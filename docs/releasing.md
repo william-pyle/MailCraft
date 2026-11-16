@@ -1,6 +1,6 @@
 # Releasing MailCraft
 
-> **Last reviewed:** 2026-10-18 · **Last updated:** 2026-11-15 · **Change:** minor · **Status:** the owner fork is configured to build and publish signed 0.13.1 release files. Windows and macOS operating-system signatures are not configured yet (gap #18).
+> **Last reviewed:** 2026-10-18 · **Last updated:** 2026-11-15 · **Change:** minor · **Status:** the owner fork builds and publishes Windows x64 release files only, beginning with 0.13.2. The Windows operating-system publisher signature is not configured yet (gap #18).
 
 This file is MailCraft's release recipe. The scripts in `packaging/` are WordCraft's with MailCraft's
 names, and differ from them only where the program does (what it opens, its description, its
@@ -22,6 +22,13 @@ its `main` into this fork's `main`, resolve conflicts while retaining the
 ContactCraft option, icon, fork repository URL and release keys, then run `cargo xtask ci`.
 Choose a new fork version above the upstream version before tagging. Push the merge and its
 follow-up fixes to `origin` only after the checks pass; publish the fork tag through this workflow.
+
+Until the owner changes this policy, build and release only Windows x64. The fork's CI and
+release package matrix enforce this; non-x64 build workflows are disabled in GitHub Actions.
+The disabled workflows are Coverage, Fuzz, Bench, Reproducible build, FreeBSD, and Windows ARM64;
+re-enable only when the owner restores those targets.
+The sections below about other platforms describe existing upstream packaging support, which is
+paused in this fork.
 
 1. Release notes: `packaging/release-notes.md` is the release's text on GitHub and on the
    website's changelog, which shows it as written. It opens with **MailCraft <version> in short**:
@@ -69,11 +76,7 @@ follow-up fixes to `origin` only after the checks pass; publish the fork tag thr
 
 | Platform | Artifacts | Signing |
 |---|---|---|
-| macOS | universal `MailCraft.app` in a `.dmg`, universal CLI zip | Developer ID + notarization (`APPLE_*` secrets) |
-| Windows | x64, x86 and arm64 `.msi` + portable `.zip` | Azure Artifact Signing (`AZURE_*` secrets, OIDC sign-in) or a certificate (`WINDOWS_CERTIFICATE*`) |
-| Linux | x86_64 and aarch64 `.AppImage` (+ `.zsync` for AppImageUpdate), `.flatpak` bundle, `.deb`, `.rpm`, `.tar.gz` | checksums |
-| FreeBSD | x86_64 `.tar.gz` (built in a FreeBSD VM; on a tag always, on a dry run only when asked for) | checksums |
-| Web | `mailcraft-web-<version>.zip` (static site: `index.html`, wasm, glue) | none |
+| Windows x64 | `.msi` and portable `.zip` | MailCraft release signature over checksums; Windows publisher signing when configured |
 
 4. The run makes ONE **draft** GitHub release, `MailCraft v<version>` on that tag, with every file
    and a `SHA256SUMS.txt` (`sha256sum` format; `packaging/release-notes.md` is its text). Running
@@ -209,10 +212,7 @@ nothing; the `.msi`, installed by Windows Installer, isn't affected.
   against its package's file list (`dpkg --verify`) before the key is handed to it; nothing is
   compiled or downloaded in that job, and no program built from this repository runs with the
   key. Locally, without OpenSSL 3, the script falls back to `cargo xtask release-key sign`.
-  The dry run makes a throwaway key with `cargo xtask release-key new` and checks that the
-  script's signature is byte for byte the one `cargo xtask release-key sign` makes with it (that
-  job holds no secret, so it may build). The key is never printed or written to a file; the step names the public key
-  it signed with. Without the secret (for example a dry run) it says "unsigned" and the run goes on:
+  Without the secret (for example a dry run) it says "unsigned" and the run goes on:
   such a release has no `.sig`, and no copy of MailCraft installs it by itself.
 - **Checking by hand:** the signature is a plain ed25519 signature over the bytes of
   `SHA256SUMS.txt`; any ed25519 tool verifies it with the public key from `RELEASE_KEYS`.
@@ -255,11 +255,11 @@ packages' hashes have been checked). trunk and wasm-bindgen come pinned through
 wasm-bindgen version in `package.yml` follows the one in `Cargo.lock`. To move a tool, change
 its version and its sha256 together, taken from the file itself.
 
-Dry run: `gh workflow run release.yml --ref <branch>` builds everything on any branch, unsigned,
-and keeps the files as workflow artifacts (FreeBSD only when asked for: it is slow), and their
+Dry run: `gh workflow run release.yml --ref <branch>` builds Windows x64 on any branch, unsigned,
+and keeps the files as workflow artifacts, and their
 `SHA256SUMS.txt` as `dry-run-sums` (the signing step says "unsigned"). It goes through the same
 jobs as a tag's run (build, then package, then check), checks every file against the digest of
-the job that made it, and checks that OpenSSL and xtask sign alike with a throwaway key. A dry run names
+the job that made it. A dry run names
 no environment, is given no secrets and publishes nothing.
 
 
@@ -380,6 +380,7 @@ and in the Flatpak (which is granted `org.freedesktop.secrets` for it).
 
 | Date | Change |
 |---|---|
+| 2026-11-15 | Owner fork: Windows x64 is the only CI and release build target until further notice; the first published fork release is 0.13.2. |
 | 2026-11-15 | Owner fork: manual dispatch on a version tag can publish when GitHub misses its push event; branch dispatch remains an unsigned dry run. |
 | 2026-11-15 | Owner fork: signed automatic release publication and update trust for 0.13.1. |
 | 2026-11-15 | Releases published: twenty-two, v0.1.0 to v0.13.0 |

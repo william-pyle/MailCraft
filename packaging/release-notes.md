@@ -1,4 +1,4 @@
-**MailCraft 0.13.1 in short**: the first signed release from this fork, including the upstream 0.13.0 improvements
+**MailCraft 0.13.2 in short**: the first signed Windows x64 release from this fork, including the upstream 0.13.0 improvements
 - On Windows, choose an installed ContactCraft as the contacts manager in File > Options > Contacts. MailCraft keeps its included contacts as the default.
 - A blue tile with a white envelope gives MailCraft a matching Craft icon; the app can check this fork for updates and offers Download and update for a newer signed release.
 - New mail on an IMAP account shows within moments where the server supports IDLE, and Send/Receive passes over folders that haven't changed ([#276](https://github.com/GITHUB_REPOSITORY/issues/276)).

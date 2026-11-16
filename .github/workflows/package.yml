@@ -1,15 +1,12 @@
 name: Package
 
-# Builds every release file with the scripts in packaging/ and uploads them as workflow artifacts
+# Builds Windows x64 release files with the scripts in packaging/ and uploads them as workflow artifacts
 # named release-* (release.yml gathers them into one GitHub release). Called by release.yml; it
 # doesn't run on its own. Everything here runs on GitHub's standard runners, so it works in any
 # public repository, a fork included.
 #
-# File names follow the Craft apps' releases, which is what lets ArtCraft Launcher find them:
-#   mailcraft-<ver>-windows-{x64,x86,arm64}.msi, mailcraft-<ver>-windows-{x64,x86,arm64}-portable.zip
-#   mailcraft-<ver>-macos-universal.dmg, mailcraft-cli-<ver>-macos-universal.zip
-#   mailcraft-<ver>-linux-{x86_64,aarch64}.{AppImage,AppImage.zsync,deb,rpm,tar.gz,flatpak}
-#   mailcraft-<ver>-freebsd-x86_64.tar.gz, mailcraft-web-<ver>.zip
+# The current release files are mailcraft-<ver>-windows-x64.msi and
+# mailcraft-<ver>-windows-x64-portable.zip. Other target jobs are paused at the owner's request.
 #
 # Building and signing are separate jobs. A job that compiles (cargo, and every build script and
 # macro of every dependency) or runs what was compiled has no signing secret, no Azure sign-in, no
@@ -115,8 +112,6 @@ jobs:
       matrix:
         include:
           - { arch: x64, target: x86_64-pc-windows-msvc }
-          - { arch: x86, target: i686-pc-windows-msvc }
-          - { arch: arm64, target: aarch64-pc-windows-msvc }
     # One output per architecture: the legs of a matrix share the job's outputs.
     outputs:
       x64: ${{ steps.seal.outputs.x64 }}
@@ -164,8 +159,6 @@ jobs:
       matrix:
         include:
           - { arch: x64, target: x86_64-pc-windows-msvc }
-          - { arch: x86, target: i686-pc-windows-msvc }
-          - { arch: arm64, target: aarch64-pc-windows-msvc }
     # Signing runs in the protected `release` environment, which holds the signing secrets and
     # accepts version tags only; an unsigned build names no environment and gets no secrets.
     environment: ${{ inputs.sign && 'release' || '' }}
@@ -275,7 +268,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x64, x86]
+        arch: [x64]
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -311,6 +304,7 @@ jobs:
 
   # Compiles the two macOS programs for both architectures. No signing secret, no environment.
   macos-build:
+    if: ${{ false }} # Windows x64 releases only until the owner re-enables other targets.
     name: macOS universal (build)
     runs-on: macos-latest
     outputs:
@@ -447,6 +441,7 @@ jobs:
           "$cli" --version
 
   linux:
+    if: ${{ false }} # Windows x64 releases only.
     name: Linux ${{ matrix.arch }}
     # The oldest supported Ubuntu image: binaries built against its glibc (2.35) run on newer ones.
     runs-on: ${{ matrix.runner }}
@@ -564,7 +559,7 @@ jobs:
 
   freebsd:
     name: FreeBSD x86_64
-    if: inputs.freebsd
+    if: ${{ false }} # Windows x64 releases only.
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     outputs:
@@ -616,6 +611,7 @@ jobs:
           retention-days: 30
 
   web:
+    if: ${{ false }} # Windows x64 releases only.
     name: Web (wasm)
     runs-on: ubuntu-24.04
     outputs:
