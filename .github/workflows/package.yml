@@ -14,7 +14,7 @@ name: Package
 # Building and signing are separate jobs. A job that compiles (cargo, and every build script and
 # macro of every dependency) or runs what was compiled has no signing secret, no Azure sign-in, no
 # keychain and no `release` environment. The Windows and macOS jobs that sign (in the `release`
-# environment, for a pushed version tag) check out the scripts afresh, take the binaries a build
+# environment, for a version tag) check out the scripts afresh, take the binaries a build
 # job handed on and check them against the digest that job gave (packaging/ci/handoff.sh), and
 # then sign and package them with pinned tools; they never run cargo, rustup or a built program.
 # The built programs are run in smoke-test jobs that hold no secret. `cargo xtask workflows`
@@ -177,11 +177,11 @@ jobs:
       x86: ${{ steps.seal.outputs.x86 }}
       arm64: ${{ steps.seal.outputs.arm64 }}
     steps:
-      - name: Signing only for a pushed version tag
-        if: inputs.sign && !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+      - name: Signing only for a version tag
+        if: inputs.sign && !startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
-          echo "::error::signing was asked for on $GITHUB_REF ($GITHUB_EVENT_NAME); only a pushed version tag is signed"
+          echo "::error::signing was asked for on $GITHUB_REF ($GITHUB_EVENT_NAME); only a version tag is signed"
           exit 1
       # The scripts come from the tagged commit, not from the build job.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -354,10 +354,10 @@ jobs:
     outputs:
       digest: ${{ steps.seal.outputs.digest }}
     steps:
-      - name: Signing only for a pushed version tag
-        if: inputs.sign && !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+      - name: Signing only for a version tag
+        if: inputs.sign && !startsWith(github.ref, 'refs/tags/v')
         run: |
-          echo "::error::signing was asked for on $GITHUB_REF ($GITHUB_EVENT_NAME); only a pushed version tag is signed"
+          echo "::error::signing was asked for on $GITHUB_REF ($GITHUB_EVENT_NAME); only a version tag is signed"
           exit 1
       # The scripts come from the tagged commit, not from the build job.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

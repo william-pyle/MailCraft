@@ -12,7 +12,7 @@ name: Release
 # first; every other job needs it).
 #
 # The signing and publishing jobs run in the protected `release` environment, which holds the
-# signing secrets and is limited to version tags; only a pushed tag reaches them. They are not the
+# signing secrets and is limited to version tags; only a version tag reaches them. They are not the
 # jobs that build: package.yml compiles in jobs that hold no secret and hands the binaries on by
 # digest, and no job with a signing secret, an Azure sign-in, a keychain or the `release`
 # environment runs cargo, rustup or a built program (`cargo xtask workflows` checks it). The
@@ -20,8 +20,9 @@ name: Release
 # the checksums are signed with the runner's OpenSSL (packaging/sign-sums.sh), not a program built
 # here.
 #
-# Run by hand (workflow_dispatch) it builds everything unsigned and keeps the files as workflow
-# artifacts: a dry run, on any branch, that is given no secrets and publishes nothing.
+# Run by hand (workflow_dispatch) on a branch to build everything unsigned as workflow
+# artifacts: a dry run given no secrets. Dispatch on a version tag to build and publish it,
+# subject to the same main/ci-ok gate and protected release environment as a pushed tag.
 #
 # This workflow is self-contained on purpose. The Craft apps inside the storytold organisation
 # call a shared one (storytold/craft-common-actions) that needs that organisation's runners and
@@ -108,11 +109,11 @@ jobs:
           case "$VERSION" in *-*) pre=true ;; *) pre=false ;; esac
           { echo "version=$VERSION"; echo "prerelease=$pre"; } >>"$GITHUB_OUTPUT"
 
-  # A run by hand: unsigned, no secrets, nothing published.
+  # A run by hand on a branch: unsigned, no secrets, nothing published.
   dry-run:
     name: Package (dry run, unsigned)
     needs: [version]
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.ref_type != 'tag'
     # zizmor's self-repository audit wants GitHub's new `$/` form; kept as `./` until a release has
     # been cut with it, since this path runs on a tag alone.
     uses: ./.github/workflows/package.yml # zizmor: ignore[self-repository]
@@ -129,7 +130,7 @@ jobs:
   dry-run-sums:
     name: Checksums (dry run, unsigned)
     needs: [dry-run]
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.ref_type != 'tag'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -195,11 +196,11 @@ jobs:
           path: artifacts/SHA256SUMS.txt*
           if-no-files-found: error
 
-  # A pushed version tag: signed, in the `release` environment (package.yml's signing jobs).
+  # A pushed or manually dispatched version tag: signed, in the `release` environment.
   package:
     name: Package
     needs: [version]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     uses: ./.github/workflows/package.yml # zizmor: ignore[self-repository]
     permissions:
       contents: read
@@ -230,8 +231,8 @@ jobs:
   publish:
     name: Verify and publish the release
     needs: [version, package]
-    # Pushed tags only; a run by hand stops at the artifacts.
-    if: "!cancelled() && needs.package.result == 'success' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"
+    # A version tag only; branch dispatches stop at the unsigned artifacts.
+    if: "!cancelled() && needs.package.result == 'success' && startsWith(github.ref, 'refs/tags/v')"
     runs-on: ubuntu-24.04
     environment: release
     permissions:

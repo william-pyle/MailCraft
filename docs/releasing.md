@@ -62,6 +62,11 @@ follow-up fixes to `origin` only after the checks pass; publish the fork tag thr
 3. Tag that commit `v0.2.0` and push the tag. The workflow refuses a tag that isn't the version in
    `Cargo.toml`, then builds:
 
+   If GitHub does not enqueue the tag's push event, run
+   `gh workflow run release.yml --repo william-pyle/MailCraft --ref v<version>`.
+   Dispatching on a version tag uses the same passing-CI gate, signed packages and protected
+   `release` environment. Dispatching on a branch remains an unsigned packaging dry run.
+
 | Platform | Artifacts | Signing |
 |---|---|---|
 | macOS | universal `MailCraft.app` in a `.dmg`, universal CLI zip | Developer ID + notarization (`APPLE_*` secrets) |
@@ -375,6 +380,7 @@ and in the Flatpak (which is granted `org.freedesktop.secrets` for it).
 
 | Date | Change |
 |---|---|
+| 2026-11-15 | Owner fork: manual dispatch on a version tag can publish when GitHub misses its push event; branch dispatch remains an unsigned dry run. |
 | 2026-11-15 | Owner fork: signed automatic release publication and update trust for 0.13.1. |
 | 2026-11-15 | Releases published: twenty-two, v0.1.0 to v0.13.0 |
 | 2026-11-07 | AU3-04: release programs are built in jobs without signing material and handed on by digest; the jobs that sign never run cargo or a built program, the programs are run in check jobs without secrets, the checksums are signed with OpenSSL, and `cargo xtask workflows` checks the shape |
