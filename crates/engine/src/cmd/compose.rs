@@ -1166,7 +1166,14 @@ fn check_names(s: &mut Session, _: &Value) -> CmdResult {
                     return a;
                 }
                 let typed = a.email.clone();
-                let hits: Vec<Address> = s.mailbox.contacts.values().filter(|k| k.matches(&typed)).filter_map(|k| k.address()).collect();
+                let hits: Vec<Address> = s
+                    .mailbox
+                    .contacts
+                    .values()
+                    .filter(|k| k.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts)
+                    .filter(|k| k.matches(&typed))
+                    .filter_map(|k| k.address())
+                    .collect();
                 match hits.as_slice() {
                     [one] => one.clone(),
                     _ => {
@@ -1639,7 +1646,8 @@ pub fn suggest(s: &Session, query: &str, limit: usize) -> Vec<Suggestion> {
     let own: Vec<String> = s.mailbox.accounts.iter().map(|a| a.email.trim().to_lowercase()).filter(|e| !e.is_empty()).collect();
     let mut seen: std::collections::HashSet<String> = own.into_iter().collect();
     let mut out: Vec<Suggestion> = Vec::new();
-    let mut people: Vec<&std::sync::Arc<mailcraft_model::Contact>> = s.mailbox.contacts.values().collect();
+    let mut people: Vec<&std::sync::Arc<mailcraft_model::Contact>> =
+        s.mailbox.contacts.values().filter(|c| c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts).collect();
     people.sort_by_cached_key(|c| (!c.favorite, c.name().to_lowercase()));
     for c in people {
         let name = c.name();

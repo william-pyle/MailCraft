@@ -658,6 +658,11 @@ msgstr "Environ {size} de courrier datant de plus de {window} seront supprimés 
 msgid "Above the status bar"
 msgstr "Au-dessus de la barre d'état"
 
+#. ribbon location
+#: crates/ui-egui/src/lib.rs
+msgid "Above the status bar · File"
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/backstage.rs
 #, fuzzy
@@ -2736,9 +2741,8 @@ msgstr "Vérifiez les deux serveurs avant de vous connecter."
 
 #. interface
 #: crates/ui-egui/src/updates.rs
-#, fuzzy
-msgid "Check daily for new versions of MailCraft, and download and install them when you quit? Only GitHub is asked; nothing about you or your mail is sent."
-msgstr "Rechercher chaque jour les nouvelles versions de MailCraft, et les télécharger et les installer quand vous quittez ? Seul GitHub est interrogé ; rien sur vous ni sur votre courrier n'est envoyé."
+msgid "Check daily for new versions of MailCraft? You will be asked before one is downloaded. Only GitHub is asked; nothing about you or your mail is sent."
+msgstr ""
 
 #. command label
 #: crates/ui-egui/src/lib.rs
@@ -3198,10 +3202,35 @@ msgid "Contact Card"
 msgstr "Carte de contact"
 
 #. interface
+#: crates/ui-egui/src/backstage.rs crates/ui-egui/src/people_view.rs
+msgid "ContactCraft"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "ContactCraft's shared contacts are used even when its window is closed. New and edited contacts open in ContactCraft."
+msgstr ""
+
+#. interface, ribbon location
+#: crates/ui-egui/src/backstage.rs crates/ui-egui/src/lib.rs
+msgid "Contacts"
+msgstr ""
+
+#. command label
+#: crates/ui-egui/src/lib.rs
+msgid "Contacts Manager"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/dialogs.rs
 #, fuzzy
 msgid "Contacts don't go to Deleted Items."
 msgstr "Les contacts ne vont pas dans Éléments supprimés."
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Contacts manager"
+msgstr ""
 
 #. android, interface
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/AccountDialogs.kt crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/auto_replies.rs crates/ui-egui/src/open_shared.rs crates/ui-egui/src/opening.rs crates/ui-egui/src/rule_sync.rs crates/ui-egui/src/shared_calendars.rs crates/ui-egui/src/shared_mailboxes.rs crates/ui-egui/src/task_sync.rs
@@ -4305,6 +4334,16 @@ msgstr "Télécharger les images dans tous les courriers"
 msgid "Download Pictures in Mail Automatically"
 msgstr "Télécharger automatiquement les images du courrier"
 
+#. command label
+#: crates/ui-egui/src/lib.rs
+msgid "Download and Update"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/updates.rs
+msgid "Download and update"
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/dialogs.rs
 #, fuzzy
@@ -4366,6 +4405,16 @@ msgid "Downloaded {n} attachment"
 msgid_plural "Downloaded {n} attachments"
 msgstr[0] "{n} pièce jointe téléchargée"
 msgstr[1] "{n} pièces jointes téléchargées"
+
+#. interface
+#: crates/ui-egui/src/updates.rs
+msgid "Downloading and checking the update…"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/updates.rs
+msgid "Downloading or installing an update is the owner's click."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/reading/remote.rs
@@ -6638,6 +6687,11 @@ msgid "Include the original message when replying"
 msgstr "Inclure le message d'origine dans les réponses"
 
 #. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Included contacts"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/account_setup.rs
 #, fuzzy
 msgid "Incoming mail (IMAP)"
@@ -7291,7 +7345,7 @@ msgid "Last name"
 msgstr "Nom"
 
 #. interface, name
-#: crates/ui-egui/src/graph_switch.rs crates/ui-egui/src/tasks_view.rs
+#: crates/ui-egui/src/graph_switch.rs crates/ui-egui/src/tasks_view.rs crates/ui-egui/src/updates.rs
 #, fuzzy
 msgid "Later"
 msgstr "Plus tard"
@@ -7921,6 +7975,11 @@ msgstr "MailCraft enverra du courrier depuis une boîte aux lettres partagée, e
 
 #. interface
 #: crates/ui-egui/src/updates.rs
+msgid "MailCraft {version} couldn't be downloaded: {why}"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/updates.rs
 #, fuzzy
 msgid "MailCraft {version} didn't start."
 msgstr "MailCraft {version} n'a pas démarré."
@@ -7936,6 +7995,11 @@ msgstr "MailCraft {version} est disponible"
 #, fuzzy
 msgid "MailCraft {version} is available and fixes a security problem"
 msgstr "MailCraft {version} est disponible et corrige un problème de sécurité"
+
+#. interface
+#: crates/ui-egui/src/updates.rs
+msgid "MailCraft {version} is available. Download and update?"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/updates.rs
@@ -9318,6 +9382,11 @@ msgstr "Aucun message ne correspond."
 #, fuzzy
 msgid "No messages."
 msgstr "Aucun message."
+
+#. interface
+#: crates/ui-egui/src/updates.rs
+msgid "No new version is available."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/updates.rs
@@ -11835,12 +11904,6 @@ msgstr "Redémarrer pour mettre à jour"
 #, fuzzy
 msgid "Restart to update"
 msgstr "Redémarrer pour mettre à jour"
-
-#. interface
-#: crates/ui-egui/src/updates.rs
-#, fuzzy
-msgid "Restart to update is the owner's click."
-msgstr "Seul le propriétaire peut cliquer sur Redémarrer pour mettre à jour."
 
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/AccountScreens.kt
@@ -17078,6 +17141,11 @@ msgstr "Le compte de cette boîte aux lettres partagée n'existe plus : suppri
 #, fuzzy
 msgid "This system has no place MailCraft knows for S/MIME certificates with a private key."
 msgstr "Ce système n'a aucun emplacement connu de MailCraft pour les certificats S/MIME avec une clé privée."
+
+#. interface
+#: crates/ui-egui/src/updates.rs
+msgid "This version must be downloaded from its release page."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
@@ -23325,6 +23393,14 @@ msgstr "« {subject} » était trop volumineux pour être téléchargé : seul s
 #, fuzzy
 msgid "“{subject}” wasn't found on its server, so it can't be forwarded as an attachment"
 msgstr "« {subject} » est introuvable sur son serveur, il ne peut donc pas être transféré en tant que pièce jointe"
+
+#, fuzzy
+#~ msgid "Check daily for new versions of MailCraft, and download and install them when you quit? Only GitHub is asked; nothing about you or your mail is sent."
+#~ msgstr "Rechercher chaque jour les nouvelles versions de MailCraft, et les télécharger et les installer quand vous quittez ? Seul GitHub est interrogé ; rien sur vous ni sur votre courrier n'est envoyé."
+
+#, fuzzy
+#~ msgid "Restart to update is the owner's click."
+#~ msgstr "Seul le propriétaire peut cliquer sur Redémarrer pour mettre à jour."
 
 #, fuzzy
 #~ msgid "a .pst file is imported into a calendar on this computer only, never an account on a server"

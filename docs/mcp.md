@@ -242,6 +242,7 @@ parameters.
 | Date | Change | Summary |
 |---|---|---|
 | 2026-11-14 | minor | #1153: messages of a Gmail account carry `gmailLabels`, framed as message content |
+| 2026-11-13 | minor | #1208: four new sender warning kinds, `brandName`, `brandLookalike`, `domainInName` and `madeUpDomain` |
 | 2026-11-13 | minor | #1200: `list_messages` takes a folder's kind (`inbox`, `sent`, `drafts`, `deleted`, `junk`, `archive`, `outbox`), which works whatever the mailbox's language calls the folder, beside its id and path; `account` says whose, goes with `folder`, and is an account that is there whose folder it has to be |
 | 2026-11-11 | minor | #30 part 4a: `mail.digitalSignature` checks OpenPGP too (`format`); `keys.list` (safe), `keys.import` and `keys.remove` (settings; a path only from the owner) |
 | 2026-11-11 | minor | #30 part 4b: the window's key commands (`ui.importPrivateKey`, `ui.removePrivateKey`, `ui.refreshOwnKeys`, `ui.importPublicKey`, `ui.verifyKey`, `ui.markKeyVerified`) are never for agents |

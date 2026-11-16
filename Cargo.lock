@@ -954,6 +954,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "chrono"
+version = "0.4.45"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327"
+dependencies = [
+ "iana-time-zone",
+ "num-traits",
+ "windows-link",
+]
+
+[[package]]
 name = "cipher"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1077,6 +1088,20 @@ name = "const-oid"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+
+[[package]]
+name = "contactcraft-store"
+version = "1.2.0"
+source = "git+https://github.com/william-pyle/ContactCraft?tag=v1.2.0#ca1a15fcb95069808b85599967a47282f5414de5"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "getrandom 0.3.4",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+]
 
 [[package]]
 name = "convert_case"
@@ -2079,6 +2104,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "fallible-iterator"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649"
+
+[[package]]
+name = "fallible-streaming-iterator"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
 name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2609,6 +2646,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashlink"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a596f1b20ed2cc5ecac41a164aaebc7258057060f06c0cf7a2ba3991ee7990fb"
+dependencies = [
+ "hashbrown 0.17.1",
+]
+
+[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2671,6 +2717,30 @@ dependencies = [
  "subtle",
  "typenum",
  "zeroize",
+]
+
+[[package]]
+name = "iana-time-zone"
+version = "0.1.65"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e31bc9ad994ba00e440a8aa5c9ef0ec67d5cb5e5cb0cc7f8b744a35b389cc470"
+dependencies = [
+ "android_system_properties",
+ "core-foundation-sys",
+ "iana-time-zone-haiku",
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "windows-core",
+]
+
+[[package]]
+name = "iana-time-zone-haiku"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -3055,6 +3125,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsqlite3-sys"
+version = "0.39.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14a5f01b87b92705d07b433c06f96cbc764637d81a0bffb5734ce17cf0f9a2b3"
+dependencies = [
+ "cc",
+ "pkg-config",
+ "vcpkg",
+]
+
+[[package]]
 name = "linebender_resource_handle"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3095,12 +3176,13 @@ checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
 name = "mailcraft"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "apple-native-keyring-store",
  "arboard",
  "base64 0.23.1",
  "block2 0.6.2",
+ "contactcraft-store",
  "cryptoki",
  "dispatch2",
  "eframe",
@@ -3155,7 +3237,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-assuan"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "proptest",
  "thiserror 2.0.21",
@@ -3163,11 +3245,11 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-ber"
-version = "0.13.0"
+version = "0.13.1"
 
 [[package]]
 name = "mailcraft-charset"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "base64 0.23.1",
  "encoding_rs",
@@ -3176,7 +3258,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-cli"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-charset",
  "mailcraft-engine",
@@ -3191,14 +3273,14 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-control-key"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "ring",
 ]
 
 [[package]]
 name = "mailcraft-dav"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-ical",
  "mailcraft-model",
@@ -3210,7 +3292,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-engine"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "image",
  "libc",
@@ -3240,7 +3322,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-ews"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "hmac 0.13.0",
  "log",
@@ -3255,7 +3337,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-host"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "log",
  "mailcraft-engine",
@@ -3267,7 +3349,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-html"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-link",
  "mailcraft-names",
@@ -3278,14 +3360,14 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-i18n"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
 name = "mailcraft-ical"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-model",
  "mailcraft-time",
@@ -3294,7 +3376,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-jmap"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "log",
  "mailcraft-charset",
@@ -3309,7 +3391,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-jmap-types"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "proptest",
  "serde",
@@ -3318,7 +3400,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-link"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-names",
  "proptest",
@@ -3326,7 +3408,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-mcp"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "log",
  "mailcraft-control-key",
@@ -3336,7 +3418,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-mime"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-ber",
  "mailcraft-charset",
@@ -3349,7 +3431,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-mime-model"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-html",
  "mailcraft-mime",
@@ -3361,7 +3443,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-mobile"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "jni",
  "log",
@@ -3383,7 +3465,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-model"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-charset",
  "mailcraft-i18n",
@@ -3398,14 +3480,14 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-names"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
 name = "mailcraft-net"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "cryptoki",
  "flate2",
@@ -3430,7 +3512,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-openpgp"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "ed25519-dalek",
  "mailcraft-names",
@@ -3446,7 +3528,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-proto"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "log",
  "mailcraft-charset",
@@ -3456,7 +3538,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-pst"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-charset",
  "proptest",
@@ -3464,7 +3546,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-smime"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "aes 0.9.4",
  "cbc",
@@ -3495,7 +3577,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-time"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "jiff",
  "js-sys",
@@ -3505,7 +3587,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-ui-egui"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "egui",
  "egui_kittest",
@@ -3534,7 +3616,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-vcard"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "mailcraft-charset",
  "mailcraft-model",
@@ -3545,7 +3627,7 @@ dependencies = [
 
 [[package]]
 name = "mailcraft-web"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "eframe",
  "egui",
@@ -5301,6 +5383,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "rsqlite-vfs"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "353b74f9810d5b085b6c42c9d86a5f0fdb795553235cdd48753b32e3809d18a7"
+dependencies = [
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "rusqlite"
+version = "0.41.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da9bba6f3506135e120a6586df05be18b48d18896600646a4bec8f993d91a594"
+dependencies = [
+ "bitflags 2.13.2",
+ "fallible-iterator",
+ "fallible-streaming-iterator",
+ "hashlink",
+ "libsqlite3-sys",
+ "smallvec",
+ "sqlite-wasm-rs",
+]
+
+[[package]]
 name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5991,6 +6097,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sqlite-wasm-rs"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6cd504cecbfe7eef649988840f9a6cb768d11085efec138f8e99f160632d867"
+dependencies = [
+ "cc",
+ "rsqlite-vfs",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6607,6 +6723,12 @@ dependencies = [
  "serde_core",
  "wasm-bindgen",
 ]
+
+[[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "vello_common"
@@ -7563,7 +7685,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.13.0"
+version = "0.13.1"
 dependencies = [
  "image",
  "mailcraft-charset",

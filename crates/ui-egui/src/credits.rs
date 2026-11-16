@@ -45,7 +45,7 @@ pub struct Tester {
 include!(concat!(env!("OUT_DIR"), "/testers.rs"));
 
 /// Where to sign up to test: the roster issue of the repository the build came from.
-pub const TESTERS_SIGN_UP: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "/issues/11");
+pub const TESTERS_SIGN_UP: &str = "https://github.com/UCS-Care-Group/mailcraft/issues/11";
 
 impl Tester {
     /// The display name they chose, else `@username`.

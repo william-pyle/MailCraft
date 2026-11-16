@@ -44,6 +44,7 @@ IMAP and SMTP servers, a Graph stand-in and a JMAP stand-in, not yet against oth
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-15 | patch | Protocols: Exchange Web Services for an organisation's own server (mail only, #252); CalDAV, CardDAV and MAPI still no |
 | 2026-11-14 | patch | #1376: `.mailcraft`: header blocks packed in a few `headers-<n>.pack` files in the content folder, not one file each |
 | 2026-11-13 | minor | HS: `.mailcraft` in format 4, a message's header block beside it with its other content; format 3 still read |
 | 2026-11-13 | minor | #276: IMAP: STATUS (pipelined) and IDLE on the Inbox are used |

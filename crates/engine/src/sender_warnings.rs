@@ -75,10 +75,11 @@ impl Known {
             self.accounts = accounts;
             self.changed();
         }
-        let same = self.contacts.len() == mailbox.contacts.len()
-            && self.contacts.iter().zip(&mailbox.contacts).all(|((was, kept), (id, now))| was == id && Arc::ptr_eq(kept, now));
+        let chosen = mailbox.contacts.iter().filter(|(_, c)| c.contactcraft_id.is_empty() != session.prefs.contactcraft_contacts);
+        let same = self.contacts.len() == chosen.clone().count()
+            && self.contacts.iter().zip(chosen.clone()).all(|((was, kept), (id, now))| was == id && Arc::ptr_eq(kept, now));
         if fresh || !same {
-            self.contacts = mailbox.contacts.clone();
+            self.contacts = chosen.map(|(id, c)| (*id, c.clone())).collect();
             self.contact_names = self
                 .contacts
                 .values()

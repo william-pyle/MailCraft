@@ -1,6 +1,6 @@
 # Releasing MailCraft
 
-> **Last reviewed:** 2026-10-18 · **Last updated:** 2026-11-07 · **Change:** minor · **Status:** releases v0.1.0 to v0.13.0 were built and published by `release.yml` and `package.yml` on GitHub's runners, for every platform in the table below; v0.5.0 is the first with MailCraft's own release signature (`SHA256SUMS.txt.sig`, verified by the in-use key), and none is signed by the operating systems' signatures yet (gap #18).
+> **Last reviewed:** 2026-10-18 · **Last updated:** 2026-11-15 · **Change:** minor · **Status:** the owner fork is configured to build and publish signed 0.13.1 release files. Windows and macOS operating-system signatures are not configured yet (gap #18).
 
 This file is MailCraft's release recipe. The scripts in `packaging/` are WordCraft's with MailCraft's
 names, and differ from them only where the program does (what it opens, its description, its
@@ -13,6 +13,15 @@ release workflow (that one needs the organisation's runners and its `release` en
 standard runners in any public repository, a fork included. If the repository moves into the
 organisation, call `storytold/craft-common-actions/.github/workflows/release.yml` instead, as
 WordCraft does.
+
+This fork keeps `origin` at `william-pyle/MailCraft` for its own tags and signed releases and
+`upstream` at `UCS-Care-Group/mailcraft` for core changes. For each upstream release, fetch
+`upstream` (after a fresh clone, add it with
+`git remote add upstream https://github.com/UCS-Care-Group/mailcraft.git`), merge
+its `main` into this fork's `main`, resolve conflicts while retaining the
+ContactCraft option, icon, fork repository URL and release keys, then run `cargo xtask ci`.
+Choose a new fork version above the upstream version before tagging. Push the merge and its
+follow-up fixes to `origin` only after the checks pass; publish the fork tag through this workflow.
 
 1. Release notes: `packaging/release-notes.md` is the release's text on GitHub and on the
    website's changelog, which shows it as written. It opens with **MailCraft <version> in short**:
@@ -66,9 +75,7 @@ WordCraft does.
    the same tag again replaces the files of that draft; a release that is already published is
    never changed by the workflow (the run fails instead). A version with a suffix
    (`0.2.0-rc.1`) is marked as a pre-release.
-5. A maintainer checks the draft (files, names, checksums, notes) and publishes it by hand:
-   Releases › the draft › Edit › Publish release, or `gh release edit v0.2.0 --draft=false`.
-   Nothing is public until then.
+5. When the checksum signature is present, the workflow publishes the verified draft. This makes the release visible to the app version check. Without a signing key, the draft remains unpublished and the workflow fails; an unsigned release cannot be installed by the updater. Review the published assets, checksums and notes after the run.
 6. Announce it to the testers: a comment on [#11](https://github.com/UCS-Care-Group/mailcraft/issues/11)
    headed `## MailCraft v<version> is out`, with the download link and the release's headlines
    (the tester welcome promises it): the notes' **in short** list. Add anyone who signed up since to #11's Testers table.
@@ -103,11 +110,9 @@ environment, not of the repository. Windows signing with Azure Artifact Signing 
 secret: the job signs in with GitHub's OIDC token (`azure/login`), which the app registration's
 federated credential accepts only from the `release` environment; its secrets are
 `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT` and
-`AZURE_CERT_PROFILE`. That environment accepts version tags (`v*`) only and waits
-for a maintainer's approval; the Windows and macOS jobs that sign, and the job that makes the
+`AZURE_CERT_PROFILE`. The owner fork restricts that environment to version tags (`v*`); the Windows and macOS jobs that sign, and the job that makes the
 draft, run in it, and only for a pushed version tag. Without the secrets the builds are unsigned
-(ad-hoc on macOS) and the scripts say so, so forks still build. None is set yet, so every
-release so far is unsigned. There is no riscv64 Linux build, and no Flathub manifest is published.
+(ad-hoc on macOS) and the scripts say so, so forks still build. The owner fork has the MailCraft checksum signing key, but no Windows or macOS operating-system signing credentials. There is no riscv64 Linux build, and no Flathub manifest is published.
 
 ## Google Desktop OAuth release readiness
 
@@ -202,7 +207,7 @@ nothing; the `.msi`, installed by Windows Installer, isn't affected.
   The dry run makes a throwaway key with `cargo xtask release-key new` and checks that the
   script's signature is byte for byte the one `cargo xtask release-key sign` makes with it (that
   job holds no secret, so it may build). The key is never printed or written to a file; the step names the public key
-  it signed with. Without the secret (a fork, a dry run) it says "unsigned" and the run goes on:
+  it signed with. Without the secret (for example a dry run) it says "unsigned" and the run goes on:
   such a release has no `.sig`, and no copy of MailCraft installs it by itself.
 - **Checking by hand:** the signature is a plain ed25519 signature over the bytes of
   `SHA256SUMS.txt`; any ed25519 tool verifies it with the public key from `RELEASE_KEYS`.
@@ -370,6 +375,8 @@ and in the Flatpak (which is granted `org.freedesktop.secrets` for it).
 
 | Date | Change |
 |---|---|
+| 2026-11-15 | Owner fork: signed automatic release publication and update trust for 0.13.1. |
+| 2026-11-15 | Releases published: twenty-two, v0.1.0 to v0.13.0 |
 | 2026-11-07 | AU3-04: release programs are built in jobs without signing material and handed on by digest; the jobs that sign never run cargo or a built program, the programs are run in check jobs without secrets, the checksums are signed with OpenSSL, and `cargo xtask workflows` checks the shape |
 | 2026-11-06 | Pull requests leave status lines alone; the release pull request sets each one from the rows it joins in |
 | 2026-11-04 | The rows of the documents' revision histories and of the progress log are fragments, `docs/log.d/<document>/{revisions,progress}/<name>.md`, joined into their tables by `cargo xtask docs-log --write` in the release's pull request, beside the release notes' |

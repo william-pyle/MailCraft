@@ -49,7 +49,9 @@ pub fn show(app: &mut MailApp, ui: &mut Ui) {
 pub(crate) fn keep_picked(app: &mut MailApp) {
     let contacts = &app.session.mailbox.contacts;
     let shown = people::shown_account(&app.session);
-    app.people_picked.retain(|id| contacts.get(id).is_some_and(|c| shown.shows(&c.origin)));
+    app.people_picked.retain(|id| {
+        contacts.get(id).is_some_and(|c| shown.shows(&c.origin) && (c.contactcraft_id.is_empty() != app.session.prefs.contactcraft_contacts))
+    });
     if app.people_picked.len() < 2 || app.session.sel.contact.is_none_or(|c| !app.people_picked.contains(&c)) {
         app.people_picked.clear();
     }
@@ -336,7 +338,7 @@ impl std::ops::Deref for PeopleList {
 /// The layout kept between frames, with what it was made from.
 #[derive(Clone)]
 struct CachedLayout {
-    key: (u64, usize, String, PeopleSort, AccountChoice),
+    key: (u64, usize, i64, String, PeopleSort, AccountChoice),
     list: Arc<PeopleList>,
 }
 
@@ -347,7 +349,7 @@ fn list_layout(app: &MailApp, ctx: &egui::Context) -> Arc<PeopleList> {
     let s = &app.session;
     let query = &s.view.people_search;
     let shown = people::shown_account(s);
-    let key = (s.rev(), s.mailbox.contacts.len(), query.clone(), s.view.people_sort, shown);
+    let key = (s.rev(), s.mailbox.contacts.len(), app.contactcraft.revision, query.clone(), s.view.people_sort, shown);
     if let Some(cached) = ctx.data(|d| d.get_temp::<CachedLayout>(slot)).filter(|c| c.key == key) {
         return cached.list;
     }
@@ -364,7 +366,8 @@ fn list_layout(app: &MailApp, ctx: &egui::Context) -> Arc<PeopleList> {
             Layout::new(ROW_H, rows.into_iter().map(|(id, i)| (id, i.map_or(Group::NoCategory, Group::Categories))))
         }
     };
-    let total = s.mailbox.contacts.values().filter(|c| shown.shows(&c.origin)).count();
+    let total =
+        s.mailbox.contacts.values().filter(|c| shown.shows(&c.origin) && (c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts)).count();
     let list = Arc::new(PeopleList { layout, names, total });
     ctx.data_mut(|d| d.insert_temp(slot, CachedLayout { key, list: list.clone() }));
     list
@@ -577,7 +580,7 @@ fn list(app: &mut MailApp, ui: &mut Ui, layout: &PeopleList) {
     }
     let accounts = people::contact_accounts(&app.session.mailbox);
     let shown = people::shown_account(&app.session);
-    if !accounts.is_empty() {
+    if !accounts.is_empty() && !app.session.prefs.contactcraft_contacts {
         ui.add_space(2.0);
         if let Some(choice) = widgets::account_choice(ui, &app.session.mailbox, &accounts, shown) {
             let _ = app.run("view.peopleAccount", json!({"value": choice.code()}));
@@ -607,6 +610,9 @@ fn list(app: &mut MailApp, ui: &mut Ui, layout: &PeopleList) {
 
 /// Whether each row says where its contact is: every account's contacts are in one list.
 fn labelled(app: &MailApp) -> bool {
+    if app.session.prefs.contactcraft_contacts {
+        return false;
+    }
     people::shown_account(&app.session) == AccountChoice::All && !people::contact_accounts(&app.session.mailbox).is_empty()
 }
 
@@ -897,6 +903,9 @@ fn field(ui: &mut Ui, icon: &str, value: &str, label: &str, link: bool) -> egui:
 
 /// Where the contact is kept, where there is more than one place it could be.
 fn kept_in(app: &MailApp, c: &Contact) -> Option<String> {
+    if !c.contactcraft_id.is_empty() {
+        return Some(tl!("ContactCraft").to_string());
+    }
     let mailbox = &app.session.mailbox;
     (c.origin.is_remote() || !people::contact_accounts(mailbox).is_empty()).then(|| widgets::place_name(mailbox, c.origin.account))
 }

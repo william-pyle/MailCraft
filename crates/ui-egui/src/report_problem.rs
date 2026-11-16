@@ -41,7 +41,7 @@ use crate::widgets::primary_button;
 /// The longest new-issue address opened: browsers and GitHub refuse or cut longer ones.
 pub(crate) const URL_MAX: usize = 8_000;
 /// Where problems are reported (the repository's own new-issue page, with its problem form).
-const NEW_ISSUE: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "/issues/new");
+const NEW_ISSUE: &str = "https://github.com/UCS-Care-Group/mailcraft/issues/new";
 const TEMPLATE: &str = "problem.yml";
 /// The most of each box that is kept (a paste of a whole log is not a description).
 const TITLE_CHARS: usize = 200;

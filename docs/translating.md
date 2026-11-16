@@ -71,6 +71,7 @@ Agreement](../CLA.md).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-14 | minor | Added the Hungarian preview catalogue (`hu.po`). |
 | 2026-11-12 | minor | #1135: Romanian as a preview language (`ro.po`), with its three plural forms |
 | 2026-11-12 | minor | #1031: Simplified Chinese preview catalogue (`zh_CN.po`), initial catalogue reviewed by its contributor |
 | 2026-11-10 | patch | #978: English writes dates the day first outside the US, Canada and the Philippines, with the region's clock and first day of the week |

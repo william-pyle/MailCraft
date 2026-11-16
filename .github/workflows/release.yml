@@ -1,11 +1,11 @@
 name: Release
 
-# A pushed version tag vX.Y.Z builds and signs every platform (package.yml) and makes ONE draft
+# A pushed version tag vX.Y.Z builds and signs every platform (package.yml) and makes ONE
 # GitHub release, "MailCraft vX.Y.Z" on that tag, holding all the files plus SHA256SUMS.txt
 # (`sha256sum` format) and SHA256SUMS.txt.sig (MailCraft's own ed25519 signature over it, which
 # a copy of MailCraft checks before it takes an update): the layout of the Craft apps' releases,
 # so ArtCraft Launcher and anything else that reads those releases finds MailCraft's files by
-# the same names. A maintainer reviews the draft and publishes it by hand. See docs/releasing.md.
+# the same names. A signed release is published after the files pass verification. See docs/releasing.md.
 #
 # A tag builds and signs only when its commit is on main and CI passed there, or the commit merges
 # an up-to-date pull request whose CI passed on the same tree (the `version` job checks that
@@ -228,7 +228,7 @@ jobs:
       MAILCRAFT_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
 
   publish:
-    name: Make the draft release
+    name: Verify and publish the release
     needs: [version, package]
     # Pushed tags only; a run by hand stops at the artifacts.
     if: "!cancelled() && needs.package.result == 'success' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"
@@ -293,8 +293,8 @@ jobs:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
           VERSION: ${{ needs.version.outputs.version }}
         run: cp -- "$BUNDLE" "artifacts/mailcraft-$VERSION.intoto.jsonl"
-      # Always a draft: a maintainer checks it and publishes it by hand. A re-run replaces the files
-      # of the draft; a release that is already published is never changed here.
+      # Stage the release as a draft so an interrupted run can replace only unpublished files.
+      # A release that is already published is never changed here.
       - name: Create the draft release, or replace the files of the draft a re-run made
         working-directory: artifacts
         env:
@@ -307,8 +307,8 @@ jobs:
           title="MailCraft v$VERSION"
           pre=()
           if [ "$PRERELEASE" = "true" ]; then pre=(--prerelease); fi
-          # The notes name the repository they are published in (a fork's point at the fork).
-          sed "s|GITHUB_REPOSITORY|$GITHUB_REPOSITORY|g" "$GITHUB_WORKSPACE/packaging/release-notes.md" >"$RUNNER_TEMP/notes.md"
+          # Existing issue references belong to the upstream tracker; this fork has issues off.
+          sed 's|GITHUB_REPOSITORY|UCS-Care-Group/mailcraft|g' "$GITHUB_WORKSPACE/packaging/release-notes.md" >"$RUNNER_TEMP/notes.md"
           if gh release view "$tag" >/dev/null 2>&1; then
             if [ "$(gh release view "$tag" --json isDraft --jq .isDraft)" != "true" ]; then
               echo "::error::release $tag is already published; the workflow only makes and refreshes drafts"
@@ -323,7 +323,19 @@ jobs:
               --notes-file "$RUNNER_TEMP/notes.md" "${pre[@]}" -- *
           fi
           {
-            echo "Draft release **$title** at \`${GITHUB_SHA::9}\`: check it, then publish it by hand."
+            echo "Staged release **$title** at \`${GITHUB_SHA::9}\`."
             echo
             sed 's/^/    /' SHA256SUMS.txt
           } >>"$GITHUB_STEP_SUMMARY"
+      - name: Publish the signed release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          if [ ! -s artifacts/SHA256SUMS.txt.sig ]; then
+            echo "::error::The release has no MailCraft signature; it remains a draft and cannot be offered for automatic updates"
+            exit 1
+          fi
+          gh release edit "v$VERSION" --draft=false
+          echo "Published MailCraft v$VERSION with its verified release files and signature." >>"$GITHUB_STEP_SUMMARY"

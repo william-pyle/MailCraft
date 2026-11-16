@@ -9,6 +9,26 @@ use serde_json::{Value, json};
 use super::*;
 use crate::Session;
 
+#[test]
+fn contactcraft_contacts_are_never_written_into_a_mailbox() {
+    let tmp = Temp::new("contactcraft-view");
+    let path = tmp.file();
+    let mut mb = Mailbox::with_local_account("Owner", "owner@example.org");
+    let local = mb.add_contact(mailcraft_model::Contact { display_name: "Local".into(), ..Default::default() });
+    let shared =
+        mb.add_contact(mailcraft_model::Contact { display_name: "Shared".into(), contactcraft_id: "contactcraft-id".into(), ..Default::default() });
+    assert_ne!(local, shared);
+    assert_eq!(mb.contact(shared).map(|c| c.contactcraft_id.as_str()), Some("contactcraft-id"));
+    save(&path, &mb).unwrap();
+    let reopened = whole(&path);
+    assert!(reopened.contact(local).is_some());
+    assert!(reopened.contact(shared).is_none(), "reopened contacts: {:?}", reopened.contacts.keys().collect::<Vec<_>>());
+    save_single(&path, &mb).unwrap();
+    let reopened = crate::io::read_mailbox(&fs::read(&path).unwrap()).unwrap();
+    assert!(reopened.contact(local).is_some());
+    assert!(reopened.contact(shared).is_none());
+}
+
 /// A folder of its own under the system's temporary one, removed when the test is over.
 struct Temp(PathBuf);
 

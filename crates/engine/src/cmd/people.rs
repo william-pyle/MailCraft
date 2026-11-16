@@ -262,8 +262,15 @@ pub fn sorted(s: &Session, query: &str) -> Vec<Id> {
 /// categories, by name alone (the list then puts each under each of its categories, and favourites
 /// have no heading of their own there). Each contact once.
 pub fn sorted_of(s: &Session, query: &str, account: AccountChoice) -> Vec<Id> {
-    let mut v: Vec<&Contact> =
-        s.mailbox.contacts.values().map(|c| c.as_ref()).filter(|c| account.shows(&c.origin)).filter(|c| c.matches(query)).collect();
+    let mut v: Vec<&Contact> = s
+        .mailbox
+        .contacts
+        .values()
+        .map(|c| c.as_ref())
+        .filter(|c| c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts)
+        .filter(|c| account.shows(&c.origin))
+        .filter(|c| c.matches(query))
+        .collect();
     let by_name = |a: &Contact, b: &Contact| a.file_as().to_lowercase().cmp(&b.file_as().to_lowercase()).then(a.id.cmp(&b.id));
     match s.view.people_sort {
         PeopleSort::Name => v.sort_by(|a, b| b.favorite.cmp(&a.favorite).then_with(|| by_name(a, b))),

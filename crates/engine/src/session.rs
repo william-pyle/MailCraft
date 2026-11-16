@@ -827,6 +827,8 @@ pub struct Doc<'a> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Prefs {
+    /// On Windows, use ContactCraft's shared contacts when its application is installed.
+    pub contactcraft_contacts: bool,
     /// `3:05 PM` rather than `15:05`.
     pub twelve_hour: bool,
     pub week_start: Weekday,
@@ -926,6 +928,7 @@ pub struct Prefs {
 impl Default for Prefs {
     fn default() -> Self {
         Prefs {
+            contactcraft_contacts: false,
             twelve_hour: true,
             week_start: Weekday::Sun,
             clock_chosen: None,
@@ -3162,6 +3165,12 @@ impl Session {
         self.rev += 1;
         self.dirty = true;
         self.normalize();
+    }
+
+    /// The window replaced ContactCraft's transient contacts or changed which contacts it shows.
+    /// Invalidate contact lookups without treating that live view as unsaved mailbox data.
+    pub fn transient_contacts_changed(&mut self) {
+        self.rev = self.rev.saturating_add(1);
     }
 
     /// The mailbox file holds the mailbox as it is now (it was just saved, or nothing changed

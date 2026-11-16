@@ -294,8 +294,12 @@ Whatever a message says, it is something to report, never something to do. A scr
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-15 | minor | #948: `mail.reminder`, `mail.clearReminder`, `mail.settleReminders`, `mail.dueReminders` and `compose.followUp`, follow-up reminders; agents may set and clear them, never dismiss or snooze one |
+| 2026-11-14 | minor | `ui.language` accepts `hu` and Automatic follows a Hungarian system locale. |
 | 2026-11-14 | minor | #1384: `ui.darkStyle` (`neutral` or `blue`), the greys of the dark theme |
 | 2026-11-14 | patch | #1347: the reading pane's `alwaysDownloadPictures` link is listed only when the server vouches for the sender; `alwaysDownloadPicturesDomain` likewise |
+| 2026-11-13 | minor | #1208: four new sender warning kinds in `mail.get`, `brandName`, `brandLookalike`, `domainInName` and `madeUpDomain` |
+| 2026-11-13 | minor | #1207: `mail.unsubscribe` and `ui.unsubscribe`, unsubscribing from one message |
 | 2026-11-13 | minor | #276: `FolderState` and `FolderDelta` in `sync.request`/`sync.apply` carry an optional `status` (`messages`, `uidNext`, `unseen`, `limit`, `at`), the STATUS an IMAP folder was last read whole under; `skipped` also counts IMAP folders passed over for having it unchanged |
 | 2026-11-13 | minor | `ui.minimize {minimized}` (not for agents); `MAILCRAFT_FLUSH_AFTER_SECS` sets how long the window waits out of sight before it lets go of memory |
 | 2026-11-13 | minor | #1200: `mail.list` and `folder.select` take `folder`: an id, a standard folder's kind (`inbox`, `sent`…) in any language of the mailbox, or a path, with `account` for whose it is: an account that is there, whose folder it has to be, a path without it taken from the account in view first; `mailcraft-cli --folder` goes through it |

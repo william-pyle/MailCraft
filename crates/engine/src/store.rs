@@ -3236,7 +3236,10 @@ fn save_locked(mut st: MutexGuard<'_, State>, shared: &Shared, path: &Path, mail
 /// Save `mailbox` to `path` as one self-contained file (an export, a copy to carry somewhere),
 /// written whole and atomically. Returns the bytes written.
 pub fn save_single(path: &Path, mailbox: &Mailbox) -> Result<u64, String> {
-    let bytes = crate::io::write_mailbox(mailbox)?;
+    // This export uses the model's direct serializer, not the indexed writer above.
+    let mut portable = mailbox.clone();
+    portable.contacts.retain(|_, c| c.contactcraft_id.is_empty());
+    let bytes = crate::io::write_mailbox(&portable)?;
     // Never write a file a later open would refuse.
     if bytes.len() as u64 > MAX_MAILBOX_JSON {
         return Err(format!(
@@ -3604,7 +3607,10 @@ fn delta<'m>(st: &mut State, path: &Path, mailbox: &'m Mailbox, d: &Disk, pack: 
         index::delete(&mut group, (Coll::Message, *id)).map_err(io_error)?;
         records = records.saturating_add(1);
     }
-    let contacts = changes(&mailbox.contacts, Coll::Contact, &d.contacts, &mut group, &mut records)?;
+    // ContactCraft records are only a live view of its own database, never mailbox data.
+    let local_contacts: BTreeMap<Id, Arc<mailcraft_model::Contact>> =
+        mailbox.contacts.iter().filter(|(_, c)| c.contactcraft_id.is_empty()).map(|(id, c)| (*id, c.clone())).collect();
+    let contacts = changes(&local_contacts, Coll::Contact, &d.contacts, &mut group, &mut records)?;
     let events = changes(&mailbox.events, Coll::Event, &d.events, &mut group, &mut records)?;
     let tasks = changes(&mailbox.tasks, Coll::Task, &d.tasks, &mut group, &mut records)?;
     let rest_json = rest_json(mailbox)?;
@@ -4108,7 +4114,9 @@ fn compact_with(
         records = records.checked_add(1).ok_or_else(too_many)?;
         d.messages.insert(*id, Msg { entry: Entry { of: p.of, fp: p.fp, size }, parts: p.parts });
     }
-    compact_items(&mailbox.contacts, Coll::Contact, &mut out, &mut d.contacts, &mut d.live, &mut records)?;
+    let local_contacts: BTreeMap<Id, Arc<mailcraft_model::Contact>> =
+        mailbox.contacts.iter().filter(|(_, c)| c.contactcraft_id.is_empty()).map(|(id, c)| (*id, c.clone())).collect();
+    compact_items(&local_contacts, Coll::Contact, &mut out, &mut d.contacts, &mut d.live, &mut records)?;
     compact_items(&mailbox.events, Coll::Event, &mut out, &mut d.events, &mut d.live, &mut records)?;
     compact_items(&mailbox.tasks, Coll::Task, &mut out, &mut d.tasks, &mut d.live, &mut records)?;
     let commit = index::commit(&mut out, records).map_err(io_error)?;

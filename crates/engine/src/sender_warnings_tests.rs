@@ -6,10 +6,33 @@
 //! The people, hosts and addresses are invented.
 
 use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{Address, Body, FolderKind, Id, Message};
+use mailcraft_model::{Address, Body, Contact, FolderKind, Id, Labeled, Mailbox, Message};
 use serde_json::{Value, json};
 
 use crate::Session;
+
+#[test]
+fn known_senders_follow_the_selected_contacts_manager() {
+    let mut mailbox = Mailbox::with_local_account("Owner", "owner@example.org");
+    mailbox.add_contact(Contact {
+        display_name: "Included".into(),
+        emails: vec![Labeled::new("work", "included@example.org")],
+        ..Default::default()
+    });
+    mailbox.add_contact(Contact {
+        contactcraft_id: "shared-one".into(),
+        display_name: "Shared".into(),
+        emails: vec![Labeled::new("work", "shared@example.org")],
+        ..Default::default()
+    });
+    let mut session = Session::new(mailbox);
+    assert!(session.knows("included@example.org"));
+    assert!(!session.knows("shared@example.org"));
+    session.prefs.contactcraft_contacts = true;
+    session.transient_contacts_changed();
+    assert!(!session.knows("included@example.org"));
+    assert!(session.knows("shared@example.org"));
+}
 
 /// A session with Avery's IMAP account at Lumen, whose Inbox has `messages` from its server; the
 /// account's id.

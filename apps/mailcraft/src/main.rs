@@ -34,6 +34,8 @@ mod calendar_flow;
 mod clipboard;
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 mod clipboard_mime;
+#[cfg(target_os = "windows")]
+mod contactcraft;
 #[cfg(test)]
 mod control_challenge_flow;
 mod control_server;
@@ -1070,6 +1072,10 @@ fn services(
     let replies_ctx = ctx.clone();
     let ahead_ctx = ctx.clone();
     let update_ctx = ctx.clone();
+    #[cfg(target_os = "windows")]
+    let (contact_load_ctx, contact_action_ctx) = (ctx.clone(), ctx.clone());
+    #[cfg(target_os = "windows")]
+    let contactcraft_available = contactcraft::installed();
     let download_ctx = ctx.clone();
     let report_ctx = ctx.clone();
     let copy_ctx = ctx.clone();
@@ -1098,6 +1104,15 @@ fn services(
         }
     };
     Services {
+        #[cfg(target_os = "windows")]
+        contactcraft_load: contactcraft_available.then(|| {
+            Box::new(move |revision| background(&contact_load_ctx, "ContactCraft contacts", move || contactcraft::load(revision)))
+                as Box<dyn Fn(i64) -> _>
+        }),
+        #[cfg(target_os = "windows")]
+        contactcraft_action: contactcraft_available.then(|| {
+            Box::new(move |action| background(&contact_action_ctx, "ContactCraft change", move || contactcraft::act(action))) as Box<dyn Fn(_) -> _>
+        }),
         platform_calls,
         file_dialog: Some(file_dialog),
         #[cfg(windows)]

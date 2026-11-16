@@ -239,6 +239,7 @@ const ROWS: &[(&str, &str, Setup)] = &[
     ("ui.repliesInWindow", "{}", Setup::None),
     ("ui.updateCheck", "{}", Setup::None),
     ("ui.updateInstall", "{}", Setup::None),
+    ("ui.contactManager", r#"{"value": "included"}"#, Setup::None),
     ("ui.dismissUpdateNotice", "{}", Setup::None),
     ("ui.dismissSettingsNotice", "{}", Setup::None),
     ("ui.dismissSoftwareNotice", "{}", Setup::None),

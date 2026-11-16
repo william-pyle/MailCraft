@@ -631,7 +631,7 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
             };
             answered(match mailcraft_model::update::Version::parse(&version) {
                 Some(version) => Ok(mailcraft_model::update::Release {
-                    page: format!("https://github.com/UCS-Care-Group/mailcraft/releases/tag/v{version}"),
+                    page: format!("https://github.com/william-pyle/MailCraft/releases/tag/v{version}"),
                     version,
                     security,
                     assets: Vec::new(),

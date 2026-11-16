@@ -71,6 +71,7 @@ mod close_to_tray_tests;
 pub mod compose;
 #[cfg(test)]
 mod confirm_ids_tests;
+mod contactcraft;
 pub mod control;
 pub mod credits;
 pub mod data_removal;
@@ -272,6 +273,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 pub use approval::{AdminConsentAnswer, AdminConsentRequest};
+pub use contactcraft::{SharedAction, SharedContacts};
 pub use control::ControlRequest;
 pub use files::FileDialogRequest;
 pub use idle_watch::IdleWatch;
@@ -285,6 +287,10 @@ pub use unconfirmed::ConfirmedMailbox;
 pub struct Services {
     /// The Windows host reads the local Recent Items folder on a worker, only when asked by the owner.
     pub recent_attachments: Option<recent_attachments::Loader>,
+    /// Windows: ContactCraft is installed. Read its shared store on a background thread.
+    pub contactcraft_load: Option<Box<dyn Fn(i64) -> Receiver<Result<Option<SharedContacts>, String>>>>,
+    /// Windows: open ContactCraft's editor or change a shared record off the UI thread.
+    pub contactcraft_action: Option<Box<dyn Fn(SharedAction) -> Receiver<Result<(), String>>>>,
     /// Desktop: the icon and application id of the main window, which every other window of the
     /// system (reminders, messages) takes too.
     pub window_identity: Option<windows::WindowIdentity>,
@@ -938,7 +944,7 @@ pub struct UiState {
     /// The last newer version the owner was told of (`0.4.3`), so it is said once.
     pub update_told: String,
     /// Whether a copy that updates itself downloads a new version by itself, while the daily
-    /// check is on ([`updates`]): on unless the owner turns it off.
+    /// check is on ([`updates`]): off until the owner chooses automatic updates.
     pub update_install: bool,
     /// A version that isn't installed by itself: the one the owner went back from because it
     /// didn't start ([`updates`]). Newer ones are.
@@ -1009,7 +1015,7 @@ impl Default for UiState {
             update_asked: 0,
             update_checked: 0,
             update_told: String::new(),
-            update_install: true,
+            update_install: false,
             update_skip: String::new(),
             update_install_told: false,
             software_told: false,
@@ -1301,6 +1307,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     ("ui.open", "Open Mailbox", "File › Open & Export", "{}"),
     ("ui.import", "Import", "File › Open & Export", "{}"),
     ("ui.attach", "Attach File", "Message › Include", "{}"),
+    (
+        "ui.contactManager",
+        "Contacts Manager",
+        "File › Options › Contacts",
+        r#"{"value": "included"|"contactcraft"} — choose the included contacts or ContactCraft's shared contacts; ContactCraft must be installed. Existing contacts are kept in their own stores"#,
+    ),
     ("ui.toggleFolder", "Expand or Collapse Folder", "Folder", r#"{"id": number}"#),
     (
         "ui.openWindow",
@@ -1410,7 +1422,13 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "ui.updateInstall",
         "Install Updates Automatically",
         "File › About",
-        r#"{"value"?: bool (default: toggle)} — whether a copy that updates itself (the Windows .msi, the macOS app, a Linux AppImage) downloads a newer release by itself while the daily check is on, and checks it by the release's own signature (on unless the owner turns it off). Refused when the organisation has turned it off ("Turned off by your organisation") and for a copy that doesn't update itself. Agents and scripts can't start a download. Answers what `ui.updateCheck` answers"#,
+        r#"{"value"?: bool (default: toggle)} — whether a copy that updates itself downloads a newer release by itself while the daily check is on, and checks it by the release's own signature (off until the owner turns it on). Refused when the organisation has turned it off and for a copy that doesn't update itself. Agents and scripts can't start a download. Answers what `ui.updateCheck` answers"#,
+    ),
+    (
+        "ui.downloadUpdate",
+        "Download and Update",
+        "Above the status bar · File › About",
+        "{} — the owner's click after a newer release is offered: downloads it, checks its release signature, and offers Restart to update. Refused for agents and the control channel",
     ),
     (
         "ui.restartToUpdate",
@@ -1483,6 +1501,7 @@ pub struct MailApp {
     /// selected one among them; empty when one contact alone is selected. The window's own: a
     /// command is given the ids (Merge Contacts…, #506).
     pub people_picked: Vec<Id>,
+    pub(crate) contactcraft: contactcraft::State,
     pub status_msg: Option<(String, f64)>,
     /// macOS: the window has no title bar; leave room for the traffic lights.
     pub integrated_titlebar: bool,
@@ -1834,6 +1853,7 @@ impl MailApp {
             services,
             dialog: None,
             people_picked: Vec::new(),
+            contactcraft: Default::default(),
             status_msg: None,
             integrated_titlebar: false,
             search_text: String::new(),
@@ -2037,6 +2057,9 @@ impl MailApp {
         self.ui.collapsed_calendar_groups.truncate(200);
         updates::sanitize(&mut self.ui);
         self.session.prefs = self.ui.options.clone();
+        if self.services.contactcraft_load.is_none() {
+            self.session.prefs.contactcraft_contacts = false;
+        }
         // Layout choices carry over; the folder, the day and the search start fresh.
         let saved = self.ui.view.clone();
         let v = &mut self.session.view;
@@ -2112,6 +2135,12 @@ impl MailApp {
             self.dialog = Some(dialogs::leaving(id, params));
             return Ok(json!({"pending": "discardDraft"}));
         }
+        if let Some(result) = contactcraft::by_hand(self, id, &params) {
+            if let Err(e) = &result {
+                self.say_refused(id, e);
+            }
+            return result;
+        }
         if let Some(name) = dialogs::input_dialog(id, &params)
             && self.enabled(id)
         {
@@ -2168,6 +2197,7 @@ impl MailApp {
         // So are Restart to update and Go back, which are the owner's clicks alone.
         let r = match id {
             updates::CHECK => self.check_for_updates(true),
+            updates::DOWNLOAD => self.download_update(),
             updates::RESTART => self.restart_to_update(),
             updates::GO_BACK => self.go_back_a_version(),
             // Marking a key Verified and removing the owner's own key: the owner's press alone.
@@ -2270,6 +2300,9 @@ impl MailApp {
         // stays as it is (#517).
         if let Some(e) = opening::claim_refused(self, id, &params) {
             return Err(e);
+        }
+        if let Some(result) = contactcraft::execute(self, id, &params) {
+            return result;
         }
         // Whatever replaces the mailbox gives up one being read in the background, which would
         // otherwise take the place of this one later.
@@ -2828,6 +2861,7 @@ impl MailApp {
                     .or_else(|| approval::ui_command(self, id, p))
                     .or_else(|| graph_switch::ui_command(self, id, p))
                     .or_else(|| updates::ui_command(self, id, p))
+                    .or_else(|| contactcraft::ui_command(self, id, p))
                     .or_else(|| attachment_open::ui_command(self, id, p))
                     .or_else(|| report_problem::ui_command(self, id, p))
                     .or_else(|| sender_images::ui_command(self, id, p));
@@ -4747,6 +4781,7 @@ impl MailApp {
         security::tick(self, ctx.input(|i| i.viewport().focused.unwrap_or(true)));
         self.data_removal_tick();
         if !self.data_removed {
+            contactcraft::tick(self, ctx);
             // Whether a new version is out, when the owner wants that known ([`updates`]).
             self.updates_tick(ctx);
             self.auto_sync();

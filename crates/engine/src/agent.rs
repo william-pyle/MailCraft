@@ -575,6 +575,7 @@ const SETTINGS: &[&str] = &[
     "ui.repliesInWindow",
     "ui.updateCheck",
     "ui.updateInstall",
+    "ui.contactManager",
     "ui.dismissUpdateNotice",
     "ui.dismissSettingsNotice",
     "ui.dismissSoftwareNotice",
@@ -640,6 +641,7 @@ const NEVER: &[&str] = &[
     // Installing a new version, or going back to the one before: only the owner's click.
     "ui.restartToUpdate",
     "ui.goBackVersion",
+    "ui.downloadUpdate",
     // The owner's own answer to sending the tasks that exist only here to an account's To Do
     // (#632): an agent never gives it, asked or not.
     "tasks.sendLocal",

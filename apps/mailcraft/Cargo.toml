@@ -118,6 +118,8 @@ keyring-core = "1"
 encoding_rs = { workspace = true }
 # Enumerate local fixed volumes without starting a shell or probing mapped drives.
 sysinfo = { version = "0.40.1", default-features = false, features = ["disk"] }
+# ContactCraft's shared store. Only the Windows host opens it, and only when ContactCraft is installed.
+contactcraft-store = { git = "https://github.com/william-pyle/ContactCraft", tag = "v1.2.0" }
 # Windows Credential Manager, for the credential store above.
 windows-native-keyring-store = "1.1"
 # Three registry values read, never written: where the `.msi` put the program (whether this copy

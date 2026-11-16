@@ -1358,7 +1358,13 @@ mod event {
                     return a;
                 }
                 let typed = a.email.clone();
-                let mut hits = s.mailbox.contacts.values().filter(|k| k.matches(&typed)).filter_map(|k| k.address()).filter(Address::is_valid);
+                let mut hits = s
+                    .mailbox
+                    .contacts
+                    .values()
+                    .filter(|k| (k.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts) && k.matches(&typed))
+                    .filter_map(|k| k.address())
+                    .filter(Address::is_valid);
                 match (hits.next(), hits.next()) {
                     (Some(one), None) => one,
                     _ => {
@@ -1390,7 +1396,13 @@ mod event {
             let name: String = if !who.name.is_empty() || !known || !look_up {
                 who.display().to_string()
             } else {
-                let contact = s.mailbox.contacts.values().find(|c| c.has_email(&who.email)).map(|c| c.name()).filter(|name| !name.trim().is_empty());
+                let contact = s
+                    .mailbox
+                    .contacts
+                    .values()
+                    .find(|c| (c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts) && c.has_email(&who.email))
+                    .map(|c| c.name())
+                    .filter(|name| !name.trim().is_empty());
                 contact.unwrap_or_else(|| who.email.clone())
             };
             let name: String = name.chars().map(|c| if c.is_control() { ' ' } else { c }).take(120).collect();

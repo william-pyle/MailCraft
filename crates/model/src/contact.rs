@@ -157,6 +157,10 @@ mod key_bytes {
 #[serde(default, rename_all = "camelCase")]
 pub struct Contact {
     pub id: Id,
+    /// A ContactCraft record shown in this run. It lives only in ContactCraft's shared store,
+    /// never in the MailCraft mailbox file.
+    #[serde(skip)]
+    pub contactcraft_id: String,
     /// The name lists show; when empty, [`Contact::name`] builds one.
     pub display_name: String,
     pub first: String,

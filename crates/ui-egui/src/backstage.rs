@@ -783,6 +783,28 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     let set = |app: &mut MailApp, params: serde_json::Value| {
         let _ = app.run("file.options", params);
     };
+    section(ui, tl!("Contacts"), t);
+    row(ui, tl!("Contacts manager"), |ui| {
+        let shared = app.session.prefs.contactcraft_contacts;
+        egui::ComboBox::from_id_salt("opt_contacts_manager")
+            .selected_text(if shared { tl!("ContactCraft") } else { tl!("Included contacts") })
+            .show_ui(ui, |ui| {
+                if ui.selectable_label(!shared, tl!("Included contacts")).clicked() {
+                    let _ = app.run("ui.contactManager", json!({"value": "included"}));
+                }
+                if app.services.contactcraft_load.is_some() && ui.selectable_label(shared, tl!("ContactCraft")).clicked() {
+                    let _ = app.run("ui.contactManager", json!({"value": "contactcraft"}));
+                }
+            });
+    });
+    if app.services.contactcraft_load.is_some() {
+        ui.label(
+            egui::RichText::new(tl!(
+                "ContactCraft's shared contacts are used even when its window is closed. New and edited contacts open in ContactCraft."
+            ))
+            .color(t.text_dim),
+        );
+    }
     section(ui, tl!("Mail"), t);
     let mut mark = prefs.mark_read_on_open;
     if ui.checkbox(&mut mark, tl!("Mark a message as read when it is opened in the reading pane")).changed() {

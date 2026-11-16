@@ -86,9 +86,9 @@ fn a_job_with_no_problems_makes_a_returning_one_new() {
     assert_eq!(count(), 2);
 }
 
-/// (A3-5) The question says what a Yes does: check, download and install.
+/// (A3-5) The question says what a Yes does: check daily, then ask before download.
 #[test]
-fn the_update_question_names_installing() {
+fn the_update_question_names_the_download_choice() {
     let mut app = app();
     app.updates.asking = true;
     let mut harness =
@@ -101,7 +101,7 @@ fn the_update_question_names_installing() {
             app,
         );
     harness.run_steps(4);
-    assert!(harness.query_all_by_label_contains("download and install them when you quit").next().is_some());
+    assert!(harness.query_all_by_label_contains("asked before one is downloaded").next().is_some());
 }
 
 /// Uses up the allowance of `account`'s mail, as a run of many problems does.

@@ -147,6 +147,7 @@ pub fn object(id: &str) -> Option<Object> {
         | "ui.repliesInWindow"
         | "ui.updateCheck"
         | "ui.updateInstall"
+        | "ui.contactManager"
         | "ui.dismissUpdateNotice"
         | "ui.dismissSettingsNotice"
         | "ui.dismissSoftwareNotice"

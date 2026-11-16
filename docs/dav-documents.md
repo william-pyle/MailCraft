@@ -82,6 +82,7 @@ Protocol sources: [WebDAV, RFC 4918](https://www.rfc-editor.org/rfc/rfc4918),
 
 | Date | Change |
 |---|---|
+| 2026-11-15 | #209 D2: the `dav_answers` fuzz target for the typed answers, addresses and statuses |
 | 2026-11-02 | Validate changed recurrence UNTIL against the effective surviving DTSTART |
 | 2026-11-02 | Refuse lossy alarm and alias edits; strengthen unsafe-edit assertions |
 | 2026-11-01 | Timing and recurrence changes refuse a lossy writer baseline |

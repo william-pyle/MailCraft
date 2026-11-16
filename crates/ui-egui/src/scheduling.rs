@@ -359,7 +359,13 @@ fn name_of(app: &MailApp, who: &Address, look_up: bool) -> String {
     let name = if !who.name.trim().is_empty() {
         who.name.clone()
     } else if look_up {
-        let contact = app.session.mailbox.contacts.values().find(|c| c.has_email(&who.email)).map(|c| c.name());
+        let contact = app
+            .session
+            .mailbox
+            .contacts
+            .values()
+            .find(|c| (c.contactcraft_id.is_empty() != app.session.prefs.contactcraft_contacts) && c.has_email(&who.email))
+            .map(|c| c.name());
         contact.filter(|name| !name.trim().is_empty()).unwrap_or_else(|| who.email.clone())
     } else {
         who.email.clone()
