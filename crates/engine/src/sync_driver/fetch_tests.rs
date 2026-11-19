@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::sync::{GraphFetchResult, GraphFetched, ServerMessage};
-use mailcraft_model::{FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::sync::{GraphFetchResult, GraphFetched, ServerMessage};
+use mailsolutions_model::{FolderKind, Id, Mailbox, Message};
 use serde_json::json;
 
 use super::fetch::*;

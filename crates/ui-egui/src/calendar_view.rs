@@ -15,13 +15,13 @@
 use std::sync::Arc;
 
 use egui::{Align2, Color32, CornerRadius, FontId, Painter, Rect, Response, Sense, Shape, Stroke, StrokeKind, Ui, pos2, vec2};
-use mailcraft_engine::CalView;
-use mailcraft_engine::cmd::calendar::occurrences;
-use mailcraft_engine::cmd::calendar_extra::{DEFAULT_TIME_SCALE, MAX_DAYS, TIME_SCALES, time_scale};
-use mailcraft_engine::cmd::calendar_settings::{self, MAX_PANES};
-use mailcraft_engine::cmd::view::calendar_range;
-use mailcraft_model::{Event, Freq, Id, Importance, Occurrence, Recurrence, Response as Reply, ShowAs};
-use mailcraft_time::{Date, DateTime, Weekday};
+use mailsolutions_engine::CalView;
+use mailsolutions_engine::cmd::calendar::occurrences;
+use mailsolutions_engine::cmd::calendar_extra::{DEFAULT_TIME_SCALE, MAX_DAYS, TIME_SCALES, time_scale};
+use mailsolutions_engine::cmd::calendar_settings::{self, MAX_PANES};
+use mailsolutions_engine::cmd::view::calendar_range;
+use mailsolutions_model::{Event, Freq, Id, Importance, Occurrence, Recurrence, Response as Reply, ShowAs};
+use mailsolutions_time::{Date, DateTime, Weekday};
 use serde_json::{Value, json};
 
 use crate::theme::{Tokens, c32, medium, paint_clipped, regular, semibold};
@@ -780,7 +780,7 @@ fn pane_views(app: &MailApp) -> Vec<PaneView> {
     let panes = calendar_settings::panes(&app.session);
     // A tab says its calendar's name, and whose calendar it is only where two of those in view
     // are called the same (two accounts' "Calendar").
-    let plain = |calendar: &mailcraft_model::Calendar| {
+    let plain = |calendar: &mailsolutions_model::Calendar| {
         let name = calendar.name.trim();
         if name.is_empty() { tl!("Calendar").to_string() } else { tl!(clip_text(name, 200)).to_string() }
     };
@@ -822,7 +822,7 @@ pub(crate) fn read_only(app: &MailApp, calendar: Id) -> bool {
     let mailbox = &app.session.mailbox;
     mailbox
         .calendar(calendar)
-        .is_some_and(|c| c.is_subscribed() || (!c.can_edit() && mailcraft_engine::cmd::remote::keeper(mailbox, &c.origin).is_some()))
+        .is_some_and(|c| c.is_subscribed() || (!c.can_edit() && mailsolutions_engine::cmd::remote::keeper(mailbox, &c.origin).is_some()))
 }
 
 /// Working in a block makes its calendar the one being worked in (where the ribbon's New
@@ -902,7 +902,7 @@ fn gather(app: &MailApp, from: Date, to: Date, t: &Tokens, panes: &[PaneView]) -
             let tags = ev.categories.iter().skip(1).take(3).map(|name| c32(mailbox.category_color_of(account, name))).collect();
             let pane = pane_of(panes, ev.calendar);
             let dim = panes.get(pane).is_some_and(|pane| pane.tabs.len() > 1 && pane.front != ev.calendar);
-            let free_busy = mailbox.calendar(ev.calendar).is_some_and(|c| c.rights == mailcraft_model::Rights::FreeBusy);
+            let free_busy = mailbox.calendar(ev.calendar).is_some_and(|c| c.rights == mailsolutions_model::Rights::FreeBusy);
             Some(Item { occ, ev, color, edge, tags, pane, dim, free_busy })
         })
         .collect()
@@ -1275,9 +1275,9 @@ fn date_navigator(app: &mut MailApp, ui: &mut Ui, months: usize) {
 
 /// What a calendar is called where the account it is listed under isn't beside it (the form, a
 /// menu): a calendar that an account's server keeps says whose it is.
-pub(crate) fn calendar_label(session: &mailcraft_engine::Session, calendar: &mailcraft_model::Calendar) -> String {
+pub(crate) fn calendar_label(session: &mailsolutions_engine::Session, calendar: &mailsolutions_model::Calendar) -> String {
     let name = if calendar.name.trim().is_empty() { tl!("Calendar") } else { tl!(clip_text(calendar.name.trim(), 200)) };
-    match mailcraft_engine::cmd::remote::keeper(&session.mailbox, &calendar.origin) {
+    match mailsolutions_engine::cmd::remote::keeper(&session.mailbox, &calendar.origin) {
         Some(account) => {
             let whose = if account.name.trim().is_empty() { account.email.trim() } else { account.name.trim() };
             format!("{name} ({})", clip_text(whose, 100))
@@ -1296,7 +1296,7 @@ struct CalendarRow {
     name: String,
     /// The colour it is shown in, and the one the owner chose for it here, when one was.
     color: Color32,
-    own_color: Option<mailcraft_model::Rgb>,
+    own_color: Option<mailsolutions_model::Rgb>,
     visible: bool,
     /// The account may read it and not change it.
     read_only: bool,
@@ -1374,7 +1374,7 @@ pub(crate) fn ui_command(app: &mut MailApp, id: &str, p: &Value) -> Option<Resul
 /// which is where new items go.
 fn calendar_list(app: &mut MailApp, ui: &mut Ui, groups: Vec<ListGroup>) {
     let t = Tokens::get(ui.ctx());
-    let current = mailcraft_engine::cmd::calendar::current_calendar(&app.session);
+    let current = mailsolutions_engine::cmd::calendar::current_calendar(&app.session);
     let several = groups.iter().flat_map(|group| &group.rows).filter(|row| row.visible).count() > 1;
     let only_here = local_only(app);
     for (n, group) in groups.iter().enumerate() {
@@ -1463,7 +1463,7 @@ fn calendar_menu(ui: &mut Ui, app: &mut MailApp, row: &CalendarRow, several: boo
         }
     });
     // One opened by address is the owner's own list's: it comes off it here (#70).
-    let opened = app.session.mailbox.calendar(row.id).is_some_and(|c| mailcraft_model::remote::opened_address(&c.origin.id).is_some());
+    let opened = app.session.mailbox.calendar(row.id).is_some_and(|c| mailsolutions_model::remote::opened_address(&c.origin.id).is_some());
     if opened {
         ui.separator();
         mi(ui, app, "Remove Shared Calendar", "calendar.removeShared", json!({"id": row.id}));
@@ -1503,7 +1503,7 @@ pub(crate) fn listed_twice(app: &MailApp, calendar: Id) -> Option<(String, bool)
         let address = account.email.trim().to_string();
         return (owner.listed_twice_answer(&address) == Some(true)).then_some((address, true));
     }
-    if calendar.origin.id.is_empty() || mailcraft_model::remote::opened_address(&calendar.origin.id).is_some() {
+    if calendar.origin.id.is_empty() || mailsolutions_model::remote::opened_address(&calendar.origin.id).is_some() {
         return None;
     }
     let by = calendar.owner.as_ref()?.address.trim().to_string();
@@ -1545,7 +1545,7 @@ fn extras_line(app: &mut MailApp, ui: &mut Ui, account: Id) {
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
     }
     let tip =
-        tl!("Sign in once more, so that MailCraft may read the categories and the working hours your mailbox has. Your calendar works as it is.");
+        tl!("Sign in once more, so that MailSolutions may read the categories and the working hours your mailbox has. Your calendar works as it is.");
     if resp.on_hover_text(tip).clicked()
         && let Err(e) = app.run("ui.connectMicrosoft", json!({"account": account}))
     {
@@ -1624,7 +1624,7 @@ pub(crate) fn work_hours_option(app: &mut MailApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let mut own = app.session.prefs.own_work_hours;
     let tip = tl!(
-        "Without this, the calendar uses the working hours your Microsoft 365 mailbox has, once MailCraft may read them. The ones above are used until then."
+        "Without this, the calendar uses the working hours your Microsoft 365 mailbox has, once MailSolutions may read them. The ones above are used until then."
     );
     if ui.checkbox(&mut own, tl!("Use my own working hours")).on_hover_text(tip).changed() {
         let _ = app.run("view.workHours", json!({"own": own}));
@@ -1677,7 +1677,7 @@ fn connect_notice(app: &mut MailApp, ui: &mut Ui) {
     );
     paint_clipped(&p, pos2(r.min.x + 12.0, r.center().y), button.min.x - r.min.x - 24.0, text, regular(12.0), t.text);
     app.hit.add("calendarConnect", account, button);
-    if resp.on_hover_text(tl!("Sign in once more, so that MailCraft may show and change your calendar")).clicked()
+    if resp.on_hover_text(tl!("Sign in once more, so that MailSolutions may show and change your calendar")).clicked()
         && let Err(e) = app.run("ui.connectMicrosoft", json!({"account": account}))
     {
         app.status(e);
@@ -1691,10 +1691,10 @@ pub(crate) const LOCAL_ONLY: &str = "Only on this computer: not in your Outlook 
 const LOCAL_LINE_H: f32 = 30.0;
 
 /// The calendars that are kept on this computer only although the account has a calendar on its
-/// server, and hold something ([`mailcraft_engine::cmd::remote::only_here`]): what is in them
+/// server, and hold something ([`mailsolutions_engine::cmd::remote::only_here`]): what is in them
 /// is in nobody's Outlook calendar.
 fn local_only(app: &MailApp) -> Vec<Id> {
-    mailcraft_engine::cmd::remote::only_here(&app.session.mailbox).into_iter().map(|(calendar, _)| calendar).take(50).collect()
+    mailsolutions_engine::cmd::remote::only_here(&app.session.mailbox).into_iter().map(|(calendar, _)| calendar).take(50).collect()
 }
 
 /// A line under the header while items that are shown are kept on this computer only, although
@@ -1704,7 +1704,7 @@ fn local_only(app: &MailApp) -> Vec<Id> {
 fn local_notice(app: &mut MailApp, ui: &mut Ui) {
     let mailbox = &app.session.mailbox;
     let shown = |calendar: &Id| mailbox.calendar(*calendar).is_some_and(|c| c.visible);
-    let only_here = mailcraft_engine::cmd::remote::only_here(mailbox);
+    let only_here = mailsolutions_engine::cmd::remote::only_here(mailbox);
     let items: usize = only_here.iter().filter(|(calendar, _)| shown(calendar)).map(|(_, items)| *items).sum();
     if items == 0 {
         return;
@@ -2073,10 +2073,10 @@ fn when_label(item: &Item, twelve: bool) -> String {
 
 /// When an occurrence is by the clock of its event's own zone (`3:00 PM – 4:00 PM (Eastern
 /// Time)`), for an event that has a zone whose clock shows another time than the calendar's.
-fn own_time(s: &mailcraft_engine::Session, item: &Item) -> Option<String> {
+fn own_time(s: &mailsolutions_engine::Session, item: &Item) -> Option<String> {
     item.ev.zone_of_end()?;
     let at = Event { start: item.occ.start, end: item.occ.end, ..(*item.ev).clone() };
-    mailcraft_model::zoned::own_time_label(&at, &|instant| s.offset_at(instant), s.prefs.twelve_hour)
+    mailsolutions_model::zoned::own_time_label(&at, &|instant| s.offset_at(instant), s.prefs.twelve_hour)
 }
 
 /// What hovering an event says: title, when (and when that is where the event is at home),
@@ -2126,7 +2126,7 @@ fn tooltip(ui: &mut Ui, item: &Item, twelve: bool, own: Option<&str>) {
         Importance::Normal => {}
     }
     if let Some(online) = &ev.online {
-        state.push(if online.provider == mailcraft_model::OnlineProvider::Teams { tl!("Teams meeting") } else { tl!("Online meeting") });
+        state.push(if online.provider == mailsolutions_model::OnlineProvider::Teams { tl!("Teams meeting") } else { tl!("Online meeting") });
     }
     if !state.is_empty() {
         line(ui, &state.join(" · "));
@@ -2142,7 +2142,7 @@ fn opens(resp: &Response) -> bool {
 /// invited (its server says so, or its organizer is none of the owner's accounts); and what the
 /// owner has answered so far, when the owner is among the people invited.
 pub(crate) fn invitation(app: &MailApp, ev: &Event) -> (bool, Option<Reply>) {
-    let own = |address: &mailcraft_model::Address| {
+    let own = |address: &mailsolutions_model::Address| {
         let email = address.email.trim();
         !email.is_empty() && app.session.mailbox.accounts.iter().take(50).any(|account| account.email.trim().eq_ignore_ascii_case(email))
     };
@@ -2182,17 +2182,17 @@ fn event_input(app: &mut MailApp, resp: Response, item: &Item, tips: bool) {
     // then has it). One that a server keeps can go into another calendar of the same account
     // (the engine says what can't, and why: a meeting, a series); out of the account it can't,
     // as taking it out would delete it there.
-    let own = mailcraft_engine::cmd::remote::keeper(&app.session.mailbox, &item.ev.origin).is_none();
+    let own = mailsolutions_engine::cmd::remote::keeper(&app.session.mailbox, &item.ev.origin).is_none();
     let account = item.ev.origin.account;
     let others: Vec<(Id, String)> = {
         let calendars = app.session.mailbox.calendars.iter().take(50).filter(|c| c.id != item.ev.calendar);
-        let fits = |c: &&mailcraft_model::Calendar| own || (c.origin.account == account && c.can_edit());
+        let fits = |c: &&mailsolutions_model::Calendar| own || (c.origin.account == account && c.can_edit());
         calendars.filter(fits).map(|c| (c.id, calendar_label(&app.session, c))).collect()
     };
     let importance = item.ev.importance;
     let proposable = !own && item.ev.origin.guest && item.ev.response_options.allow_proposals;
     // The link to join an online meeting by, when its server gave one that is one.
-    let join = item.ev.join_link().and_then(mailcraft_model::OnlineMeeting::clean_link);
+    let join = item.ev.join_link().and_then(mailsolutions_model::OnlineMeeting::clean_link);
     let online = item.ev.online.as_ref().map(|online| online.provider.label());
     // Somebody else's meeting can be answered from here; what the owner answered so far is ticked.
     let (invited, answered) = invitation(app, &item.ev);
@@ -2877,7 +2877,7 @@ fn move_pick(app: &mut MailApp, ctx: &egui::Context, frame: &mut Frame, key: egu
             let today = app.session.today();
             let day = [today, app.session.view.date].into_iter().find(in_view).unwrap_or(from);
             let slot = if month { Slot::day(day) } else { Slot::timed(day, work_start, scale.slot) };
-            let current = mailcraft_engine::cmd::calendar::current_calendar(&app.session);
+            let current = mailsolutions_engine::cmd::calendar::current_calendar(&app.session);
             return place(app, ctx, frame, slot.in_calendar(front_of(app, current)));
         }
     };
@@ -3294,14 +3294,14 @@ fn time_grid(app: &mut MailApp, ui: &mut Ui, frame: &mut Frame, from: Date, to: 
 const SECOND_ZONE_W: f32 = 52.0;
 
 fn second_zone_width(app: &MailApp) -> f32 {
-    if mailcraft_engine::cmd::zones::second_zone(&app.session).is_some() { SECOND_ZONE_W } else { 0.0 }
+    if mailsolutions_engine::cmd::zones::second_zone(&app.session).is_some() { SECOND_ZONE_W } else { 0.0 }
 }
 
 /// The instant the time bar's zones are compared at: noon of the first day in view (a week in
 /// January is labelled as the zones are in January).
-fn bar_instant(app: &MailApp, g: &Grid) -> mailcraft_time::Timestamp {
+fn bar_instant(app: &MailApp, g: &Grid) -> mailsolutions_time::Timestamp {
     let noon = DateTime { hour: 12, ..DateTime::at_midnight(g.from) };
-    mailcraft_model::zoned::instant_at(noon, &|instant| app.session.offset_at(instant))
+    mailsolutions_model::zoned::instant_at(noon, &|instant| app.session.offset_at(instant))
 }
 
 /// What the time bar says over its hours (`area`: the bar's part of the days' headings): the
@@ -3311,12 +3311,12 @@ fn bar_instant(app: &MailApp, g: &Grid) -> mailcraft_time::Timestamp {
 fn zone_labels(app: &mut MailApp, ui: &mut Ui, g: &Grid, area: Rect) {
     let t = g.t;
     let prefs = &app.session.prefs;
-    let second = mailcraft_engine::cmd::zones::second_zone(&app.session);
+    let second = mailsolutions_engine::cmd::zones::second_zone(&app.session);
     let shown = app.session.zone();
-    let worth = second.is_some() || !prefs.zone_label.trim().is_empty() || mailcraft_time::Zone::named(&prefs.time_zone).is_some();
+    let worth = second.is_some() || !prefs.zone_label.trim().is_empty() || mailsolutions_time::Zone::named(&prefs.time_zone).is_some();
     let at = bar_instant(app, g);
     let split = area.min.x + if second.is_some() { SECOND_ZONE_W } else { 0.0 };
-    let mut label = |zone: mailcraft_time::Zone, given: &str, cell: Rect, key: u64| {
+    let mut label = |zone: mailsolutions_time::Zone, given: &str, cell: Rect, key: u64| {
         let text = crate::zones::bar_label(zone, given, at);
         let p = ui.painter().with_clip_rect(cell.intersect(ui.clip_rect()));
         p.text(pos2(cell.max.x - 8.0, cell.max.y - 6.0), Align2::RIGHT_BOTTOM, clip_text(&text, 16), regular(10.5), t.text_dim);
@@ -3341,7 +3341,7 @@ fn tab_strip(app: &mut MailApp, ui: &mut Ui, blocks: &Blocks, panes: &[PaneView]
     let t = Tokens::get(ui.ctx());
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), TAB_H), Sense::hover());
     let p = ui.painter().clone();
-    let current = mailcraft_engine::cmd::calendar::current_calendar(&app.session);
+    let current = mailsolutions_engine::cmd::calendar::current_calendar(&app.session);
     let stacked = panes.first().is_some_and(|pane| pane.tabs.iter().any(|tab| tab.overlaid));
     let only_here = local_only(app);
     for (k, pane) in panes.iter().enumerate().take(blocks.count) {
@@ -3362,7 +3362,7 @@ fn tab_strip(app: &mut MailApp, ui: &mut Ui, blocks: &Blocks, panes: &[PaneView]
             let named = if only_here.contains(&tab.id) {
                 let plain = tab.name.trim();
                 let line = tl!(LOCAL_ONLY);
-                if plain.eq_ignore_ascii_case(mailcraft_engine::cmd::remote::LOCAL_CALENDAR) {
+                if plain.eq_ignore_ascii_case(mailsolutions_engine::cmd::remote::LOCAL_CALENDAR) {
                     line.to_string()
                 } else {
                     format!("{plain} · {line}")
@@ -3602,7 +3602,7 @@ fn hour_grid(app: &mut MailApp, ui: &mut Ui, g: &Grid, frame: &mut Frame, segs: 
     let work = calendar_settings::work_hours(&app.session);
     let (work_start, work_end) = (work.start.clamp(0, DAY_MINUTES), work.end.clamp(0, DAY_MINUTES));
     // The second time zone of the time bar: how many minutes its clock is ahead of the calendar's.
-    let ahead = mailcraft_engine::cmd::zones::second_zone(&app.session).map(|zone| {
+    let ahead = mailsolutions_engine::cmd::zones::second_zone(&app.session).map(|zone| {
         let at = bar_instant(app, g);
         i64::from(zone.offset_at(at)) - i64::from(app.session.offset_at(at))
     });
@@ -3981,7 +3981,7 @@ fn drop_event(app: &mut MailApp, drag: &Drag, span: Span, copy: bool) {
         // don't take the day up and remind the afternoon before, an appointment is busy time
         // with the usual reminder; what the owner set otherwise stays.
         let usual = app.session.prefs.default_reminder;
-        let whole_days = usual.map(|_| mailcraft_engine::cmd::calendar::ALL_DAY_REMINDER);
+        let whole_days = usual.map(|_| mailsolutions_engine::cmd::calendar::ALL_DAY_REMINDER);
         let mut params = if span.all_day {
             json!({"id": id, "allDay": true, "start": span.start.date.iso(), "end": last(span.start, span.end)})
         } else {
@@ -4369,7 +4369,7 @@ fn month_grid(app: &mut MailApp, ui: &mut Ui, frame: &mut Frame, from: Date, to:
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_engine::Session;
+    use mailsolutions_engine::Session;
 
     use super::*;
 
@@ -4687,7 +4687,7 @@ mod tests {
     const COPY: egui::Modifiers = if MAC { egui::Modifiers::ALT } else { CTRL };
 
     impl Rig {
-        fn new(mailbox: mailcraft_model::Mailbox) -> Rig {
+        fn new(mailbox: mailsolutions_model::Mailbox) -> Rig {
             let mut app = MailApp::new(Session::at(mailbox, NOW, 0), crate::Services::default());
             app.autosave = false;
             app.execute("view.calendar", json!({})).unwrap();
@@ -4701,7 +4701,7 @@ mod tests {
         }
 
         fn sample() -> Rig {
-            Rig::new(mailcraft_engine::sample::mailbox(NOW, 0))
+            Rig::new(mailsolutions_engine::sample::mailbox(NOW, 0))
         }
 
         fn frame(&mut self, mut events: Vec<egui::Event>) {
@@ -5094,7 +5094,7 @@ mod tests {
 
     #[test]
     fn hostile_calendars_draw_without_panicking() {
-        let mut mailbox = mailcraft_engine::sample::mailbox(NOW, 0);
+        let mut mailbox = mailsolutions_engine::sample::mailbox(NOW, 0);
         let today = d(2026, 10, 14);
         // Thousands of events at once today, and thousands of whole-day ones.
         for i in 0..2500u32 {
@@ -5197,9 +5197,9 @@ mod tests {
         /// The sample calendar in the Week view, with an account whose Microsoft server (a
         /// stand-in) has `events`, already brought down.
         fn served(
-            events: Vec<mailcraft_model::remote::RemoteEvent>,
+            events: Vec<mailsolutions_model::remote::RemoteEvent>,
         ) -> (Rig, std::sync::Arc<std::sync::Mutex<crate::calendar_sync::testing::Server>>, Id) {
-            let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
+            let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
             app.autosave = false;
             let server = crate::calendar_sync::testing::serve(&mut app);
             let account = crate::calendar_sync::testing::microsoft_account(&mut app);
@@ -5443,7 +5443,7 @@ mod tests {
         rig.frames(3);
         assert!(rig.app.session.mailbox.calendar(own).is_none());
         assert!(rig.app.hit.rect("calendarLocalLine", own).is_none() && rig.app.hit.rect("calendarLocalOnly", meetings as u64).is_none());
-        assert!(mailcraft_engine::cmd::remote::only_here(&rig.app.session.mailbox).is_empty());
+        assert!(mailsolutions_engine::cmd::remote::only_here(&rig.app.session.mailbox).is_empty());
     }
 
     #[test]
@@ -5460,7 +5460,7 @@ mod tests {
         assert_eq!(calendar_label(&rig.app.session, mailbox.calendar(own).unwrap()), "On this computer");
         // Nothing was picked: the server's is the one being worked in, so what the ribbon makes
         // reaches it.
-        let current = |rig: &Rig| mailcraft_engine::cmd::calendar::current_calendar(&rig.app.session);
+        let current = |rig: &Rig| mailsolutions_engine::cmd::calendar::current_calendar(&rig.app.session);
         assert_eq!(current(&rig), of_server);
         // Both are shown, side by side: the account's own first, then what is kept here.
         let (theirs, ours) = (rig.app.hit.rect("pane", of_server).unwrap(), rig.app.hit.rect("pane", own).unwrap());
@@ -5521,9 +5521,9 @@ mod tests {
     #[test]
     fn a_dragged_event_goes_to_its_server_and_somebody_elses_meeting_is_asked_about_first() {
         use crate::calendar_sync::testing::event as on_server;
-        use mailcraft_model::{Address, Attendee};
+        use mailsolutions_model::{Address, Attendee};
         // The owner's own appointment at noon, and a meeting Bo organizes at two.
-        let meeting = mailcraft_model::remote::RemoteEvent {
+        let meeting = mailsolutions_model::remote::RemoteEvent {
             organizer: Some(Address::new("Bo Marsh", "bo@example.org")),
             attendees: vec![Attendee { address: Address::new("Avery", "avery@mail.example"), ..Default::default() }],
             is_organizer: Some(false),
@@ -5546,7 +5546,7 @@ mod tests {
         assert!(rig.app.session.mailbox.event_changes.is_empty());
         let sent: Vec<_> = server.lock().unwrap().jobs.iter().flat_map(|job| job.ops.clone()).collect();
         assert_eq!(sent.len(), 1);
-        assert_eq!((sent[0].kind, sent[0].remote.as_str()), (mailcraft_model::remote::EventChangeKind::Update, "e-1"));
+        assert_eq!((sent[0].kind, sent[0].remote.as_str()), (mailsolutions_model::remote::EventChangeKind::Update, "e-1"));
         assert_eq!(sent[0].fields.time.map(|t| (t.start, t.end, t.all_day)), Some((NOW - 3 * 3600, NOW - 2 * 3600, false)));
 
         // Somebody else's meeting: the drag is asked about first, and nothing has moved.
@@ -5997,8 +5997,8 @@ mod tests {
     #[test]
     fn an_edge_and_a_copy_reach_the_server_and_somebody_elses_meeting_is_asked_about() {
         use crate::calendar_sync::testing::event as on_server;
-        use mailcraft_model::{Address, Attendee};
-        let meeting = mailcraft_model::remote::RemoteEvent {
+        use mailsolutions_model::{Address, Attendee};
+        let meeting = mailsolutions_model::remote::RemoteEvent {
             organizer: Some(Address::new("Bo Marsh", "bo@example.org")),
             attendees: vec![Attendee { address: Address::new("Avery", "avery@mail.example"), ..Default::default() }],
             is_organizer: Some(false),
@@ -6851,7 +6851,7 @@ mod tests {
     #[test]
     fn somebody_elses_meeting_is_answered_from_its_menu() {
         use egui_kittest::kittest::Queryable as _;
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
         app.autosave = false;
         app.session.driver.set_auto_sync(false);
         app.execute("view.calendar", json!({})).unwrap();
@@ -6965,7 +6965,7 @@ mod tests {
 
         /// The calendar being worked in.
         fn current(&self) -> Id {
-            mailcraft_engine::cmd::calendar::current_calendar(&self.app.session)
+            mailsolutions_engine::cmd::calendar::current_calendar(&self.app.session)
         }
     }
 
@@ -7317,9 +7317,9 @@ mod tests {
     #[test]
     fn an_appointment_dropped_in_another_calendar_of_its_account_moves_there() {
         use crate::calendar_sync::testing::event as on_server;
-        use mailcraft_model::remote::{CalendarsDownload, EventChangeKind, RemoteCalendar, RemoteEvent};
+        use mailsolutions_model::remote::{CalendarsDownload, EventChangeKind, RemoteCalendar, RemoteEvent};
         let invited =
-            |name: &str, email: &str| mailcraft_model::Attendee { address: mailcraft_model::Address::new(name, email), ..Default::default() };
+            |name: &str, email: &str| mailsolutions_model::Attendee { address: mailsolutions_model::Address::new(name, email), ..Default::default() };
         let meeting = RemoteEvent { attendees: vec![invited("Bo", "bo@example.org")], ..on_server("m-1", "Roadmap", NOW + 20 * 3600) };
         let (mut rig, server, account) = Rig::served(vec![on_server("e-1", "Physio", NOW + 18 * 3600), meeting]);
         let list = CalendarsDownload {
@@ -7332,7 +7332,7 @@ mod tests {
             ],
             ..Default::default()
         };
-        mailcraft_engine::cmd::remote::apply_calendars(&mut rig.app.session, &list).unwrap();
+        mailsolutions_engine::cmd::remote::apply_calendars(&mut rig.app.session, &list).unwrap();
         let of = |rig: &Rig, name: &str| {
             rig.app.session.mailbox.calendars.iter().find(|c| c.origin.account == account && c.origin.id == name).map(|c| c.id).unwrap()
         };
@@ -7616,7 +7616,7 @@ mod tests {
         assert!(says(&harness, "Automatic") && says(&harness, "Teal"));
         harness.get_by_label_contains("Teal").click();
         harness.run_steps(4);
-        let teal = mailcraft_engine::cmd::calendar_settings::CALENDAR_COLORS.iter().find(|(name, _)| *name == "Teal").map(|(_, rgb)| *rgb);
+        let teal = mailsolutions_engine::cmd::calendar_settings::CALENDAR_COLORS.iter().find(|(name, _)| *name == "Teal").map(|(_, rgb)| *rgb);
         assert_eq!(harness.state().session.mailbox.calendar(team).and_then(|c| c.own_color), teal);
         assert_eq!(harness.state().session.undo_label(), Some("Calendar Colour"));
         // Show Only This Calendar hides the others.
@@ -7629,7 +7629,7 @@ mod tests {
     #[test]
     fn working_hours_come_from_the_mailbox_once_an_hour() {
         use egui::Key;
-        use mailcraft_engine::cmd::calendar_settings::{MailboxHours, work_hours};
+        use mailsolutions_engine::cmd::calendar_settings::{MailboxHours, work_hours};
         let (mut rig, server, account) = Rig::served(Vec::new());
         let wednesday = d(2026, 10, 14);
         let asked = |server: &std::sync::Arc<std::sync::Mutex<crate::calendar_sync::testing::Server>>| {
@@ -7723,7 +7723,7 @@ mod tests {
         assert!(rig.app.hit.rect("calendarConnect", account).is_none());
         let before = rig.at("Design review");
         // Its link has the host sign the owner in once more, for Microsoft Graph.
-        let asked: std::sync::Arc<std::sync::Mutex<Vec<(Id, bool, std::sync::mpsc::Sender<Result<mailcraft_model::sync::Tokens, String>>)>>> =
+        let asked: std::sync::Arc<std::sync::Mutex<Vec<(Id, bool, std::sync::mpsc::Sender<Result<mailsolutions_model::sync::Tokens, String>>)>>> =
             Default::default();
         let seen = asked.clone();
         rig.app.services.sign_in = Some(Box::new(move |request: crate::SignInRequest| {
@@ -7744,7 +7744,8 @@ mod tests {
         rig.frames(2);
         assert_eq!(rig.at("Design review"), before, "the line takes nothing from the calendar");
         // With the extras there, the line goes.
-        let hours = mailcraft_engine::cmd::calendar_settings::MailboxHours { days: vec![Weekday::Mon], start: 480, end: 1020, ..Default::default() };
+        let hours =
+            mailsolutions_engine::cmd::calendar_settings::MailboxHours { days: vec![Weekday::Mon], start: 480, end: 1020, ..Default::default() };
         rig.app.take_in_mailbox_hours(account, &hours);
         rig.frames(2);
         assert!(rig.app.hit.rect("calendarExtras", account).is_none());
@@ -7806,7 +7807,7 @@ mod tests {
         rig.run("view.days", json!({"count": 14}));
         every_view(&mut rig);
         // Working hours nobody has: from a mailbox, in the settings file.
-        rig.app.session.prefs.mailbox_hours = Some(mailcraft_engine::cmd::calendar_settings::MailboxHours {
+        rig.app.session.prefs.mailbox_hours = Some(mailsolutions_engine::cmd::calendar_settings::MailboxHours {
             email: rig.app.session.mailbox.accounts.first().map(|a| a.email.clone()).unwrap(),
             days: vec![Weekday::Sun; 5000],
             start: u16::MAX,
@@ -7815,7 +7816,7 @@ mod tests {
             offset: Some(i32::MIN),
         });
         every_view(&mut rig);
-        rig.app.session.prefs.mailbox_hours = Some(mailcraft_engine::cmd::calendar_settings::MailboxHours {
+        rig.app.session.prefs.mailbox_hours = Some(mailsolutions_engine::cmd::calendar_settings::MailboxHours {
             email: rig.app.session.mailbox.accounts.first().map(|a| a.email.clone()).unwrap(),
             days: vec![Weekday::Sun],
             start: 1439,

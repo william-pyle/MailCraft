@@ -3,8 +3,8 @@
 //! #276: an IMAP folder whose STATUS is what it was when it was last read whole is passed over by
 //! a Send/Receive: its mailbox isn't opened and its messages aren't listed.
 
-use mailcraft_model::sync::FolderState;
-use mailcraft_model::{AccountKind, ImapStatus, Server};
+use mailsolutions_model::sync::FolderState;
+use mailsolutions_model::{AccountKind, ImapStatus, Server};
 
 use super::*;
 use crate::fake::{Fake, FakeImap, FakeMailbox, FakeMessage, ImapWorld};
@@ -192,7 +192,7 @@ fn a_folder_that_was_cut_short_keeps_no_status() {
 
 #[test]
 fn a_folder_this_run_changed_on_the_server_is_read_whatever_its_counts_say() {
-    use mailcraft_model::sync::RemoteOp;
+    use mailsolutions_model::sync::RemoteOp;
     // A message deleted here is marked, not expunged, on a server without UIDPLUS: no count of
     // its folder moves, and the folder has to be read to show it gone.
     let imap = Fake::imap(world(1));

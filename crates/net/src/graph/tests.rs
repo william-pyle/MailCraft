@@ -5,9 +5,9 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
 
-use mailcraft_model::Body;
-use mailcraft_model::remote::{EventReminder, EventRepeat, EventWall};
-use mailcraft_time::Date;
+use mailsolutions_model::Body;
+use mailsolutions_model::remote::{EventReminder, EventRepeat, EventWall};
+use mailsolutions_time::Date;
 use proptest::prelude::*;
 use serde_json::json;
 
@@ -123,7 +123,7 @@ fn a_message_goes_to_graph_in_base64() {
         "Accept: application/json".into(),
         "Content-Type: text/plain".into(),
         format!("Content-Length: {}", body.len()),
-        "User-Agent: MailCraft".into(),
+        "User-Agent: MailSolutions".into(),
         // Graph's connections are kept open (#276); a send still has a new one of its own.
         "Connection: keep-alive".into(),
     ] {
@@ -132,12 +132,12 @@ fn a_message_goes_to_graph_in_base64() {
     // The body is base64 and nothing else: of the message exactly as it is written for the wire.
     assert!(!body.is_empty() && body.bytes().all(|b| b.is_ascii_alphanumeric() || b"+/=".contains(&b)), "{body}");
     let sent = sent_message(&request);
-    assert_eq!(sent, mailcraft_mime_model::write(&message(), &WriteOptions { include_bcc: true, offset_minutes: 120 }));
+    assert_eq!(sent, mailsolutions_mime_model::write(&message(), &WriteOptions { include_bcc: true, offset_minutes: 120 }));
     let text = String::from_utf8(sent.clone()).unwrap();
     assert!(text.starts_with("Date: Mon, 12 Oct 2026 10:00:00 +0200\r\n") && text.contains("\r\nSubject: Tea on Thursday?\r\n"), "{text}");
     // Nobody gets a blind copy: no such field.
     assert!(!text.to_lowercase().contains("\r\nbcc:"), "{text}");
-    let read = mailcraft_mime_model::parse(&sent);
+    let read = mailsolutions_mime_model::parse(&sent);
     assert_eq!(
         (read.subject.as_str(), read.from.email.as_str(), read.message_id.as_str()),
         ("Tea on Thursday?", "ada@example.org", "mc.1.1@example.org")
@@ -146,10 +146,10 @@ fn a_message_goes_to_graph_in_base64() {
     assert_eq!(read.body.text.trim(), "Four o'clock, the usual place.");
 
     // A message that was never dated is dated as it goes.
-    let before = mailcraft_time::now();
+    let before = mailsolutions_time::now();
     send_at(&server.url(""), TOKEN, &Message { date: 0, ..message() }, &SendOptions::default()).unwrap();
-    let dated = mailcraft_mime_model::parse(&sent_message(&server.request(1))).date;
-    assert!((before..=mailcraft_time::now()).contains(&dated), "{dated}");
+    let dated = mailsolutions_mime_model::parse(&sent_message(&server.request(1))).date;
+    assert!((before..=mailsolutions_time::now()).contains(&dated), "{dated}");
 }
 
 #[test]
@@ -162,7 +162,7 @@ fn blind_copies_are_named_to_graph_in_the_message() {
     let sent = sent_message(&server.request(0));
     let text = String::from_utf8(sent.clone()).unwrap();
     assert!(text.contains("\r\nBcc: ") && text.contains("eve@example.org") && text.contains("dee@example.org"), "{text}");
-    let read = mailcraft_mime_model::parse(&sent);
+    let read = mailsolutions_mime_model::parse(&sent);
     assert_eq!((read.to, read.cc, read.bcc), (message.to.clone(), message.cc.clone(), blind.clone()));
     // Once, to everybody: not a second time for those it names.
     assert_eq!(server.asked(), 1);
@@ -170,7 +170,7 @@ fn blind_copies_are_named_to_graph_in_the_message() {
     // A message for blind copies alone can be sent.
     let only = Message { to: Vec::new(), cc: Vec::new(), ..message };
     send_at(&server.url(""), TOKEN, &only, &SendOptions::default()).unwrap();
-    let read = mailcraft_mime_model::parse(&sent_message(&server.request(1)));
+    let read = mailsolutions_mime_model::parse(&sent_message(&server.request(1)));
     assert_eq!((read.to.len(), read.cc.len(), read.bcc), (0, 0, blind));
 }
 
@@ -1294,10 +1294,10 @@ proptest! {
                 repeat: flags.1.then(|| repeat.clone()),
                 attendees: Some(vec![Attendee { address: Address::new(title.clone(), remote.clone()), ..Default::default() }]),
                 categories: Some(vec![title.clone()]),
-                importance: flags.1.then_some(mailcraft_model::Importance::High),
+                importance: flags.1.then_some(mailsolutions_model::Importance::High),
                 request_responses: Some(flags.0),
                 allow_proposals: Some(flags.1),
-                online: (flags.2 > 1).then_some(mailcraft_model::OnlineProvider::Teams),
+                online: (flags.2 > 1).then_some(mailsolutions_model::OnlineProvider::Teams),
                 ..Default::default()
             },
             proposed: flags.1.then_some(EventTime { start, end, all_day }),
@@ -2179,7 +2179,7 @@ fn the_accounts_calendars_come_with_their_groups_and_colours() {
         ]
     );
     // What a calendar's meetings may be held online with, when Graph says; nothing when it doesn't.
-    use mailcraft_model::OnlineProvider::{SkypeForBusiness, Teams};
+    use mailsolutions_model::OnlineProvider::{SkypeForBusiness, Teams};
     assert_eq!(download.calendars[0].online_providers, Some(vec![Teams, SkypeForBusiness]));
     assert_eq!(download.calendars[1].online_providers, None);
     // Whose each is, as Graph says: one line, bounded; nothing when it isn't a name and an address.
@@ -2361,8 +2361,8 @@ proptest! {
 // ---- time zones ----
 
 /// The zones of an event as an upload names them.
-fn zones(start: &str, end: &str) -> Option<mailcraft_model::remote::EventZones> {
-    Some(mailcraft_model::remote::EventZones { start: start.into(), end: end.into() })
+fn zones(start: &str, end: &str) -> Option<mailsolutions_model::remote::EventZones> {
+    Some(mailsolutions_model::remote::EventZones { start: start.into(), end: end.into() })
 }
 
 #[test]
@@ -2502,7 +2502,7 @@ proptest! {
     /// and the name of its zone) as the instants it was written for, whatever the zone.
     #[test]
     fn a_time_written_in_any_zone_reads_back_as_its_instant(index in 0usize..200, start in 0i64..4_000_000_000, minutes in 0i64..5_000) {
-        let choices = mailcraft_time::Zone::choices();
+        let choices = mailsolutions_time::Zone::choices();
         let zone = choices[index % choices.len()];
         // (A time in the second of an hour that comes twice has no clock time of its own.)
         let end = start + minutes * 60;
@@ -2511,7 +2511,7 @@ proptest! {
         let body: Value = serde_json::from_str(&event_body(&fields, "", "", true).unwrap()).unwrap();
         // The name is one Graph knows, and one that is read back as the same zone.
         let name = body["start"]["timeZone"].as_str().unwrap();
-        prop_assert_eq!(mailcraft_time::Zone::named(name), Some(zone));
+        prop_assert_eq!(mailsolutions_time::Zone::named(name), Some(zone));
         prop_assert_eq!((when(body.get("start")), when(body.get("end"))), (Some(start), Some(end)));
         // And as instants, when Graph wouldn't have the zone.
         let plain: Value = serde_json::from_str(&event_body(&fields, "", "", false).unwrap()).unwrap();

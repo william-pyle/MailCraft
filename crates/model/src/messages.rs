@@ -456,7 +456,7 @@ impl IntoIterator for Messages {
 }
 
 /// Each message with every header line it kept in its `headers`, and no header block: as a
-/// MailCraft from before the two were kept apart reads a mailbox file (`crate::headers`). One
+/// MailSolutions from before the two were kept apart reads a mailbox file (`crate::headers`). One
 /// message is copied at a time.
 impl Serialize for Messages {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Telling a POP server from an IMAP one by its name and port alone, so that Add Account can
-//! say "MailCraft has no POP yet" instead of trying IMAP on it and showing a TLS error (#402).
+//! say "MailSolutions has no POP yet" instead of trying IMAP on it and showing a TLS error (#402).
 //!
 //! Pure: nothing is looked up or sent. A host name typed by the owner is hostile text, so it
 //! is only compared, never sliced at a byte offset.

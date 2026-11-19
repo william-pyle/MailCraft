@@ -208,7 +208,7 @@ fn canonical(bytes: &[u8]) -> Vec<u8> {
 /// [`parse()`] for a message as its server or a file gave it: a Digitally signed or Encrypted
 /// one ([`protection`]) keeps the bytes it came as ([`Message::original`]), in CRLF lines
 /// ([`canonical`]), up to [`MAX_ORIGINAL`]; any other is read exactly as
-/// [`parse()`] reads it. The line of MailCraft's own that a copy put on a server carries first
+/// [`parse()`] reads it. The line of MailSolutions's own that a copy put on a server carries first
 /// ([`PLACE_HEADER`]) is not kept.
 pub fn parse_fetched(bytes: &[u8]) -> Message {
     let mut message = parse(bytes);
@@ -311,7 +311,7 @@ pub(crate) fn content_of(original: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
     Some((fields, body))
 }
 
-/// `bytes` without the [`PLACE_HEADER`] lines MailCraft put first in a copy it made.
+/// `bytes` without the [`PLACE_HEADER`] lines MailSolutions put first in a copy it made.
 fn without_place(mut bytes: &[u8]) -> &[u8] {
     loop {
         let (line, next) = header::line_at(bytes, 0);

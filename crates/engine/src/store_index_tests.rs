@@ -10,9 +10,9 @@ fn full_mailbox(messages: usize) -> Mailbox {
     let mut mb = mailbox(messages);
     let calendar = mb.default_calendar().unwrap();
     for i in 0..6 {
-        mb.add_contact(mailcraft_model::Contact { display_name: format!("Person {i}"), first: format!("P{i}"), ..Default::default() });
-        mb.add_event(mailcraft_model::Event { calendar, title: format!("Meeting {i}"), ..Default::default() }).unwrap();
-        mb.add_task(mailcraft_model::Task { title: format!("Task {i}"), ..Default::default() });
+        mb.add_contact(mailsolutions_model::Contact { display_name: format!("Person {i}"), first: format!("P{i}"), ..Default::default() });
+        mb.add_event(mailsolutions_model::Event { calendar, title: format!("Meeting {i}"), ..Default::default() }).unwrap();
+        mb.add_task(mailsolutions_model::Task { title: format!("Task {i}"), ..Default::default() });
     }
     mb
 }
@@ -60,7 +60,7 @@ fn a_mailbox_of_either_earlier_form_becomes_this_one_without_loss() {
         let opened = open(&path).unwrap();
         let mut changed = opened.mailbox.clone();
         let first = *changed.messages.keys().next().unwrap();
-        changed.message_mut(first).unwrap().flag = mailcraft_model::FlagStatus::Flagged;
+        changed.message_mut(first).unwrap().flag = mailsolutions_model::FlagStatus::Flagged;
         let saved = save(&path, &changed).unwrap();
         assert!(saved.compacted && !saved.unchanged, "form {form}");
         assert_eq!(fs::read(tmp.0.join(format!("mailbox.mailcraft.format{form}"))).unwrap(), before);
@@ -69,7 +69,7 @@ fn a_mailbox_of_either_earlier_form_becomes_this_one_without_loss() {
         assert!(back.unavailable == 0 && back.split, "form {form}");
         load(&path, &mut back);
         let mut expect = mb.clone();
-        expect.message_mut(first).unwrap().flag = mailcraft_model::FlagStatus::Flagged;
+        expect.message_mut(first).unwrap().flag = mailsolutions_model::FlagStatus::Flagged;
         assert!(back.mailbox == expect, "form {form}");
         if form == 1 {
             assert!(crate::io::read_mailbox(&before).unwrap() == mb);
@@ -108,7 +108,7 @@ fn a_save_appends_what_changed_and_nothing_else() {
     mb.events.remove(&event);
     let task = *mb.tasks.keys().last().unwrap();
     mb.task_mut(task).unwrap().title = "Done soon".into();
-    mb.add_contact(mailcraft_model::Contact { display_name: "Newcomer".into(), ..Default::default() });
+    mb.add_contact(mailsolutions_model::Contact { display_name: "Newcomer".into(), ..Default::default() });
     mb.messages.remove(&ids[3]);
     let inbox = mb.inbox().unwrap();
     mb.add_message(Message {
@@ -118,7 +118,7 @@ fn a_save_appends_what_changed_and_nothing_else() {
         ..Default::default()
     })
     .unwrap();
-    mb.signatures.push(mailcraft_model::Signature::plain_text("Short", ""));
+    mb.signatures.push(mailsolutions_model::Signature::plain_text("Short", ""));
     let many = save(&path, &mb).unwrap();
     assert!(!many.compacted && many.blobs == 1 && many.bytes < 20_000, "{many:?}");
     assert!(peek(&path) == mb);
@@ -407,7 +407,7 @@ fn a_damaged_item_of_the_first_save_costs_that_item_and_the_mail_is_fetched_agai
     {
         let f = mb.folder_mut(inbox).unwrap();
         f.uid_seen = 300;
-        f.server = Some(mailcraft_model::ServerFolder {
+        f.server = Some(mailsolutions_model::ServerFolder {
             id: "in".into(),
             name: "Inbox".into(),
             delta: "https://graph.example/delta?token=1".into(),
@@ -505,24 +505,24 @@ fn a_damaged_item_of_the_first_save_costs_that_item_and_the_mail_is_fetched_agai
 }
 
 #[test]
-fn a_file_of_a_newer_form_is_said_to_be_from_a_newer_mailcraft() {
+fn a_file_of_a_newer_form_is_said_to_be_from_a_newer_mailsolutions() {
     let tmp = Temp::new("newer");
     let path = tmp.file();
     save(&path, &mailbox(3)).unwrap();
     let good = fs::read(&path).unwrap();
     // This form with a higher number, and another form of ours altogether.
     let higher = [&good[..16], &[5, 0, 0, 0][..], &good[20..]].concat();
-    for (bytes, says) in [(higher, "newer MailCraft (format 5)"), (b"MailCraft journal\n\x05\0\0\0".to_vec(), "newer MailCraft")] {
+    for (bytes, says) in [(higher, "newer MailSolutions (format 5)"), (b"MailCraft journal\n\x05\0\0\0".to_vec(), "newer MailSolutions")] {
         fs::write(&path, &bytes).unwrap();
         let error = open(&path).unwrap_err();
         assert!(error.contains(says), "{error}");
         assert!(crate::io::read_mailbox(&bytes).is_err());
         assert!(sweep(&path, Duration::ZERO).is_err());
     }
-    assert!(crate::io::read_mailbox(b"MailCraft journal\n").unwrap_err().contains("newer MailCraft"));
+    assert!(crate::io::read_mailbox(b"MailCraft journal\n").unwrap_err().contains("newer MailSolutions"));
     // JSON that isn't ours still isn't.
     fs::write(&path, b"{\"hello\": 1, \"version\": \"x\"}").unwrap();
-    assert!(open(&path).unwrap_err().contains("isn't a MailCraft mailbox"));
+    assert!(open(&path).unwrap_err().contains("isn't a MailSolutions mailbox"));
 }
 
 #[test]
@@ -865,7 +865,7 @@ fn a_hostile_file_of_this_form_is_refused_or_read_and_names_nothing_outside_its_
     for (n, bytes) in refused.iter().enumerate() {
         fs::write(&path, bytes).unwrap();
         let error = open(&path).unwrap_err();
-        assert!(error.contains("damaged") || error.contains("newer MailCraft"), "{n}: {error}");
+        assert!(error.contains("damaged") || error.contains("newer MailSolutions"), "{n}: {error}");
         assert!(sweep(&path, Duration::ZERO).is_err(), "{n}");
     }
     // Content names that are paths or lies cost that content and nothing else.
@@ -982,13 +982,13 @@ proptest! {
     }
 }
 
-/// How quickly a large mailbox opens and saves. `cargo test --release -p mailcraft-engine --lib
-/// large_mailbox -- --ignored --nocapture`; `MAILCRAFT_BENCH_MESSAGES` sets the size (100,000 by
+/// How quickly a large mailbox opens and saves. `cargo test --release -p mailsolutions-engine --lib
+/// large_mailbox -- --ignored --nocapture`; `MAILSOLUTIONS_BENCH_MESSAGES` sets the size (100,000 by
 /// default).
 #[test]
 #[ignore]
 fn large_mailbox_opens_and_saves_quickly() {
-    let n: usize = std::env::var("MAILCRAFT_BENCH_MESSAGES").ok().and_then(|v| v.parse().ok()).unwrap_or(100_000);
+    let n: usize = std::env::var("MAILSOLUTIONS_BENCH_MESSAGES").ok().and_then(|v| v.parse().ok()).unwrap_or(100_000);
     let tmp = Temp::new("large");
     let path = tmp.file();
     let t = Instant::now();
@@ -1012,7 +1012,7 @@ fn large_mailbox_opens_and_saves_quickly() {
             to: vec![Address::new("Avery Quinn", "avery@example.org")],
             message_id: format!("{i}@mail.example.org"),
             date: 1_600_000_000 + i as i64 * 60,
-            body: mailcraft_model::Body { text, html: None },
+            body: mailsolutions_model::Body { text, html: None },
             read: i % 3 != 0,
             ..Default::default()
         })
@@ -1029,7 +1029,7 @@ fn large_mailbox_opens_and_saves_quickly() {
     let opened = open(&path).unwrap();
     eprintln!("open: {:?} ({} messages)", t.elapsed(), opened.mailbox.messages.len());
     let mut mb = opened.mailbox;
-    let saves: usize = std::env::var("MAILCRAFT_BENCH_SAVES").ok().and_then(|v| v.parse().ok()).unwrap_or(5);
+    let saves: usize = std::env::var("MAILSOLUTIONS_BENCH_SAVES").ok().and_then(|v| v.parse().ok()).unwrap_or(5);
     let ids: Vec<Id> = mb.messages.keys().copied().take(saves).collect();
     let mut quickest = Duration::MAX;
     let mut slowest = Duration::ZERO;

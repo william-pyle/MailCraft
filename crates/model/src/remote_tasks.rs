@@ -8,7 +8,7 @@
 //! All of it is hostile: it comes from a server, or from a command's parameters.
 //! [`RemoteTask::tidy`] cuts a task to size before any of it is kept.
 
-use mailcraft_time::{Date, Timestamp};
+use mailsolutions_time::{Date, Timestamp};
 use serde::{Deserialize, Serialize};
 
 use crate::remote::{key, line, text};

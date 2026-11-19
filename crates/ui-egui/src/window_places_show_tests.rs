@@ -7,7 +7,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use crate::window_places::{Kind, Monitor, Place};
@@ -87,7 +87,7 @@ struct Expected {
 
 fn opens_at_its_place_and_is_remembered(points: bool, x: Expected) {
     let (ctx, seen) = backend();
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     app.windows.points = Some(points);

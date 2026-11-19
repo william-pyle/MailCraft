@@ -224,7 +224,7 @@ fn letters_drawn_alike_make_a_lookalike() {
         matches!(&found[..], [Warning::LookalikeSender { domain, like }, ..] if domain.starts_with("xn--") && like == "harborworks.example"),
         "{found:?}"
     );
-    let wire = mailcraft_link::WebLink::parse("http://harb\u{43e}rworks.example/").map(|l| l.host().to_string()).unwrap_or_default();
+    let wire = mailsolutions_link::WebLink::parse("http://harb\u{43e}rworks.example/").map(|l| l.host().to_string()).unwrap_or_default();
     assert!(kinds(&from("Lin", &format!("lin@{wire}"))).contains(&"lookalikeSender"));
     // "rn" for "m".
     assert!(kinds(&from("Lumen", "it@lurnen.example")).contains(&"lookalikeSender"));
@@ -267,7 +267,7 @@ fn edits_and_registrable_parts() {
     assert_eq!(registrable("lumen.github.io"), "lumen.github.io");
     assert_eq!(registrable("example"), "example");
     // A name over the wire is read back into its letters, whatever its case.
-    let wire = mailcraft_link::WebLink::parse("http://harb\u{43e}rworks.example/").map(|l| l.host().to_uppercase()).unwrap_or_default();
+    let wire = mailsolutions_link::WebLink::parse("http://harb\u{43e}rworks.example/").map(|l| l.host().to_uppercase()).unwrap_or_default();
     assert_eq!(sender_domain(&format!("x@{wire}.")), Some("harb\u{43e}rworks.example".into()));
     assert_eq!(sender_domain("no address"), None);
     assert_eq!(sender_domain("x@a..b"), None);

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-use mailcraft_model::rich::{Font, Format, ListKind, MAX_LEVEL, MAX_SIZE, MIN_SIZE, Paragraph, RichText, Run, Style, safe_color, safe_link};
-use mailcraft_model::signature::{Layout, MAX_WIDTH, Signature};
+use mailsolutions_model::rich::{Font, Format, ListKind, MAX_LEVEL, MAX_SIZE, MIN_SIZE, Paragraph, RichText, Run, Style, safe_color, safe_link};
+use mailsolutions_model::signature::{Layout, MAX_WIDTH, Signature};
 use proptest::prelude::*;
 
 use super::*;
@@ -41,7 +41,7 @@ fn assert_in_set(html: &str) {
             || tag
                 .strip_prefix("<a href=\"")
                 .and_then(|t| t.strip_suffix("\">"))
-                .is_some_and(|url| !url.contains(['"', '<', '>']) && safe_link(&mailcraft_html::unescape(url)).is_some())
+                .is_some_and(|url| !url.contains(['"', '<', '>']) && safe_link(&mailsolutions_html::unescape(url)).is_some())
             || tag.strip_prefix("<span style=\"color:").and_then(|t| t.strip_suffix("\">")).is_some_and(|c| safe_color(c).as_deref() == Some(c))
             || tag
                 .strip_prefix("<span style=\"font-family:")
@@ -318,11 +318,11 @@ proptest! {
     /// line that isn't a header, and no NUL or bare CR or LF anywhere in its header.
     #[test]
     fn a_message_from_any_text_keeps_its_headers(t in arb_text(), subject in "\\PC{0,40}|[\\r\\n\\x00a-z:]{0,20}") {
-        let m = mailcraft_model::Message {
+        let m = mailsolutions_model::Message {
             subject,
-            from: mailcraft_model::Address::new("Ada", "ada@example.org"),
-            to: vec![mailcraft_model::Address::new("Bob\r\nBcc: x@example.org", "bob@example.org")],
-            body: mailcraft_model::Body { text: t.to_plain(), html: Some(to_html_document(&t, None)) },
+            from: mailsolutions_model::Address::new("Ada", "ada@example.org"),
+            to: vec![mailsolutions_model::Address::new("Bob\r\nBcc: x@example.org", "bob@example.org")],
+            body: mailsolutions_model::Body { text: t.to_plain(), html: Some(to_html_document(&t, None)) },
             ..Default::default()
         };
         let bytes = crate::write(&m, &crate::WriteOptions::default());
@@ -364,11 +364,11 @@ fn logo_signature(layout: Layout) -> Signature {
 
 #[test]
 fn a_signature_is_written_with_its_colours_fonts_and_pictures() {
-    let cid = |p: &mailcraft_model::signature::Picture| format!("sig-{}@mailcraft.invalid", p.id);
+    let cid = |p: &mailsolutions_model::signature::Picture| format!("sig-{}@mailsolutions.invalid", p.id);
     let inline = signature_html(&logo_signature(Layout::Inline), &cid);
     assert!(
         inline.starts_with(
-            "<div><img src=\"cid:sig-1@mailcraft.invalid\" width=\"120\" alt=\"Lumen &quot;Studio&quot; &lt;logo&gt;\" style=\"border:0\">"
+            "<div><img src=\"cid:sig-1@mailsolutions.invalid\" width=\"120\" alt=\"Lumen &quot;Studio&quot; &lt;logo&gt;\" style=\"border:0\">"
         ),
         "{inline}"
     );
@@ -424,7 +424,8 @@ fn pictures_of_a_draft_come_back_in_their_places() {
     text.insert_rich(4, &RichText::from_paragraphs(vec![Paragraph::new(vec![Run::picture(a.id, Style::default())], Default::default())])).unwrap();
     let end = text.len();
     text.insert_rich(end, &RichText::from_paragraphs(vec![Paragraph::new(vec![Run::picture(b.id, Style::default())], Default::default())])).unwrap();
-    let html = to_html_with(&text, &|id| [&a, &b].into_iter().find(|p| p.id == id).map(|p| Img::of(p, format!("pic-{}.x@mailcraft.invalid", p.id))));
+    let html =
+        to_html_with(&text, &|id| [&a, &b].into_iter().find(|p| p.id == id).map(|p| Img::of(p, format!("pic-{}.x@mailsolutions.invalid", p.id))));
     let mut seen = Vec::new();
     let back = from_html_with_pictures(&html, &mut |img| {
         seen.push(img.clone());
@@ -444,12 +445,12 @@ fn pictures_of_a_draft_come_back_in_their_places() {
 fn only_pictures_claimed_and_never_a_stray_object_character() {
     let html = format!(
         "<div>a{}b<img src=\"https://x.example/p.png\">c<IMG SRC='CID:q@x' width=5>d<imgx src=\"cid:q@x\"></div>",
-        mailcraft_model::rich::OBJECT
+        mailsolutions_model::rich::OBJECT
     );
     let back = from_html_with_pictures(&html, &mut |img| (img.cid == "q@x").then_some(7));
     assert_eq!(back.pictures(), vec![7]);
-    assert!(!back.text().replace(mailcraft_model::rich::OBJECT, "").contains(mailcraft_model::rich::OBJECT));
-    assert_eq!(back.text().chars().filter(|c| *c == mailcraft_model::rich::OBJECT).count(), 1);
+    assert!(!back.text().replace(mailsolutions_model::rich::OBJECT, "").contains(mailsolutions_model::rich::OBJECT));
+    assert_eq!(back.text().chars().filter(|c| *c == mailsolutions_model::rich::OBJECT).count(), 1);
 }
 
 proptest! {

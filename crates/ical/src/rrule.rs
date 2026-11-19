@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Recurrence rules (RFC 5545 §3.3.10), as far as the model holds them.
 
-use mailcraft_model::{Freq, Recurrence};
-use mailcraft_time::{DateTime, Timestamp, Weekday};
+use mailsolutions_model::{Freq, Recurrence};
+use mailsolutions_time::{DateTime, Timestamp, Weekday};
 
 use crate::lines::prefix;
 use crate::values::{When, format_date, valid_time};
@@ -178,7 +178,7 @@ fn format(r: &Recurrence, start: Option<(DateTime, bool)>, until_at: Option<Time
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_time::Date;
+    use mailsolutions_time::Date;
     use proptest::prelude::*;
 
     use super::*;

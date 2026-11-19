@@ -10,10 +10,11 @@ use crate::anchors::{MAIL_BUNDLES, bundle, bundles};
 fn a_bundle_gives_its_certificates_and_leaves_out_the_rest() {
     let a = rcgen::generate_simple_self_signed(vec!["a.example".to_string()]).unwrap();
     let b = rcgen::generate_simple_self_signed(vec!["b.example".to_string()]).unwrap();
-    let dir = std::env::temp_dir().join(format!("mailcraft-anchors-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-anchors-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("email-ca-bundle.pem");
-    let pem = |der: &[u8]| format!("-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n", mailcraft_charset::base64::STANDARD.encode(der));
+    let pem =
+        |der: &[u8]| format!("-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n", mailsolutions_charset::base64::STANDARD.encode(der));
     let text = format!("# junk\n{}\nnot a certificate\n{}", pem(a.cert.der()), pem(b.cert.der()));
     std::fs::write(&path, text).unwrap();
     let found = bundle(&path).unwrap();
@@ -37,10 +38,10 @@ fn only_the_mail_bundles_are_read() {
 #[test]
 fn nss_s_list_stands_in_only_where_no_bundle_for_mail_is_there() {
     let a = rcgen::generate_simple_self_signed(vec!["a.example".to_string()]).unwrap();
-    let dir = std::env::temp_dir().join(format!("mailcraft-bundles-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-bundles-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let (first, second, missing) = (dir.join("first.pem"), dir.join("second.pem"), dir.join("missing.pem"));
-    let pem = format!("-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n", mailcraft_charset::base64::STANDARD.encode(a.cert.der()));
+    let pem = format!("-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n", mailsolutions_charset::base64::STANDARD.encode(a.cert.der()));
     assert_eq!(bundles(&[&missing, &dir.join("no-folder/x.pem")]), None, "nothing there: NSS's list may stand in");
     std::fs::write(&first, "").unwrap();
     assert_eq!(bundles(&[&missing, &first]), Some(Vec::new()), "an emptied bundle trusts none, and NSS's list doesn't stand in");

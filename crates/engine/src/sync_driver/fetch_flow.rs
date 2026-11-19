@@ -8,8 +8,8 @@
 //! ([`Session::fetch_background_accounts`]). The host starts the fetches, holds the commands that
 //! wait for a form to be closed, and words what is said.
 
-use mailcraft_model::sync::GraphFetchResult;
-use mailcraft_model::{AccountKind, Id};
+use mailsolutions_model::sync::GraphFetchResult;
+use mailsolutions_model::{AccountKind, Id};
 use serde_json::{Value, json};
 
 use super::fetch::{Came, apply_fetch, forward_of, forwarded, needs_whole, still_to_fetch, to_fetch};

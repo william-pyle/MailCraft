@@ -6,9 +6,9 @@
 //! (`check_calendar`, `free_busy`) are native only. Nothing of an event is logged, and what the
 //! check makes on the server it deletes again.
 
-use mailcraft_model::remote::{FreeBusy, FreeBusyAsk};
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{Account, Id, OAuth};
+use mailsolutions_model::remote::{FreeBusy, FreeBusyAsk};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{Account, Id, OAuth};
 
 /// What the host needs to check an account's calendar connection (the front end's `Services::check_calendar`).
 pub struct CalendarCheckRequest {

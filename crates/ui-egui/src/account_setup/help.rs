@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! What Add Account says about a sign-in on Microsoft's page: while the browser has it, when it
-//! ended without signing anybody in, and when the organisation has to approve MailCraft first
+//! ended without signing anybody in, and when the organisation has to approve MailSolutions first
 //! ([`crate::approval`]).
 //!
 //! Many organisations let only an administrator approve a new program. Microsoft's page then
@@ -45,7 +45,7 @@ pub(crate) enum Help {
 }
 
 const WAITING_HELP: &str = "Your organisation lets only an administrator approve a new program. Nothing is wrong with your account or your password, and there is nothing to wait for here.";
-const WHY: &str = "Your organisation lets only an administrator approve a new program, and none has approved MailCraft yet. Nothing is wrong with your account or your password.";
+const WHY: &str = "Your organisation lets only an administrator approve a new program, and none has approved MailSolutions yet. Nothing is wrong with your account or your password.";
 const ENDED_HELP: &str =
     "Your organisation then lets only an administrator approve a new program. Nothing is wrong with your account or your password.";
 const DECLINED_HELP: &str = "You came back from Microsoft's page without having signed in: you said no there, or the page sent you back.";
@@ -56,7 +56,7 @@ const NO_BROWSER_OPENED: &str = "If no browser opened, check that this computer 
 const NO_BROWSER_HELP: &str = "Signing in happens on Microsoft's page in a web browser, and none could be started on this computer. Check that it has a default browser, then try again.";
 
 impl AccountSetup {
-    /// The page that says what to do when its organisation has to approve MailCraft first, for
+    /// The page that says what to do when its organisation has to approve MailSolutions first, for
     /// an account that exists. `None` for one that doesn't sign in with Microsoft.
     pub(super) fn approval_for(app: &MailApp, id: Id) -> Option<AccountSetup> {
         let account = app.session.mailbox.account(id).filter(|_| app.is_microsoft(id))?;
@@ -241,7 +241,7 @@ impl AccountSetup {
             t,
             tl!("I'm an administrator: approve it for my organisation"),
             about(
-                "Opens Microsoft's approval page in your browser. Sign in there with an administrator account and accept; MailCraft carries on by itself.",
+                "Opens Microsoft's approval page in your browser. Sign in there with an administrator account and accept; MailSolutions carries on by itself.",
             ),
         );
         app.hit.add("approvalAdministrator", self.existing, administrator.rect);
@@ -252,7 +252,7 @@ impl AccountSetup {
             ui,
             t,
             tl!("Copy a message for my administrator"),
-            about("A short note with the link to that page, to paste into mail or chat. MailCraft sends nothing itself."),
+            about("A short note with the link to that page, to paste into mail or chat. MailSolutions sends nothing itself."),
         );
         app.hit.add("approvalCopyMessage", self.existing, copy.rect);
         if copy.clicked() {
@@ -271,7 +271,7 @@ impl AccountSetup {
         let mut action = None;
         page(ui, &t, |ui| {
             if self.approved && !google {
-                note(ui, tl!("Your organisation has approved MailCraft. Now sign in with your own account."), t.green);
+                note(ui, tl!("Your organisation has approved MailSolutions. Now sign in with your own account."), t.green);
             }
             ui.add_space(8.0);
             ui.vertical_centered(|ui| {
@@ -296,7 +296,7 @@ impl AccountSetup {
                 note(
                     ui,
                     tl!(
-                        "If Google says the app is in testing, ask the developer to add your email as a test user. If your organization blocks MailCraft, ask its Workspace administrator. Those pages may not return here: cancel, then retry when access is granted or use an app password if allowed."
+                        "If Google says the app is in testing, ask the developer to add your email as a test user. If your organization blocks MailSolutions, ask its Workspace administrator. Those pages may not return here: cancel, then retry when access is granted or use an app password if allowed."
                     ),
                     t.text_dim,
                 );
@@ -353,24 +353,24 @@ impl AccountSetup {
         let (title, text) = if google {
             match self.ended {
                 Some(SignInEnd::Approval) => (
-                    tl!("Google blocked access to MailCraft"),
+                    tl!("Google blocked access to MailSolutions"),
                     tl!(
-                        "If MailCraft is still in Google's testing mode, ask its developer to add this address to the Test users list. If your organization blocked access, ask your Google Workspace administrator. Your mailbox was not changed."
+                        "If MailSolutions is still in Google's testing mode, ask its developer to add this address to the Test users list. If your organization blocked access, ask your Google Workspace administrator. Your mailbox was not changed."
                     ),
                 ),
                 Some(SignInEnd::Declined) => (
                     tl!("Google sign-in was declined"),
-                    tl!("Google did not authorize MailCraft. Your mailbox was not changed. You can retry or choose an app password."),
+                    tl!("Google did not authorize MailSolutions. Your mailbox was not changed. You can retry or choose an app password."),
                 ),
                 Some(SignInEnd::TimedOut) => (
                     tl!("Google sign-in did not finish"),
                     tl!(
-                        "Google did not return to MailCraft. If you saw Error 403 or Access blocked because the app is in testing, ask the developer to add you as a test user. If your organization blocked it, ask its Workspace administrator. Otherwise, retry. Mail and settings are unchanged."
+                        "Google did not return to MailSolutions. If you saw Error 403 or Access blocked because the app is in testing, ask the developer to add you as a test user. If your organization blocked it, ask its Workspace administrator. Otherwise, retry. Mail and settings are unchanged."
                     ),
                 ),
                 Some(SignInEnd::NoBrowser) => (
                     tl!("Could not open Google sign-in"),
-                    tl!("MailCraft needs your system browser to sign in. You can also use a Google app password."),
+                    tl!("MailSolutions needs your system browser to sign in. You can also use a Google app password."),
                 ),
                 _ => (
                     tl!("Google sign-in didn't work"),
@@ -406,7 +406,7 @@ impl AccountSetup {
                 approval = more.clicked();
             } else if !google && self.ended.is_some() {
                 // Whatever it was: it may have ended for want of an approval all the same.
-                let link = ui.link(tl!("My organisation has to approve MailCraft first: what to do"));
+                let link = ui.link(tl!("My organisation has to approve MailSolutions first: what to do"));
                 app.hit.add("signInApprovalHelp", self.existing, link.rect);
                 approval = link.clicked();
             }
@@ -439,7 +439,7 @@ impl AccountSetup {
         }
     }
 
-    /// "Your organisation has to approve MailCraft first": why, and what to do next, as actions.
+    /// "Your organisation has to approve MailSolutions first": why, and what to do next, as actions.
     pub(super) fn approval_page(&mut self, app: &mut MailApp, ui: &mut Ui, pass: &Pass) -> Option<Action> {
         if self.approval.approving {
             return self.approving_page(ui, pass);
@@ -447,7 +447,7 @@ impl AccountSetup {
         let t = pass.t;
         let mut action = None;
         page(ui, &t, |ui| {
-            heading(ui, tl!("Your organisation has to approve MailCraft first"), &t);
+            heading(ui, tl!("Your organisation has to approve MailSolutions first"), &t);
             note(ui, &shown(self.email.trim(), 120), t.text_dim);
             // What a try at an administrator's approval came to, and what Microsoft answered.
             if let Some((ours, theirs)) = &self.approval.refused {

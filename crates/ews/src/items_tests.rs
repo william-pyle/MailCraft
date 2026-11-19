@@ -76,6 +76,6 @@ fn a_change_with_no_usable_id_or_item_makes_the_page_no_page() {
 #[test]
 fn a_page_larger_than_the_model_takes_in_is_no_page() {
     let changes: String =
-        (0..mailcraft_model::sync::MAX_EWS_PAGE_MESSAGES + 1).map(|n| format!("<t:Create>{}</t:Create>", bare(&format!("ID{n}")))).collect();
+        (0..mailsolutions_model::sync::MAX_EWS_PAGE_MESSAGES + 1).map(|n| format!("<t:Create>{}</t:Create>", bare(&format!("ID{n}")))).collect();
     assert_eq!(page(&changes, 512).unwrap_err(), Error::Unreadable);
 }

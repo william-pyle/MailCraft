@@ -15,17 +15,17 @@
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::graph_mail::apply_graph_mail;
-use mailcraft_engine::cmd::graph_send::MAY_HAVE_GONE;
-use mailcraft_model::remote::EventsDownload;
-use mailcraft_model::remote_rules::RulesDownload;
-use mailcraft_model::remote_tasks::{RemoteTask, RemoteTaskList, TasksDownload};
-use mailcraft_model::sync::{
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::graph_mail::apply_graph_mail;
+use mailsolutions_engine::cmd::graph_send::MAY_HAVE_GONE;
+use mailsolutions_model::remote::EventsDownload;
+use mailsolutions_model::remote_rules::RulesDownload;
+use mailsolutions_model::remote_tasks::{RemoteTask, RemoteTaskList, TasksDownload};
+use mailsolutions_model::sync::{
     EwsMailResult, FolderListing, GraphFolder, GraphMailResult, GraphMessage, JmapMailResult, MessagePage, SendDone, SendOutcome, ServerMessage,
     SyncRequest, SyncResult, Tokens,
 };
-use mailcraft_model::{Address, FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::{Address, FolderKind, Id, Mailbox, Message};
 use serde_json::json;
 
 use crate::auto_replies::{AutoRepliesJob, AutoRepliesResult};
@@ -86,7 +86,7 @@ impl SecretStore for Store {
     fn get(&self, _: &str) -> Option<String> {
         None
     }
-    fn set(&self, _: &str, _: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, _: &str, _: &str) -> Result<(), mailsolutions_host::SecretError> {
         *self.0.lock().unwrap() += 1;
         Ok(())
     }
@@ -100,7 +100,7 @@ impl Store {
 }
 
 fn tokens(access: &str, refresh: &str) -> Tokens {
-    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 /// What every stale answer says of its sign-in: a refresh token and nobody's address (H6).
@@ -223,7 +223,7 @@ fn sent(message: Id) -> SendDone {
 
 /// The open mailbox, as its file has it.
 fn bytes(app: &MailApp) -> Vec<u8> {
-    mailcraft_engine::io::write_mailbox(&app.session.mailbox).unwrap()
+    mailsolutions_engine::io::write_mailbox(&app.session.mailbox).unwrap()
 }
 
 /// How a row's answer is let in: the job's own poll straight after the replacement (before any
@@ -270,7 +270,7 @@ fn row(kind: JobKind, way: Way) {
             app.execute("ui.checkCalendar", json!({"account": ids.microsoft, "confirmed": true})).unwrap();
         }
         JobKind::FreeBusy => {
-            let day = mailcraft_time::Date::new(2026, 10, 14).unwrap();
+            let day = mailsolutions_time::Date::new(2026, 10, 14).unwrap();
             assert!(app.free_busy_at(calendar, &["kit@example.net".to_string()], day, crate::now_ms()).pending);
         }
         JobKind::Tasks => assert!(app.tasks_tick_at(0.0)),
@@ -400,17 +400,17 @@ fn row(kind: JobKind, way: Way) {
 
 /// A calendar of `account`'s server, as its first job brought it.
 fn free_busy_calendar(app: &mut MailApp, account: Id) -> Id {
-    mailcraft_engine::cmd::remote::ensure_shared_calendars(&mut app.session);
+    mailsolutions_engine::cmd::remote::ensure_shared_calendars(&mut app.session);
     let mb = &mut app.session.mailbox;
     if let Some(c) = mb.calendars.iter().find(|c| c.origin.account == account) {
         return c.id;
     }
     let id = mb.calendars.iter().map(|c| c.id).chain(mb.messages.keys().copied()).max().unwrap_or(0) + 1_000;
-    let calendar = mailcraft_model::Calendar {
+    let calendar = mailsolutions_model::Calendar {
         id,
         name: "Calendar".into(),
         visible: true,
-        origin: mailcraft_model::remote::Origin { account, ..Default::default() },
+        origin: mailsolutions_model::remote::Origin { account, ..Default::default() },
         ..Default::default()
     };
     mb.calendars.push(calendar);
@@ -568,7 +568,7 @@ fn send_row(protocol: Sends, lost: Lost) {
     assert_eq!(going, [message], "{protocol:?}: the message goes with the run");
     // Marked as being sent, on disk, before the run was handed to the host.
     let saved = written.lock().unwrap().last().cloned().expect("the mailbox was saved before the send left");
-    let on_disk = mailcraft_engine::io::read_mailbox(&saved).unwrap();
+    let on_disk = mailsolutions_engine::io::read_mailbox(&saved).unwrap();
     assert!(on_disk.message(message).is_some_and(|m| m.sending), "{protocol:?}: the mark is on disk");
     let (mut app, hosts) = match lost {
         Lost::Replaced => {
@@ -660,7 +660,7 @@ fn a_send_taken_in_before_the_run_was_lost_is_not_held() {
     poll_run(&mut app);
     // Killed here, with what was taken in on disk.
     drop(tx);
-    let on_disk = mailcraft_engine::io::read_mailbox(&bytes(&app)).unwrap();
+    let on_disk = mailsolutions_engine::io::read_mailbox(&bytes(&app)).unwrap();
     let (mut app, _hosts, _) = hosted(on_disk);
     sign_in(&mut app, ids);
     let _ = app.run("ui.sync", json!({"account": ids.imap}));
@@ -761,7 +761,7 @@ fn graph_sends_of_imap_and_shared_mailboxes_are_marked_and_held() {
         };
         assert_eq!(going, [message], "shared: {shared}: it goes through Graph");
         let saved = written.lock().unwrap().last().cloned().expect("saved before the send left");
-        let on_disk = mailcraft_engine::io::read_mailbox(&saved).unwrap();
+        let on_disk = mailsolutions_engine::io::read_mailbox(&saved).unwrap();
         assert!(on_disk.message(message).is_some_and(|m| m.sending), "shared: {shared}: the mark is on disk");
         // Killed mid-send.
         drop((request, tx));
@@ -857,16 +857,20 @@ struct Saver {
     fails: Arc<Mutex<bool>>,
 }
 
-impl mailcraft_engine::io::BackgroundSave for Saver {
+impl mailsolutions_engine::io::BackgroundSave for Saver {
     fn follow(&self, _: &std::path::Path) {}
     fn submit(&self, path: &std::path::Path, _: &Mailbox, rev: u64) {
         self.handed.lock().unwrap().push((path.to_path_buf(), rev));
     }
-    fn reports(&self) -> Vec<mailcraft_engine::io::SaveReport> {
+    fn reports(&self) -> Vec<mailsolutions_engine::io::SaveReport> {
         let failed = *self.fails.lock().unwrap();
         std::mem::take(&mut *self.handed.lock().unwrap())
             .into_iter()
-            .map(|(path, rev)| mailcraft_engine::io::SaveReport { path, rev, result: if failed { Err("the disk is full".into()) } else { Ok(()) } })
+            .map(|(path, rev)| mailsolutions_engine::io::SaveReport {
+                path,
+                rev,
+                result: if failed { Err("the disk is full".into()) } else { Ok(()) },
+            })
             .collect()
     }
     fn flush(&self) {}

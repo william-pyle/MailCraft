@@ -11,8 +11,8 @@
 //! An item's id changes when it is moved ([`Moved`] says the new one); a change key changes with
 //! every edit ([`Saved`]). Both are the server's and stay opaque.
 
-use mailcraft_model::sync::FlagUp;
-use mailcraft_model::{Address, FlagStatus, Importance};
+use mailsolutions_model::sync::FlagUp;
+use mailsolutions_model::{Address, FlagStatus, Importance};
 
 use crate::error::Error;
 use crate::folder::valid_id;
@@ -114,7 +114,7 @@ fn flag_element(flag: &FlagUp) -> Element {
         FlagStatus::Complete => "Complete",
     };
     inner = inner.child(Element::new("t:FlagStatus").text(status));
-    let when = |ts| mailcraft_time::format_iso_utc(ts);
+    let when = |ts| mailsolutions_time::format_iso_utc(ts);
     match flag.status {
         FlagStatus::Flagged => {
             if let Some((start, due)) = flag.start.zip(flag.due) {

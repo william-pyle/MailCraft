@@ -63,7 +63,7 @@ fn names_are_matched_whatever_their_case() {
     assert!(is_working_name("list-id"));
     assert!(is_working_name("AUTHENTICATION-RESULTS"));
     assert!(is_working_name("x-mailcraft-anything"));
-    assert!(!is_working_name("X-MailCraft"));
+    assert!(!is_working_name("X-MailSolutions"));
     assert!(!is_working_name("Received"));
     assert!(!is_working("Received", "from a.example.org by b.example.org"));
     assert!(!is_working_name("X-Microsoft-Antispam"));
@@ -154,7 +154,7 @@ fn a_mailbox_file_has_every_line_in_headers_as_before_and_is_split_when_read() {
     m.split_headers();
     mb.messages.insert(1, Arc::new(m.clone()));
     let json = serde_json::to_string(&mb).unwrap();
-    assert!(!json.contains("headerBlock"), "a MailCraft from before reads every line: {json}");
+    assert!(!json.contains("headerBlock"), "a MailSolutions from before reads every line: {json}");
     assert!(json.contains("X-Microsoft-Antispam-Message-Info"));
     let back: Mailbox = serde_json::from_str(&json).unwrap();
     let read = back.messages.get(&1).unwrap();
@@ -317,7 +317,7 @@ const READS_ITS_OWN: &[(&str, &str)] = &[
 
 /// Lookups that are an HTTP request's or answer's, not a message's (a file, and what the line says).
 const NOT_A_MESSAGE: &[(&str, &str)] =
-    &[("ews/src/autodiscover.rs", "response.header("), ("apps/mailcraft/src/graph_folders_flow.rs", "asked.header(")];
+    &[("ews/src/autodiscover.rs", "response.header("), ("apps/mailsolutions/src/graph_folders_flow.rs", "asked.header(")];
 
 #[test]
 fn every_name_the_program_reads_stays_on_the_message() {

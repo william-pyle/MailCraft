@@ -11,7 +11,7 @@
 //!                             its attachments, each with the parts of the message it is in
 //! ```
 //!
-//! - **What a word is** is the search box's ([`mailcraft_model::words`]): letters and digits,
+//! - **What a word is** is the search box's ([`mailsolutions_model::words`]): letters and digits,
 //!   case and accents folded. A search word finds the words that start with it, in the parts of
 //!   the message its keyword names (`from:`) or in any of them.
 //! - **Derived data.** Everything in it can be worked out again from the mailbox, so it is never
@@ -24,7 +24,7 @@
 //!   read (each a list of word numbers and the parts they are in), and the messages taken out.
 //!   When what was taken out outweighs what is left, an account is removed, or mail is found
 //!   gone that went while the file was closed (removed where no index is kept, as by
-//!   `mailcraft-cli`), the file is written again whole without it ([`Index::compact`]), to a
+//!   `mailsolutions-cli`), the file is written again whole without it ([`Index::compact`]), to a
 //!   temporary file renamed over. A
 //!   record cut short at the end (the program stopped while writing) is left out, and so is
 //!   everything after it; any other damage makes the whole file go.
@@ -42,7 +42,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Weak};
 
-use mailcraft_model::{Id, Mailbox, Message, words};
+use mailsolutions_model::{Id, Mailbox, Message, words};
 
 /// The format of the file: another number is another version, thrown away and built again.
 pub const VERSION: u32 = 1;
@@ -882,7 +882,7 @@ pub struct Words {
     /// words off the disk at once.
     accounts: Vec<Id>,
     /// Brought in step since its file was read: mail gone before that (removed where no index
-    /// is kept, as by `mailcraft-cli`) takes its words off the disk at the first step (#325).
+    /// is kept, as by `mailsolutions-cli`) takes its words off the disk at the first step (#325).
     stepped: bool,
     /// Messages the last [`Words::in_step`] left out of the index (for the background to read).
     left: usize,

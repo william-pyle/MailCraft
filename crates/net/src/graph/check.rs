@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A check of the calendar connection, for the owner to run on the real account.
 //!
-//! [`check_calendar`] makes one appointment called "MailCraft connection check" a year from
+//! [`check_calendar`] makes one appointment called "MailSolutions connection check" a year from
 //! today in the account's main calendar, reads it back, changes its time, reads it back again,
 //! changes it once more with the time said in the owner's own time zone (as a whole-day event
 //! and a series are said), reads that back too, and deletes it. Each step comes with what
@@ -15,7 +15,7 @@
 //! when it refuses (its status, the short name of the refusal and its words) is what the owner
 //! needs here, so it is kept: one line, cut to size, and never with anything of the token in it.
 
-use mailcraft_time::{DAY, DateTime, Timestamp};
+use mailsolutions_time::{DAY, DateTime, Timestamp};
 use ring::rand::SecureRandom as _;
 use serde_json::{Value, json};
 
@@ -23,7 +23,7 @@ use super::{ASK_TIMEOUT, EVENT_PREFERENCES, EVENTS, Graph, MAX_ECHO, MAX_WRITTEN
 use crate::{NetError, http};
 
 /// What the appointment of the check is called.
-pub const CHECK_TITLE: &str = "MailCraft connection check";
+pub const CHECK_TITLE: &str = "MailSolutions connection check";
 /// How far ahead of today it is made (days), and how long it is (seconds).
 const AHEAD_DAYS: i64 = 365;
 const LENGTH: i64 = 1_800;
@@ -170,14 +170,14 @@ pub(super) fn check_calendar_at(base: &str, token: &str, now: Timestamp, zone: &
         made.insert("subject".into(), json!(CHECK_TITLE));
         made.insert(
             "body".into(),
-            json!({"contentType": "text", "content": "Made by MailCraft to check that changes reach your calendar. It deletes itself."}),
+            json!({"contentType": "text", "content": "Made by MailSolutions to check that changes reach your calendar. It deletes itself."}),
         );
         made.insert("showAs".into(), json!("free"));
         made.insert("isReminderOn".into(), json!(false));
         made.insert("transactionId".into(), json!(mark(now)));
     }
     let (status, answer, said) = ask("POST", EVENTS, Some(made.to_string()));
-    let id = mailcraft_model::remote::clean_key(text(&answer, "id"));
+    let id = mailsolutions_model::remote::clean_key(text(&answer, "id"));
     check.token_refused |= status == 401;
     match ((200..300).contains(&status), id.is_empty()) {
         (true, false) => check.steps.push(step(0, true, status, format!("sent: {}", span(start)))),

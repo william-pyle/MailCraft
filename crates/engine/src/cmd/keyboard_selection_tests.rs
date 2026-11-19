@@ -3,8 +3,8 @@
 //! Selecting in the message list from the keyboard (#426): Up, Down, Home, End, Page Up and Page
 //! Down move the focus, and with Shift (`extend`) the selection runs from its anchor to it.
 
-use mailcraft_model::Id;
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::Id;
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::list::Row;

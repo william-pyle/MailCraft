@@ -3,7 +3,7 @@
 //! Notes and journal entries, as they come from a .pst file (#815): kept, listed and searched;
 //! views of their own come later.
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use crate::{Address, Id};

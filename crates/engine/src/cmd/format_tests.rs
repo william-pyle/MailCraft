@@ -3,8 +3,8 @@
 //! Writing in rich text through commands: the selection, typing, formatting, links, lists and
 //! undo inside the message, and messages written before rich text.
 
-use mailcraft_model::rich::{ListKind, Selection};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::rich::{ListKind, Selection};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Compose, Session, sample};
@@ -172,11 +172,11 @@ fn a_formatted_message_goes_out_as_html_with_a_plain_text_part() {
         "{html}"
     );
     // On the wire: both forms, as alternatives, and they read back.
-    let bytes = mailcraft_mime_model::write(&m, &mailcraft_mime_model::WriteOptions::default());
+    let bytes = mailsolutions_mime_model::write(&m, &mailsolutions_mime_model::WriteOptions::default());
     let text = String::from_utf8_lossy(&bytes);
     assert!(text.contains("multipart/alternative") && text.contains("text/plain") && text.contains("text/html"));
-    let back = mailcraft_mime_model::parse(&bytes);
-    assert_eq!(mailcraft_mime_model::rich::from_html(back.body.html.as_deref().unwrap()), mailcraft_mime_model::rich::from_html(&html));
+    let back = mailsolutions_mime_model::parse(&bytes);
+    assert_eq!(mailsolutions_mime_model::rich::from_html(back.body.html.as_deref().unwrap()), mailsolutions_mime_model::rich::from_html(&html));
 }
 
 #[test]
@@ -192,7 +192,7 @@ fn a_formatted_draft_reopens_formatted() {
     assert_eq!(compose(&s).body.text(), &unmarked(&written));
     assert_eq!(compose(&s).format, crate::BodyFormat::Html);
     // A draft saved before rich text (plain text only) opens as plain text.
-    s.mailbox.message_mut(d).unwrap().body = mailcraft_model::Body { text: "Old\ndraft".into(), html: None };
+    s.mailbox.message_mut(d).unwrap().body = mailsolutions_model::Body { text: "Old\ndraft".into(), html: None };
     run(&mut s, "compose.close", json!({}));
     run(&mut s, "mail.editDraft", json!({"id": d}));
     assert_eq!(compose(&s).body.plain(), "Old\ndraft");
@@ -341,9 +341,9 @@ fn list_items_indent_and_the_selection_is_copied_as_html_and_text() {
 
 /// The text without its signature marked: a draft reopened from its HTML doesn't know which
 /// paragraphs were the signature (R4.5.2).
-pub(crate) fn unmarked(t: &mailcraft_model::RichText) -> mailcraft_model::RichText {
-    mailcraft_model::RichText::from_paragraphs(
-        t.paragraphs().iter().map(|p| mailcraft_model::rich::Paragraph { signature: false, ..p.clone() }).collect(),
+pub(crate) fn unmarked(t: &mailsolutions_model::RichText) -> mailsolutions_model::RichText {
+    mailsolutions_model::RichText::from_paragraphs(
+        t.paragraphs().iter().map(|p| mailsolutions_model::rich::Paragraph { signature: false, ..p.clone() }).collect(),
     )
 }
 
@@ -365,15 +365,15 @@ fn a_received_message_quoted_in_a_reply_is_still_read_by_the_reading_rule() {
     let mut s = session();
     let inbox = s.mailbox.inbox().unwrap();
     let account = s.mailbox.accounts[0].id;
-    let m = mailcraft_model::Message {
+    let m = mailsolutions_model::Message {
         account,
         folder: inbox,
         message_id: "settings@news.example".into(),
-        from: mailcraft_model::Address::new("Harbor", "news@news.example"),
-        to: vec![mailcraft_model::Address::new("Avery Quinn", "avery@lumen.example")],
+        from: mailsolutions_model::Address::new("Harbor", "news@news.example"),
+        to: vec![mailsolutions_model::Address::new("Avery Quinn", "avery@lumen.example")],
         subject: "Notice".into(),
         date: 1_791_000_000,
-        body: mailcraft_model::Body {
+        body: mailsolutions_model::Body {
             text: "x".into(),
             html: Some("<p><a href=\"ms-settings:network-vpn\">Open</a> and <a href=\"https://example.org/\">web</a></p>".into()),
         },
@@ -387,7 +387,7 @@ fn a_received_message_quoted_in_a_reply_is_still_read_by_the_reading_rule() {
     run(&mut s, "mail.editDraft", json!({"id": draft}));
     let quote = compose(&s).quote.clone().unwrap();
     let links: Vec<String> =
-        mailcraft_html::parse(&quote.html).iter().flat_map(|b| b.spans.iter()).filter_map(|sp| sp.link.as_deref().map(str::to_string)).collect();
+        mailsolutions_html::parse(&quote.html).iter().flat_map(|b| b.spans.iter()).filter_map(|sp| sp.link.as_deref().map(str::to_string)).collect();
     assert_eq!(links, vec!["https://example.org/".to_string()], "{}", quote.html);
     assert!(!compose(&s).body.text().paragraphs().iter().flat_map(|p| p.runs.iter()).any(|r| r.style.link.is_some()));
 }

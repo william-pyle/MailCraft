@@ -5,7 +5,7 @@
 //! asks first, with Don't ask again, per account.
 
 use egui::{Key, PointerButton};
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use crate::people_view::testing;
@@ -281,10 +281,10 @@ fn the_account_on_this_computer_is_asked_with_no_box_as_it_has_no_account_settin
     w.run_steps(3);
     let Some(crate::dialogs::Dialog::Confirm { ask, .. }) = &w.state().dialog else { panic!("no question") };
     assert!(ask.tick.is_none());
-    // Nor for one a newer MailCraft added, which keeps its settings as that one wrote them.
+    // Nor for one a newer MailSolutions added, which keeps its settings as that one wrote them.
     let (mut w, newer, _, _) = release_checklist();
     if let Some(a) = w.state_mut().session.mailbox.accounts.iter_mut().find(|a| a.id == account) {
-        a.kind = mailcraft_model::AccountKind::Unknown;
+        a.kind = mailsolutions_model::AccountKind::Unknown;
     }
     w.run_steps(3);
     click(&mut w, "message", newer);
@@ -591,7 +591,7 @@ fn an_agents_question_goes_with_the_mailbox_it_was_asked_about() {
     click(&mut w, "message", newer);
     let ids = row_ids(&mut w, newer);
     let answer = an_agent_asks(&mut w, "mail.deletePermanently", json!({"ids": ids}));
-    let other = mailcraft_engine::sample::mailbox(w.state().session.now(), 0);
+    let other = mailsolutions_engine::sample::mailbox(w.state().session.now(), 0);
     w.state_mut().session.replace_mailbox(other);
     crate::agent_gate::answer(w.state_mut(), true);
     assert_eq!(answer.try_recv().unwrap()["ok"], false);
@@ -663,10 +663,10 @@ fn the_question_doesnt_say_other_folders_stay_when_one_picked_there_goes() {
 fn delete_for_good_of_more_messages_than_a_command_names_still_goes_ahead() {
     // Deleted Items with more messages than a command's `ids` may name: the yes takes the
     // selection, as before (#503).
-    let mut mb = mailcraft_engine::sample::mailbox(1_791_993_600, 0);
+    let mut mb = mailsolutions_engine::sample::mailbox(1_791_993_600, 0);
     let deleted = mb.folder_of_kind(mb.accounts[0].id, FolderKind::Deleted).unwrap();
-    for i in 0..=mailcraft_engine::p::MAX_IDS as i64 {
-        let m = mailcraft_model::Message {
+    for i in 0..=mailsolutions_engine::p::MAX_IDS as i64 {
+        let m = mailsolutions_model::Message {
             folder: deleted,
             subject: format!("Old {i}"),
             date: 1_700_000_000 + i,
@@ -681,7 +681,7 @@ fn delete_for_good_of_more_messages_than_a_command_names_still_goes_ahead() {
     w.state_mut().execute("folder.select", json!({"id": deleted})).unwrap();
     w.state_mut().execute("mail.selectAll", json!({})).unwrap();
     w.run_steps(2);
-    assert!(w.state().session.sel.messages.len() > mailcraft_engine::p::MAX_IDS);
+    assert!(w.state().session.sel.messages.len() > mailsolutions_engine::p::MAX_IDS);
     assert_eq!(w.state_mut().run("mail.delete", json!({})).unwrap()["pending"], "confirm");
     w.run_steps(2);
     click(&mut w, "questionAction", 0);
@@ -695,10 +695,10 @@ fn left_far_down_a_long_conversation_scrolls_the_list_to_its_row() {
     w.state_mut().execute("folder.select", json!({"kind": "inbox"})).unwrap();
     let inbox = w.state().session.view.folder;
     let now = testing::now();
-    let ada = mailcraft_model::Address::new("Ada", "ada@example.org");
+    let ada = mailsolutions_model::Address::new("Ada", "ada@example.org");
     for i in 0..40i64 {
         let at = now - 60 - i * 60;
-        let m = mailcraft_model::Message {
+        let m = mailsolutions_model::Message {
             folder: inbox,
             subject: "Big thread".into(),
             from: ada.clone(),
@@ -711,7 +711,7 @@ fn left_far_down_a_long_conversation_scrolls_the_list_to_its_row() {
     }
     for i in 0..30i64 {
         let at = now - 400 * 86_400 - i * 60;
-        let m = mailcraft_model::Message {
+        let m = mailsolutions_model::Message {
             folder: inbox,
             subject: format!("Old note {i}"),
             from: ada.clone(),
@@ -749,7 +749,7 @@ fn what_the_list_keeps_of_the_rows_drawn_selected_follows_every_change_of_the_se
         let rows = w.state_mut().session.rows();
         let now = w.state().session.drawn(&rows);
         let kept = w.state().drawn.as_ref().map(|d| d.3.clone()).unwrap();
-        let drawn = |d: &mailcraft_engine::Drawn| rows.iter().map(|r| d.shows(r)).collect::<Vec<_>>();
+        let drawn = |d: &mailsolutions_engine::Drawn| rows.iter().map(|r| d.shows(r)).collect::<Vec<_>>();
         assert_eq!(drawn(&kept), drawn(&now), "{step}");
     };
     w.state_mut().execute("mail.select", json!({"id": newer})).unwrap();

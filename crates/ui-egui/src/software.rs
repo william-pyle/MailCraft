@@ -4,7 +4,7 @@
 //! host says so: the adapter eframe got is a processor), every frame costs processor time, so
 //! this module (a) says so once in a line above the status bar and (b) holds the window's own
 //! animation and progress repaints to a few a second. Input still repaints at once: only the
-//! repaints MailCraft asks for itself go through [`repaint_after`].
+//! repaints MailSolutions asks for itself go through [`repaint_after`].
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -14,7 +14,7 @@ use serde_json::{Value, json};
 
 use crate::MailApp;
 
-/// The shortest wait between two repaints MailCraft asks for itself while drawing in software
+/// The shortest wait between two repaints MailSolutions asks for itself while drawing in software
 /// (about four a second).
 pub const SOFTWARE_MIN_WAIT: Duration = Duration::from_millis(250);
 
@@ -79,7 +79,7 @@ pub(crate) fn bar(app: &mut MailApp, ui: &mut Ui) {
         return;
     }
     let said = tl!(
-        "MailCraft is drawing without the graphics card, which uses a lot of processor time. Installing or updating the graphics driver usually fixes this."
+        "MailSolutions is drawing without the graphics card, which uses a lot of processor time. Installing or updating the graphics driver usually fixes this."
     );
     crate::updates::bar(app, ui, "software_drawing", said, &[("softwareNoticeOk", tl!("OK"), false)], |app, _| {
         let _ = app.run("ui.dismissSoftwareNotice", json!({}));

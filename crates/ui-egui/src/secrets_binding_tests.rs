@@ -9,9 +9,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{SyncRequest, SyncResult};
-use mailcraft_model::{Account, AccountKind, EwsServer, Mailbox, OAuth, OAuthProvider, Server};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{SyncRequest, SyncResult};
+use mailsolutions_model::{Account, AccountKind, EwsServer, Mailbox, OAuth, OAuthProvider, Server};
 use serde_json::json;
 
 use super::*;
@@ -29,7 +29,7 @@ impl SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.0.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().insert(key.into(), secret.into());
         Ok(())
     }
@@ -73,7 +73,7 @@ fn exchange(id: u64, email: &str, trusted: &str) -> Account {
 }
 
 fn app(store: &Store, seen: &Seen) -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.ui.remember_sign_in = true;
     let s2 = seen.clone();
@@ -90,9 +90,9 @@ fn app(store: &Store, seen: &Seen) -> MailApp {
 
 /// The sample mailbox with `accounts` added, as it comes back from a file.
 fn from_file(accounts: Vec<Account>) -> Mailbox {
-    let mut mb = mailcraft_engine::sample::mailbox(NOW, 0);
+    let mut mb = mailsolutions_engine::sample::mailbox(NOW, 0);
     mb.accounts.extend(accounts);
-    mailcraft_engine::io::read_mailbox(&mailcraft_engine::io::write_mailbox(&mb).unwrap()).unwrap()
+    mailsolutions_engine::io::read_mailbox(&mailsolutions_engine::io::write_mailbox(&mb).unwrap()).unwrap()
 }
 
 fn open(a: &mut MailApp, mailbox: Mailbox) {
@@ -146,7 +146,7 @@ fn a_mailbox_where_two_accounts_share_an_address_reads_nothing_until_its_servers
     let owner = imap(7001, OWNER, "mail.example");
     store.set(&MailApp::secret_key("password", &owner), SECRET).unwrap();
     // The window starts with it (no file to confirm: its own mailbox).
-    let mut mb = mailcraft_engine::sample::mailbox(NOW, 0);
+    let mut mb = mailsolutions_engine::sample::mailbox(NOW, 0);
     mb.accounts.extend([owner.clone(), imap(7002, OWNER, "attacker.example")]);
     let mut a = MailApp::new(Session::at(mb, NOW, 0), Services::default());
     a.autosave = false;
@@ -163,7 +163,7 @@ fn a_mailbox_where_two_accounts_share_an_address_reads_nothing_until_its_servers
     assert_eq!(a.remembered("password", 7001).as_deref(), Some(SECRET));
     assert_eq!(a.remembered("password", 7002), None);
     // A mailbox whose addresses are each its own is not held back for it.
-    let mut b = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut b = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     b.drop_secrets_if_replaced();
     assert!(!b.is_unconfirmed());
 }
@@ -244,8 +244,8 @@ fn an_agents_change_of_the_trusted_certificate_names_it_in_the_question() {
         (json!({"email": "kit@mail.example", "kind": "exchange", "ews": {"url": URL, "trusted": "ef".repeat(32)}}), "trusting the certificate EF:EF"),
     ] {
         let command = if params.get("id").is_some() { "account.edit" } else { "account.add" };
-        match mailcraft_engine::agent::check(&s, command, &params, &[]) {
-            mailcraft_engine::agent::Verdict::Ask(_, text) => assert!(text.contains(said), "{command}: {text}"),
+        match mailsolutions_engine::agent::check(&s, command, &params, &[]) {
+            mailsolutions_engine::agent::Verdict::Ask(_, text) => assert!(text.contains(said), "{command}: {text}"),
             other => panic!("{command}: {other:?}"),
         }
     }
@@ -301,7 +301,7 @@ fn removing_a_pinned_account_forgets_its_password_under_every_name_it_had() {
 fn the_old_name_moves_to_neither_of_two_accounts_with_one_address() {
     let store = Store::default();
     store.set(&MailApp::legacy_secret_key("password", OWNER), SECRET).unwrap();
-    let mut mb = mailcraft_engine::sample::mailbox(NOW, 0);
+    let mut mb = mailsolutions_engine::sample::mailbox(NOW, 0);
     mb.accounts.extend([imap(7001, OWNER, "mail.example"), imap(7002, OWNER, "attacker.example")]);
     let mut a = MailApp::new(Session::at(mb, NOW, 0), Services::default());
     a.autosave = false;
@@ -326,7 +326,7 @@ fn a_shared_mailbox_is_not_an_account_with_the_same_address() {
     let mut owner = imap(7001, OWNER, "mail.example");
     owner.kind = AccountKind::Microsoft;
     let shared = Account { id: 7002, shared_of: Some(7001), ..owner.clone() };
-    let mut mb = mailcraft_engine::sample::mailbox(NOW, 0);
+    let mut mb = mailsolutions_engine::sample::mailbox(NOW, 0);
     mb.accounts.extend([owner, shared]);
     let a = MailApp::new(Session::at(mb, NOW, 0), Services::default());
     assert!(!a.has_shared_address());

@@ -1,9 +1,9 @@
 [package]
-name = "mailcraft-openpgp"
+name = "mailsolutions-openpgp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "MailCraft OpenPGP checking: PGP/MIME and inline Digital signatures, attached Public keys and Autocrypt headers; no I/O of its own"
+description = "MailSolutions OpenPGP checking: PGP/MIME and inline Digital signatures, attached Public keys and Autocrypt headers; no I/O of its own"
 
 [lints]
 workspace = true
@@ -11,7 +11,7 @@ workspace = true
 [dependencies]
 pgp = { workspace = true }
 thiserror = { workspace = true }
-mailcraft-names = { workspace = true }
+mailsolutions-names = { workspace = true }
 # rPGP's generation of RustCrypto (the workspace's `sha2` is 0.11, for S/MIME).
 sha2 = { version = "0.10", default-features = false }
 sha3 = { workspace = true }

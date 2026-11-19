@@ -6,11 +6,11 @@
 //! requests with answers made by hand; a JMAP account's server, which isn't told of moves yet,
 //! refuses it. (Against the stand-ins themselves: the apps' flow tests.)
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     EwsFolderDeltas, EwsMailResult, EwsMessagePage, FolderChange, FolderChangeDone, FolderDelta, GraphFolder, GraphMessage, MessageChange,
     MessageChangeDone, MessageOutcome, RemoteOp, ServerMessage, SyncResult,
 };
-use mailcraft_model::{Account, AccountKind, Address, FolderKind, Id, Message, ServerFolder};
+use mailsolutions_model::{Account, AccountKind, Address, FolderKind, Id, Message, ServerFolder};
 use serde_json::json;
 
 use super::account::{apply_sync, sync_request};
@@ -166,7 +166,7 @@ fn an_exchange_server_hears_of_the_folder_and_the_move_and_a_return_is_a_move_ba
         request.messages
     );
     let there = GraphFolder { id: "FS".into(), name: "Snoozed".into(), kind: FolderKind::Custom, ..Default::default() };
-    let made = FolderChangeDone { change: request.changes[0].clone(), outcome: mailcraft_model::sync::ChangeOutcome::Done { folder: there } };
+    let made = FolderChangeDone { change: request.changes[0].clone(), outcome: mailsolutions_model::sync::ChangeOutcome::Done { folder: there } };
     let moved = MessageChangeDone {
         change: request.messages[0].clone(),
         outcome: MessageOutcome::Done { categories: None, flag: None, folder: "FS".into(), id: "A1-moved".into() },

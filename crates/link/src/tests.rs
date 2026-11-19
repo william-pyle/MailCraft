@@ -411,7 +411,7 @@ fn a_joiner_is_accepted_only_where_idna2008_allows_it() {
 #[test]
 fn every_format_character_but_the_joiners_is_refused_in_a_name() {
     let refused: Vec<char> =
-        (0..=0x10ffff).filter_map(char::from_u32).filter(|c| mailcraft_names::is_format(*c) && !mailcraft_names::is_joiner(*c)).collect();
+        (0..=0x10ffff).filter_map(char::from_u32).filter(|c| mailsolutions_names::is_format(*c) && !mailsolutions_names::is_joiner(*c)).collect();
     assert_eq!(refused.len(), 168);
     for c in refused {
         assert!(WebLink::parse(&format!("https://exam{c}ple.example/")).is_none(), "U+{:04X}", u32::from(c));

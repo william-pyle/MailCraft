@@ -8,7 +8,7 @@
 
 mod support;
 
-use mailcraft_jmap_types::{
+use mailsolutions_jmap_types::{
     ChangesRequest, ChangesResponse, Filter, FilterOperator, GetRequest, GetResponse, Operator, QueryChangesRequest, QueryChangesResponse,
     QueryRequest, QueryResponse, SetRequest, SetResponse,
 };

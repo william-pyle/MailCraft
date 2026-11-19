@@ -7,12 +7,12 @@
 //! be told. Where the host has a window, the window words and shows it; a host without one has
 //! the same decisions.
 
-use mailcraft_i18n::{Arg, Text};
-use mailcraft_model::remote::{
+use mailsolutions_i18n::{Arg, Text};
+use mailsolutions_model::remote::{
     CalendarsDownload, CategoriesDownload, ContactsDownload, EventResult, EventsDownload, EventsUpload, EventsUploaded, id_tag,
 };
-use mailcraft_model::{Account, Id};
-use mailcraft_time::Timestamp;
+use mailsolutions_model::{Account, Id};
+use mailsolutions_time::Timestamp;
 use serde_json::Value;
 
 use super::{Busy, MAX_ASKED, Pacing, Start, WIDE_AHEAD, WIDE_BEHIND};
@@ -182,7 +182,7 @@ impl Session {
     /// that should be on the calendar and hasn't come down. It only asks: nothing is sent up with
     /// it, and it never starts while another job is at work (`busy`) or while something waits to
     /// go up.
-    pub fn calendar_around(&self, account: Id, day: mailcraft_time::Date, busy: bool) -> Result<CalendarPlan, AroundRefused> {
+    pub fn calendar_around(&self, account: Id, day: mailsolutions_time::Date, busy: bool) -> Result<CalendarPlan, AroundRefused> {
         if busy || self.calendar_changes(account).is_some() {
             return Err(AroundRefused::Busy);
         }
@@ -211,7 +211,7 @@ impl Session {
 
     /// What the job asks of the server for `plan`: the calendars, each with the series the mailbox
     /// expects in the stretch.
-    pub fn calendar_asks_for(&self, plan: &CalendarPlan) -> Vec<mailcraft_model::remote::CalendarAsk> {
+    pub fn calendar_asks_for(&self, plan: &CalendarPlan) -> Vec<mailsolutions_model::remote::CalendarAsk> {
         self.calendar_asks(plan.account, plan.directory, Some(plan.window))
     }
 
@@ -330,7 +330,7 @@ impl Session {
             let said = said!(
                 "{n} changes to the calendar \"{name}\" are held here, not sent: this account may no longer change it. They are sent if it may again.",
                 n,
-                name = mailcraft_names::shown(&name, 60)
+                name = mailsolutions_names::shown(&name, 60)
             );
             out.status.push(said.clone());
             out.problems.push(said);
@@ -470,7 +470,7 @@ impl Session {
                 Err(e) => out.errors.push(said!("The calendar changes couldn't be taken in: {error}", error = e.to_string())),
             }
             // What couldn't be sent stays as it is here and is tried again: never without a word.
-            let failed = |outcome: &&mailcraft_model::remote::EventOutcome| outcome.result == EventResult::Failed;
+            let failed = |outcome: &&mailsolutions_model::remote::EventOutcome| outcome.result == EventResult::Failed;
             for (n, outcome) in uploaded.outcomes.iter().filter(failed).take(3).enumerate() {
                 let line = if outcome.error.is_empty() {
                     said!(

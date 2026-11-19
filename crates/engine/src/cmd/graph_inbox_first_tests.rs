@@ -3,8 +3,8 @@
 //! #276: the Inbox is taken in before the run's housekeeping, so what was changed here and has not
 //! gone up yet must be there, and go up, after it.
 
-use mailcraft_model::sync::{GraphMailResult, GraphMessage, MessageChange, MessagePage, ServerMessage};
-use mailcraft_model::{Folder, FolderKind, Message, ServerFolder};
+use mailsolutions_model::sync::{GraphMailResult, GraphMessage, MessageChange, MessagePage, ServerMessage};
+use mailsolutions_model::{Folder, FolderKind, Message, ServerFolder};
 use serde_json::json;
 
 use super::*;
@@ -81,7 +81,7 @@ fn what_was_changed_here_and_not_sent_yet_wins_over_the_inbox_delta_that_comes_f
 
     // The Inbox pass comes first: the server has M-1 flagged and M-2 read, and M-3 gone from the Inbox.
     let mut flagged = there("M-1", false);
-    flagged.server.flag = mailcraft_model::FlagStatus::Flagged;
+    flagged.server.flag = mailsolutions_model::FlagStatus::Flagged;
     let page = MessagePage {
         folder: "F-in".into(),
         messages: vec![flagged, there("M-2", true)],
@@ -94,7 +94,7 @@ fn what_was_changed_here_and_not_sent_yet_wins_over_the_inbox_delta_that_comes_f
 
     // Here wins for what was changed here, the server for the rest.
     let m1 = s.mailbox.message(read_here).unwrap();
-    assert!(m1.read && m1.flag == mailcraft_model::FlagStatus::Flagged, "read here stays, flagged there comes");
+    assert!(m1.read && m1.flag == mailsolutions_model::FlagStatus::Flagged, "read here stays, flagged there comes");
     let m2 = s.mailbox.message(moved_here).unwrap();
     assert!(m2.read && m2.folder == archive, "moved here stays moved, read there comes");
     let m3 = s.mailbox.message(deleted_there).unwrap();

@@ -18,7 +18,7 @@ fn a_narrow_pane_draws_the_sender_the_tag_and_the_date_apart() {
     let email = "newsletter.monthly.updates@harborbooks-and-stationery.example";
     for width in [960.0, 1060.0, 1280.0] {
         let mut m = super::tests::web_message(0, email, "Long", &[]);
-        m.from = mailcraft_model::Address::new("Harbor Books and Stationery Supplies", email);
+        m.from = mailsolutions_model::Address::new("Harbor Books and Stationery Supplies", email);
         let (app, ids) = super::tests::app_with(vec![m]);
         let mut harness = super::tests::window(app, (width, 800.0));
         super::tests::select(&mut harness, ids[0]);
@@ -43,7 +43,7 @@ fn a_compact_pane_gives_the_address_its_own_line() {
 
     let email = "maya.okafor@long-name.example";
     let mut message = super::tests::web_message(0, email, "Sender details", &[]);
-    message.from = mailcraft_model::Address::new("Maya Okafor", email);
+    message.from = mailsolutions_model::Address::new("Maya Okafor", email);
     let (app, ids) = super::tests::app_with(vec![message]);
     let mut h = super::tests::window(app, (1280.0, 800.0));
     super::tests::select(&mut h, ids[0]);

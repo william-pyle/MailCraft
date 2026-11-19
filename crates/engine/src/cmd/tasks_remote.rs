@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The to-dos of a Microsoft account, kept in step with Microsoft To Do (#248).
 //!
-//! The engine does no I/O: a host with sockets (`mailcraft_net::graph::tasks`) brings a
+//! The engine does no I/O: a host with sockets (`mailsolutions_net::graph::tasks`) brings a
 //! [`TasksDownload`] (`sync.applyTasks`, [`merge_tasks`]), asks what is to be told to the server
 //! (`sync.taskChanges`, [`task_upload`]) and says what the server made of it
 //! (`sync.applyTaskChanges`, [`apply_task_outcomes`]).
@@ -15,7 +15,7 @@
 //! here stays as it is here (and goes up), every other field is the server's. A to-do the server
 //! no longer has goes from here too, unless it was changed here since: then it is made again (a
 //! change made here is never lost to a deletion elsewhere). A to-do deleted here is remembered
-//! ([`mailcraft_model::TaskGone`]) until the server has been told, and is not brought back by a
+//! ([`mailsolutions_model::TaskGone`]) until the server has been told, and is not brought back by a
 //! download that still shows it. A new to-do goes up to the default list of the account it was put
 //! in; those that exist only here go when the owner says so (`tasks.sendLocal`), and never by
 //! themselves.
@@ -25,11 +25,11 @@
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use mailcraft_model::remote_tasks::{
+use mailsolutions_model::remote_tasks::{
     MAX_TASK_CREATES, MAX_TASK_LISTS, MAX_TASK_OPS, MAX_TASKS, RemoteTask, RemoteTaskList, TaskOp, TaskOpKind, TaskResult, TasksDownload,
     TasksUpload, TasksUploaded,
 };
-use mailcraft_model::{Id, LocalTasks, Mailbox, Origin, Task, TaskFields};
+use mailsolutions_model::{Id, LocalTasks, Mailbox, Origin, Task, TaskFields};
 use serde_json::{Value, json};
 
 use super::remote::{Merged, owner};
@@ -295,9 +295,9 @@ pub fn apply_task_outcomes(mailbox: &mut Mailbox, uploaded: &TasksUploaded) -> R
                         task.synced = Some(sent);
                     }
                     merged.added += 1;
-                } else if mailbox.task_gone.len() < mailcraft_model::MAX_TASK_GONE {
+                } else if mailbox.task_gone.len() < mailsolutions_model::MAX_TASK_GONE {
                     // Deleted here while it was being made: the server is told to delete it.
-                    mailbox.task_gone.push(mailcraft_model::TaskGone { account, id: outcome.id.clone(), list: outcome.list.clone() });
+                    mailbox.task_gone.push(mailsolutions_model::TaskGone { account, id: outcome.id.clone(), list: outcome.list.clone() });
                 }
             }
             (TaskOpKind::Update, TaskResult::Done) => {

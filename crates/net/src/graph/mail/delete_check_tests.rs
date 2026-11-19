@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use mailcraft_model::sync::Shown;
+use mailsolutions_model::sync::Shown;
 
 use super::*;
 use crate::graph::standin::{StandIn, TOKEN};

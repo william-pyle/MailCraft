@@ -3,12 +3,12 @@
 //! A folder the server keeps although no well-known name tells it apart (RSS Feeds, #1069): when
 //! the server refuses to move or delete it as one of its own, it is put back where the server has
 //! it, the owner is told, and it is never offered for renaming, moving or deleting again. A folder
-//! of the owner's still goes. The servers' answers are written out by hand, as `mailcraft-net`
+//! of the owner's still goes. The servers' answers are written out by hand, as `mailsolutions-net`
 //! gives them.
 
 use serde_json::json;
 
-use mailcraft_model::sync::FolderChangeDone;
+use mailsolutions_model::sync::FolderChangeDone;
 
 use super::*;
 

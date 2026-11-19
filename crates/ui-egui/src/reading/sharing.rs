@@ -14,8 +14,8 @@
 use std::sync::Arc;
 
 use egui::Ui;
-use mailcraft_model::Message;
-use mailcraft_model::remote::{opened_address, opened_id};
+use mailsolutions_model::Message;
+use mailsolutions_model::remote::{opened_address, opened_id};
 
 use crate::MailApp;
 use crate::theme::{Tokens, regular};
@@ -24,7 +24,7 @@ use crate::theme::{Tokens, regular};
 const CALENDAR_FOLDER: &str = "IPF.Appointment";
 
 /// Whether the message is a sharing invitation for a calendar, by its headers (those it keeps on
-/// itself: `mailcraft_model::headers::WORKING`).
+/// itself: `mailsolutions_model::headers::WORKING`).
 pub(crate) fn is_calendar_share(m: &Message) -> bool {
     let calendar = |value: Option<&str>| {
         value.map(str::trim).is_some_and(|value| value.len() <= 64 && value.to_ascii_lowercase().starts_with(&CALENDAR_FOLDER.to_ascii_lowercase()))
@@ -35,7 +35,7 @@ pub(crate) fn is_calendar_share(m: &Message) -> bool {
 
 /// The address of whoever shared, when it is one a mailbox can be opened at.
 pub(crate) fn sharer(m: &Message) -> Option<String> {
-    mailcraft_model::mailbox_address(&m.from.email)
+    mailsolutions_model::mailbox_address(&m.from.email)
 }
 
 /// The account the calendar would be opened under: the message's own, or the one a shared

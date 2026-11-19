@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::{Account, AccountKind, Server};
+use mailsolutions_model::{Account, AccountKind, Server};
 
 use crate::{SecretError, legacy_secret_key, microsoft_secret_key, secret_key};
 

@@ -28,9 +28,9 @@
 //! sign-in left waiting in the browser. Once the new mailbox is kept, the rest of it waits for
 //! the runs in line: its own run is called off in turn and goes on after them (#274).
 
-use mailcraft_engine::sync_driver::Pressed;
-use mailcraft_model::sync::SharedRefusal;
-use mailcraft_model::{Account, AccountKind, Directory, FolderKind, Id};
+use mailsolutions_engine::sync_driver::Pressed;
+use mailsolutions_model::sync::SharedRefusal;
+use mailsolutions_model::{Account, AccountKind, Directory, FolderKind, Id};
 use serde_json::{Value, json};
 
 use crate::dialogs::Dialog;
@@ -93,7 +93,7 @@ impl MailApp {
             self.begin_sign_in(owner.id, oauth, &address, String::new(), false, true)?;
             return Ok(json!({"pending": "signIn", "account": owner.id}));
         }
-        let mut mail = mailcraft_engine::cmd::graph_mail::graph_mail_request(&self.session, account).map_err(|e| e.to_string())?;
+        let mut mail = mailsolutions_engine::cmd::graph_mail::graph_mail_request(&self.session, account).map_err(|e| e.to_string())?;
         // Its Outbox waits for the owner's permission (#70): a run nobody asked for leaves it
         // there, and asks Microsoft nothing about it.
         if quiet && self.session.shared_send_waits(account) {
@@ -163,14 +163,14 @@ impl MailApp {
                     kept.refresh = tokens.refresh.clone();
                 }
             }
-            let now = mailcraft_time::now();
+            let now = mailsolutions_time::now();
             self.graph_tokens.insert(account, Tokens { expires_at: tokens.expires_at.clamp(now, now.saturating_add(86_400)), ..tokens });
         }
         if let Some(mail) = result.mail.take() {
             if let Some(why) = mail.refused {
                 self.shared_refused.insert(account, why);
             }
-            match mailcraft_engine::cmd::graph_mail::apply_graph_mail(&mut self.session, mail) {
+            match mailsolutions_engine::cmd::graph_mail::apply_graph_mail(&mut self.session, mail) {
                 Ok(taken) => {
                     let said = taken["errors"].as_array().map(|all| all.iter().filter_map(Value::as_str).map(str::to_string).collect::<Vec<_>>());
                     errors.extend(said.unwrap_or_default());
@@ -274,7 +274,7 @@ impl MailApp {
         // (A sign-in that couldn't start doesn't leave the question for another one.)
         self.shared_next = None;
         begun?;
-        self.session.sync_status = tl!("Allow MailCraft to read shared mailboxes on the page that opened in your browser…").to_string();
+        self.session.sync_status = tl!("Allow MailSolutions to read shared mailboxes on the page that opened in your browser…").to_string();
         Ok(())
     }
 
@@ -311,7 +311,7 @@ impl MailApp {
     }
 
     /// The first send from the shared mailbox `shared` (#70): ask the owner whether Microsoft's
-    /// page may ask him to let MailCraft send from shared mailboxes. Whether it was asked.
+    /// page may ask him to let MailSolutions send from shared mailboxes. Whether it was asked.
     pub(crate) fn ask_shared_send(&mut self, shared: Id) -> bool {
         self.ask_shared_send_for(shared, false)
     }
@@ -323,14 +323,14 @@ impl MailApp {
         let text = if meeting {
             crate::i18n::fmt(
                 tl!(
-                    "To answer or send meetings from {address}, MailCraft needs your permission to send from shared mailboxes. Microsoft's page opens in your browser to ask you, once.\n\nWhether the answer goes as {address} or on its behalf is your organisation's choice. Until you allow it, the answer waits on this computer, and nothing is sent from your own address."
+                    "To answer or send meetings from {address}, MailSolutions needs your permission to send from shared mailboxes. Microsoft's page opens in your browser to ask you, once.\n\nWhether the answer goes as {address} or on its behalf is your organisation's choice. Until you allow it, the answer waits on this computer, and nothing is sent from your own address."
                 ),
                 &[("address", &address)],
             )
         } else {
             crate::i18n::fmt(
                 tl!(
-                    "To send from {address}, MailCraft needs your permission to send from shared mailboxes. Microsoft's page opens in your browser to ask you, once.\n\nWhether your mail goes as {address} or on its behalf is your organisation's choice. Until you allow it, the mail waits in its Outbox, and nothing is sent from your own address."
+                    "To send from {address}, MailSolutions needs your permission to send from shared mailboxes. Microsoft's page opens in your browser to ask you, once.\n\nWhether your mail goes as {address} or on its behalf is your organisation's choice. Until you allow it, the mail waits in its Outbox, and nothing is sent from your own address."
                 ),
                 &[("address", &address)],
             )
@@ -361,7 +361,7 @@ impl MailApp {
         let begun = self.begin_sign_in(owner.id, oauth, &owner.email, String::new(), false, true);
         (self.shared_next, self.shared_send_next) = (None, false);
         begun?;
-        self.session.sync_status = tl!("Allow MailCraft to send from shared mailboxes on the page that opened in your browser…").to_string();
+        self.session.sync_status = tl!("Allow MailSolutions to send from shared mailboxes on the page that opened in your browser…").to_string();
         Ok(json!({"pending": "signIn", "account": owner.id}))
     }
 

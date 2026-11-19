@@ -66,8 +66,8 @@ fn a_long_hidden_text_leaves_the_record_comes_back_and_goes_with_a_thinned_messa
     let s = session_without_bodies(&path);
     assert!(s.mailbox.message(id).unwrap().hidden_text.is_empty());
     let loaded = s.loaded_message_where(id, |_| false).unwrap();
-    assert!(mailcraft_model::search::Query::parse(NEEDLE).matches(&loaded, 0));
-    assert!(mailcraft_model::Condition::BodyContains(NEEDLE.into()).matches(&loaded));
+    assert!(mailsolutions_model::search::Query::parse(NEEDLE).matches(&loaded, 0));
+    assert!(mailsolutions_model::Condition::BodyContains(NEEDLE.into()).matches(&loaded));
 
     // Thinned: it goes with the body, and the content file is no longer named by the message.
     let mut thin = Message::clone(whole(&path).message(id).unwrap());
@@ -174,7 +174,7 @@ fn the_hidden_file_an_older_builds_sweep_took_is_no_hidden_text() {
 /// A hostile file that names a hidden text larger than the cap gets none of it read.
 #[test]
 fn a_hidden_file_named_past_the_cap_is_not_read() {
-    let big = "w ".repeat(mailcraft_model::MAX_HIDDEN_TEXT);
+    let big = "w ".repeat(mailsolutions_model::MAX_HIDDEN_TEXT);
     let (mb, id) = with_hidden(&big);
     let tmp = Temp::new("hidden-big");
     let path = tmp.file();
@@ -280,13 +280,13 @@ fn a_file_that_is_no_picture_is_listed_while_the_body_is_kept_outside() {
          --B\r\nContent-Type: text/html; charset=utf-8\r\n\r\n{html}\r\n\
          --B\r\nContent-Type: application/zip; name=tool.zip\r\nContent-Disposition: attachment; filename=tool.zip\r\nContent-ID: <t9@a.example>\r\nContent-Transfer-Encoding: base64\r\n\r\nUEsDBHYyNw==\r\n--B--\r\n"
     );
-    let parsed = mailcraft_mime_model::parse(eml.as_bytes());
+    let parsed = mailsolutions_mime_model::parse(eml.as_bytes());
     let mut mb = mailbox(24);
     let id = first_with(&mb, |m| m.body.text.len() > INLINE_MAX);
     let mut m = Message::clone(mb.message(id).unwrap());
     (m.body.html, m.attachments) = (parsed.body.html.clone(), parsed.attachments.clone());
     assert!(m.attachments[0].inline, "a part with a Content-ID in multipart/related");
-    let query = mailcraft_model::search::Query::parse("has:attachment");
+    let query = mailsolutions_model::search::Query::parse("has:attachment");
     assert!(m.has_attachments() && query.matches(&m, 0));
     mb.messages.insert(id, Arc::new(m));
     let tmp = Temp::new("kept-cid");

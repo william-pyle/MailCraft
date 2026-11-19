@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::remote::{EventOp, EventsUpload};
+use mailsolutions_model::remote::{EventOp, EventsUpload};
 
 use super::calendar::*;
 use super::{CALENDAR_DIRECTORY_MS, CALENDAR_SETTINGS_MS, Pacing};
@@ -116,12 +116,12 @@ fn the_waiting_changes_are_looked_over_once_for_each_state_of_the_mailbox() {
 
 #[test]
 fn the_calendar_window_is_at_least_a_day_and_the_asks_of_an_empty_mailbox_are_none() {
-    let s = crate::Session::new(mailcraft_model::Mailbox::with_local_account("", ""));
+    let s = crate::Session::new(mailsolutions_model::Mailbox::with_local_account("", ""));
     let (from, to) = s.calendar_window();
-    assert!(to - from >= mailcraft_time::DAY);
-    let day = mailcraft_time::Date::new(2026, 10, 21).unwrap();
+    assert!(to - from >= mailsolutions_time::DAY);
+    let day = mailsolutions_time::Date::new(2026, 10, 21).unwrap();
     let (from, to) = s.days_as_instants(day, day);
-    assert_eq!(to - from, mailcraft_time::DAY);
+    assert_eq!(to - from, mailsolutions_time::DAY);
     assert!(s.calendar_asks(999, true, None).is_empty());
     assert!(s.calendar_changes(999).is_none());
     assert!(s.microsoft_calendar_accounts().is_empty());

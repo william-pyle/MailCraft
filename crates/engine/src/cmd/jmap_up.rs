@@ -14,7 +14,7 @@
 //!   server last said here and another there).
 //! - **A move** goes when the message lies in another of the server's mailboxes than the server
 //!   last said. Delete is a move into the server's Deleted Items, as for a Microsoft account. A
-//!   folder the server hasn't got takes none of its mail ([`mailcraft_model::Mailbox::stays_out_of`]).
+//!   folder the server hasn't got takes none of its mail ([`mailsolutions_model::Mailbox::stays_out_of`]).
 //! - **A deletion for good** goes as one there.
 //!
 //! A run takes [`MAX_JMAP_CHANGES`] at the most; the rest is worked out again for the next.
@@ -29,8 +29,8 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use mailcraft_model::sync::{JmapChange, JmapChangeDone, JmapMailResult, JmapOutcome, MAX_SENDS, SendOutcome, ServerMessage};
-use mailcraft_model::{FlagStatus, FolderKind, Id, Mailbox, Message, Queued};
+use mailsolutions_model::sync::{JmapChange, JmapChangeDone, JmapMailResult, JmapOutcome, MAX_SENDS, SendOutcome, ServerMessage};
+use mailsolutions_model::{FlagStatus, FolderKind, Id, Mailbox, Message, Queued};
 
 use super::graph_up::{self, Kind, Refusals, Why};
 use super::jmap_down::{MAX_LINE, is_id, line};

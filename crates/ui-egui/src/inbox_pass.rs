@@ -35,8 +35,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, TryRecvError};
 
-use mailcraft_engine::sync_driver::Start;
-use mailcraft_model::{AccountKind, Id};
+use mailsolutions_engine::sync_driver::Start;
+use mailsolutions_model::{AccountKind, Id};
 use serde_json::{Value, json};
 
 use crate::{GraphRequest, GraphResult, MailApp, Tokens};
@@ -114,12 +114,12 @@ impl MailApp {
                 return None;
             }
             self.inbox_check.last = now;
-            let graph = |a: &&mailcraft_model::Account| a.kind == AccountKind::Microsoft;
+            let graph = |a: &&mailsolutions_model::Account| a.kind == AccountKind::Microsoft;
             let accounts: Vec<Id> = self.session.mailbox.accounts.iter().filter(graph).map(|a| a.id).collect();
             self.inbox_check.queue = accounts
                 .into_iter()
                 .filter(|account| {
-                    mailcraft_engine::cmd::graph_mail::graph_inbox_request(&self.session, *account).is_some_and(|r| !r.links.is_empty())
+                    mailsolutions_engine::cmd::graph_mail::graph_inbox_request(&self.session, *account).is_some_and(|r| !r.links.is_empty())
                 })
                 .collect();
         }
@@ -160,7 +160,7 @@ impl MailApp {
         self.session.driver.round.inbox_queue = accounts
             .iter()
             .copied()
-            .filter(|account| mailcraft_engine::cmd::graph_mail::graph_inbox_request(&self.session, *account).is_some())
+            .filter(|account| mailsolutions_engine::cmd::graph_mail::graph_inbox_request(&self.session, *account).is_some())
             .map(|account| (account, quiet))
             .collect();
     }
@@ -198,11 +198,11 @@ impl MailApp {
         if refresh.is_empty() {
             return None;
         }
-        let mail = mailcraft_engine::cmd::graph_mail::graph_inbox_request(&self.session, account)?;
+        let mail = mailsolutions_engine::cmd::graph_mail::graph_inbox_request(&self.session, account)?;
         // A check every minute goes with the token it had a minute ago while that is still good,
         // as the calendar's job does: one request, not two.
         let access = if check {
-            self.graph_tokens.get(&account).filter(|t| t.fresh(mailcraft_time::now() + 60)).map(|t| t.access.clone()).unwrap_or_default()
+            self.graph_tokens.get(&account).filter(|t| t.fresh(mailsolutions_time::now() + 60)).map(|t| t.access.clone()).unwrap_or_default()
         } else {
             String::new()
         };
@@ -244,7 +244,7 @@ impl MailApp {
         }
         // (No run of its own to call off for something made here: the round's runs do that.)
         self.sync_run = None;
-        self.session.sync_progress.phase(account, mailcraft_model::sync::SyncPhase::Inbox);
+        self.session.sync_progress.phase(account, mailsolutions_model::sync::SyncPhase::Inbox);
         self.graph_rx = Some((account, quiet, false, opening, job));
         self.session.sync_status = tl!("Sending and receiving…").to_string();
         Some(json!({"started": true, "account": account, "graph": true, "inbox": true}))
@@ -285,7 +285,7 @@ impl MailApp {
                     kept.refresh = tokens.refresh.clone();
                 }
             }
-            let now = mailcraft_time::now();
+            let now = mailsolutions_time::now();
             self.graph_tokens.insert(account, Tokens { expires_at: tokens.expires_at.clamp(now, now.saturating_add(86_400)), ..tokens });
         }
     }

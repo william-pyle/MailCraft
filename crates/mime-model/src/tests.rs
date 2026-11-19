@@ -4,10 +4,10 @@
 
 use std::sync::Arc;
 
-use mailcraft_model::{Address, Attachment, Body, FlagStatus, Importance, Message};
+use mailsolutions_model::{Address, Attachment, Body, FlagStatus, Importance, Message};
 use proptest::prelude::*;
 
-use mailcraft_mime::written_message_id;
+use mailsolutions_mime::written_message_id;
 
 use crate::{WriteOptions, parse, parse_mbox, write, write_mbox};
 
@@ -33,7 +33,7 @@ fn expected(m: &Message, opts: &WriteOptions) -> Message {
     let html = m.body.html.as_deref().map(lines);
     let text = lines(&m.body.text);
     let text = match &html {
-        Some(html) if text.trim().is_empty() => mailcraft_html::to_text(html),
+        Some(html) if text.trim().is_empty() => mailsolutions_html::to_text(html),
         _ => text,
     };
     let mut attachments = m.attachments.clone();
@@ -59,8 +59,8 @@ fn expected(m: &Message, opts: &WriteOptions) -> Message {
         importance: m.importance,
         categories: m.categories.clone(),
         answered: m.answered,
-        headers: mailcraft_model::headers::split(m.all_headers()).0,
-        header_block: mailcraft_model::headers::split(m.all_headers()).1,
+        headers: mailsolutions_model::headers::split(m.all_headers()).0,
+        header_block: mailsolutions_model::headers::split(m.all_headers()).1,
         ..Message::default()
     }
 }
@@ -398,7 +398,7 @@ fn large_and_hostile_input_is_read_quickly() {
     let _ = parse(&m);
     let mut m = b"To: ".to_vec();
     m.extend(b"a@example.org,".repeat(50_000));
-    assert_eq!(parse(&m).to.len(), mailcraft_mime::MAX_RECIPIENTS);
+    assert_eq!(parse(&m).to.len(), mailsolutions_mime::MAX_RECIPIENTS);
     let mut m = b"Cc: ".to_vec();
     m.extend(b"\"a\" <a@example.org>, (c) ".repeat(50_000));
     assert!(parse(&m).cc.len() > 1_000);
@@ -531,19 +531,19 @@ fn message() -> impl Strategy<Value = Message> {
             uid: 11,
             draft: true,
             pinned: true,
-            snooze: Some(mailcraft_model::Snooze { until: 1_900_000_000, after_id: 5, from: 7, ..Default::default() }),
+            snooze: Some(mailsolutions_model::Snooze { until: 1_900_000_000, after_id: 5, from: 7, ..Default::default() }),
             warnings_dismissed: vec!["external".into()],
             forwarded: true,
             flag_due: Some(1),
             follow_up: None,
-            synced: Some(mailcraft_model::sync::RemoteFlags { uid: 11, read: true, ..Default::default() }),
+            synced: Some(mailsolutions_model::sync::RemoteFlags { uid: 11, read: true, ..Default::default() }),
             not_downloaded: 62_914_560,
-            gmail_category: Some(mailcraft_model::GmailCategory::Social),
-            gmail_synced: Some(mailcraft_model::GmailCategory::Updates),
+            gmail_category: Some(mailsolutions_model::GmailCategory::Social),
+            gmail_synced: Some(mailsolutions_model::GmailCategory::Updates),
             gmail_refusals: 0,
             gmail_id: 42,
             gmail_labels: vec!["Not/Carried".into()],
-            server: Some(mailcraft_model::sync::ServerMessage { id: "AAMkAGI2-not-carried".into(), ..Default::default() }),
+            server: Some(mailsolutions_model::sync::ServerMessage { id: "AAMkAGI2-not-carried".into(), ..Default::default() }),
             unfetched: false,
             refetch: false,
             refetched: false,
@@ -707,9 +707,9 @@ fn recipients_and_categories_are_capped_across_the_message() {
     let t = std::time::Instant::now();
     let m = parse(raw.as_bytes());
     assert!(t.elapsed().as_secs() < 1, "{:?}", t.elapsed());
-    assert_eq!(m.to.len() + m.cc.len() + m.bcc.len(), mailcraft_mime::MAX_RECIPIENTS);
-    assert_eq!(m.categories.len(), mailcraft_mime::MAX_CATEGORIES);
-    assert_eq!(m.reply_to.len(), mailcraft_mime::MAX_RECIPIENTS);
+    assert_eq!(m.to.len() + m.cc.len() + m.bcc.len(), mailsolutions_mime::MAX_RECIPIENTS);
+    assert_eq!(m.categories.len(), mailsolutions_mime::MAX_CATEGORIES);
+    assert_eq!(m.reply_to.len(), mailsolutions_mime::MAX_RECIPIENTS);
 }
 
 #[test]
@@ -731,9 +731,9 @@ proptest! {
         }
         raw.push_str("\r\nbody");
         let m = parse(raw.as_bytes());
-        prop_assert!(m.to.len() + m.cc.len() + m.bcc.len() <= mailcraft_mime::MAX_RECIPIENTS);
-        prop_assert!(m.reply_to.len() <= mailcraft_mime::MAX_RECIPIENTS);
-        prop_assert!(m.categories.len() <= mailcraft_mime::MAX_CATEGORIES);
+        prop_assert!(m.to.len() + m.cc.len() + m.bcc.len() <= mailsolutions_mime::MAX_RECIPIENTS);
+        prop_assert!(m.reply_to.len() <= mailsolutions_mime::MAX_RECIPIENTS);
+        prop_assert!(m.categories.len() <= mailsolutions_mime::MAX_CATEGORIES);
     }
 }
 
@@ -751,7 +751,7 @@ fn the_message_id_said_to_be_written_is_the_one_written() {
 /// out of what is kept, and a flood of stamps is itself capped.
 #[test]
 fn exchange_stamps_are_kept_past_the_header_cap() {
-    use mailcraft_model::auth_results::{AUTH_AS, MAX_AUTH_AS};
+    use mailsolutions_model::auth_results::{AUTH_AS, MAX_AUTH_AS};
     let stamps = |m: &Message| m.headers.iter().filter(|(n, _)| n.eq_ignore_ascii_case(AUTH_AS)).map(|(_, v)| v.clone()).collect::<Vec<_>>();
     let padded = format!(
         "{}{AUTH_AS}: Internal\r\n{}x-ms-exchange-organization-authas: Anonymous\r\n\r\n",
@@ -780,7 +780,7 @@ fn exchange_stamps_are_kept_past_the_header_cap() {
 /// kept headers, on header fields or on header bytes; a flood of it is capped too.
 #[test]
 fn exchanges_direction_is_kept_past_the_header_cap() {
-    use mailcraft_model::auth_results::{DIRECTIONALITY, MAX_AUTH_AS};
+    use mailsolutions_model::auth_results::{DIRECTIONALITY, MAX_AUTH_AS};
     let words = |m: &Message| m.headers.iter().filter(|(n, _)| n.eq_ignore_ascii_case(DIRECTIONALITY)).map(|(_, v)| v.clone()).collect::<Vec<_>>();
     for padding in ["X-Pad: 1\r\n".repeat(200), "X-Pad: 1\r\n".repeat(2_500), format!("X-Pad: {}\r\n", "p".repeat(250_000)).repeat(20)] {
         let padded = format!("From: a@example.org\r\n{padding}{DIRECTIONALITY}: Incoming\r\n\r\n");

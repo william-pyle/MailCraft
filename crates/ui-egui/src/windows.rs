@@ -34,7 +34,7 @@
 use std::sync::Arc;
 
 use egui::{Key, Modifiers, Ui, vec2};
-use mailcraft_model::{FlagStatus, Id, Message};
+use mailsolutions_model::{FlagStatus, Id, Message};
 use serde_json::{Value, json};
 
 use crate::dialogs::Unsaved;
@@ -82,9 +82,9 @@ impl What {
 
     /// Whether closing it would lose something: its form's changes, or what is written in its
     /// message and isn't all in Drafts.
-    fn unsaved(&self, s: &mailcraft_engine::Session) -> bool {
+    fn unsaved(&self, s: &mailsolutions_engine::Session) -> bool {
         match self.compose() {
-            Some(id) => s.composing_by_id(id).is_some_and(|c| mailcraft_engine::cmd::compose::unsaved(s, c)),
+            Some(id) => s.composing_by_id(id).is_some_and(|c| mailsolutions_engine::cmd::compose::unsaved(s, c)),
             None => self.dirty(),
         }
     }
@@ -326,7 +326,7 @@ pub(crate) fn hold_quit(app: &mut MailApp) -> bool {
 /// another zone, or the owner chose one): the appointments that stand open, in windows of their
 /// own or in the dialog, read by the new clock as the calendar does, so that saving one of them
 /// moves nothing.
-pub(crate) fn rezone(app: &mut MailApp, was: mailcraft_time::Zone) {
+pub(crate) fn rezone(app: &mut MailApp, was: mailsolutions_time::Zone) {
     let (now, twelve) = (app.session.zone(), app.session.prefs.twelve_hour);
     let in_windows = app.windows.open.iter_mut().filter_map(|window| window.what.form_mut());
     let in_dialog = match &mut app.dialog {
@@ -364,7 +364,7 @@ fn open_event(app: &mut MailApp, id: Id, p: &Value) -> Result<Value, String> {
     let proposed = p.get("proposed").filter(|proposed| proposed.is_object());
     if let Some(window) = app.windows.of_event(id) {
         app.windows.raise(window);
-        let time = |key: &str| proposed.and_then(|proposed| proposed.get(key)).and_then(Value::as_str).and_then(mailcraft_time::parse_iso);
+        let time = |key: &str| proposed.and_then(|proposed| proposed.get(key)).and_then(Value::as_str).and_then(mailsolutions_time::parse_iso);
         if let (Some((start, _)), Some((end, _))) = (time("start"), time("end")) {
             let twelve = app.session.prefs.twelve_hour;
             let open = app.windows.open.iter_mut().find(|w| w.id == window);
@@ -474,15 +474,15 @@ fn move_opened(app: &mut MailApp, p: &Value) -> Result<Value, String> {
 fn save_opened(app: &mut MailApp, p: &Value) -> Result<Value, String> {
     let window = opened_file(app, p)?;
     let What::File { message, bytes } = &window.what else { return Err(tl!("No window shows a message file").to_string()) };
-    let name = mailcraft_engine::cmd::file::eml_name(message);
+    let name = mailsolutions_engine::cmd::file::eml_name(message);
     match p.get("path").and_then(Value::as_str) {
         #[cfg(not(target_arch = "wasm32"))]
         Some(path) => {
             // A sender's bytes: marked as a browser marks a download (AU3-V6).
-            mailcraft_engine::mark::write_from_mail(std::path::Path::new(path), bytes.as_slice()).map_err(|e| format!("{path}: {e}"))?;
+            mailsolutions_engine::mark::write_from_mail(std::path::Path::new(path), bytes.as_slice()).map_err(|e| format!("{path}: {e}"))?;
             Ok(json!({"path": path, "bytes": bytes.len()}))
         }
-        _ => Ok(json!({"name": name, "bytes": bytes.len(), "data": mailcraft_engine::cmd::base64_encode(bytes)})),
+        _ => Ok(json!({"name": name, "bytes": bytes.len(), "data": mailsolutions_engine::cmd::base64_encode(bytes)})),
     }
 }
 
@@ -553,7 +553,7 @@ pub(crate) fn removing_unsaved(app: &MailApp, id: &str, p: &Value) -> Option<Val
 /// `edit.undo` or `edit.redo` with `p` would take the appointment, contact or task `item` away.
 pub(crate) fn takes_away(app: &MailApp, id: &str, p: &Value, item: Id) -> bool {
     // As the command reads it (#553): `12.0` is 12, and one named wrongly (0, null, text) takes nothing away.
-    let named = |selected: Option<Id>| mailcraft_engine::p::id_strict(p, "id").ok().and_then(|n| n.or(selected));
+    let named = |selected: Option<Id>| mailsolutions_engine::p::id_strict(p, "id").ok().and_then(|n| n.or(selected));
     let sel = &app.session.sel;
     match id {
         "calendar.delete" => named(sel.event) == Some(item),
@@ -642,7 +642,7 @@ fn event_state(window: &Open) -> Value {
     // What Find a Time last drew, while its page is the one in view.
     if let Some(form) = form.filter(|f| f.page() == crate::forms::Page::Scheduling) {
         let (drawn, meeting) = (form.scheduling(), form.meeting());
-        let iso = |at: mailcraft_time::DateTime| at.iso();
+        let iso = |at: mailsolutions_time::DateTime| at.iso();
         state["scheduling"] = json!({
             "day": meeting.day.iso(),
             "start": meeting.span.map(|(start, _)| iso(start)),
@@ -823,7 +823,7 @@ pub fn inspect(app: &MailApp) -> Value {
 
 /// The egui name of the window numbered `id`, where it is shown inside the main window.
 fn area(id: u64) -> egui::Id {
-    egui::Id::unique(("mailcraft-window", id))
+    egui::Id::unique(("mailsolutions-window", id))
 }
 
 /// The layer of the window numbered `id`, where it is shown inside the main window.
@@ -883,7 +883,7 @@ fn take_key(input: &mut egui::InputState, modifiers: Modifiers, key: Key) -> boo
 
 /// The viewport of the window numbered `id`, where it is a window of the system.
 fn viewport_of(id: u64) -> egui::ViewportId {
-    egui::ViewportId::from_hash_of(("mailcraft-window", id))
+    egui::ViewportId::from_hash_of(("mailsolutions-window", id))
 }
 
 /// The viewports of the windows that are open.
@@ -1092,7 +1092,7 @@ pub struct WindowIdentity {
 }
 
 fn identity_id() -> egui::Id {
-    egui::Id::unique("mailcraft-window-identity")
+    egui::Id::unique("mailsolutions-window-identity")
 }
 
 /// Hand the context the identity the host gave, for [`like_main`].
@@ -1292,7 +1292,7 @@ fn contents(app: &mut MailApp, ui: &mut Ui, id: u64, what: &mut What, own_keys: 
         What::Message { seen, .. } => {
             let m = seen.clone();
             let mut close = false;
-            egui::Panel::top(egui::Id::unique(("mailcraft-window-actions", id)))
+            egui::Panel::top(egui::Id::unique(("mailsolutions-window-actions", id)))
                 .resizable(false)
                 .frame(egui::Frame::NONE.fill(t.ribbon).inner_margin(egui::Margin::symmetric(10, 5)))
                 .show(ui, |ui| close = actions(app, ui, &m, own_keys));
@@ -1308,7 +1308,7 @@ fn contents(app: &mut MailApp, ui: &mut Ui, id: u64, what: &mut What, own_keys: 
         What::File { message, bytes } => {
             let m = message.clone();
             let mut asked = crate::opened_message::Asked::default();
-            egui::Panel::top(egui::Id::unique(("mailcraft-window-actions", id)))
+            egui::Panel::top(egui::Id::unique(("mailsolutions-window-actions", id)))
                 .resizable(false)
                 .frame(egui::Frame::NONE.fill(t.ribbon).inner_margin(egui::Margin::symmetric(10, 5)))
                 .show(ui, |ui| asked = crate::opened_message::bar(app, ui));
@@ -1432,7 +1432,7 @@ fn actions(app: &mut MailApp, ui: &mut Ui, m: &Arc<Message>, own_keys: bool) -> 
             if let Ok(answer) = r {
                 let windowed = answer.get("compose").and_then(Value::as_u64).is_some_and(|c| app.windows.of_compose(c).is_some());
                 if !windowed && answer.get("compose").is_some() {
-                    if app.session.view.module != mailcraft_engine::Module::Mail {
+                    if app.session.view.module != mailsolutions_engine::Module::Mail {
                         let _ = app.execute("view.mail", json!({}));
                     }
                     to_main(&ctx);
@@ -1456,8 +1456,8 @@ fn hit_kind(command: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
     use egui_kittest::kittest::Queryable as _;
-    use mailcraft_engine::Session;
-    use mailcraft_model::FolderKind;
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::FolderKind;
 
     use super::*;
     use crate::Services;
@@ -1468,7 +1468,7 @@ mod tests {
     type Harness = egui_kittest::Harness<'static, MailApp>;
 
     fn app() -> MailApp {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.autosave = false;
         app.session.driver.set_auto_sync(false);
         app
@@ -1832,7 +1832,7 @@ mod tests {
         windows(harness).as_array().is_some_and(|all| all.iter().any(|w| w["asking"] == true))
     }
 
-    fn event_named(harness: &Harness, title: &str) -> Option<mailcraft_model::Event> {
+    fn event_named(harness: &Harness, title: &str) -> Option<mailsolutions_model::Event> {
         harness.state().session.mailbox.events.values().find(|e| e.title == title).map(|e| (**e).clone())
     }
 
@@ -2108,7 +2108,7 @@ mod tests {
         let now = event_named(&harness, "Dentist").unwrap();
         assert_eq!(
             (now.private, now.show_as, now.reminder_minutes, now.categories.as_slice()),
-            (!was.private, mailcraft_model::ShowAs::Tentative, Some(30), ["Blue category".to_string()].as_slice())
+            (!was.private, mailsolutions_model::ShowAs::Tentative, Some(30), ["Blue category".to_string()].as_slice())
         );
         assert_eq!((now.title.as_str(), now.start, now.end), (was.title.as_str(), was.start, was.end));
         assert!(harness.state().windows.is_empty());
@@ -2190,7 +2190,7 @@ mod tests {
         bar(&mut harness, w, "send");
         let made = event_named(&harness, "Roadmap").expect("the meeting was made");
         assert_eq!((made.attendees.len(), made.start.iso().as_str()), (1, "2026-10-16T10:00:00"));
-        assert_eq!(made.attendees[0].address, mailcraft_model::Address::new("Maya Okafor", "maya@lumen.example"));
+        assert_eq!(made.attendees[0].address, mailsolutions_model::Address::new("Maya Okafor", "maya@lumen.example"));
         assert!(harness.state().windows.is_empty() && harness.state().dialog.is_none());
         // Opened again it is a meeting: Send Update, and Cancel Meeting in place of Delete.
         let w = open(&mut harness, json!({"event": made.id}));
@@ -2573,7 +2573,7 @@ mod tests {
 
     #[test]
     fn the_recurrence_dialog_opens_from_the_bar_and_its_rule_is_saved_with_the_appointment() {
-        use mailcraft_model::{Freq, Recurrence};
+        use mailsolutions_model::{Freq, Recurrence};
         let mut harness = window(app());
         // Thursday the 15th, half past twelve; it happens once.
         let lunch = id_of(&harness, "Lunch with Dev");
@@ -2610,7 +2610,7 @@ mod tests {
         assert!(!open_dialog(&mut harness) && says(&harness, "Every week on Thursday, 10 times, from Oct 15, 2026"));
         // Save & Close: one command, with the rule in it.
         bar(&mut harness, w, "save");
-        let weekly = Recurrence { by_day: vec![mailcraft_time::Weekday::Thu], count: Some(10), ..Recurrence::every(Freq::Weekly) };
+        let weekly = Recurrence { by_day: vec![mailsolutions_time::Weekday::Thu], count: Some(10), ..Recurrence::every(Freq::Weekly) };
         assert_eq!(rule(&harness), Some(weekly));
         assert!(harness.state().windows.is_empty());
         // Remove Recurrence is there for an item that repeats.
@@ -2638,8 +2638,8 @@ mod tests {
     fn the_scheduling_assistant_shows_everybodys_day_and_moves_the_meeting() {
         use std::sync::{Arc, Mutex, mpsc};
 
-        use mailcraft_model::ShowAs;
-        use mailcraft_model::remote::{BusyTime, FreeBusy, FreeBusyAsk, PersonSchedule};
+        use mailsolutions_model::ShowAs;
+        use mailsolutions_model::remote::{BusyTime, FreeBusy, FreeBusyAsk, PersonSchedule};
 
         use crate::calendar_sync::testing::{event, microsoft_account, serve};
         let mut a = app();
@@ -2876,7 +2876,7 @@ mod tests {
         // series is as it was but for that day.
         assert!(harness.state().dialog.is_none() && harness.state().windows.is_empty());
         assert_eq!(events(&harness), count + 1);
-        let friday = mailcraft_time::Date::new(2026, 10, 16).unwrap();
+        let friday = mailsolutions_time::Date::new(2026, 10, 16).unwrap();
         let one = harness.state().session.mailbox.events.values().find(|e| e.title == "Team stand-up" && e.recurrence.is_none()).cloned().unwrap();
         assert_eq!((one.start.date, one.private, one.start.hour), (friday, !series.private, series.start.hour));
         let after = harness.state().session.mailbox.event(standup).cloned().unwrap();
@@ -2902,7 +2902,7 @@ mod tests {
         let w = harness.state().windows.of_event(standup).expect("its window opened");
         bar(&mut harness, w, "delete");
         let after = harness.state().session.mailbox.event(standup).cloned().expect("the series is still there");
-        assert!(after.exceptions.contains(&mailcraft_time::Date::new(2026, 10, 20).unwrap()) && harness.state().windows.is_empty());
+        assert!(after.exceptions.contains(&mailsolutions_time::Date::new(2026, 10, 20).unwrap()) && harness.state().windows.is_empty());
     }
 }
 

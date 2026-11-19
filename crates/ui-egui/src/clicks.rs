@@ -74,7 +74,7 @@ impl Clicks {
 /// clicks in a row it is. `None` when it did not go down. A text that selects asks in every pass
 /// it is shown, pressed or not, so that the clicks before a press are counted.
 pub(crate) fn pressed(ctx: &Context) -> Option<Unit> {
-    let id = Id::unique("mailcraft-clicks").with(ctx.viewport_id());
+    let id = Id::unique("mailsolutions-clicks").with(ctx.viewport_id());
     let pass = ctx.cumulative_pass_nr();
     let mut clicks: Clicks = ctx.data(|d| d.get_temp(id)).unwrap_or_default();
     if clicks.pass != Some(pass) {

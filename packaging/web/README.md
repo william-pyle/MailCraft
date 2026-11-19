@@ -1,13 +1,13 @@
-# Hosting MailCraft for the web
+# Hosting MailSolutions for the web
 
-`mailcraft-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
-static site in `mailcraft-web-<version>/`:
+`mailsolutions-web-<version>.zip` (from the GitHub release, or `packaging/web/package.sh`) holds a
+static site in `mailsolutions-web-<version>/`:
 
 | File | What it is |
 |---|---|
 | `index.html` | The page. It loads everything through relative URLs. |
-| `mailcraft-web-<hash>.js` | wasm-bindgen glue (generated, ES module) |
-| `mailcraft-web-<hash>_bg.wasm` | The app, about 13 MB, or 5 MB with compression |
+| `mailsolutions-web-<hash>.js` | wasm-bindgen glue (generated, ES module) |
+| `mailsolutions-web-<hash>_bg.wasm` | The app, about 13 MB, or 5 MB with compression |
 | `NotoSansGeorgian-Regular.ttf` | Georgian letters, about 35 KB; the page fetches it only when the interface language is Georgian |
 | `OFL-NotoSansGeorgian.txt` | The font's licence (SIL OFL 1.1), kept beside it |
 | `_headers`, `.htaccess` | Sample header rules for Netlify/Cloudflare Pages and Apache |
@@ -16,9 +16,9 @@ There is no server-side code. Upload the folder's contents anywhere that serves 
 
 ## Any path works
 
-All URLs in `index.html` are relative (`public_url = "./"` in `apps/mailcraft-web/Trunk.toml`),
+All URLs in `index.html` are relative (`public_url = "./"` in `apps/mailsolutions-web/Trunk.toml`),
 so the site works at a domain root (`https://example.com/`), under a prefix
-(`https://example.com/tools/mailcraft/`) and from a CDN bucket. The `.wasm`, `.js` and `.css` names carry a
+(`https://example.com/tools/mailsolutions/`) and from a CDN bucket. The `.wasm`, `.js` and `.css` names carry a
 content hash, so they can be cached forever. `index.html`, `NotoSansGeorgian-Regular.ttf` and
 `OFL-NotoSansGeorgian.txt` have no hash and need revalidation.
 
@@ -35,7 +35,7 @@ content hash, so they can be cached forever. `index.html`, `NotoSansGeorgian-Reg
 - **HTTPS:** WebGPU (and the clipboard) only work in a secure context, which means `https://`
   or `http://localhost`. Over plain HTTP elsewhere, the app falls back to WebGL2.
 - **Opener isolation:** `Cross-Origin-Opener-Policy: same-origin` (in `_headers` and `.htaccess`)
-  cuts any page this one opens off from it. MailCraft doesn't use `SharedArrayBuffer`, so it
+  cuts any page this one opens off from it. MailSolutions doesn't use `SharedArrayBuffer`, so it
   doesn't need `Cross-Origin-Embedder-Policy`. If your site already sends
   COEP `require-corp`, also send `Cross-Origin-Resource-Policy: same-origin` (or `cross-origin`
   when the files live on a CDN) on the app's files.
@@ -43,7 +43,7 @@ content hash, so they can be cached forever. `index.html`, `NotoSansGeorgian-Reg
 nginx example:
 
 ```nginx
-location /mailcraft/ {
+location /mailsolutions/ {
     types { application/wasm wasm; text/javascript js; text/html html; }
     gzip on;
     gzip_types application/wasm text/javascript text/html;
@@ -58,8 +58,8 @@ Local test: `python3 -m http.server 8765` inside the folder, then open http://lo
 
 ```html
 <iframe
-  src="https://example.com/mailcraft/"
-  title="MailCraft image editor"
+  src="https://example.com/mailsolutions/"
+  title="MailSolutions image editor"
   style="width: 100%; height: 720px; border: 0;"
   allow="fullscreen; clipboard-read; clipboard-write"
   allowfullscreen>
@@ -85,12 +85,12 @@ server has to answer the site's origin (CORS: `Authorization`, `Content-Type` an
 in the preflight of `GET` and `POST`, and `Retry-After` exposed), and an account names the address
 of its session resource itself: a page follows no redirect, so a `/.well-known/jmap` that sends the
 client on can't be used. A site that signs its users in itself can name their accounts, and hand
-over their credential, with `window.mailcraftJmap`, set in `index.html` before the app's script;
-MailCraft then never asks for it.
+over their credential, with `window.mailsolutionsJmap`, set in `index.html` before the app's script;
+MailSolutions then never asks for it.
 
 ## Renderer selection and fallback flags
 
-MailCraft renders with wgpu. It uses **WebGPU** when the browser has it and falls back to
+MailSolutions renders with wgpu. It uses **WebGPU** when the browser has it and falls back to
 **WebGL2** on its own. URL query flags override this, and they work on the iframe `src` too:
 
 | Flag | Effect |
@@ -98,6 +98,6 @@ MailCraft renders with wgpu. It uses **WebGPU** when the browser has it and fall
 | *(none)* | WebGPU if available, otherwise WebGL2 |
 | `?webgl` | Force the WebGL2 backend (useful when a WebGPU driver misbehaves) |
 
-For example: `<iframe src="https://example.com/mailcraft/?webgl" ...>`.
+For example: `<iframe src="https://example.com/mailsolutions/?webgl" ...>`.
 
 A browser with neither WebGPU nor WebGL2 gets a message in place of the app.

@@ -5,11 +5,11 @@
 //! items whose every text field holds the frame's own markers, and no string of the answer may
 //! hold a marker outside a frame.
 
-use mailcraft_engine::Session;
-use mailcraft_engine::model::{
+use mailsolutions_engine::Session;
+use mailsolutions_engine::model::{
     Address, Attachment, Attendee, Body, Contact, Event, FolderKind, Id, Labeled, Message, OnlineMeeting, PostalAddress, Proposal, Task,
 };
-use mailcraft_engine::time::{Date, DateTime, Timestamp};
+use mailsolutions_engine::time::{Date, DateTime, Timestamp};
 use serde_json::{Value, json};
 
 use crate::Headless;
@@ -50,7 +50,7 @@ struct Fixture {
 }
 
 fn fixture() -> Fixture {
-    let mut s = Session::at(mailcraft_engine::sample::mailbox(now(), 0), now(), 0);
+    let mut s = Session::at(mailsolutions_engine::sample::mailbox(now(), 0), now(), 0);
     let account = s.mailbox.accounts.first().map(|a| a.id).unwrap();
     let inbox = s.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
     let message = s
@@ -165,12 +165,12 @@ fn fixture() -> Fixture {
         list: marked("list"),
         ..Default::default()
     });
-    let note = s.mailbox.add_note(mailcraft_engine::model::Note {
+    let note = s.mailbox.add_note(mailsolutions_engine::model::Note {
         text: marked("noteText"),
         categories: vec![marked("noteCategory")],
         ..Default::default()
     });
-    let entry = s.mailbox.add_journal(mailcraft_engine::model::JournalEntry {
+    let entry = s.mailbox.add_journal(mailsolutions_engine::model::JournalEntry {
         subject: marked("journalSubject"),
         activity: marked("journalActivity"),
         text: marked("journalText"),

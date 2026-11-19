@@ -5,8 +5,8 @@
 //! each account's (#516): with more than one account, a drop-down says whose are in view.
 
 use egui::{Align2, CornerRadius, Sense, Stroke, StrokeKind, Ui, vec2};
-use mailcraft_engine::Session;
-use mailcraft_model::{Id, JunkList};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Id, JunkList};
 use serde_json::{Value, json};
 
 use super::kit::{ROW_H, body, close_button, error, field_id, shown};

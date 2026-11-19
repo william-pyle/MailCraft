@@ -17,7 +17,7 @@ use std::collections::HashSet;
 const JMAP_NOT_YET: &str = "A JMAP account's mail can't be snoozed yet.";
 use std::sync::Arc;
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use super::{Mailbox, invalid, not_found};
@@ -41,7 +41,7 @@ pub struct Snooze {
     /// The folder the message came from, which it goes back to (the Inbox when that is gone).
     pub from: Id,
     /// `Some(when)`: the message has come back, at that moment (which may be later than `until`:
-    /// MailCraft was closed at the Return time). It stays marked, and pinned at the top of a
+    /// MailSolutions was closed at the Return time). It stays marked, and pinned at the top of a
     /// date-sorted list, until the owner has opened it. `None`: it is waiting in the Snoozed
     /// folder.
     #[serde(skip_serializing_if = "Option::is_none", deserialize_with = "crate::sync::lenient")]
@@ -108,7 +108,7 @@ impl Mailbox {
     }
 
     /// The Snoozed folder `account` has, or would take for it: a top-level folder that already
-    /// has `name` (another device or MailCraft install made it).
+    /// has `name` (another device or MailSolutions install made it).
     fn snoozed_candidate(&self, account: Id, name: &str) -> Option<Id> {
         if let Some(id) = self.snoozed_folder(account) {
             return Some(id);

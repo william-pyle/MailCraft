@@ -7,7 +7,7 @@
 use std::future::Future;
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::sync::{ChangeOutcome, EwsMailRequest, EwsMailResult, FolderChange, Shown};
+use mailsolutions_model::sync::{ChangeOutcome, EwsMailRequest, EwsMailResult, FolderChange, Shown};
 
 use crate::standin::{AUTHORIZATION, StandIn, block_on};
 use crate::*;

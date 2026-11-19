@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Whether and how a Send/Receive run of an account kept in step through Microsoft Graph starts,
 //! with no I/O: the owner is asked to sign in, or the run goes ahead with the request the mailbox
-//! makes. The host adds the token and runs it ((`mailcraft_host::sync`)); a shared mailbox's run
+//! makes. The host adds the token and runs it ((`mailsolutions_host::sync`)); a shared mailbox's run
 //! is the window's for now.
 
-use mailcraft_model::sync::GraphMailRequest;
-use mailcraft_model::{Account, Id, OAuth};
+use mailsolutions_model::sync::GraphMailRequest;
+use mailsolutions_model::{Account, Id, OAuth};
 
 use crate::Session;
 use crate::cmd::graph_mail::graph_mail_request;

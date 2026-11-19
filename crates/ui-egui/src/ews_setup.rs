@@ -17,7 +17,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Receiver;
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 
 use crate::MailApp;
 
@@ -122,7 +122,7 @@ pub enum EwsSetupFailure {
     ServerRefused,
     /// The answer has no address for Exchange Web Services.
     NoExchangeAddress,
-    /// The server wants a way of signing in that MailCraft doesn't speak yet.
+    /// The server wants a way of signing in that MailSolutions doesn't speak yet.
     SignInNotSupported,
     /// The server's automatic setup takes only NTLM, which a typed server address is signed in to with.
     SignInNtlm,
@@ -193,7 +193,7 @@ impl MailApp {
 /// File › Info under an Exchange server account's card (#252): where it connects, as whom, how the
 /// last run signed in, the certificate it trusts (with Forget), and a certificate that needs the
 /// owner's say again (with a way to answer).
-pub(crate) fn info_rows(app: &mut MailApp, ui: &mut egui::Ui, t: &crate::theme::Tokens, a: &mailcraft_model::Account) {
+pub(crate) fn info_rows(app: &mut MailApp, ui: &mut egui::Ui, t: &crate::theme::Tokens, a: &mailsolutions_model::Account) {
     use crate::forms::kit::shown;
     use crate::theme::regular;
     use serde_json::json;
@@ -225,7 +225,7 @@ pub(crate) fn info_rows(app: &mut MailApp, ui: &mut egui::Ui, t: &crate::theme::
         ui.horizontal(|ui| {
             ui.add_space(36.0);
             // (A mailbox file can say anything: only 64 hexadecimal digits are set out in pairs.)
-            let text = if mailcraft_model::EwsServer::check_fingerprint(&server.trusted).is_ok() {
+            let text = if mailsolutions_model::EwsServer::check_fingerprint(&server.trusted).is_ok() {
                 crate::account_setup::grouped(&server.trusted)
             } else {
                 shown(&server.trusted, 120)

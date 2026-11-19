@@ -7,8 +7,8 @@
 
 #![no_main]
 
-use mailcraft_ews::auth;
-use mailcraft_ews::ntlm::{Context, Credentials, Handshake};
+use mailsolutions_ews::auth;
+use mailsolutions_ews::ntlm::{Context, Credentials, Handshake};
 
 /// Standard Base64 (RFC 4648), for the bytes the fuzzer gives.
 fn base64(bytes: &[u8]) -> String {

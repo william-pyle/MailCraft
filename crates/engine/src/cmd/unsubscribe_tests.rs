@@ -5,8 +5,8 @@
 //!
 //! The people, lists and hosts are invented.
 
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, Message};
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{Address, FolderKind, Id, Message};
 use serde_json::{Value, json};
 
 use crate::Session;

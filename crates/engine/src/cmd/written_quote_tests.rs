@@ -6,8 +6,8 @@
 //! a Microsoft account, an Exchange server account) carries them. The people, addresses and
 //! pictures are invented.
 
-use mailcraft_model::sync::{EwsFolderDeltas, GraphFolder};
-use mailcraft_model::{Address, Attachment, FolderKind, Id, Message};
+use mailsolutions_model::sync::{EwsFolderDeltas, GraphFolder};
+use mailsolutions_model::{Address, Attachment, FolderKind, Id, Message};
 use serde_json::json;
 
 use super::compose::QUOTE_MARK;
@@ -22,7 +22,7 @@ fn png(extra: usize, fill: u8) -> Vec<u8> {
 }
 
 fn data(bytes: &[u8]) -> String {
-    format!("data:image/png;base64,{}", mailcraft_charset::base64::STANDARD.encode(bytes))
+    format!("data:image/png;base64,{}", mailsolutions_charset::base64::STANDARD.encode(bytes))
 }
 
 /// A message in `folder` written by another program: a chart and a logo written into its HTML,
@@ -38,7 +38,7 @@ fn report(s: &mut Session, account: Id, folder: Id, html: String) -> Id {
         to: vec![Address::new("Avery Quinn", "avery@lumen.example"), Address::new("Kit", "kit@lumen.example")],
         subject: "Quarter figures".into(),
         date: 1_791_000_000,
-        body: mailcraft_model::Body { text: "The figures.".into(), html: Some(html) },
+        body: mailsolutions_model::Body { text: "The figures.".into(), html: Some(html) },
         attachments: vec![logo, file],
         ..Default::default()
     };
@@ -64,7 +64,7 @@ fn written(c: &Compose) -> Vec<Attachment> {
 }
 
 fn wire(m: &Message) -> String {
-    String::from_utf8_lossy(&mailcraft_mime_model::write(m, &mailcraft_mime_model::WriteOptions::default())).to_string()
+    String::from_utf8_lossy(&mailsolutions_mime_model::write(m, &mailsolutions_mime_model::WriteOptions::default())).to_string()
 }
 
 #[test]
@@ -80,7 +80,10 @@ fn reply_reply_all_and_forward_carry_the_pictures_written_into_the_original() {
         assert_eq!(pics.len(), 1, "{command}: {:?}", q.pictures);
         let pic = &pics[0];
         assert!(pic.inline && pic.mime == "image/png" && pic.data.as_slice() == png(40, 2).as_slice(), "{command}: {pic:?}");
-        assert!(pic.content_id.ends_with("@mailcraft.invalid") && !pic.content_id.contains("lumen") && !pic.content_id.contains("avery"), "{pic:?}");
+        assert!(
+            pic.content_id.ends_with("@mailsolutions.invalid") && !pic.content_id.contains("lumen") && !pic.content_id.contains("avery"),
+            "{pic:?}"
+        );
         assert!(pic.name.ends_with(".png") && !pic.name.is_empty());
         assert!(q.html.contains(&format!("<img src=\"cid:{}\" alt=\"Chart\" width=\"64\">", pic.content_id)), "{command}: {}", q.html);
         assert!(!q.html.contains("data:") && q.html.contains("<p>Regards, Rowan</p>"), "{command}: {}", q.html);
@@ -192,24 +195,24 @@ fn a_message_of_many_or_huge_pictures_sends_no_more_than_the_reading_pane_shows(
     let id = in_inbox(&mut s, format!("<p>Hello</p>{many}<p>Regards, Rowan</p>"));
     run(&mut s, "mail.reply", json!({"id": id}));
     let c = compose(&s).clone();
-    assert_eq!(written(&c).len(), mailcraft_html::MAX_DATA_PICTURES);
+    assert_eq!(written(&c).len(), mailsolutions_html::MAX_DATA_PICTURES);
     let q = c.quote.clone().unwrap();
-    assert_eq!(q.html.matches("<img").count(), mailcraft_html::MAX_DATA_PICTURES);
+    assert_eq!(q.html.matches("<img").count(), mailsolutions_html::MAX_DATA_PICTURES);
     assert!(q.html.contains("Regards, Rowan"));
     run(&mut s, "compose.close", json!({"discard": true}));
     // Pictures of 3 MB, five of them: far more than is read of a message besides its pictures;
     // the words after them are still quoted, and no picture over the cap goes.
-    let big = mailcraft_html::MAX_DATA_PICTURE_BYTES / 10 * 3;
+    let big = mailsolutions_html::MAX_DATA_PICTURE_BYTES / 10 * 3;
     let huge: String = (0..5u8).map(|n| format!("<p><img src=\"{}\"></p>", data(&png(big, n)))).collect();
-    let over = data(&png(mailcraft_html::MAX_DATA_PICTURE_BYTES + 1, 9));
+    let over = data(&png(mailsolutions_html::MAX_DATA_PICTURE_BYTES + 1, 9));
     let id = in_inbox(&mut s, format!("<p>Hello</p>{huge}<img src=\"{over}\"><p>Regards, Rowan</p>"));
     run(&mut s, "mail.reply", json!({"id": id}));
     let c = compose(&s).clone();
     let pics = written(&c);
     assert_eq!(pics.len(), 5);
-    assert!(pics.iter().all(|a| a.data.len() <= mailcraft_html::MAX_DATA_PICTURE_BYTES));
+    assert!(pics.iter().all(|a| a.data.len() <= mailsolutions_html::MAX_DATA_PICTURE_BYTES));
     let total: usize = pics.iter().map(|a| a.data.len()).sum();
-    assert!(total <= mailcraft_html::MAX_DATA_PICTURES_BYTES);
+    assert!(total <= mailsolutions_html::MAX_DATA_PICTURES_BYTES);
     let q = c.quote.unwrap();
     assert!(q.html.contains("Regards, Rowan") && q.text.contains("Regards, Rowan"));
     // The quote kept with the message being written refers to them; it doesn't hold them twice.
@@ -255,7 +258,7 @@ fn an_exchange_server_account_sends_the_pictures_in_its_mime() {
         folder("F3", "Drafts", FolderKind::Drafts),
         folder("F4", "Deleted Items", FolderKind::Deleted),
     ];
-    let piece = mailcraft_model::sync::EwsMailResult {
+    let piece = mailsolutions_model::sync::EwsMailResult {
         account,
         email: "avery@example.org".into(),
         url: url.into(),
@@ -291,8 +294,8 @@ fn a_picture_the_quote_left_out_never_goes_though_its_content_id_is_written_in_t
     let id = in_inbox(&mut s, "<p>x</p>".to_string());
     s.mailbox.message_mut(id).unwrap().body.html = Some(format!("<img src=\"{head}\"><body><p>Hello</p></body>"));
     run(&mut s, "mail.reply", json!({"id": id}));
-    let handed = mailcraft_model::sync::fingerprint(&png(8, 5));
-    let cid = format!("quote-1.{handed:016x}@mailcraft.invalid");
+    let handed = mailsolutions_model::sync::fingerprint(&png(8, 5));
+    let cid = format!("quote-1.{handed:016x}@mailsolutions.invalid");
     run(&mut s, "compose.close", json!({"discard": true}));
     s.mailbox.message_mut(id).unwrap().body.html = Some(format!("<img src=\"{head}\"><body><p>Hello cid:{cid}</p></body>"));
     run(&mut s, "mail.reply", json!({"id": id}));
@@ -338,7 +341,7 @@ fn two_pictures_of_one_length_are_two_parts_and_each_goes_as_what_its_bytes_say(
         *b.last_mut().unwrap() = 2;
         b
     });
-    let as_gif = format!("data:image/gif;base64,{}", mailcraft_charset::base64::STANDARD.encode(&b));
+    let as_gif = format!("data:image/gif;base64,{}", mailsolutions_charset::base64::STANDARD.encode(&b));
     let id = in_inbox(&mut s, format!("<img src=\"{}\"><img src=\"{as_gif}\">", data(&a)));
     run(&mut s, "mail.reply", json!({"id": id}));
     let pics = written(compose(&s));

@@ -34,7 +34,7 @@ pub enum InitError {
 impl fmt::Display for InitError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            InitError::NoMemory => f.write_str("the platform has no memory to spare for MailCraft"),
+            InitError::NoMemory => f.write_str("the platform has no memory to spare for MailSolutions"),
         }
     }
 }
@@ -42,7 +42,7 @@ impl fmt::Display for InitError {
 impl std::error::Error for InitError {}
 
 /// The memory budget: the lower of what the device allows (`device`, when it says) and the
-/// engine's own cap ([`mailcraft_engine::store::body_budget`]).
+/// engine's own cap ([`mailsolutions_engine::store::body_budget`]).
 pub fn memory_budget(device: Option<u64>) -> u64 {
     let engine = engine_cap();
     device.map_or(engine, |d| d.min(engine))
@@ -51,7 +51,7 @@ pub fn memory_budget(device: Option<u64>) -> u64 {
 /// The engine's own cap on mail content in memory.
 #[cfg(not(target_arch = "wasm32"))]
 fn engine_cap() -> u64 {
-    mailcraft_engine::store::engine_body_budget()
+    mailsolutions_engine::store::engine_body_budget()
 }
 
 /// The browser has no mailbox file to keep bodies in, so the engine's fallback stands in.

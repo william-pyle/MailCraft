@@ -1,10 +1,10 @@
 name: Release
 
 # A pushed version tag vX.Y.Z builds Windows x64 (package.yml) and makes ONE
-# GitHub release, "MailCraft vX.Y.Z" on that tag, holding all the files plus SHA256SUMS.txt
-# (`sha256sum` format) and SHA256SUMS.txt.sig (MailCraft's own ed25519 signature over it, which
-# a copy of MailCraft checks before it takes an update): the layout of the Craft apps' releases,
-# so ArtCraft Launcher and anything else that reads those releases finds MailCraft's files by
+# GitHub release, "MailSolutions vX.Y.Z" on that tag, holding all the files plus SHA256SUMS.txt
+# (`sha256sum` format) and SHA256SUMS.txt.sig (MailSolutions's own ed25519 signature over it, which
+# a copy of MailSolutions checks before it takes an update): the layout of the Craft apps' releases,
+# so ArtCraft Launcher and anything else that reads those releases finds MailSolutions's files by
 # the same names. A signed release is published after the files pass verification. See docs/releasing.md.
 #
 # A tag builds and signs only when its commit is on main and CI passed there, or the commit merges
@@ -26,7 +26,7 @@ name: Release
 #
 # This workflow is self-contained on purpose. The Craft apps inside the storytold organisation
 # call a shared one (storytold/craft-common-actions) that needs that organisation's runners and
-# release environment; if MailCraft's repository ever moves there, call that one instead.
+# release environment; if MailSolutions's repository ever moves there, call that one instead.
 
 on:
   push:
@@ -183,8 +183,8 @@ jobs:
       AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
       AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
       AZURE_CERT_PROFILE: ${{ secrets.AZURE_CERT_PROFILE }}
-      MAILCRAFT_GOOGLE_CLIENT_ID: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}
-      MAILCRAFT_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
+      MAILSOLUTIONS_GOOGLE_CLIENT_ID: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}
+      MAILSOLUTIONS_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
 
   publish:
     name: Verify and publish the release
@@ -218,14 +218,14 @@ jobs:
         run: |
           rm -f SHA256SUMS.txt SHA256SUMS.txt.sig
           sha256sum -- * | tee SHA256SUMS.txt
-      # MailCraft's own release signature over the checksums (SHA256SUMS.txt.sig): what a copy of
-      # MailCraft checks before it installs an update. Made by the runner's OpenSSL 3, checked
+      # MailSolutions's own release signature over the checksums (SHA256SUMS.txt.sig): what a copy of
+      # MailSolutions checks before it installs an update. Made by the runner's OpenSSL 3, checked
       # against its package's file list first; nothing is compiled or downloaded in this job, and
       # no program built from this repository runs with the key. Without the key the release is
       # unsigned and says so.
       - name: Sign the checksums
         env:
-          MAILCRAFT_RELEASE_KEY: ${{ secrets.MAILCRAFT_RELEASE_KEY }}
+          MAILSOLUTIONS_RELEASE_KEY: ${{ secrets.MAILCRAFT_RELEASE_KEY }}
         run: packaging/sign-sums.sh artifacts
       - name: Attest build provenance
         id: attest
@@ -238,7 +238,7 @@ jobs:
         env:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
           VERSION: ${{ needs.version.outputs.version }}
-        run: cp -- "$BUNDLE" "artifacts/mailcraft-$VERSION.intoto.jsonl"
+        run: cp -- "$BUNDLE" "artifacts/mailsolutions-$VERSION.intoto.jsonl"
       # Stage the release as a draft so an interrupted run can replace only unpublished files.
       # A release that is already published is never changed here.
       - name: Create the draft release, or replace the files of the draft a re-run made
@@ -250,7 +250,7 @@ jobs:
           PRERELEASE: ${{ needs.version.outputs.prerelease }}
         run: |
           tag="v$VERSION"
-          title="MailCraft v$VERSION"
+          title="MailSolutions v$VERSION"
           pre=()
           if [ "$PRERELEASE" = "true" ]; then pre=(--prerelease); fi
           # Existing issue references belong to the upstream tracker; this fork has issues off.
@@ -280,8 +280,8 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           if [ ! -s artifacts/SHA256SUMS.txt.sig ]; then
-            echo "::error::The release has no MailCraft signature; it remains a draft and cannot be offered for automatic updates"
+            echo "::error::The release has no MailSolutions signature; it remains a draft and cannot be offered for automatic updates"
             exit 1
           fi
           gh release edit "v$VERSION" --draft=false
-          echo "Published MailCraft v$VERSION with its verified release files and signature." >>"$GITHUB_STEP_SUMMARY"
+          echo "Published MailSolutions v$VERSION with its verified release files and signature." >>"$GITHUB_STEP_SUMMARY"

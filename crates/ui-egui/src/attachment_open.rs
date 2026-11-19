@@ -4,15 +4,15 @@
 //! program for that kind of file, as Outlook's double-click and Open do.
 //!
 //! What the sender chose is never trusted: the kind of file decides first
-//! ([`mailcraft_engine::opening::verdict`]): programs, scripts, shortcuts, installers, disk
+//! ([`mailsolutions_engine::opening::verdict`]): programs, scripts, shortcuts, installers, disk
 //! images and files of no kind are not opened (the owner can save them); Office files with macros
 //! and web pages are asked about first ([`question`]). The host writes the file into a folder of
-//! MailCraft's own, under a name made safe, and asks the system to open it
+//! MailSolutions's own, under a name made safe, and asks the system to open it
 //! ([`Services::open_file`](crate::Services::open_file)). The browser has no such thing: there the
 //! file is downloaded instead. Agents can't ask for any of it (`agent::access`).
 
-use mailcraft_engine::opening::{self, Verdict};
-use mailcraft_model::Id;
+use mailsolutions_engine::opening::{self, Verdict};
+use mailsolutions_model::Id;
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -22,7 +22,7 @@ pub(crate) const OPEN: &str = "mail.openAttachment";
 /// The attachment the params name: its message, its index and its name.
 fn target(app: &MailApp, p: &Value) -> Result<(Id, usize, String), String> {
     // Read as the engine reads it (#553): named wrongly, it is refused, never taken for the selection.
-    let id = mailcraft_engine::p::message_strict(p)
+    let id = mailsolutions_engine::p::message_strict(p)
         .map_err(|e| e.to_string())?
         .or(app.session.sel.focus())
         .ok_or_else(|| tl!("Select a message first").to_string())?;
@@ -63,7 +63,7 @@ fn open(app: &mut MailApp, p: &Value) -> Result<Value, String> {
         return Err(opening::blocked_message(&name));
     }
     let file = opening::file_name(&name);
-    let bytes = app.session.content(message, mailcraft_engine::Part::Attachment(index)).map_err(|e| e.to_string())?;
+    let bytes = app.session.content(message, mailsolutions_engine::Part::Attachment(index)).map_err(|e| e.to_string())?;
     if let Some(open_file) = &app.services.open_file {
         open_file(&file, bytes.as_slice())?;
         app.status(crate::i18n::fmt(tl!("Opening {name}"), &[("name", &file)]));

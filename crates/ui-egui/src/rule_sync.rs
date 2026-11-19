@@ -7,7 +7,7 @@
 //! with what is to be told to the server (`sync.ruleChanges`); the host tells it, then reads the
 //! server's rules whole, and the window takes in what the server made of the changes
 //! (`sync.applyRuleChanges`) and then what it has (`sync.applyRules`). The merge is the engine's
-//! ([`mailcraft_engine::cmd::rules_remote`]).
+//! ([`mailsolutions_engine::cmd::rules_remote`]).
 //!
 //! **The permission.** Reading the server's rules takes `MailboxSettings.Read`, which a sign-in
 //! asks for; changing them takes `MailboxSettings.ReadWrite`, which no sign-in page asks for.
@@ -22,10 +22,10 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::cmd::rules_remote;
-use mailcraft_engine::sync_driver::{RulesCame, RulesFacts};
-use mailcraft_model::remote_rules::{RulesDownload, RulesUpload, RulesUploaded};
-use mailcraft_model::{Account, Id};
+use mailsolutions_engine::cmd::rules_remote;
+use mailsolutions_engine::sync_driver::{RulesCame, RulesFacts};
+use mailsolutions_model::remote_rules::{RulesDownload, RulesUpload, RulesUploaded};
+use mailsolutions_model::{Account, Id};
 use serde_json::{Value, json};
 
 use crate::dialogs::{Dialog, Question};
@@ -36,7 +36,7 @@ use crate::{MailApp, Tokens, now_ms};
 pub struct RulesJob {
     pub account: Account,
     /// The account's sign-in settings, with the application id filled in.
-    pub oauth: mailcraft_model::OAuth,
+    pub oauth: mailsolutions_model::OAuth,
     /// The account's refresh token: the job gets its own token with it.
     pub refresh: String,
     /// What the server is to be told first. Empty for a job that only reads: nothing waits, or
@@ -70,7 +70,7 @@ pub struct RulesResult {
     pub errors: Vec<String>,
 }
 
-pub(crate) use mailcraft_engine::sync_driver::Permission;
+pub(crate) use mailsolutions_engine::sync_driver::Permission;
 
 /// The state of the rules jobs, in the window.
 #[derive(Default)]
@@ -244,7 +244,7 @@ impl MailApp {
         let Some(address) = self.session.mailbox.account(account).map(|a| a.email.trim().to_string()) else { return false };
         let text = crate::i18n::fmt(
             tl!(
-                "To keep the rules of {address} on its server, where they run even while MailCraft is closed and show in Outlook on the web and on your phone, MailCraft needs your permission to change your mailbox settings, where Microsoft keeps the rules. Microsoft's page opens in your browser to ask you, once.\n\nUntil you allow it, your rules stay on this computer and nothing of them is sent to Microsoft."
+                "To keep the rules of {address} on its server, where they run even while MailSolutions is closed and show in Outlook on the web and on your phone, MailSolutions needs your permission to change your mailbox settings, where Microsoft keeps the rules. Microsoft's page opens in your browser to ask you, once.\n\nUntil you allow it, your rules stay on this computer and nothing of them is sent to Microsoft."
             ),
             &[("address", &address)],
         );
@@ -287,7 +287,7 @@ impl MailApp {
             return Err(e);
         }
         self.session.driver.rules.asking(account);
-        self.session.sync_status = tl!("Allow MailCraft to keep your rules on the server on the page that opened in your browser…").to_string();
+        self.session.sync_status = tl!("Allow MailSolutions to keep your rules on the server on the page that opened in your browser…").to_string();
         Ok(json!({"pending": "signIn", "account": owner.id}))
     }
 
@@ -320,7 +320,7 @@ impl MailApp {
                 let _ = self.run("ui.approvalHelp", json!({"account": account}));
             }
             Err(e) if e == REFUSED_BY_ORGANISATION || e == REFUSED_FOR_ACCOUNT => {
-                let said = tl!("Your organisation doesn't allow MailCraft to keep rules on the server");
+                let said = tl!("Your organisation doesn't allow MailSolutions to keep rules on the server");
                 self.session.driver.rules.refused(account, said.to_string());
                 self.status(said);
             }

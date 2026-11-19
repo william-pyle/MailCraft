@@ -4,8 +4,8 @@
 //! contacts left out of a merge, and Enter, which never merges.
 
 use egui_kittest::Harness;
-use mailcraft_engine::Session;
-use mailcraft_model::{Contact, Id, Labeled};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Contact, Id, Labeled};
 use serde_json::json;
 
 use super::MergeContacts;
@@ -15,7 +15,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_990_000;
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     app

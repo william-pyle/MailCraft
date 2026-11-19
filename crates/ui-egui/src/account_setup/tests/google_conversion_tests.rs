@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::SecretStore;
-use mailcraft_model::sync::Tokens as SignedIn;
+use mailsolutions_model::sync::Tokens as SignedIn;
 
 use super::*;
 
@@ -17,7 +17,7 @@ impl SecretStore for Stored {
     fn get(&self, key: &str) -> Option<String> {
         self.0.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().insert(key.into(), secret.into());
         Ok(())
     }
@@ -408,7 +408,7 @@ fn conversion_waits_for_an_unsaved_colour() {
     let requested = sign_ins(&mut a, None);
     let mut w = AccountSetup::open(&a, &json!({"id":id})).unwrap();
     let was = a.session.mailbox.account(id).unwrap().color;
-    w.color = Some((was, Some(mailcraft_model::Rgb(0x12, 0x34, 0x56))));
+    w.color = Some((was, Some(mailsolutions_model::Rgb(0x12, 0x34, 0x56))));
     assert!(!w.act(&mut a, Action::ConvertToGoogle));
     assert_eq!(w.page, Page::Settings);
     assert!(w.error.contains("Save or discard"), "{}", w.error);

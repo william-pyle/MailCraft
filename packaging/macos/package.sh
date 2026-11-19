@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build, sign and (optionally) notarize the macOS release artifacts:
 #
-#   $DIST/mailcraft-<version>-macos-<arch>.dmg          MailCraft.app on a drag-to-Applications DMG
-#   $DIST/mailcraft-cli-<version>-macos-<arch>.zip      the headless CLI
+#   $DIST/mailsolutions-<version>-macos-<arch>.dmg          MailSolutions.app on a drag-to-Applications DMG
+#   $DIST/mailsolutions-cli-<version>-macos-<arch>.zip      the headless CLI
 #
 # Usage: packaging/macos/package.sh [--arch universal|aarch64|x86_64] [--skip-build | --build-only] [--no-run]
 #
@@ -49,9 +49,9 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 IDENTITY="${MACOS_SIGN_IDENTITY:--}"
 SHORT_VERSION="${VERSION%%-*}"
 WORK="$CARGO_TARGET_DIR/macos-package"
-APP="$WORK/MailCraft.app"
-DMG="$DIST/mailcraft-$VERSION-macos-$ARCH.dmg"
-CLI_ZIP="$DIST/mailcraft-cli-$VERSION-macos-$ARCH.zip"
+APP="$WORK/MailSolutions.app"
+DMG="$DIST/mailsolutions-$VERSION-macos-$ARCH.dmg"
+CLI_ZIP="$DIST/mailsolutions-cli-$VERSION-macos-$ARCH.zip"
 
 NOTARIZE=0
 if [[ $IDENTITY == "-" ]]; then
@@ -62,13 +62,13 @@ else
   warn "macOS: APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID incomplete; signed but not notarized"
 fi
 
-echo "==> MailCraft $VERSION for macOS ($ARCH), identity: $IDENTITY, notarize: $NOTARIZE"
+echo "==> MailSolutions $VERSION for macOS ($ARCH), identity: $IDENTITY, notarize: $NOTARIZE"
 
 # ---- build -------------------------------------------------------------------------------------
 if [[ $SKIP_BUILD == 0 ]]; then
   args=()
   for t in "${TARGETS[@]}"; do args+=(--target "$t"); done
-  (cd "$ROOT" && cargo build --release --locked -p mailcraft -p mailcraft-cli "${args[@]}")
+  (cd "$ROOT" && cargo build --release --locked -p mailsolutions -p mailsolutions-cli "${args[@]}")
 fi
 
 # CI compiles in a job of its own (--build-only), which has no signing secret, and hands the
@@ -81,7 +81,7 @@ fi
 
 rm -rf "$WORK"
 mkdir -p "$WORK/bin"
-for bin in mailcraft mailcraft-cli; do
+for bin in mailsolutions mailsolutions-cli; do
   inputs=()
   for t in "${TARGETS[@]}"; do inputs+=("$CARGO_TARGET_DIR/$t/release/$bin"); done
   lipo -create -output "$WORK/bin/$bin" "${inputs[@]}"
@@ -115,29 +115,29 @@ notarize() {
   fi
 }
 
-# ---- MailCraft.app ----------------------------------------------------------------------------
+# ---- MailSolutions.app ----------------------------------------------------------------------------
 echo "==> assembling $APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 # Executable and icon carry the display name (CFBundleExecutable / CFBundleIconFile).
-cp "$WORK/bin/mailcraft" "$APP/Contents/MacOS/MailCraft"
-cp "$ROOT/assets/app-icon/mailcraft.icns" "$APP/Contents/Resources/MailCraft.icns"
+cp "$WORK/bin/mailsolutions" "$APP/Contents/MacOS/MailSolutions"
+cp "$ROOT/assets/app-icon/mailsolutions.icns" "$APP/Contents/Resources/MailSolutions.icns"
 # Licences of the embedded craft-fonts fonts (only when built with CRAFT_FONTS_DIR).
 copy_font_licences "$APP/Contents/Resources"
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/$SHORT_VERSION/g" \
-  -e "s/@BUILD_SHA@/${MAILCRAFT_BUILD_SHA:-unknown}/g" \
+  -e "s/@BUILD_SHA@/${MAILSOLUTIONS_BUILD_SHA:-unknown}/g" \
   "$HERE/Info.plist.in" >"$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 printf 'APPL????' >"$APP/Contents/PkgInfo"
 
 # Sign inside-out: nested code first, then the bundle itself (no --deep on the final signature).
 # Today the only nested code is the main executable; frameworks/helpers would be signed here too.
-sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/MailCraft"
+sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/MailSolutions"
 sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP"
 codesign --verify --strict --deep --verbose=2 "$APP"
 
 if [[ $NOTARIZE == 1 ]]; then
-  ditto -c -k --keepParent "$APP" "$WORK/MailCraft-notarize.zip"
-  notarize "$WORK/MailCraft-notarize.zip"
+  ditto -c -k --keepParent "$APP" "$WORK/MailSolutions-notarize.zip"
+  notarize "$WORK/MailSolutions-notarize.zip"
   xcrun stapler staple "$APP"
   xcrun stapler validate "$APP"
   spctl --assess --type execute -vvv "$APP"
@@ -147,10 +147,10 @@ fi
 echo "==> building $DMG"
 STAGE="$WORK/dmg"
 mkdir -p "$STAGE"
-ditto "$APP" "$STAGE/MailCraft.app"
+ditto "$APP" "$STAGE/MailSolutions.app"
 ln -s /Applications "$STAGE/Applications"
 # Finder window layout: background, icon size and positions (packaging/macos/dmg/README.md).
-# MailCraft has no DMG artwork yet (packaging/macos/dmg/README.md): without it the DMG opens as a
+# MailSolutions has no DMG artwork yet (packaging/macos/dmg/README.md): without it the DMG opens as a
 # plain Finder window.
 if [[ -f "$HERE/dmg/background.tiff" ]] && [[ -f "$HERE/dmg/dmg-layout.DS_Store" ]]; then
   mkdir -p "$STAGE/.background"
@@ -166,7 +166,7 @@ rm -f "$DMG"
 # The volume name has no version: .DS_Store finds the background through an alias that includes it.
 made=0
 for attempt in 1 2 3 4 5; do
-  if hdiutil create -volname "MailCraft" -srcfolder "$STAGE" -fs HFS+ -format UDZO -imagekey zlib-level=9 -ov "$DMG"; then
+  if hdiutil create -volname "MailSolutions" -srcfolder "$STAGE" -fs HFS+ -format UDZO -imagekey zlib-level=9 -ov "$DMG"; then
     made=1
     break
   fi
@@ -188,21 +188,21 @@ fi
 
 # ---- CLI ---------------------------------------------------------------------------------------
 echo "==> building $CLI_ZIP"
-CLI_DIR="$WORK/mailcraft-cli-$VERSION-macos-$ARCH"
+CLI_DIR="$WORK/mailsolutions-cli-$VERSION-macos-$ARCH"
 mkdir -p "$CLI_DIR"
-cp "$WORK/bin/mailcraft-cli" "$CLI_DIR/"
+cp "$WORK/bin/mailsolutions-cli" "$CLI_DIR/"
 copy_docs "$CLI_DIR"
-sign --options runtime "$CLI_DIR/mailcraft-cli"
-codesign --verify --strict --verbose=2 "$CLI_DIR/mailcraft-cli"
+sign --options runtime "$CLI_DIR/mailsolutions-cli"
+codesign --verify --strict --verbose=2 "$CLI_DIR/mailsolutions-cli"
 rm -f "$CLI_ZIP"
 ditto -c -k --norsrc --noextattr --keepParent "$CLI_DIR" "$CLI_ZIP"
 # A bare Mach-O can't carry a stapled ticket; Gatekeeper looks the notarization up online.
 if [[ $NOTARIZE == 1 ]]; then notarize "$CLI_ZIP"; fi
 
 if [[ $NO_RUN == 1 ]]; then
-  echo "==> skipping mailcraft-cli --version (--no-run): a job without the signing secrets runs it"
+  echo "==> skipping mailsolutions-cli --version (--no-run): a job without the signing secrets runs it"
 else
-  "$WORK/bin/mailcraft-cli" --version
+  "$WORK/bin/mailsolutions-cli" --version
 fi
 echo "==> done"
 ls -lh "$DMG" "$CLI_ZIP"

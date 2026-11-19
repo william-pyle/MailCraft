@@ -3,7 +3,7 @@
 //! Tighter spacing (`view.density`): the list's rows are shorter, and what is in them keeps its
 //! place in them, half of what a row gave up above and half below.
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::*;
@@ -15,7 +15,7 @@ const NOW: i64 = 1_791_993_600;
 type Window = egui_kittest::Harness<'static, MailApp>;
 
 fn window(tight: bool, one_line: bool) -> Window {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     app.overlay_scroll_bars = false;

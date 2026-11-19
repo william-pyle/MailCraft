@@ -6,9 +6,9 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-use mailcraft_model::TaskPatch;
-use mailcraft_model::remote_tasks::{TaskOp, TaskOpKind, TaskResult, TasksUpload};
-use mailcraft_time::Zone;
+use mailsolutions_model::TaskPatch;
+use mailsolutions_model::remote_tasks::{TaskOp, TaskOpKind, TaskResult, TasksUpload};
+use mailsolutions_time::Zone;
 use serde_json::{Value, json};
 
 use super::standin::{StandIn, TOKEN};
@@ -79,7 +79,7 @@ fn a_client_reads_and_writes_to_dos_through_it() {
         kind: TaskOpKind::Update,
         id: made.id.clone(),
         list: list.clone(),
-        patch: TaskPatch { completed: Some(Some(1_790_000_000)), importance: Some(mailcraft_model::Importance::High), ..Default::default() },
+        patch: TaskPatch { completed: Some(Some(1_790_000_000)), importance: Some(mailsolutions_model::Importance::High), ..Default::default() },
         ..Default::default()
     };
     let delete = TaskOp { kind: TaskOpKind::Delete, id: made.id.clone(), list: list.clone(), ..Default::default() };

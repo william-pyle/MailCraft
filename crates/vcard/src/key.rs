@@ -15,7 +15,7 @@
 //! Nothing is checked beyond that outline, nothing is trusted, and nothing is fetched: an address
 //! is kept as an address. Written as vCard 3.0.
 
-use mailcraft_model::{ContactKey, KeyKind};
+use mailsolutions_model::{ContactKey, KeyKind};
 
 use crate::lines::ContentLine;
 use crate::text::{base64_bytes, quoted_printable, unescape};
@@ -151,7 +151,7 @@ fn armour_body(armour: &str) -> Option<Vec<u8>> {
         body.push_str(line);
     }
     let compact = body.trim_end_matches('=');
-    mailcraft_charset::base64::STANDARD_NO_PAD.decode(compact).ok().filter(|b| !b.is_empty())
+    mailsolutions_charset::base64::STANDARD_NO_PAD.decode(compact).ok().filter(|b| !b.is_empty())
 }
 
 /// One DER element: its tag, its contents and what follows it. Only the definite lengths DER
@@ -273,7 +273,7 @@ pub(crate) fn checked_uri(value: &str) -> Option<String> {
     let (scheme, rest) = value.split_once(':')?;
     let known = SCHEMES.iter().any(|s| s.eq_ignore_ascii_case(scheme));
     // (A backslash would be read back as an escape.)
-    let clean = !rest.is_empty() && !value.chars().any(|c| c.is_whitespace() || c.is_control() || mailcraft_names::is_format(c) || c == '\\');
+    let clean = !rest.is_empty() && !value.chars().any(|c| c.is_whitespace() || c.is_control() || mailsolutions_names::is_format(c) || c == '\\');
     (known && clean && value.len() <= ContactKey::MAX_URI).then(|| value.to_string())
 }
 
@@ -292,5 +292,5 @@ pub(crate) fn line(key: &ContactKey) -> Option<String> {
     // Only what the reader would keep as this very key: never secret material a mailbox file
     // may hold.
     (key_of(&key.data, Some(key.kind.clone())).as_ref() == Some(key))
-        .then(|| format!("KEY;TYPE={kind};ENCODING=b:{}", mailcraft_charset::base64::STANDARD.encode(&key.data)))
+        .then(|| format!("KEY;TYPE={kind};ENCODING=b:{}", mailsolutions_charset::base64::STANDARD.encode(&key.data)))
 }

@@ -12,7 +12,7 @@
 
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use mailcraft_model::{AccountKind, FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::{AccountKind, FolderKind, Id, Mailbox, Message};
 use serde_json::{Value, json};
 
 use crate::cmd::imported_dupes::Twins;
@@ -145,7 +145,7 @@ pub fn tidy_name(raw: &str) -> String {
     if s.is_empty() || s.chars().all(|c| c == '.') {
         return "Folder".to_string();
     }
-    mailcraft_model::clean_name(s).unwrap_or_else(|| "Folder".to_string())
+    mailsolutions_model::clean_name(s).unwrap_or_else(|| "Folder".to_string())
 }
 
 /// The folder name a directory on disk stands for: `Inbox.sbd` holds the subfolders of `Inbox`.
@@ -363,7 +363,7 @@ fn parse_found(mut w: Walk, top: String, count_only: bool, progress: &Progress) 
         let mut ids = Vec::new();
         let mut messages = Vec::new();
         let mut more = false;
-        for m in mailcraft_mime_model::mbox_messages(&bytes) {
+        for m in mailsolutions_mime_model::mbox_messages(&bytes) {
             if ids.len() >= limit {
                 more = true;
                 break;

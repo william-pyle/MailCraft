@@ -3,8 +3,8 @@
 //! #300: a Microsoft account's message keeps the size of the MIME fetched whole, through its
 //! being kept as its preview and the deltas that say no size.
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{AccountKind, Folder, FolderKind, Mailbox, Message, ServerFolder};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{AccountKind, Folder, FolderKind, Mailbox, Message, ServerFolder};
 
 use super::*;
 
@@ -116,7 +116,7 @@ fn a_message_being_moved_out_is_given_no_server_state() {
     let (mut mb, account, id) = mailbox(false);
     let m = mb.message_mut(id).unwrap();
     m.server = None;
-    m.moving_out = Some(mailcraft_model::sync::MovingOut { account, id: "AAkA1".into(), ..Default::default() });
+    m.moving_out = Some(mailsolutions_model::sync::MovingOut { account, id: "AAkA1".into(), ..Default::default() });
     assert!(take_fetched(&mut mb, &mut ServerIndex::default(), account, "AAkA1", MIME));
     let m = mb.message(id).unwrap();
     assert!(m.server.is_none() && !m.unfetched);
@@ -148,7 +148,7 @@ fn a_draft_the_server_says_was_sent_is_no_longer_a_draft() {
 #[test]
 fn a_draft_waiting_to_go_up_stays_a_draft() {
     let (mut mb, account, id) = mailbox(true);
-    mb.message_mut(id).unwrap().server_draft = Some(mailcraft_model::sync::ServerDraft { pending: true, ..Default::default() });
+    mb.message_mut(id).unwrap().server_draft = Some(mailsolutions_model::sync::ServerDraft { pending: true, ..Default::default() });
     let mut index = ServerIndex::default();
     let mut page = delta("AAkA1", "CK1");
     page.messages[0].draft = Some(false);

@@ -5,7 +5,7 @@ use std::path::Path;
 
 #[test]
 fn key_file_is_named_by_port() {
-    let dir = Path::new("/settings/mailcraft");
+    let dir = Path::new("/settings/mailsolutions");
     assert_eq!(key_path(dir, 7981), dir.join("control-key.local-7981"));
     assert_eq!(key_path(dir, 7982), dir.join("control-key.local-7982"));
 }
@@ -37,6 +37,6 @@ fn bridge_finds_the_key_the_app_wrote() {
 fn settings_dir_is_the_apps_folder() {
     if let Some(d) = settings_dir() {
         let name = d.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        assert!(name == "mailcraft" || name == "MailCraft", "{}", d.display());
+        assert!(name == "mailsolutions" || name == "MailSolutions", "{}", d.display());
     }
 }

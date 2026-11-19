@@ -11,7 +11,7 @@
 //! 4. the name mentions an offset (`(UTC-05:00) Somewhere`): that offset;
 //! 5. otherwise the time is kept as it is written, like a time without a zone.
 //!
-//! The zone an event keeps as its own ([`Event::start_zone`](mailcraft_model::Event)) is a zone of
+//! The zone an event keeps as its own ([`Event::start_zone`](mailsolutions_model::Event)) is a zone of
 //! the database: the one the name says when the file's definition agrees with it at the event's
 //! time, else one that keeps the same clock as the definition around that time, else the offset
 //! the definition gives. Cases 4 and 5, and a definition that contradicts its name, are said
@@ -23,7 +23,7 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
-use mailcraft_time::{DAY, Date, DateTime, Timestamp, Weekday, Zone, days_in_month};
+use mailsolutions_time::{DAY, Date, DateTime, Timestamp, Weekday, Zone, days_in_month};
 
 use crate::lines::{ContentLine, Lines, fold, prefix};
 use crate::values::{When, format_local};

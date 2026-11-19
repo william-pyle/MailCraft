@@ -4,7 +4,7 @@
 //! diagnostics, and the window.
 
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 use super::*;
 use crate::Services;
@@ -18,12 +18,12 @@ const REFRESH: &str = "M.R3_BAY.refresh-token";
 const LOG_LINE: &str = "sync: 42 messages in 3 folders";
 
 fn host_report() -> String {
-    format!("### MailCraft diagnostics\n\n- Version: 9.8.7\n- Platform: testos testarch\n\n```\n{LOG_LINE}\n```\n")
+    format!("### MailSolutions diagnostics\n\n- Version: 9.8.7\n- Platform: testos testarch\n\n```\n{LOG_LINE}\n```\n")
 }
 
 /// The sample mailbox with an account that sends, whose password and tokens are in memory.
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.services.diagnostics = Some(Box::new(host_report));
     let added = a.execute(
@@ -32,7 +32,8 @@ fn app() -> MailApp {
     );
     let id = added.unwrap()["id"].as_u64().unwrap();
     a.passwords.insert(id, PASSWORD.into());
-    a.tokens.insert(id, mailcraft_model::sync::Tokens { access: TOKEN.into(), refresh: REFRESH.into(), email: EMAIL.into(), ..Default::default() });
+    a.tokens
+        .insert(id, mailsolutions_model::sync::Tokens { access: TOKEN.into(), refresh: REFRESH.into(), email: EMAIL.into(), ..Default::default() });
     a
 }
 
@@ -52,7 +53,7 @@ fn the_address_carries_what_was_typed_and_the_version_and_nothing_else() {
     let p = json!({"title": "Search stops", "what": "I searched & it stopped", "expected": "Results", "diagnostics": true, "open": false});
     let r = report(&mut a, p).unwrap();
     let url = r["url"].as_str().unwrap();
-    assert!(url.starts_with("https://github.com/UCS-Care-Group/mailcraft/issues/new?template=problem.yml&title=Search%20stops&"), "{url}");
+    assert!(url.starts_with("https://github.com/william-pyle/MailSolutions/issues/new?template=problem.yml&title=Search%20stops&"), "{url}");
     assert!(url.contains("&version=9.8.7&platform=testos%20testarch&what=I%20searched%20%26%20it%20stopped"), "{url}");
     assert!(url.contains("What%20I%20expected") && url.contains("&diagnostics=Drag%20the%20diagnostics%20file"), "{url}");
     assert_eq!(r["length"].as_u64().unwrap() as usize, url.len());
@@ -104,18 +105,18 @@ fn the_file_holds_exactly_what_copy_diagnostics_copies() {
     assert!(copied.contains(LOG_LINE));
     // No file named: the bytes are the answer, under the day's name.
     let r = report(&mut a, json!({"what": "x", "diagnostics": true, "open": false})).unwrap();
-    assert_eq!(r["name"], "mailcraft-diagnostics-2026-10-14.txt");
+    assert_eq!(r["name"], "mailsolutions-diagnostics-2026-10-14.txt");
     let bytes = base64_lite::decode(r["data"].as_str().unwrap()).unwrap();
     assert_eq!(String::from_utf8(bytes).unwrap(), copied);
     // With a file named and the window up, it is written there and the page opened.
-    let dir = std::env::temp_dir().join(format!("mailcraft-report-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-report-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
-    let path = dir.join("mailcraft-diagnostics.txt");
+    let path = dir.join("mailsolutions-diagnostics.txt");
     a.ctx = Some(egui::Context::default());
     let r = report(&mut a, json!({"what": "x", "diagnostics": true, "path": path.to_string_lossy()})).unwrap();
     assert_eq!(r["saved"].as_str().unwrap(), path.to_string_lossy());
     assert_eq!(std::fs::read_to_string(&path).unwrap(), copied);
-    assert!(a.status_msg.as_ref().unwrap().0.contains("MailCraft sent nothing"));
+    assert!(a.status_msg.as_ref().unwrap().0.contains("MailSolutions sent nothing"));
     let _ = std::fs::remove_dir_all(&dir);
     assert!(saves_file(&json!({"diagnostics": true})));
 }
@@ -223,7 +224,7 @@ fn a_cancelled_save_keeps_the_window_and_what_was_typed() {
     assert!(opened(&h).is_empty());
 
     // Once more, and this time the file is saved: then the page opens and the window closes.
-    let path = std::env::temp_dir().join(format!("mailcraft-report-test-{}.txt", std::process::id()));
+    let path = std::env::temp_dir().join(format!("mailsolutions-report-test-{}.txt", std::process::id()));
     h.get_by_label("Open on GitHub").click();
     h.step();
     answers.try_recv().unwrap().send(Some(vec![path.to_string_lossy().to_string()])).unwrap();
@@ -279,7 +280,7 @@ fn send_report_sends_what_the_window_shows_once_and_says_the_reference() {
     draft(&mut h).username = "@octocat".into();
     h.run_steps(1);
     // The privacy line is above Send.
-    assert!(h.query_by_label_contains("Sent to the MailCraft team privately").is_some());
+    assert!(h.query_by_label_contains("Sent to the MailSolutions team privately").is_some());
     h.get_by_label("Send report").click();
     h.run_steps(3);
     let asked = asked.lock().unwrap().clone();
@@ -458,7 +459,7 @@ fn with_diagnostics_too_open_on_github_keeps_what_didnt_fit() {
     h.run_steps(6);
     h.get_by_label("Open on GitHub").click();
     h.step();
-    let path = std::env::temp_dir().join(format!("mailcraft-report-kept-{}.txt", std::process::id()));
+    let path = std::env::temp_dir().join(format!("mailsolutions-report-kept-{}.txt", std::process::id()));
     answers.try_recv().unwrap().send(Some(vec![path.to_string_lossy().to_string()])).unwrap();
     h.step();
     assert!(opened(&h).first().is_some_and(|u| u.len() <= URL_MAX));
@@ -491,7 +492,7 @@ fn a_script_or_an_agent_fills_the_window_and_never_sends() {
     // From an agent the owner let send: the same, and still nothing sent.
     a.dialog = None;
     let (req, _rx) = crate::ControlRequest::new("engine.execute", json!({"command": "ui.reportProblem", "params": {"what": "x", "via": "send"}}));
-    let _ = crate::control::handle(&mut a, &egui::Context::default(), &req.from_agent(vec![mailcraft_engine::agent::Class::Send]));
+    let _ = crate::control::handle(&mut a, &egui::Context::default(), &req.from_agent(vec![mailsolutions_engine::agent::Class::Send]));
     assert!(matches!(a.dialog, Some(crate::dialogs::Dialog::ReportProblem(_))));
     assert!(asked.lock().unwrap().is_empty());
     // A click the control channel made on Send report sends nothing either.
@@ -509,13 +510,13 @@ fn a_script_or_an_agent_fills_the_window_and_never_sends() {
     assert_eq!(asked.lock().unwrap().len(), 1);
 }
 
-/// `MAILCRAFT_SHOTS_DIR=<dir> cargo test -p mailcraft-ui-egui shots_of_report_a_problem -- --ignored`:
+/// `MAILSOLUTIONS_SHOTS_DIR=<dir> cargo test -p mailsolutions-ui-egui shots_of_report_a_problem -- --ignored`:
 /// the window as written, sending, sent, and not sent for each reason, in light and dark.
 #[test]
 #[ignore = "writes screenshots, for looking at them"]
 fn shots_of_report_a_problem() {
-    let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") else {
-        eprintln!("set MAILCRAFT_SHOTS_DIR to the directory to write to");
+    let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") else {
+        eprintln!("set MAILSOLUTIONS_SHOTS_DIR to the directory to write to");
         return;
     };
     let mut states: Vec<(String, Option<Result<u64, NotSent>>, bool)> =
@@ -592,7 +593,7 @@ fn without_a_relay_the_window_offers_open_on_github_alone() {
     let h = open_window(app());
     assert!(h.query_by_label("Send report").is_none());
     assert!(h.query_by_label("Open on GitHub").is_some());
-    assert!(h.query_by_label_contains("Sent to the MailCraft team privately").is_none());
+    assert!(h.query_by_label_contains("Sent to the MailSolutions team privately").is_none());
     assert!(h.query_by_label_contains("GitHub issues are public").is_some());
 }
 

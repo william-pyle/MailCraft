@@ -6,7 +6,7 @@
 //! server outside the owner's domain is named to the owner before the password goes there, and a
 //! no sends nothing.
 
-use mailcraft_model::provider::{FoundServer, Via};
+use mailsolutions_model::provider::{FoundServer, Via};
 
 use super::*;
 

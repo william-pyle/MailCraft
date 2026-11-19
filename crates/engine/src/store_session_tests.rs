@@ -5,7 +5,7 @@
 
 use std::sync::Mutex;
 
-use mailcraft_model::{Action, Condition, ContentRef, Rule};
+use mailsolutions_model::{Action, Condition, ContentRef, Rule};
 
 use super::*;
 use crate::{CmdError, CommandSpec, Registry};
@@ -303,8 +303,8 @@ fn a_result_opened_during_a_search_that_reads_bodies_does_not_search_again() {
 
 #[test]
 fn a_pending_draft_and_an_outbox_message_reopened_from_disk_go_up_with_their_real_content() {
-    use mailcraft_model::FolderKind;
-    use mailcraft_model::sync::{DraftState, ServerDraft};
+    use mailsolutions_model::FolderKind;
+    use mailsolutions_model::sync::{DraftState, ServerDraft};
     let tmp = Temp::new("graph-up-whole");
     let path = tmp.file();
     let mut s = Session::at(Mailbox::with_local_account("", ""), 1_800_000_000, 0);
@@ -322,11 +322,11 @@ fn a_pending_draft_and_an_outbox_message_reopened_from_disk_go_up_with_their_rea
     };
     // Never up yet: everything goes. Up before, then retitled: only the subject goes.
     let mut fresh = message(drafts, "Fresh");
-    fresh.server_draft = Some(ServerDraft { marker: "mailcraft-draft-a".into(), pending: true, saves: 1, ..Default::default() });
+    fresh.server_draft = Some(ServerDraft { marker: "mailsolutions-draft-a".into(), pending: true, saves: 1, ..Default::default() });
     let mut retitled = message(drafts, "Before");
-    retitled.server = Some(mailcraft_model::sync::ServerMessage { id: "AAkA-retitled".into(), ..Default::default() });
+    retitled.server = Some(mailsolutions_model::sync::ServerMessage { id: "AAkA-retitled".into(), ..Default::default() });
     retitled.server_draft = Some(ServerDraft {
-        marker: "mailcraft-draft-b".into(),
+        marker: "mailsolutions-draft-b".into(),
         synced: Some(DraftState::of(&retitled)),
         pending: true,
         saves: 2,
@@ -370,7 +370,7 @@ fn a_pending_draft_and_an_outbox_message_reopened_from_disk_go_up_with_their_rea
 /// A session whose "Brewing notes" conversation has two messages in `kind`: the newer with
 /// "zymurgy" in a short body kept in the file, the older with it in a long body back on disk
 /// after a search; conversation view, that search, and the conversation's row clicked (#503).
-fn found_on_disk(tmp: &Temp, kind: mailcraft_model::FolderKind) -> (Session, Id, Id) {
+fn found_on_disk(tmp: &Temp, kind: mailsolutions_model::FolderKind) -> (Session, Id, Id) {
     let path = tmp.file();
     let mut mb = mailbox(24);
     let folder = mb.folder_of_kind(mb.accounts[0].id, kind).unwrap();
@@ -422,7 +422,7 @@ fn asked_then_run(s: &mut Session, id: &str, row: Id, mut params: Value) -> Stri
 #[test]
 fn an_agents_delete_for_good_in_a_search_is_asked_about_what_it_deletes() {
     let tmp = Temp::new("agent-for-good");
-    let (mut s, newer, older) = found_on_disk(&tmp, mailcraft_model::FolderKind::Deleted);
+    let (mut s, newer, older) = found_on_disk(&tmp, mailsolutions_model::FolderKind::Deleted);
     let asked = asked_then_run(&mut s, "mail.delete", newer, json!({}));
     let gone = [newer, older].into_iter().filter(|id| s.mailbox.message(*id).is_none()).count();
     assert_eq!((asked.as_str(), gone), ("permanently delete 2 messages (\u{201c}Brewing notes\u{201d}, \u{201c}Brewing notes\u{201d})", 2));
@@ -431,8 +431,8 @@ fn an_agents_delete_for_good_in_a_search_is_asked_about_what_it_deletes() {
 #[test]
 fn an_agents_move_to_the_outbox_in_a_search_is_asked_about_what_it_sends() {
     let tmp = Temp::new("agent-outbox");
-    let (mut s, newer, older) = found_on_disk(&tmp, mailcraft_model::FolderKind::Inbox);
-    let outbox = s.mailbox.folder_of_kind(s.mailbox.accounts[0].id, mailcraft_model::FolderKind::Outbox).unwrap();
+    let (mut s, newer, older) = found_on_disk(&tmp, mailsolutions_model::FolderKind::Inbox);
+    let outbox = s.mailbox.folder_of_kind(s.mailbox.accounts[0].id, mailsolutions_model::FolderKind::Outbox).unwrap();
     let asked = asked_then_run(&mut s, "mail.move", newer, json!({"folder": outbox}));
     let sent = [newer, older].into_iter().filter(|id| s.mailbox.message(*id).is_some_and(|m| m.folder == outbox)).count();
     assert_eq!(

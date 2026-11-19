@@ -22,7 +22,7 @@ impl MailApp {
 }
 
 /// What is said of something that would go to a server while working offline (the engine's
-/// refusal, `mailcraft_engine::cmd::send_receive::OFFLINE`, in the same words).
+/// refusal, `mailsolutions_engine::cmd::send_receive::OFFLINE`, in the same words).
 pub(crate) fn said() -> String {
     tl!("You're working offline. Turn off Work Offline (Send / Receive) to connect.").to_string()
 }
@@ -62,7 +62,7 @@ pub(crate) fn after_owner(app: &mut MailApp, id: &str, r: &Result<Value, String>
         }
         "help.help" | "help.training" | "help.support" | "help.whatsNew" => {
             // Only the project's own pages, which the engine names.
-            let Some(url) = v.get("url").and_then(Value::as_str).filter(|u| u.starts_with(mailcraft_engine::cmd::help::REPOSITORY)) else {
+            let Some(url) = v.get("url").and_then(Value::as_str).filter(|u| u.starts_with(mailsolutions_engine::cmd::help::REPOSITORY)) else {
                 return;
             };
             if let Some(ctx) = app.ctx.clone() {

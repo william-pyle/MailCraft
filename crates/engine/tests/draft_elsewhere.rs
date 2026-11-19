@@ -5,13 +5,13 @@
 //! send. A message the server itself put in the Outbox is still never sent from here. Every
 //! message here is invented.
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::{ews_mail, graph_mail, graph_send};
-use mailcraft_model::sync::{
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::{ews_mail, graph_mail, graph_send};
+use mailsolutions_model::sync::{
     DraftDone, EwsFolderDeltas, EwsMailResult, EwsMessagePage, FolderListing, GraphFetchResult, GraphFetched, GraphFolder, GraphMailResult,
     GraphMessage, MessagePage, SendDone, SendOutcome, ServerMessage,
 };
-use mailcraft_model::{Address, FolderKind, Id};
+use mailsolutions_model::{Address, FolderKind, Id};
 use serde_json::json;
 
 const ME: &str = "ada@example.org";
@@ -169,7 +169,7 @@ fn a_draft_left_in_the_outbox_by_an_earlier_version_goes() {
 /// here. Until Send Again it isn't sent again by itself (AU3-26).
 #[test]
 fn a_leftover_held_after_its_draft_went_up_goes_with_send_again() {
-    let lang = mailcraft_i18n::Lang::default();
+    let lang = mailsolutions_i18n::Lang::default();
     let outcomes = [SendOutcome::Held { lost: true, why: String::new() }, SendOutcome::Held { lost: false, why: "it can't take it".into() }];
     for kind in [Kind::Ews, Kind::Graph] {
         for outcome in outcomes.clone() {

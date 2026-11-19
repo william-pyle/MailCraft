@@ -501,7 +501,7 @@ const REASONS: &str = "eyJzdGF0dXMiOiI0MDEifQ==";
 
 /// The user and the token of an XOAUTH2 response (`user=…^Aauth=Bearer …^A^A` in base64); empty when it isn't one.
 fn bearer(payload: &str) -> (String, String) {
-    let decoded = mailcraft_charset::base64::STANDARD.decode(payload).unwrap_or_default();
+    let decoded = mailsolutions_charset::base64::STANDARD.decode(payload).unwrap_or_default();
     let decoded = String::from_utf8_lossy(&decoded).into_owned();
     let parts: Vec<&str> = decoded.split('\u{1}').collect();
     match parts.as_slice() {
@@ -659,7 +659,7 @@ fn serve_imap(stream: TcpStream, shared: Arc<Mutex<ImapWorld>>) {
                     } else {
                         with_command.to_string()
                     };
-                    let expected = mailcraft_charset::base64::STANDARD.encode(format!("\0{user}\0{password}").as_bytes());
+                    let expected = mailsolutions_charset::base64::STANDARD.encode(format!("\0{user}\0{password}").as_bytes());
                     signed_in = payload == expected;
                     let verdict = if signed_in { "OK welcome" } else { "NO [AUTHENTICATIONFAILED] refused" };
                     let _ = reader.get_mut().write_all(format!("{tag} {verdict}\r\n").as_bytes());
@@ -1099,7 +1099,7 @@ fn serve_smtp(stream: TcpStream, shared: Arc<Mutex<SmtpWorld>>) {
             pretend_tls(&mut out, &mut reader, "220 go ahead\r\n");
             return;
         } else if let Some(payload) = line.strip_prefix("AUTH PLAIN ") {
-            let decoded = mailcraft_charset::base64::STANDARD.decode(payload).unwrap_or_default();
+            let decoded = mailsolutions_charset::base64::STANDARD.decode(payload).unwrap_or_default();
             let decoded = String::from_utf8_lossy(&decoded).into_owned();
             let parts: Vec<&str> = decoded.split('\0').collect();
             if parts == ["", world.user.as_str(), world.password.as_str()] {

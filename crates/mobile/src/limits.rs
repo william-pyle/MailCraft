@@ -6,7 +6,7 @@
 //! - **The phone's defaults.** A Microsoft account added on the phone keeps one month of mail in
 //!   full ([`PHONE_KEEP`]), fetches a message whole in the background only up to 1 MB
 //!   ([`PHONE_DOWNLOAD`]; attachments come when opened), and its mail older than the month isn't
-//!   listed at all, not even its headers ([`mailcraft_model::Mailbox::listed_since`]).
+//!   listed at all, not even its headers ([`mailsolutions_model::Mailbox::listed_since`]).
 //! - **Caps.** At most 500 MB of mail on the phone's disk, and a number of messages worked out
 //!   from what the platform says the app may hold in memory ([`DeviceLimits::phone`]).
 //! - **Once.** A mailbox kept on a phone before these defaults (its accounts at a computer's 12
@@ -14,10 +14,10 @@
 //!   core opens it, and thinned to them; never again after that, so that what the owner chooses
 //!   later stands.
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 use crate::Core;
-use mailcraft_model::{AccountKind, DeviceLimits, KeepOffline, PHONE_DEFAULTS, PHONE_DOWNLOAD, PHONE_KEEP, PHONE_STORAGE};
+use mailsolutions_model::{AccountKind, DeviceLimits, KeepOffline, PHONE_DEFAULTS, PHONE_DOWNLOAD, PHONE_KEEP, PHONE_STORAGE};
 
 /// Move the mailbox to the phone's defaults if it hasn't been yet: its limits, and each Microsoft
 /// account's window and download size. True when something changed (thinning is then due).
@@ -111,7 +111,7 @@ impl Default for DownloadSettings {
 
 /// The settings of a new account, given it as a command each: its window and download size
 /// (`account.edit`), and the phone's storage cap (`account.deviceLimits`).
-pub(crate) fn apply_to(session: &mut Session, account: u64, settings: DownloadSettings) -> Result<(), mailcraft_engine::CmdError> {
+pub(crate) fn apply_to(session: &mut Session, account: u64, settings: DownloadSettings) -> Result<(), mailsolutions_engine::CmdError> {
     let keep = KeepOffline::from(settings.window).code();
     let size = serde_json::to_value(PHONE_DOWNLOAD).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
     session.run("account.edit", &serde_json::json!({"id": account, "keepOffline": keep, "downloadInFull": size}))?;
@@ -119,8 +119,8 @@ pub(crate) fn apply_to(session: &mut Session, account: u64, settings: DownloadSe
 }
 
 /// The phone's storage cap, in megabytes, within the bounds `account.deviceLimits` takes.
-pub(crate) fn set_storage(session: &mut Session, megabytes: u64) -> Result<(), mailcraft_engine::CmdError> {
-    use mailcraft_model::device_limits::{MAX_STORAGE, MIN_STORAGE};
+pub(crate) fn set_storage(session: &mut Session, megabytes: u64) -> Result<(), mailsolutions_engine::CmdError> {
+    use mailsolutions_model::device_limits::{MAX_STORAGE, MIN_STORAGE};
     let bytes = megabytes.saturating_mul(1 << 20).clamp(MIN_STORAGE, MAX_STORAGE);
     session.run("account.deviceLimits", &serde_json::json!({"storage": bytes})).map(|_| ())
 }

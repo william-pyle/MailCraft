@@ -3,18 +3,18 @@
 //! Accounts, signatures and synchronising with a mail server.
 //!
 //! The engine never talks to a server: `sync.request` says what a synchronisation should do and
-//! `sync.apply` takes in what it brought back (`mailcraft_model::sync`). A host with sockets
-//! (`mailcraft-net`, in the desktop app and the CLI) does the part in between.
+//! `sync.apply` takes in what it brought back (`mailsolutions_model::sync`). A host with sockets
+//! (`mailsolutions-net`, in the desktop app and the CLI) does the part in between.
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::gmail::MAX_GMAIL_REFUSALS;
-use mailcraft_model::provider::Via;
-use mailcraft_model::sync::{
+use mailsolutions_model::gmail::MAX_GMAIL_REFUSALS;
+use mailsolutions_model::provider::Via;
+use mailsolutions_model::sync::{
     Deleted, FlagsPushed, FolderDelta, FolderState, GmailMove, ImapPlace, MAX_GMAIL_MOVES, MAX_PLACES, Moved, PLACE_BYTES, Placed, RemoteFlags,
     RemoteOp, SyncRequest, SyncResult, SyncStage, summary_line_in,
 };
-use mailcraft_model::{
+use mailsolutions_model::{
     Account, AccountKind, Directory, EwsServer, FlagStatus, Folder, FolderKind, Id, JmapServer, MailIdentity, Mailbox, Message, OAuth, OAuthProvider,
     Pending, Queued, Rgb, Security, Server, clean_name,
 };
@@ -30,7 +30,7 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("account.edit", "Account Settings", "File › Info", edit).params(r#"{"id": number, …the fields of account.add, "downloadInFull"?: "upTo1Mb"|"upTo10Mb"|"upTo25Mb"|"upTo50Mb"|"everything" (a Microsoft or Exchange server account: which messages are fetched whole in the background), "keepOffline"?: "3d"|"1w"|"2w"|"1m"|"3m"|"6m"|"12m"|"2y"|"5y"|"10y"|"all" (a Microsoft or Exchange server account's mail to keep offline: how far back, by received date, mail is kept in full on this computer; older mail keeps its headers and preview. A shared mailbox follows its owner's. Shortening it removes nothing by itself: account.thinOffline does), "askBeforeDeletingConversation"?: bool (Delete on a conversation's row that takes more than one message, in its folder or found by a search, asks first in the window; on unless turned off. A shared mailbox follows its owner's), "showGmailCategories"?: bool (a Gmail account: the folder pane shows Gmail's categories, Primary, Social, Promotions, Updates and Forums, under its Inbox; on unless turned off), "alertPrimaryOnly"?: bool (a Gmail account: a desktop alert only for new mail in Gmail's Primary category; off unless turned on)}"#),
         CommandSpec::new("account.forgetEwsCertificate", "Forget Trusted Certificate", "File › Info", forget_ews_certificate)
             .params(r#"{"id": number} — an Exchange server account stops trusting the one certificate it was told to trust although the system doesn't: its fingerprint is forgotten, so the server's certificate is judged by the system alone and the owner is asked again if it isn't trusted. Answers {"id": id, "forgotten": bool}"#),
-        CommandSpec::new("account.remove", "Remove Account", "File › Info", remove).params(r#"{"id": number} — removes the account, its mail and what is kept for it on this computer (bodies and attachments leave the content folder once a state without it is saved; no Undo step is kept), and what came from its server: its events, contacts, to-dos and calendars (what was made here and not sent yet stays, as this computer's own), Outlook's list of categories, its rules (those its server keeps stay there; those for every account stay here), and, where the window's settings are kept (the window, not mailcraft-cli), its mailbox's working hours; nothing on the server is touched. Mail moved into it from elsewhere that its server wasn't given yet goes back to where it came from, and so does mail moved into it whose original another server keeps until the copy is safe; once the copy is safe on its server, that original goes as it would have (mail moved onto this computer goes back to its original, as its copy goes with the account). The only account leaves an empty mailbox, as at a first start. Answers {"deleted": id, "leftToSweep": n (content files the sweep removes later)}"#),
+        CommandSpec::new("account.remove", "Remove Account", "File › Info", remove).params(r#"{"id": number} — removes the account, its mail and what is kept for it on this computer (bodies and attachments leave the content folder once a state without it is saved; no Undo step is kept), and what came from its server: its events, contacts, to-dos and calendars (what was made here and not sent yet stays, as this computer's own), Outlook's list of categories, its rules (those its server keeps stay there; those for every account stay here), and, where the window's settings are kept (the window, not mailsolutions-cli), its mailbox's working hours; nothing on the server is touched. Mail moved into it from elsewhere that its server wasn't given yet goes back to where it came from, and so does mail moved into it whose original another server keeps until the copy is safe; once the copy is safe on its server, that original goes as it would have (mail moved onto this computer goes back to its original, as its copy goes with the account). The only account leaves an empty mailbox, as at a first start. Answers {"deleted": id, "leftToSweep": n (content files the sweep removes later)}"#),
         CommandSpec::new("account.move", "Move Account", "Folder Pane", move_account).params(r#"{"id": number, "before"?: number | null} — puts the account in another place in the folder pane, as dragging its name there does (#702): right before the account `before` names, or last without one. The shared mailboxes opened through it move with it; a shared mailbox can't be moved by itself, nor named as `before`. The order is kept in the mailbox and followed by the folder pane, File › Info, the From list of a new message, the list of calendars, Junk E-mail Options, Signatures, Rules and Alerts, the accounts of Tasks, account.list, folder.list, file.account and file.info (Send/Receive keeps the order the accounts were added in); the default account, which new mail is written from, stays the one it was. Answers {"moved": bool, "order": [id] (the accounts as the folder pane lists them, shared mailboxes included)}"#),
         CommandSpec::new("account.list", "List Accounts", "File › Info", list).pure(),
         CommandSpec::new("account.preset", "Suggest Account Settings", "File › Info", preset)
@@ -137,7 +137,7 @@ fn directory_of(v: &Value) -> Result<Option<Directory>, CmdError> {
 /// or, for a domain nobody here knows, from what that host found in the domain's own records
 /// (`found`, #1063), checked here as anything from outside is, and else the usual names.
 fn preset(_: &mut Session, v: &Value) -> CmdResult {
-    use mailcraft_model::provider;
+    use mailsolutions_model::provider;
     let email: String = p::req_str(v, "email")?.trim().chars().take(254).collect();
     let domain = match email.rsplit_once('@') {
         Some((user, domain)) if !user.is_empty() && provider::is_domain(domain) => domain.to_ascii_lowercase(),
@@ -193,7 +193,7 @@ fn preset(_: &mut Session, v: &Value) -> CmdResult {
     // In the words `account.add` takes, and whether a found host lies outside the address's
     // domain, so that an agent asks the owner before a password goes there as the window does.
     let server = |s: &Server, via: &str| {
-        let outside = Via::parse(via).is_some() && !mailcraft_model::is_within(&s.host, &domain);
+        let outside = Via::parse(via).is_some() && !mailsolutions_model::is_within(&s.host, &domain);
         json!({"host": s.host, "port": s.port, "security": s.security.code(), "via": via, "outside": outside})
     };
     Ok(json!({
@@ -214,7 +214,7 @@ fn preset(_: &mut Session, v: &Value) -> CmdResult {
 /// encryption when none is said: `tls`'s then `starttls`'s of `usual`) and where it was found.
 /// `None` for anything short of that: the usual names stand in.
 fn found_server(v: Option<&Value>, usual: (u16, u16)) -> Option<(Server, Via)> {
-    use mailcraft_model::provider::is_domain;
+    use mailsolutions_model::provider::is_domain;
     let v = v.filter(|v| v.is_object())?;
     let host = p::str(v, "host")?.trim().trim_end_matches('.').to_ascii_lowercase();
     if !is_domain(&host) {
@@ -292,7 +292,7 @@ fn apply_fields(a: &mut Account, v: &Value) -> Result<(), CmdError> {
     // Mail to keep offline (#143).
     if let Some(keep) = p::str(v, "keepOffline") {
         a.keep_offline =
-            mailcraft_model::KeepOffline::parse(keep).ok_or_else(|| bad("`keepOffline` is 3d, 1w, 2w, 1m, 3m, 6m, 12m, 2y, 5y, 10y or all"))?;
+            mailsolutions_model::KeepOffline::parse(keep).ok_or_else(|| bad("`keepOffline` is 3d, 1w, 2w, 1m, 3m, 6m, 12m, 2y, 5y, 10y or all"))?;
     }
     // Whether Delete on a whole conversation asks first (#503).
     match v.get("askBeforeDeletingConversation") {
@@ -535,7 +535,7 @@ fn ews_shown(a: &Account) -> Option<Value> {
 
 fn add(s: &mut Session, v: &Value) -> CmdResult {
     // A new account keeps a year of mail in full (#143); one from before keeps all of it.
-    let mut a = Account { keep_offline: mailcraft_model::KeepOffline::NEW_ACCOUNT, ..Default::default() };
+    let mut a = Account { keep_offline: mailsolutions_model::KeepOffline::NEW_ACCOUNT, ..Default::default() };
     apply_fields(&mut a, v)?;
     check_address(&a, None)?;
     if s.mailbox.accounts.iter().any(|x| x.email.eq_ignore_ascii_case(&a.email)) {
@@ -559,11 +559,11 @@ fn add(s: &mut Session, v: &Value) -> CmdResult {
     Ok(json!({"id": id}))
 }
 
-/// The answer to something only the newer MailCraft that added `a` does with it: an account of a
+/// The answer to something only the newer MailSolutions that added `a` does with it: an account of a
 /// kind this version doesn't know ([`AccountKind::Unknown`]), kept as its file has it. `then` says
 /// what happens instead, or what to do.
 pub(crate) fn added_by_newer(a: &Account, then: &'static str) -> CmdError {
-    failed!("{who} was added by a newer version of MailCraft, {then}", who = super::remote::who(a), then = mailcraft_i18n::Arg::words(then))
+    failed!("{who} was added by a newer version of MailSolutions, {then}", who = super::remote::who(a), then = mailsolutions_i18n::Arg::words(then))
 }
 
 fn edit(s: &mut Session, v: &Value) -> CmdResult {
@@ -660,14 +660,14 @@ fn edit(s: &mut Session, v: &Value) -> CmdResult {
 
 /// Every folder the server has of `account`, and of the shared mailboxes opened through it, is
 /// listed afresh at their next run (MB3.16).
-fn relist(mb: &mut mailcraft_model::Mailbox, account: Id) {
+fn relist(mb: &mut mailsolutions_model::Mailbox, account: Id) {
     let accounts: Vec<Id> =
         mb.accounts.iter().filter(|a| a.id == account || mb.owner_of(a.id).is_some_and(|o| o.id == account)).map(|a| a.id).collect();
     relist_accounts(mb, &accounts);
 }
 
 /// Every folder the server has of the `accounts` is listed afresh at its next run.
-pub(super) fn relist_accounts(mb: &mut mailcraft_model::Mailbox, accounts: &[Id]) {
+pub(super) fn relist_accounts(mb: &mut mailsolutions_model::Mailbox, accounts: &[Id]) {
     for f in mb.folders.iter_mut().filter(|f| accounts.contains(&f.account)) {
         if let Some(server) = f.server.as_mut().filter(|s| !s.id.is_empty()) {
             server.relist = true;
@@ -692,7 +692,7 @@ fn forget_ews_certificate(s: &mut Session, v: &Value) -> CmdResult {
 /// An Exchange server account's sync states belong to the mailbox they were given for: forgotten,
 /// where the account's folder list went on from and where each of its folders did, so that the
 /// next run reads from the start (#252).
-fn forget_ews_states(mb: &mut mailcraft_model::Mailbox, account: Id) {
+fn forget_ews_states(mb: &mut mailsolutions_model::Mailbox, account: Id) {
     if let Some(server) = mb.account_mut(account).ok().and_then(|a| a.ews.as_mut()) {
         server.hierarchy.clear();
     }
@@ -756,7 +756,7 @@ pub(crate) fn remove_within(s: &mut Session, id: Id, budget: u64) -> Result<usiz
     #[cfg(target_arch = "wasm32")]
     let _ = budget;
     #[cfg(not(target_arch = "wasm32"))]
-    let refs: Vec<mailcraft_model::ContentRef> = if s.path.is_some() {
+    let refs: Vec<mailsolutions_model::ContentRef> = if s.path.is_some() {
         let mut budget = budget;
         let mut refs = Vec::new();
         for (mid, m) in s.mailbox.messages.iter().filter(|(_, m)| going.contains(&m.account)) {
@@ -958,12 +958,12 @@ fn gmail_moved(mb: &mut Mailbox, account: Id, moved: &[GmailMove]) -> HashSet<u6
 /// Moves between Gmail's categories that Gmail refused on their own this run, and how many
 /// weren't sent at all (#911). A move refused [`MAX_GMAIL_REFUSALS`] times (in runs that tried it) is given up:
 /// the message stays where Gmail has it, and the owner is told. Said in `said`, in `lang`.
-fn gmail_refused(mb: &mut Mailbox, account: Id, (refused, unsent): (&[GmailMove], usize), lang: mailcraft_i18n::Lang, said: &mut Vec<String>) {
+fn gmail_refused(mb: &mut Mailbox, account: Id, (refused, unsent): (&[GmailMove], usize), lang: mailsolutions_i18n::Lang, said: &mut Vec<String>) {
     // Said by Gmail's message: two copies here of one message are one message there.
     let (mut again, mut given_up) = (0u64, 0u64);
     if !refused.is_empty() {
         // The account's moves waiting, by Gmail's id: the copies here of one Gmail message.
-        let mut copies: HashMap<u64, Vec<(Id, mailcraft_model::GmailCategory)>> = HashMap::new();
+        let mut copies: HashMap<u64, Vec<(Id, mailsolutions_model::GmailCategory)>> = HashMap::new();
         for m in mb.messages.values().filter(|m| m.account == account && m.gmail_id != 0) {
             if let Some(category) = m.gmail_move_waiting() {
                 copies.entry(m.gmail_id).or_default().push((m.id, category));
@@ -998,7 +998,7 @@ fn gmail_refused(mb: &mut Mailbox, account: Id, (refused, unsent): (&[GmailMove]
             }
         }
     }
-    let fmt = |text: &str, n: u64, m: u64| mailcraft_i18n::fmt(text, &[("n", &n.to_string()), ("m", &m.to_string())]);
+    let fmt = |text: &str, n: u64, m: u64| mailsolutions_i18n::fmt(text, &[("n", &n.to_string()), ("m", &m.to_string())]);
     if given_up > 0 {
         let text = lang.tn(
             given_up,
@@ -1297,16 +1297,16 @@ impl SyncTotals {
     /// How the run went, in one line: its first problem, else what it brought (`3 new messages,
     /// 1 sent`, `Up to date`), or that it was stopped and what it had brought by then.
     pub fn summary(&self) -> String {
-        self.summary_in(mailcraft_i18n::Lang::English)
+        self.summary_in(mailsolutions_i18n::Lang::English)
     }
 
     /// [`summary`](Self::summary) in `lang`.
-    pub fn summary_in(&self, lang: mailcraft_i18n::Lang) -> String {
+    pub fn summary_in(&self, lang: mailsolutions_i18n::Lang) -> String {
         let line = summary_line_in(lang, self.errors.first().map(String::as_str), self.new, self.sent);
         match (self.stopped && self.errors.is_empty(), self.new + self.sent) {
             (false, _) => line,
             (true, 0) => lang.t("Stopped").to_string(),
-            (true, _) => mailcraft_i18n::fmt(lang.t("Stopped ({line})"), &[("line", &line)]),
+            (true, _) => mailsolutions_i18n::fmt(lang.t("Stopped ({line})"), &[("line", &line)]),
         }
     }
 }
@@ -1327,7 +1327,7 @@ pub fn apply_sync_parts(s: &mut Session, run: &mut SyncTotals, pieces: Vec<SyncR
 /// Most pieces a host hands [`apply_sync_parts`] at a time.
 pub const MAX_PIECES_TOGETHER: usize = 256;
 
-/// [`apply_sync`] for an answer that comes in pieces, as `mailcraft_net::sync_with` hands it
+/// [`apply_sync`] for an answer that comes in pieces, as `mailsolutions_net::sync_with` hands it
 /// over: call it with each piece, in the order they come, and the same `run`, which adds up what
 /// they changed.
 ///
@@ -1908,7 +1908,7 @@ fn matched(mb: &mut Mailbox, on_server: &mut OnServer, folder: Id, theirs: &Mess
     let waiting = |id: &Id| mb.message(*id).filter(|m| m.folder == folder && m.uid == 0 && m.synced.is_some());
     // A copy put there from elsewhere is known by its marker alone: mail that merely looks like
     // it may be the server's own (#451).
-    let carries = |m: &Message| theirs.header_values(mailcraft_mime::PLACE_HEADER).any(|value| value == m.placed);
+    let carries = |m: &Message| theirs.header_values(mailsolutions_mime::PLACE_HEADER).any(|value| value == m.placed);
     let by_id = expected.iter().position(|id| waiting(id).is_some_and(|m| if m.placed.is_empty() { same_id(m) } else { carries(m) }));
     let at = by_id.or_else(|| expected.iter().position(|id| waiting(id).is_some_and(|m| m.placed.is_empty() && same_mail(m, theirs))))?;
     let id = expected.swap_remove(at);
@@ -2089,8 +2089,8 @@ fn folder_for(mb: &mut Mailbox, account: Id, remote: &str, kind: FolderKind) -> 
 /// folder under the one its parent has here. A folder that is here already stays as it is,
 /// except one at the top whose place in the tree is now known (folders moved here are not moved
 /// on the server yet, so the server's tree is the one that holds).
-fn adopt_listed(mb: &mut Mailbox, account: Id, on_server: &mut OnServer, listed: &[mailcraft_model::sync::ListedFolder]) {
-    let listed = listed.get(..listed.len().min(mailcraft_model::sync::MAX_LISTED_FOLDERS)).unwrap_or_default();
+fn adopt_listed(mb: &mut Mailbox, account: Id, on_server: &mut OnServer, listed: &[mailsolutions_model::sync::ListedFolder]) {
+    let listed = listed.get(..listed.len().min(mailsolutions_model::sync::MAX_LISTED_FOLDERS)).unwrap_or_default();
     // Each folder's parent by the folder's path, the first listed of a path being the one: one
     // pass, not a search of the whole list at every step up (#991).
     let mut parents: HashMap<&str, &str> = HashMap::with_capacity(listed.len());
@@ -2098,7 +2098,7 @@ fn adopt_listed(mb: &mut Mailbox, account: Id, on_server: &mut OnServer, listed:
         parents.entry(f.remote.as_str()).or_insert(f.parent.as_str());
     }
     // Parents before their children, however the server ordered them.
-    let depth = |f: &mailcraft_model::sync::ListedFolder| {
+    let depth = |f: &mailsolutions_model::sync::ListedFolder| {
         let (mut above, mut n) = (f.parent.as_str(), 0);
         while !above.is_empty() && n < 32 {
             above = parents.get(above).copied().unwrap_or_default();
@@ -2106,7 +2106,7 @@ fn adopt_listed(mb: &mut Mailbox, account: Id, on_server: &mut OnServer, listed:
         }
         n
     };
-    let mut order: Vec<&mailcraft_model::sync::ListedFolder> = listed.iter().filter(|f| !f.remote.is_empty()).collect();
+    let mut order: Vec<&mailsolutions_model::sync::ListedFolder> = listed.iter().filter(|f| !f.remote.is_empty()).collect();
     order.sort_by_cached_key(|f| depth(f));
     // Indexes made in one pass and kept up to date, so that thousands of folders are not each
     // looked for, or checked against their siblings' names, by reading every folder (#991):
@@ -2184,7 +2184,7 @@ fn take_in(
     mut delta: FolderDelta,
     (gmail_moves, moved_now): (bool, &HashSet<u64>),
     counts: &mut Counts,
-    now: mailcraft_time::Timestamp,
+    now: mailsolutions_time::Timestamp,
 ) {
     if delta.remote.is_empty() {
         return;
@@ -2297,7 +2297,7 @@ fn take_in(
             continue;
         }
         // Gmail's labels of it, cleaned again: a result can say anything (#1153).
-        m.gmail_labels = mailcraft_model::gmail::tidy_labels(&m.gmail_labels);
+        m.gmail_labels = mailsolutions_model::gmail::tidy_labels(&m.gmail_labels);
         if let Some(id) = matched(mb, on_server, folder, &m) {
             counts.matched += 1;
             // The copy here takes what Gmail says of the one on the server.
@@ -2370,7 +2370,7 @@ fn take_in(
     if !reset {
         for said in delta.gmail_labels.iter().take(MAX_LABELLED) {
             let Some(id) = on_server.by_uid.get(&(folder, said.uid)).copied() else { continue };
-            let labels = mailcraft_model::gmail::tidy_labels(&said.labels);
+            let labels = mailsolutions_model::gmail::tidy_labels(&said.labels);
             if mb.message(id).is_some_and(|m| m.folder == folder && m.gmail_labels != labels)
                 && let Ok(m) = mb.message_mut(id)
             {
@@ -2385,7 +2385,7 @@ fn take_in(
         if delta.complete {
             f.whole = Some(true);
             // What the server said of it before it was read to the end (#276), or nothing.
-            f.imap_status = delta.status.map(|status| mailcraft_model::ImapStatus { at: now, ..status });
+            f.imap_status = delta.status.map(|status| mailsolutions_model::ImapStatus { at: now, ..status });
         }
         if reset {
             f.imap_status = None;

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Which Send/Receive problem texts reach the log (`problem_log`).
 
-use mailcraft_i18n::{Arg, Text};
+use mailsolutions_i18n::{Arg, Text};
 
 use crate::problem_log::{MAX_CHARS, MAX_LOGGED, MAX_SEEN, ProblemLog, masked};
 

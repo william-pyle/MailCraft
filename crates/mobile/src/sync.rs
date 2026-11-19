@@ -20,14 +20,14 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::arrivals::{self, Arrival, InboxMark};
-use mailcraft_engine::sync_driver::{ClientIds, server_accounts};
-use mailcraft_host::sync::{Adopted, Context, Left, SendReceive, Step, Taken};
-use mailcraft_host::{Host, NetworkState, SecretStore as HostSecretStore, secrets::secret_key};
-use mailcraft_model::AccountKind;
-use mailcraft_model::sync::Tokens;
-use mailcraft_time::Zone;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::arrivals::{self, Arrival, InboxMark};
+use mailsolutions_engine::sync_driver::{ClientIds, server_accounts};
+use mailsolutions_host::sync::{Adopted, Context, Left, SendReceive, Step, Taken};
+use mailsolutions_host::{Host, NetworkState, SecretStore as HostSecretStore, secrets::secret_key};
+use mailsolutions_model::AccountKind;
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_time::Zone;
 
 use crate::events::{Event, EventSink};
 use crate::keep::Keep;
@@ -35,18 +35,18 @@ use crate::platform::Platform;
 use crate::queue::{Queue, Shed, Weight};
 use crate::{NotificationRecord, NotificationTopic};
 
-/// The application id the build was made with (`MAILCRAFT_MS_CLIENT_ID`): an identifier, not a secret.
-pub(crate) const MS_CLIENT_ID: &str = match option_env!("MAILCRAFT_MS_CLIENT_ID") {
+/// The application id the build was made with (`MAILSOLUTIONS_MS_CLIENT_ID`): an identifier, not a secret.
+pub(crate) const MS_CLIENT_ID: &str = match option_env!("MAILSOLUTIONS_MS_CLIENT_ID") {
     Some(id) => id,
     None => "",
 };
 
 /// The credential-store entry that lists the names of the others the core wrote.
-const INDEX_KEY: &str = "mailcraft:index";
+const INDEX_KEY: &str = "mailsolutions:index";
 /// The credential-store entry that says a removal found the index damaged and the owner hasn't
 /// been told yet that sign-ins it alone named may remain: kept there so that a restart between a
 /// removal that failed and its retry doesn't lose the notice. Removed once it has been given.
-const NOTICE_KEY: &str = "mailcraft:notice-sign-ins-may-remain";
+const NOTICE_KEY: &str = "mailsolutions:notice-sign-ins-may-remain";
 
 /// Whether `name` is gone from `store`: removed without a failure, and read back as absent. A
 /// read that fails counts as "still there".
@@ -66,7 +66,7 @@ pub(crate) struct Forgotten {
 
 /// Whether the index of names is in the store but doesn't parse (`None` when it is absent,
 /// parses, or can't be read), and then whether it was set aside under a name of its own
-/// (`mailcraft:index.unreadable-<ms>`) and read back as it was. It is set aside only once the
+/// (`mailsolutions:index.unreadable-<ms>`) and read back as it was. It is set aside only once the
 /// notice that sign-ins may remain is kept in the store (`NOTICE_KEY`), so that a restart can't
 /// lose both; a store that can't hold either leaves the index where it is, and the next removal
 /// finds it damaged again.
@@ -349,7 +349,7 @@ impl SyncHost {
 
     /// A refresh token a check of a permission was renewed to, for the session's sign-in of
     /// `account` (only in place of the one the check began with).
-    pub(crate) fn take_renewed(&self, session: &Session, account: u64, renewed: &mailcraft_host::signin::Renewed) {
+    pub(crate) fn take_renewed(&self, session: &Session, account: u64, renewed: &mailsolutions_host::signin::Renewed) {
         self.lock().sr.take_renewed(session, account, renewed);
     }
 
@@ -820,14 +820,14 @@ fn plan_notifications(session: &Session, found: &[Arrival], next_key: &mut u64) 
     }
     if found.len() > AT_ONCE {
         *next_key = next_key.wrapping_add(1);
-        let body = mailcraft_i18n::fmt(lang.tn(found.len() as u64, "{n} new message", "{n} new messages"), &[("n", &found.len().to_string())]);
+        let body = mailsolutions_i18n::fmt(lang.tn(found.len() as u64, "{n} new message", "{n} new messages"), &[("n", &found.len().to_string())]);
         return vec![NotificationRecord { key: *next_key, topic: NotificationTopic::Mail, title: lang.t("New mail").to_string(), body }];
     }
     found
         .iter()
         .map(|a| {
-            let sender = mailcraft_names::shown(&a.sender, NAME_CHARS);
-            let subject = mailcraft_names::shown(&a.subject, SUBJECT_CHARS);
+            let sender = mailsolutions_names::shown(&a.sender, NAME_CHARS);
+            let subject = mailsolutions_names::shown(&a.subject, SUBJECT_CHARS);
             NotificationRecord {
                 key: a.message,
                 topic: NotificationTopic::Mail,

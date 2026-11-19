@@ -12,7 +12,7 @@
 //!   added in Outlook meanwhile stays (S17).
 //! - **Moves** (`POST /me/messages/{id}/move`). A move whose answer was lost is looked for by the
 //!   message's immutable id, which a move keeps, before it is asked again (S21).
-//! - **Copies**: the source is given MailCraft's invisible marker (a single-value extended
+//! - **Copies**: the source is given MailSolutions's invisible marker (a single-value extended
 //!   property, of a value used once), the destination is searched for that value, and only when
 //!   nothing there has it is the copy asked for (`POST /me/messages/{id}/copy`), which carries
 //!   the marker: a copy whose answer was lost, in this run or an earlier one, is found and not
@@ -37,9 +37,9 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::sync::{FlagUp, MessageChange, MessageChangeDone, MessageOutcome, SharedRefusal, merge_categories};
-use mailcraft_model::{FlagStatus, Importance};
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_model::sync::{FlagUp, MessageChange, MessageChangeDone, MessageOutcome, SharedRefusal, merge_categories};
+use mailsolutions_model::{FlagStatus, Importance};
+use mailsolutions_time::{DateTime, Timestamp};
 use serde_json::{Map, Value, json};
 
 use super::super::pace::Kind;
@@ -49,9 +49,9 @@ use super::id_of;
 use crate::NetError;
 use crate::http;
 
-/// MailCraft's marker: a named string property of a property set of MailCraft's own, which
-/// nothing but MailCraft reads.
-pub(crate) const MARKER: &str = "String {6d1c4e3a-8f2b-4c5d-9e0a-1b2c3d4e5f60} Name MailCraftMarker";
+/// MailSolutions's marker: a named string property of a property set of MailSolutions's own, which
+/// nothing but MailSolutions reads.
+pub(crate) const MARKER: &str = "String {6d1c4e3a-8f2b-4c5d-9e0a-1b2c3d4e5f60} Name MailSolutionsMarker";
 /// Most categories taken from the server's answer, and longest name.
 const MAX_CATEGORIES: usize = 25;
 const MAX_CATEGORY: usize = 255;
@@ -90,7 +90,7 @@ pub(super) fn messages(
     changes: &[MessageChange],
     out: &mut Vec<MessageChangeDone>,
 ) -> Result<usize, NetError> {
-    let changes: Vec<&MessageChange> = changes.iter().take(mailcraft_model::sync::MAX_MESSAGE_CHANGES).collect();
+    let changes: Vec<&MessageChange> = changes.iter().take(mailsolutions_model::sync::MAX_MESSAGE_CHANGES).collect();
     if changes.is_empty() {
         return Ok(0);
     }

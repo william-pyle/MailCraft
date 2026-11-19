@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 use egui::{RichText, Ui, vec2};
-use mailcraft_engine::import_tree::{Parsed, Progress};
+use mailsolutions_engine::import_tree::{Parsed, Progress};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -83,7 +83,7 @@ impl ImportTree {
             return;
         }
         #[cfg(not(target_arch = "wasm32"))]
-        let done = mailcraft_engine::import_tree::load_path(&self.path, None, count_only, &self.progress).map_err(|e| e.to_string());
+        let done = mailsolutions_engine::import_tree::load_path(&self.path, None, count_only, &self.progress).map_err(|e| e.to_string());
         #[cfg(target_arch = "wasm32")]
         let done: Result<Parsed, String> = Err(tl!("the browser can't read folders by path").to_string());
         self.arrived(app, count_only, done);
@@ -98,7 +98,7 @@ impl ImportTree {
         match done {
             Err(why) => self.phase = Phase::Preview(Err(why)),
             Ok(parsed) if count_only => {
-                let preview = mailcraft_engine::import_tree::finish(&mut app.session, parsed, true).map_err(|e| e.to_string());
+                let preview = mailsolutions_engine::import_tree::finish(&mut app.session, parsed, true).map_err(|e| e.to_string());
                 self.total = preview.as_ref().ok().and_then(|p| p.get("messages")).and_then(Value::as_u64).unwrap_or(0);
                 self.phase = Phase::Preview(preview);
             }

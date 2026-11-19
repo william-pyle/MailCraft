@@ -6,8 +6,8 @@
 
 use egui::{Key, Modifiers};
 use egui_kittest::Harness;
-use mailcraft_engine::Session;
-use mailcraft_model::Id;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Id;
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -19,7 +19,7 @@ const HEIGHT: f32 = 560.0;
 
 /// The sample mailbox, in the Inbox, with the first message selected.
 fn window() -> (Harness<'static, MailApp>, Vec<Id>) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let _ = app.execute("ui.dismissReminder", json!({"all": true}));
     app.run("folder.select", json!({"kind": "inbox"})).unwrap();

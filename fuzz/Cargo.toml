@@ -3,7 +3,7 @@
 # main workspace (it needs nightly): `cargo +nightly fuzz run <target>` from the repository root;
 # `cargo fuzz list` names them.
 [package]
-name = "mailcraft-fuzz"
+name = "mailsolutions-fuzz"
 version = "0.0.0"
 publish = false
 edition = "2024"
@@ -13,26 +13,26 @@ license = "MIT OR Apache-2.0"
 cargo-fuzz = true
 
 [dependencies]
-mailcraft-assuan = { path = "../crates/assuan" }
-mailcraft-dav = { path = "../crates/dav" }
+mailsolutions-assuan = { path = "../crates/assuan" }
+mailsolutions-dav = { path = "../crates/dav" }
 # Mailbox files in every form (`mailbox_file`), with the small limits of its tests.
-mailcraft-engine = { path = "../crates/engine", features = ["test-support"] }
+mailsolutions-engine = { path = "../crates/engine", features = ["test-support"] }
 libfuzzer-sys = "0.4"
-mailcraft-charset = { path = "../crates/charset" }
-mailcraft-i18n = { path = "../crates/i18n" }
-mailcraft-html = { path = "../crates/html" }
-mailcraft-ical = { path = "../crates/ical" }
-mailcraft-jmap = { path = "../crates/jmap" }
-mailcraft-ews = { path = "../crates/ews" }
-mailcraft-link = { path = "../crates/link" }
-mailcraft-mime = { path = "../crates/mime" }
-mailcraft-mime-model = { path = "../crates/mime-model" }
-mailcraft-model = { path = "../crates/model" }
-mailcraft-openpgp = { path = "../crates/openpgp" }
-mailcraft-proto = { path = "../crates/proto" }
-mailcraft-pst = { path = "../crates/pst" }
-mailcraft-smime = { path = "../crates/smime" }
-mailcraft-vcard = { path = "../crates/vcard" }
+mailsolutions-charset = { path = "../crates/charset" }
+mailsolutions-i18n = { path = "../crates/i18n" }
+mailsolutions-html = { path = "../crates/html" }
+mailsolutions-ical = { path = "../crates/ical" }
+mailsolutions-jmap = { path = "../crates/jmap" }
+mailsolutions-ews = { path = "../crates/ews" }
+mailsolutions-link = { path = "../crates/link" }
+mailsolutions-mime = { path = "../crates/mime" }
+mailsolutions-mime-model = { path = "../crates/mime-model" }
+mailsolutions-model = { path = "../crates/model" }
+mailsolutions-openpgp = { path = "../crates/openpgp" }
+mailsolutions-proto = { path = "../crates/proto" }
+mailsolutions-pst = { path = "../crates/pst" }
+mailsolutions-smime = { path = "../crates/smime" }
+mailsolutions-vcard = { path = "../crates/vcard" }
 
 # Its own workspace, so the main one's builds, lints and cargo-deny leave it alone.
 [workspace]

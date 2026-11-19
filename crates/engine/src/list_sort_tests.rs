@@ -3,7 +3,7 @@
 //! The list's sorts, which take what they compare from each message once, put the messages in
 //! the order comparing the messages themselves does, for every arrangement both ways round.
 
-use mailcraft_model::{FlagStatus, Importance, Message};
+use mailsolutions_model::{FlagStatus, Importance, Message};
 use serde_json::json;
 
 use crate::list::when;

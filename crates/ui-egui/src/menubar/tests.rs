@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The menu bar's table: what each menu holds, which keys it shows, and what an item runs when.
 
-use mailcraft_engine::Session;
-use mailcraft_model::Mailbox;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Mailbox;
 
 use super::*;
 use crate::Services;
@@ -107,7 +107,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// The sample mailbox, with a message selected in Mail.
 fn sample() -> (MailApp, u64) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let id = app.session.rows().first().map(|r| r.id).unwrap();
     app.execute("mail.select", serde_json::json!({"id": id})).unwrap();
@@ -128,7 +128,7 @@ fn search_focuses_the_search_box_as_its_key_does() {
     assert!(enabled(&app, &cmd("view.search")));
     run(&mut app, &cmd("view.search"), String::new);
     assert!(app.search_focus, "the search box was not given the keyboard");
-    assert_eq!(app.session.view.module, mailcraft_engine::Module::Mail);
+    assert_eq!(app.session.view.module, mailsolutions_engine::Module::Mail);
     assert!(app.session.view.search.is_empty());
 }
 
@@ -182,7 +182,7 @@ fn mail_commands_are_greyed_and_not_run_outside_mail() {
     // Commands of no module still run anywhere.
     assert!(enabled(&app, &cmd("view.mail")));
     run(&mut app, &cmd("view.mail"), String::new);
-    assert_eq!(app.session.view.module, mailcraft_engine::Module::Mail);
+    assert_eq!(app.session.view.module, mailsolutions_engine::Module::Mail);
     assert!(enabled(&app, &cmd("mail.reply")));
 }
 

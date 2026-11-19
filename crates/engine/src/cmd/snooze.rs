@@ -3,7 +3,7 @@
 //! Snooze (#949): put a message out of the way until a Return time. It waits in the account's
 //! Snoozed folder, then comes back by itself to the folder it came from, unread and marked.
 //!
-//! The moves are the mailbox's own ([`mailcraft_model::Mailbox::move_each`]), and the folder is
+//! The moves are the mailbox's own ([`mailsolutions_model::Mailbox::move_each`]), and the folder is
 //! made as any folder the owner makes, so what each kind of account tells its server is what it
 //! tells for any move and any new folder. Nothing here does I/O. The Return time is kept in the
 //! mailbox file only: it never leaves this computer.
@@ -18,7 +18,7 @@
 //!   `References`) or has the server's conversation id the message has.
 //! - Snoozing a JMAP account's server mail isn't built yet, so a message it has is refused.
 
-use mailcraft_model::{FolderKind, Id, MAX_SNOOZE_AHEAD, Mailbox, Message};
+use mailsolutions_model::{FolderKind, Id, MAX_SNOOZE_AHEAD, Mailbox, Message};
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 
@@ -48,7 +48,7 @@ pub fn specs() -> Vec<CommandSpec> {
             .params(r#"{"ids"?: [number]} (default: the selected messages) — snoozed messages come back now, as at their Return time. Refused when none is snoozed"#)
             .selection(needs_message),
         CommandSpec::new("mail.returnDue", "Return Snoozed Mail", "Send / Receive", return_due).pure().params(
-            r#"{} — brings back every snoozed message whose Return time has come (at most 1,000 at a time), also those that came due while MailCraft was closed, and calls off the snooze of mail moved out of the Snoozed folder. Answers `returned` (the messages, to alert about) and `calledOff`"#,
+            r#"{} — brings back every snoozed message whose Return time has come (at most 1,000 at a time), also those that came due while MailSolutions was closed, and calls off the snooze of mail moved out of the Snoozed folder. Answers `returned` (the messages, to alert about) and `calledOff`"#,
         ),
     ]
 }
@@ -62,7 +62,7 @@ fn until(s: &Session, v: &Value) -> Result<i64, crate::CmdError> {
     let at = match v.get("until") {
         Some(Value::Number(n)) => n.as_i64().ok_or_else(wrong)?,
         Some(Value::String(text)) => {
-            let (wall, offset) = (text.len() <= 40).then(|| mailcraft_time::parse_iso(text)).flatten().ok_or_else(wrong)?;
+            let (wall, offset) = (text.len() <= 40).then(|| mailsolutions_time::parse_iso(text)).flatten().ok_or_else(wrong)?;
             if !(FIRST_YEAR..=LAST_YEAR).contains(&wall.date.year) {
                 return Err(wrong());
             }
@@ -140,7 +140,7 @@ pub(crate) fn tell(answer: &mut CmdResult, said: Vec<String>) {
 /// own address (a copy to themselves, a list's echo). It is of the conversation only by a known
 /// link: it answers the snoozed message by `In-Reply-To` or `References`, or the server gave both
 /// the same conversation id. It arrived after the snooze when its id is higher than the newest
-/// there was then ([`mailcraft_model::Snooze::after_id`]), whatever date its server gave it.
+/// there was then ([`mailsolutions_model::Snooze::after_id`]), whatever date its server gave it.
 /// Nothing is remembered between runs: mail that got its conversation id in a later piece of a
 /// run is found then.
 pub(crate) fn after(s: &mut Session) -> Vec<String> {
@@ -155,7 +155,7 @@ pub(crate) fn after(s: &mut Session) -> Vec<String> {
         .map(|id| {
             let subject = s.mailbox.message(*id).map(|m| m.subject.clone()).unwrap_or_default();
             let subject = if subject.trim().is_empty() { lang.t("(no subject)").to_string() } else { subject };
-            mailcraft_i18n::fmt(
+            mailsolutions_i18n::fmt(
                 lang.t("'{subject}' stays in the Snoozed folder: the server would not move it back, so it is no longer snoozed."),
                 &[("subject", &subject)],
             )

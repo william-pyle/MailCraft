@@ -9,8 +9,8 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::sync::GraphFetchResult;
-use mailcraft_model::{AccountKind, Id};
+use mailsolutions_model::sync::GraphFetchResult;
+use mailsolutions_model::{AccountKind, Id};
 use serde_json::Value;
 
 use super::{FETCH_IDLE_MS, fetch_backoff_ms};
@@ -171,7 +171,7 @@ pub fn needs_whole(s: &Session, id: &str, params: &Value) -> Option<Id> {
 pub fn to_fetch(s: &Session, id: &str, message: Id) -> Option<Id> {
     // One whose server's copy went before it could be fetched never will be: Forward as Attachment
     // says so itself (the others have no word of their own for it, and wait as they did).
-    let never = |m: &mailcraft_model::Message| m.incomplete && id == "mail.forwardAsAttachment";
+    let never = |m: &mailsolutions_model::Message| m.incomplete && id == "mail.forwardAsAttachment";
     s.mailbox.message(message).filter(|m| m.unfetched && !never(m) && m.server.is_some()).map(|m| m.id)
 }
 
@@ -202,7 +202,7 @@ pub fn forward_of(command: &str, params: &Value) -> Option<(Vec<Id>, Option<Id>,
 /// (a delta gives no sizes), so a forward of more than 64 MB together is found out after at most
 /// that many more have come.
 pub fn still_to_fetch(s: &Session, ids: &[Id], tried: &[Id]) -> Vec<Id> {
-    let waiting = |m: &&mailcraft_model::Message| m.unfetched && m.server.is_some() && !tried.contains(&m.id);
+    let waiting = |m: &&mailsolutions_model::Message| m.unfetched && m.server.is_some() && !tried.contains(&m.id);
     let mut waiting = ids.iter().filter_map(|id| s.mailbox.message(*id)).filter(waiting);
     let Some(first) = waiting.next() else { return Vec::new() };
     let account = first.account;

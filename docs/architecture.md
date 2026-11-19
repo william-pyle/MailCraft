@@ -1,8 +1,8 @@
-# MailCraft architecture
+# MailSolutions architecture
 
-> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-11-14 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365)
+> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-11-19 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365)
 
-How MailCraft is built today. Rules for working in the code are in [`AGENTS.md`](../AGENTS.md). The
+How MailSolutions is built today. Rules for working in the code are in [`AGENTS.md`](../AGENTS.md). The
 shape — layers, "everything is a command", the swappable egui front end, the control channel, MCP,
 `xtask` gates — is WordCraft's, applied to mail.
 
@@ -35,7 +35,7 @@ egui, eframe, winit or rfd.
 | L2 | `smime` | S/MIME (RFC 8551) Digital signatures checked (#30), from RFC 5652 (CMS), RFC 5280 (X.509) and the algorithms' RFCs: the signer's digest against the message's, the signature (RSA of 2048 bits or more, ECDSA on P-256 or P-384, over SHA-2), and whether the certificate rests on a trust anchor the host hands in, is for signing mail and is for the From address; the same four results as OpenPGP; revocation isn't checked. No I/O, hostile input bounded |
 | L3 | `proto` | IMAP4rev1 and SMTP clients over any `Read + Write` stream (no sockets, so they test against scripted transcripts and build for wasm) |
 | L3 | `dav` | Bounded DAV XML and byte-preserving iCalendar/vCard edits over model snapshots; no sockets or browser APIs, builds for wasm |
-| L3 | `assuan` | The Assuan protocol and gpg-agent over any `Read + Write` stream, so that OpenPGP keys stay in GnuPG (smartcards included) and MailCraft never sees a PIN: lines of at most 1000 bytes, percent-escaping, `D`/`S`/`OK`/`ERR`/`INQUIRE`, every size and count capped; gpg-agent's `HAVEKEY`, `KEYINFO`, `READKEY`, signing a SHA-256/384/512 digest (`PKSIGN`) and decrypting a session key (`PKDECRYPT`, answering `INQUIRE CIPHERTEXT`), with the hints its own pinentry needs; a bounded canonical S-expression reader; Assuan's socket files (a redirect, Windows' loopback port and nonce). No sockets: the desktop program finds the agent with `gpgconf` and opens it (`apps/mailcraft/src/gpg_agent.rs`); builds for wasm, which never uses it (#30) |
+| L3 | `assuan` | The Assuan protocol and gpg-agent over any `Read + Write` stream, so that OpenPGP keys stay in GnuPG (smartcards included) and MailSolutions never sees a PIN: lines of at most 1000 bytes, percent-escaping, `D`/`S`/`OK`/`ERR`/`INQUIRE`, every size and count capped; gpg-agent's `HAVEKEY`, `KEYINFO`, `READKEY`, signing a SHA-256/384/512 digest (`PKSIGN`) and decrypting a session key (`PKDECRYPT`, answering `INQUIRE CIPHERTEXT`), with the hints its own pinentry needs; a bounded canonical S-expression reader; Assuan's socket files (a redirect, Windows' loopback port and nonce). No sockets: the desktop program finds the agent with `gpgconf` and opens it (`apps/mailsolutions/src/gpg_agent.rs`); builds for wasm, which never uses it (#30) |
 | L3 | `net` | TCP + TLS (rustls), sending through SMTP, two-way IMAP synchronisation, OAuth sign-in, MX and Autodiscover SRV lookup, Microsoft Graph (`graph`), one HTTPS exchange with an Exchange server that can trust one certificate by its fingerprint, and a held connection that carries the legs of an NTLM sign-in on one socket and names its certificate's hash for channel binding (`https`); empty on wasm |
 | L3 | `ews` | Exchange Web Services (Microsoft's public documentation only) without sockets or browser APIs: the SOAP request writer, a hostile XML reader, the response-code and `ErrorServerBusy` judgement and `GetFolder`, Autodiscover as a state machine the host drives (the order of places, redirects, the owner's say for another host, Exchange Online told apart), Basic credentials, NTLMv2 written from MS-NLMP (the three legs, MIC, channel binding; MD4, MD5 and HMAC from RustCrypto) and the choice of NTLM or Basic from what the server offers, and mail down: `SyncFolderHierarchy`, `SyncFolderItems` and `GetItem` with their answer readers, and `sync_mail`/`fetch_messages`, which run them over any `HttpExchange` and hand the run back in pieces (waiting for a busy server through a hook the host gives); the program does the exchange (`HttpExchange`); a strict in-process stand-in of Exchange Web Services and of Autodiscover for tests (`stand-in` feature) (#252); going up: changes of messages and folders, drafts kept in the server's Drafts and found again by a marker, sending, never repeated after a lost answer (`changes`, `compose`, `up`); NTLM or Basic chosen from the server's offer (`auth`) |
 | L3 | `jmap` | JMAP (RFC 8620, 8621) without sockets or browser APIs: builds each HTTP request and judges the answer, the program does the exchange (`HttpExchange`); an in-process server for tests (`stand-in` feature). The browser build runs it over `fetch` (M6, [jmap.md](jmap.md)) |
@@ -44,13 +44,13 @@ egui, eframe, winit or rfd.
 | L5 | `mcp` | MCP server: tools over the command registry; headless or bridged to the running app |
 | L6 | `ui-egui` | The front end: title bar with search, ribbon, module bar, folder pane, message list, reading pane, composer, calendar, people, tasks, Backstage, dialogs, themes, control channel, headless `ui_shot` example |
 | L6 | `mobile` | The binding for the phone apps (ADR 0023): the Rust core as one object that Kotlin and Swift hold, exported through UniFFI; commands run by id through `Session::run`, typed queries read windows of the mailbox, an event stream the app pulls; no UI toolkit; not part of the browser build |
-| apps | `mailcraft` | Desktop app (eframe + wgpu; logging, window geometry, native dialogs, Send/Receive thread, control server; leaving, `quit.rs`: unsaved work asks first on every platform, then on macOS the process ends through `-[NSApplication terminate:]` (`quit_macos.rs`, MailCraft's own) rather than by closing the window, which can crash AppKit, and the macOS menu bar (`menubar.rs`, `muda`; its table of command ids is `ui-egui`'s `menubar`) has Quit (⌘Q) asking like the close button) |
-| apps | `mailcraft-cli` | `info`, `folders`, `list`, `show`, `import`, `export`, `convert`, `run`, `sync`, `commands`, `parity`, `mcp` |
-| apps | `mailcraft-web` | Browser build (eframe web runner, WebGPU with WebGL2 fallback; browser storage, file picker, downloads) |
-| apps | `mailcraft-android` | Android app: a Gradle project (Kotlin, Jetpack Compose, minSdk 29) over the Rust library of `crates/mobile`, which `cargo-ndk` builds for arm64-v8a and x86_64; UniFFI's Kotlin bindings are generated from it at build time. Not a Cargo member; `cargo xtask mobile` builds, lints (Android Lint and detekt, both as errors) and tests it, and checks the licences of what ships and that no Google Play Services or Firebase is in it |
+| apps | `mailsolutions` | Desktop app (eframe + wgpu; logging, window geometry, native dialogs, Send/Receive thread, control server; leaving, `quit.rs`: unsaved work asks first on every platform, then on macOS the process ends through `-[NSApplication terminate:]` (`quit_macos.rs`, MailSolutions's own) rather than by closing the window, which can crash AppKit, and the macOS menu bar (`menubar.rs`, `muda`; its table of command ids is `ui-egui`'s `menubar`) has Quit (⌘Q) asking like the close button) |
+| apps | `mailsolutions-cli` | `info`, `folders`, `list`, `show`, `import`, `export`, `convert`, `run`, `sync`, `commands`, `parity`, `mcp` |
+| apps | `mailsolutions-web` | Browser build (eframe web runner, WebGPU with WebGL2 fallback; browser storage, file picker, downloads) |
+| apps | `mailsolutions-android` | Android app: a Gradle project (Kotlin, Jetpack Compose, minSdk 29) over the Rust library of `crates/mobile`, which `cargo-ndk` builds for arm64-v8a and x86_64; UniFFI's Kotlin bindings are generated from it at build time. Not a Cargo member; `cargo xtask mobile` builds, lints (Android Lint and detekt, both as errors) and tests it, and checks the licences of what ships and that no Google Play Services or Firebase is in it |
 
-Languages: the program is Rust. Kotlin is allowed only under `apps/mailcraft-android` and Swift only
-under `apps/mailcraft-ios`, for the interface and the platform layer (what the system gives the program:
+Languages: the program is Rust. Kotlin is allowed only under `apps/mailsolutions-android` and Swift only
+under `apps/mailsolutions-ios`, for the interface and the platform layer (what the system gives the program:
 credential store, browser, files, notifications, clock). They never parse anything that comes from
 outside: messages, server answers and files are read by Rust, which gives the apps typed records and
 display blocks. Their lint is part of the build and enforces never-crash (no `!!`, no `lateinit` where it
@@ -75,19 +75,19 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
    and `mime`; `sync.apply` (pure) takes the result in and runs the rules on new Inbox mail. The
    engine and the UI never touch a socket, which is why they build for the browser. A JMAP
    account goes the Graph way: `sync.jmapRequest` (pure) says what to take up, send and read, the host (the browser
-   build, over `fetch`) runs `mailcraft_jmap::sync_mail` and hands the run back in pieces, and
+   build, over `fetch`) runs `mailsolutions_jmap::sync_mail` and hands the run back in pieces, and
    `sync.applyJmap` (pure) takes each in by server id ([jmap.md](jmap.md)). An Exchange server
    account (#252, Exchange Web Services) goes the same way: its request and result shapes are
    in `model`'s `sync::ews`; `sync.ewsRequest` (pure) says what to read (the folder list from its
-   sync state, each folder from its own), the desktop host runs `mailcraft_ews::sync_mail` on a
-   thread of its own over `mailcraft_net::https` (Basic over TLS, one certificate trusted by its
+   sync state, each folder from its own), the desktop host runs `mailsolutions_ews::sync_mail` on a
+   thread of its own over `mailsolutions_net::https` (Basic over TLS, one certificate trusted by its
    fingerprint, a certificate question stopping the run instead of a TLS error) and hands the run
    back in pieces, and `sync.applyEws` (pure) takes each in by server id; messages are fetched whole
    through `sync.ewsFetchRequest` and `sync.applyEwsFetch`.
    What is made here goes up and is sent through the same run. Setting one up is Add Account's
    explicit Exchange server choice (L6, `account_setup/exchange.rs`): the page only collects, and
-   the host (`Services::ews_setup`, `apps/mailcraft/src/ews_setup.rs`, on a thread of its own once
-   the owner presses Connect) does the DNS-over-HTTPS lookups, drives `mailcraft_ews::Autodiscover`,
+   the host (`Services::ews_setup`, `apps/mailsolutions/src/ews_setup.rs`, on a thread of its own once
+   the owner presses Connect) does the DNS-over-HTTPS lookups, drives `mailsolutions_ews::Autodiscover`,
    asks the owner through the job's channel before a sign-in goes to another host, tries the account
    with one request for its Inbox through the run's own transport, and answers in kinds
    (`ui-egui`'s `ews_setup`), never in a server's words; `account.add` with `kind: "exchange"` then
@@ -109,7 +109,7 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
   moments stay, nothing is marked as changed for a server, and a series is pinned to the zone it
   was written in (`Event::start_zone`), so that it goes on repeating by that clock. A mailbox
   without the stamp (written before 2026-10-12) is read as it always was, by this computer's
-  clock, and only stamped. Everything that converts goes through `mailcraft_model::zoned`.
+  clock, and only stamped. Everything that converts goes through `mailsolutions_model::zoned`.
 - **Conversations are grouped by topic** (the subject without `RE:`/`FW:` prefixes) within an
   account, as the incumbent does, not by `References` chains.
 - **A mailbox file, and its content beside it.** On the desktop `mailbox.mailcraft` holds
@@ -117,7 +117,7 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
   rest of the mailbox, and one record per message, contact, event or task; bodies and attachments
   over a kilobyte are write-once files named by their SHA-256 in `mailbox.mailcraft.blobs/`
   (`crates/engine/src/store.rs`). So is a message's header block over a kilobyte: the header
-  lines nothing in the program reads by name (`mailcraft_model::headers`: those it reads by name
+  lines nothing in the program reads by name (`mailsolutions_model::headers`: those it reads by name
   are `WORKING`, which a test holds to the source), kept apart and in order, read only by View
   Source and what writes a message whole (`Session::loaded_message`). The blocks are packed one
   after another in a few `headers-<n>.pack` files there rather than a file each (#1376,
@@ -131,7 +131,7 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
   as it is; the window puts its blocks beside it as it reads it and writes it in format 4 at
   once (an opening that only reads it, the command line's or an agent's, holds them in memory
   until a save), the format-3 file kept beside it as `<file>.before-<version>` (`store_before`); a build that
-  reads only format 3 calls a format-4 file one from a newer MailCraft. A save appends the records of what changed and a commit in one
+  reads only format 3 calls a format-4 file one from a newer MailSolutions. A save appends the records of what changed and a commit in one
   flushed write, on a background thread: a read mark costs a few hundred bytes however large the
   mailbox. What was last written is remembered item by item (its fingerprint, and a weak pointer
   to the copy in memory that it is), so a save looks only at items whose copy changed; when the
@@ -147,20 +147,20 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
   the window's status bar and the CLI show it), and the file is kept aside as
   `<file>.damaged-<time>` before it is next written; a file another program wrote since it was
   read here is kept as `<file>.changed-<time>` (one whose time changed but whose bytes are still what
-  was written here, by their SHA-256, is still this program's); MailCraft never removes a file kept
+  was written here, by their SHA-256, is still this program's); MailSolutions never removes a file kept
   aside, as each may be the only copy of what it holds. The sweep keeps
   every content file a kept-aside file names (damaged, changed, or of an earlier form). Formats 1
   and 2 (JSON) are still read and become format 4 at the first changed save, the old file kept
-  beside it as `<file>.format1` or `.format2`, which is what MailCraft 0.4.3 and earlier can open
+  beside it as `<file>.format1` or `.format2`, which is what MailSolutions 0.4.3 and earlier can open
   (they call a format-3 file not a mailbox); a file that begins as ours but in a form newer than
-  this program reads is said to be from a newer MailCraft. A self-contained single file is still what the browser, exports
+  this program reads is said to be from a newer MailSolutions. A self-contained single file is still what the browser, exports
   and `file.saveAs` use. Everything is in memory while the app runs, which is the next limit
   (R6.1, see `docs/gaps.md`). An account of a kind this program doesn't know (one a newer
-  MailCraft added: `AccountKind::Unknown`) doesn't stop the file from opening: only what says
+  MailSolutions added: `AccountKind::Unknown`) doesn't stop the file from opening: only what says
   which account it is is read, the rest is kept as the file has it (`Account::as_written`) and
   written back so in every form, and nothing here sends, receives or changes its settings: going
   back to the version before, after an update that didn't start, loses nothing of it.
-- **A Send/Receive arrives in pieces.** `mailcraft_net::sync_with` emits what was sent, what the
+- **A Send/Receive arrives in pieces.** `mailsolutions_net::sync_with` emits what was sent, what the
   server was told, then mail folder by folder (the Inbox first, newest first, fifty at a time),
   each piece safe to apply by itself (`apply_sync_part`), so mail shows while the rest is on its
   way and a run that is cut short loses nothing: the UID bookkeeping only advances past what was
@@ -184,7 +184,7 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
   the IMAP ones (`GraphMailRequest`, `FolderChange`, `GraphMailResult`, `FolderListing` in
   `crates/model/src/sync.rs`): `sync.graphRequest` / `graph_mail_request` and `sync.applyGraph` /
   `apply_graph_mail` (`crates/engine/src/cmd/graph_mail.rs`) are pure, and
-  `mailcraft_net::graph::sync_folders` (`crates/net/src/graph/mail.rs`) does the talking on the
+  `mailsolutions_net::graph::sync_folders` (`crates/net/src/graph/mail.rs`) does the talking on the
   host's Graph job: the changes first, then a walk of every folder (hidden and search folders
   left out, the tree from where each was found, names whole). What comes back is taken in by
   server id; the server wins but for what was changed here and hasn't reached it; a listing that
@@ -222,7 +222,7 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
   change); after three that don't, the event is put back to what the server has and the owner is
   told. A waiting change that can't be sent any more is given up with a word, never silently
   (`cmd/remote.rs`: `check_sent`, `tidy_changes`). The tests hold all of it against
-  `mailcraft_net::graph::standin`, which takes only what the documented service takes.
+  `mailsolutions_net::graph::standin`, which takes only what the documented service takes.
 - **Two-way sync without a journal of everything.** Flags are compared with what the server last
   said (`Message::synced`): a flag changed here since then goes up, one changed there comes down,
   and here wins when both did. Moves and permanent deletes can't be seen by comparing, so the
@@ -254,9 +254,9 @@ can be avoided, no `TODO`); each file carries the SPDX lines (`cargo xtask spdx`
 ## Start-up
 
 The window comes up at once, at its remembered size and in its theme, and the mailbox is read on
-a thread of its own (`apps/mailcraft/src/launch.rs`, #519); the window waits in
+a thread of its own (`apps/mailsolutions/src/launch.rs`, #519); the window waits in
 `crates/ui-egui/src/opening.rs`. If reading takes longer than 0.3 s it shows the opening screen:
-the bytes read of the file's (`mailcraft_engine::io::OpenProgress`, counted by
+the bytes read of the file's (`mailsolutions_engine::io::OpenProgress`, counted by
 `store::open_with`), then "Getting ready…". Until the mailbox is there the window can be moved,
 resized and closed and nothing else: every command, and every control request but `app.status`,
 is refused with "the mailbox is still opening"; files and links handed over (a second start,
@@ -309,6 +309,7 @@ a made-up mailbox of 64,000 messages (ignored by `cargo test`).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-19 | minor | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-15 | patch | 27 crates and 4 apps; rows for `smime` and `mobile` |
 | 2026-11-15 | patch | #209 D2: the `dav_answers` fuzz target joins the list |
 | 2026-11-14 | patch | #1376: header blocks packed in a few files in the content folder (`store_pack.rs`), not one file each; a block that can't be read fails the fresh pack, Undo-held blocks count as named, packs a kept-aside file names stay |

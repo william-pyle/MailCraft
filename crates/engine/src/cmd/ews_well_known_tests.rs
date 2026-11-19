@@ -3,10 +3,10 @@
 //! The server's own folders of an Exchange server account (Conversation History, Sync Issues and
 //! the like, #779), as the engine takes them in: marked by the ids the run names, whether the delta
 //! of the folder list brings them or not, the mark kept once set, and never renamed, moved or
-//! deleted. (Against `mailcraft-ews`'s stand-in: `crates/ews/src/own_folders_tests.rs`.)
+//! deleted. (Against `mailsolutions-ews`'s stand-in: `crates/ews/src/own_folders_tests.rs`.)
 
-use mailcraft_model::Queued;
-use mailcraft_model::sync::{ChangeOutcome, EwsFolderDeltas, FolderChange, FolderChangeDone, GraphFolder};
+use mailsolutions_model::Queued;
+use mailsolutions_model::sync::{ChangeOutcome, EwsFolderDeltas, FolderChange, FolderChangeDone, GraphFolder};
 use serde_json::json;
 
 use super::*;

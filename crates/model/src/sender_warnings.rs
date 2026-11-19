@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! **Sender warnings**: what MailCraft tells the owner about a message that may not be what it
+//! **Sender warnings**: what MailSolutions tells the owner about a message that may not be what it
 //! seems, each with its reason. A **warning** when the account's own server says the sender's
 //! checks failed, or a name hides another address; a **caution** for a **lookalike** sender or
 //! a link whose text names one place and goes to another (and a failed check where the
@@ -316,7 +316,7 @@ pub(crate) fn normal_domain(domain: &str) -> Option<String> {
             return None;
         }
         let label = label.to_lowercase();
-        let read = label.strip_prefix("xn--").and_then(mailcraft_link::punycode::decode).map(|chars| chars.into_iter().collect::<String>());
+        let read = label.strip_prefix("xn--").and_then(mailsolutions_link::punycode::decode).map(|chars| chars.into_iter().collect::<String>());
         labels.push(read.unwrap_or(label));
     }
     Some(labels.join("."))
@@ -595,7 +595,7 @@ pub fn machine_made(name: &str) -> bool {
 /// `domain` written the way it goes over the wire (`xn--…` for letters outside ASCII), so that a
 /// lookalike shows for what it is.
 fn wire(domain: &str) -> String {
-    mailcraft_link::WebLink::parse(&format!("http://{domain}/")).map_or_else(|| domain.to_string(), |link| link.host().to_string())
+    mailsolutions_link::WebLink::parse(&format!("http://{domain}/")).map_or_else(|| domain.to_string(), |link| link.host().to_string())
 }
 
 /// `text` cut to [`MAX_DETAIL_CHARS`].
@@ -672,7 +672,7 @@ fn named_host(text: &str) -> Option<String> {
     }
     let lower = text.to_ascii_lowercase();
     if lower.starts_with("http://") || lower.starts_with("https://") {
-        return mailcraft_link::WebLink::parse(text).map(|link| link.host().to_string());
+        return mailsolutions_link::WebLink::parse(text).map(|link| link.host().to_string());
     }
     if text.contains(['@', ':']) {
         return None;
@@ -685,7 +685,7 @@ fn named_host(text: &str) -> Option<String> {
     if !plain || host.chars().any(|c| !(c.is_alphanumeric() || matches!(c, '.' | '-'))) {
         return None;
     }
-    mailcraft_link::WebLink::parse(&format!("http://{text}")).map(|link| link.host().to_string())
+    mailsolutions_link::WebLink::parse(&format!("http://{text}")).map(|link| link.host().to_string())
 }
 
 /// A host as hosts are compared: without a leading `www.` and a dot at the end.
@@ -754,7 +754,7 @@ fn query_values<'a>(link: &'a str, key: &'a str) -> impl Iterator<Item = &'a str
 }
 
 /// The link a URL Defense link stands for; `None` when it can't be read whole.
-fn proofpoint(link: &mailcraft_link::WebLink, host: &str) -> Option<mailcraft_link::WebLink> {
+fn proofpoint(link: &mailsolutions_link::WebLink, host: &str) -> Option<mailsolutions_link::WebLink> {
     let path = path_of(link.as_str());
     if is_at(host, PROOFPOINT_V2) {
         if !path.get(..7).is_some_and(|p| p.eq_ignore_ascii_case("/v2/url")) {
@@ -769,7 +769,7 @@ fn proofpoint(link: &mailcraft_link::WebLink, host: &str) -> Option<mailcraft_li
                 c => c,
             })
             .collect();
-        return mailcraft_link::WebLink::parse(percent_decoded(&written).trim());
+        return mailsolutions_link::WebLink::parse(percent_decoded(&written).trim());
     }
     // ponytail: a `*` stands for characters given after `__;`; such a link stays uncompared
     // rather than be half read. Read them if rewritten links with one turn out common.
@@ -777,22 +777,22 @@ fn proofpoint(link: &mailcraft_link::WebLink, host: &str) -> Option<mailcraft_li
     if inner.contains('*') {
         return None;
     }
-    mailcraft_link::WebLink::parse(inner.trim())
+    mailsolutions_link::WebLink::parse(inner.trim())
 }
 
 /// Where `link` really goes: through Safe Links, each link its `url` stands for (the Safe Links
 /// address itself when it stands for none); through URL Defense, the link it stands for; else
 /// `link` itself. None for a link through one of the [`LINK_REWRITERS`], or a URL Defense link
 /// that can't be read whole: those are not compared.
-fn real_links(link: mailcraft_link::WebLink) -> Vec<mailcraft_link::WebLink> {
+fn real_links(link: mailsolutions_link::WebLink) -> Vec<mailsolutions_link::WebLink> {
     if !is_at(&host_key(link.host()).to_ascii_lowercase(), SAFE_LINKS) {
         return unwrapped(link);
     }
     // Safe Links round another rewriter (an organisation behind Proofpoint as well) is
     // unwrapped once more; no deeper.
-    let (mut inner, mut named) = (Vec::<mailcraft_link::WebLink>::new(), false);
+    let (mut inner, mut named) = (Vec::<mailsolutions_link::WebLink>::new(), false);
     for value in query_values(link.as_str(), "url").take(MAX_INNER_LINKS) {
-        let Some(target) = mailcraft_link::WebLink::parse(percent_decoded(value).trim()) else { continue };
+        let Some(target) = mailsolutions_link::WebLink::parse(percent_decoded(value).trim()) else { continue };
         named = true;
         for target in unwrapped(target) {
             if !inner.iter().any(|known| known.as_str() == target.as_str()) {
@@ -805,7 +805,7 @@ fn real_links(link: mailcraft_link::WebLink) -> Vec<mailcraft_link::WebLink> {
 
 /// Where `link` goes, through a rewriter other than Safe Links: the link URL Defense carries,
 /// nothing for one that hides it or can't be read, else `link` itself.
-fn unwrapped(link: mailcraft_link::WebLink) -> Vec<mailcraft_link::WebLink> {
+fn unwrapped(link: mailsolutions_link::WebLink) -> Vec<mailsolutions_link::WebLink> {
     let host = host_key(link.host()).to_ascii_lowercase();
     if LINK_REWRITERS.iter().any(|rewriter| is_at(&host, rewriter)) {
         return Vec::new();
@@ -819,8 +819,8 @@ fn unwrapped(link: mailcraft_link::WebLink) -> Vec<mailcraft_link::WebLink> {
 /// Where the link to `href` really goes, as [`link_mismatches`] compares it: none for no web
 /// address, or one whose real place can't be read ([`LINK_REWRITERS`]); more than one for a
 /// Safe Links address that names several.
-pub fn link_targets(href: &str) -> Vec<mailcraft_link::WebLink> {
-    mailcraft_link::WebLink::parse(href.trim()).map(real_links).unwrap_or_default()
+pub fn link_targets(href: &str) -> Vec<mailsolutions_link::WebLink> {
+    mailsolutions_link::WebLink::parse(href.trim()).map(real_links).unwrap_or_default()
 }
 
 /// The links whose text names one place and which go to another, of `links` (each its text and

@@ -7,9 +7,9 @@
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_model::Id;
-use mailcraft_model::subscription::SubscriptionOutcome;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Id;
+use mailsolutions_model::subscription::SubscriptionOutcome;
 use serde_json::json;
 
 use crate::{MailApp, SecretStore, Services, SubscriptionDone, SubscriptionJob};
@@ -30,7 +30,7 @@ impl SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.kept.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.kept.lock().unwrap().insert(key.to_string(), secret.to_string());
         Ok(())
     }
@@ -46,7 +46,7 @@ type Asked = Arc<Mutex<Vec<(Id, String, String)>>>;
 type Answers = Arc<Mutex<VecDeque<SubscriptionOutcome>>>;
 
 fn window(store: Option<&Store>, remember: bool) -> (MailApp, Asked, Answers) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.ui.remember_sign_in = remember;
     app.services.secrets = store.map(|s| Arc::new(s.clone()) as Arc<dyn SecretStore>);
@@ -133,7 +133,7 @@ fn after_a_restart_without_the_address_the_calendar_stays_and_asks_for_it_again(
     looks(&mut app);
     // The mailbox as it is saved and opened again, in a window that has no address.
     let saved = serde_json::to_string(&app.session.mailbox).unwrap();
-    let mailbox: mailcraft_model::Mailbox = serde_json::from_str(&saved).unwrap();
+    let mailbox: mailsolutions_model::Mailbox = serde_json::from_str(&saved).unwrap();
     let (mut again, asked, _) = window(None, false);
     again.session = Session::at(mailbox, NOW + 7_200, 0);
     assert!(again.subscription_needs_address(id));
@@ -157,7 +157,7 @@ fn a_remembered_address_is_found_again_in_the_store_after_a_restart() {
     let id = subscribe(&mut app);
     looks(&mut app);
     let saved = serde_json::to_string(&app.session.mailbox).unwrap();
-    let mailbox: mailcraft_model::Mailbox = serde_json::from_str(&saved).unwrap();
+    let mailbox: mailsolutions_model::Mailbox = serde_json::from_str(&saved).unwrap();
     let (mut again, asked, _) = window(Some(&store), true);
     again.session = Session::at(mailbox, NOW + 7_200, 0);
     assert!(again.subscription_needs_address(id), "until the store has been read");
@@ -312,7 +312,7 @@ fn turning_remembering_off_keeps_the_addresses_already_read_for_the_session() {
     let id = subscribe(&mut app);
     looks(&mut app);
     let saved = serde_json::to_string(&app.session.mailbox).unwrap();
-    let mailbox: mailcraft_model::Mailbox = serde_json::from_str(&saved).unwrap();
+    let mailbox: mailsolutions_model::Mailbox = serde_json::from_str(&saved).unwrap();
     // A restart: the address is the store's, read in the background.
     let (mut again, asked_again, _) = window(Some(&store), true);
     again.session = Session::at(mailbox, NOW + 7_200, 0);

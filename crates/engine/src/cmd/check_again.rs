@@ -9,7 +9,7 @@
 //! as alone ([`Message::original_wanted`]): nothing else of it changes. A message a part was
 //! removed from here ([`Message::parts_removed`]) is never checked again.
 
-use mailcraft_model::{AccountKind, Id, Mailbox, Message, ORIGINAL_TRIES, Pending};
+use mailsolutions_model::{AccountKind, Id, Mailbox, Message, ORIGINAL_TRIES, Pending};
 use serde_json::{Value, json};
 
 use super::{fail, needs_message};

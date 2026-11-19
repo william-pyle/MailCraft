@@ -5,7 +5,7 @@
 
 use std::time::{Duration, Instant};
 
-use mailcraft_html::parse;
+use mailsolutions_html::parse;
 
 fn blanks(bytes: usize) -> String {
     let unit = "<i>&nbsp;</i>&nbsp;";

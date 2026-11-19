@@ -24,7 +24,7 @@ impl Source {
     /// The dialog for what `mail.viewSource` answered.
     pub fn from_answer(v: &Value) -> Option<Source> {
         Some(Source {
-            subject: mailcraft_names::shown(v.get("subject").and_then(Value::as_str).unwrap_or_default(), 80),
+            subject: mailsolutions_names::shown(v.get("subject").and_then(Value::as_str).unwrap_or_default(), 80),
             text: v.get("source")?.as_str()?.to_string(),
             truncated: v.get("truncated").and_then(Value::as_bool) == Some(true),
         })

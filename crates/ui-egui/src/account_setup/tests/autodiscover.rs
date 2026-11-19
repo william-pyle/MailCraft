@@ -315,7 +315,7 @@ fn a_search_again_still_out_is_dropped_when_the_exchange_page_is_left() {
 
 #[test]
 fn imap_after_the_question_takes_the_servers_the_domain_s_own_records_name() {
-    use mailcraft_model::provider::{FoundServer, Via};
+    use mailsolutions_model::provider::{FoundServer, Via};
     let mut a = app(false);
     checks(&mut a, None);
     // The domain names an Autodiscover host and, in its RFC 6186 records, its IMAP and SMTP servers.

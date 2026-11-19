@@ -9,8 +9,8 @@ use std::collections::BTreeSet;
 
 use egui::Shape;
 use egui_kittest::Harness;
-use mailcraft_engine::Session;
-use mailcraft_ui_egui::{MailApp, Services};
+use mailsolutions_engine::Session;
+use mailsolutions_ui_egui::{MailApp, Services};
 use serde_json::{Value, json};
 
 /// Wednesday 2026-10-14 16:00 UTC.
@@ -20,7 +20,7 @@ const NOW: i64 = 1_791_993_600;
 /// interface takes its words out of here.
 const ALLOWED: &[&str] = &[
     // The program's name, and the names of products and providers.
-    "MailCraft",
+    "MailSolutions",
     "Microsoft",
     "Outlook",
     "Graph",
@@ -52,7 +52,7 @@ fn mailbox_words(app: &MailApp) -> BTreeSet<String> {
         }
     }
     let mut mailbox = app.session.mailbox.clone();
-    mailbox.folders.retain(|f| f.kind == mailcraft_model::FolderKind::Custom);
+    mailbox.folders.retain(|f| f.kind == mailsolutions_model::FolderKind::Custom);
     let mut out = BTreeSet::new();
     walk(&serde_json::to_value(&mailbox).unwrap(), &mut out);
     out
@@ -88,7 +88,7 @@ fn shown(h: &Harness<'static, MailApp>) -> Vec<String> {
 
 #[test]
 fn every_main_view_is_in_the_pseudo_language() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.execute("ui.language", json!({"language": "pseudo"})).unwrap();
     let data = mailbox_words(&app);

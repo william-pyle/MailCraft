@@ -36,7 +36,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use mailcraft_time::{DAY, Date, DateTime, MINUTE, Timestamp, Zone};
+use mailsolutions_time::{DAY, Date, DateTime, MINUTE, Timestamp, Zone};
 
 use crate::{Event, Id, Mailbox, Occurrence};
 
@@ -98,7 +98,7 @@ pub fn wall_of(instant: Timestamp, offset_at: OffsetAt) -> (DateTime, bool) {
 /// The name of a zone as an event keeps it: the zone's own name when it is one that is known,
 /// nothing otherwise (an event never carries a zone that can't be worked with).
 pub fn zone_name(name: &str) -> String {
-    if name.len() > mailcraft_time::MAX_ZONE_NAME {
+    if name.len() > mailsolutions_time::MAX_ZONE_NAME {
         return String::new();
     }
     Zone::named(name).map(Zone::id).filter(|id| id.len() <= MAX_ZONE).unwrap_or_default()
@@ -407,7 +407,7 @@ pub fn own_time_label(event: &Event, here: OffsetAt, twelve_hour: bool) -> Optio
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_time::Weekday;
+    use mailsolutions_time::Weekday;
 
     use super::*;
     use crate::remote::{EventChange, EventChangeKind, EventCheck};

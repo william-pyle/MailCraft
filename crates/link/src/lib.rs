@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's own handling of links: what a web address is, where it really goes, and how it
+//! MailSolutions's own handling of links: what a web address is, where it really goes, and how it
 //! is written once it has been checked.
 //!
 //! [`WebLink::parse`] reads an `http` or `https` address from RFC 3986's shape and is stricter

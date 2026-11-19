@@ -3,16 +3,16 @@
 //! Time zones: the zone the calendar is shown in (and a second one beside it), the zones an
 //! event has of its own, and the list of zones to choose from.
 //!
-//! How times are kept is in `mailcraft_model::zoned`. In short: an event's `start` and `end` are
+//! How times are kept is in `mailsolutions_model::zoned`. In short: an event's `start` and `end` are
 //! wall-clock times by the clock of the zone the calendar is shown in ([`Session::zone`]), which
 //! the mailbox names; [`Session::settle_zone`] rewrites them when that zone changes. An event may
 //! name a zone of its own for its start and for its end (`startZone`, `endZone` of
 //! `calendar.new` and `calendar.edit`): it is still shown by the calendar's clock, says where it
 //! is at home, and when it repeats, repeats by its own clock.
 
-use mailcraft_model::Event;
-use mailcraft_model::zoned::{instant_at, own_zones};
-use mailcraft_time::{DateTime, Timestamp, Zone};
+use mailsolutions_model::Event;
+use mailsolutions_model::zoned::{instant_at, own_zones};
+use mailsolutions_time::{DateTime, Timestamp, Zone};
 use serde_json::{Value, json};
 
 use super::{bad, fail, remote};
@@ -123,7 +123,7 @@ pub fn event_zones_json(s: &Session, event: &Event) -> Value {
     let here = remote::offset_of(s);
     json!({
         "startZone": event.zone().map(Zone::id), "endZone": event.zone_of_end().map(Zone::id),
-        "ownTime": mailcraft_model::zoned::own_time_label(event, &here, s.prefs.twelve_hour),
+        "ownTime": mailsolutions_model::zoned::own_time_label(event, &here, s.prefs.twelve_hour),
     })
 }
 
@@ -259,8 +259,8 @@ impl Times {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::{Freq, Mailbox, Recurrence};
-    use mailcraft_time::Date;
+    use mailsolutions_model::{Freq, Mailbox, Recurrence};
+    use mailsolutions_time::Date;
 
     use super::*;
 

@@ -9,9 +9,9 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::pictures as model;
-use mailcraft_model::pictures::{HEAVY_BYTES, MAX_PICTURE_BYTES};
-use mailcraft_model::rich::{Paragraph, RichText, Run, Style};
+use mailsolutions_model::pictures as model;
+use mailsolutions_model::pictures::{HEAVY_BYTES, MAX_PICTURE_BYTES};
+use mailsolutions_model::rich::{Paragraph, RichText, Run, Style};
 use serde_json::{Value, json};
 
 use super::format::position;

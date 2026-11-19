@@ -14,7 +14,7 @@
 use std::collections::HashMap;
 
 use egui::{RichText, Ui, vec2};
-use mailcraft_model::{Folder, FolderKind, Id};
+use mailsolutions_model::{Folder, FolderKind, Id};
 use serde_json::Value;
 
 use crate::MailApp;
@@ -512,7 +512,7 @@ fn cell<R>(ui: &mut Ui, width: f32, right: bool, add: impl FnOnce(&mut Ui) -> R)
 }
 
 fn size(bytes: u64) -> String {
-    mailcraft_model::size_label_in(crate::i18n::current(), bytes)
+    mailsolutions_model::size_label_in(crate::i18n::current(), bytes)
 }
 
 /// The layer of Folder Size, over Properties: a modal one.

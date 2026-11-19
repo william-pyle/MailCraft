@@ -21,7 +21,7 @@ use crate::template::AddressTemplate;
 
 // The core (RFC 8620 §2), mail (RFC 8621 §1.3.1) and submission (RFC 8621 §1.3.2) capabilities, named once, in the
 // shared types.
-pub use mailcraft_jmap_types::{CAPABILITY_CORE, CAPABILITY_MAIL, CAPABILITY_SUBMISSION};
+pub use mailsolutions_jmap_types::{CAPABILITY_CORE, CAPABILITY_MAIL, CAPABILITY_SUBMISSION};
 
 /// The most accounts a session may list.
 pub const MAX_ACCOUNTS: usize = 1024;

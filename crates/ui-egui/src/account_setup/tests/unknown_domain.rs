@@ -30,7 +30,7 @@ fn a_legacy_outlook_custom_domain_discovers_outlook_and_starts_microsoft_sign_in
 }
 
 /// What the host says when a server announces `LOGINDISABLED`, as it says it (#872).
-fn no_password() -> mailcraft_i18n::Text {
+fn no_password() -> mailsolutions_i18n::Text {
     crate::host_said_tests::no_password_here()
 }
 

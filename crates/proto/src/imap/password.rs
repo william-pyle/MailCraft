@@ -28,7 +28,7 @@ impl<S: Read + Write> Imap<S> {
             return Err(ProtoError::Auth(said!("the user name or password is too long")));
         }
         // Empty authorization identity: the server derives it from the authentication identity.
-        let response = mailcraft_charset::base64::STANDARD.encode(format!("\0{user}\0{password}").as_bytes());
+        let response = mailsolutions_charset::base64::STANDARD.encode(format!("\0{user}\0{password}").as_bytes());
         self.secrets.add(password);
         self.secrets.add(&response);
         let inline = self.offers("SASL-IR");

@@ -31,7 +31,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 
-use mailcraft_model::EwsServer;
+use mailsolutions_model::EwsServer;
 
 use super::*;
 use crate::ews_setup::{EwsCertificate, EwsCertificateFault, EwsConsentReason, EwsSetupEnd, EwsSetupEvent, EwsSetupFailure, EwsSetupJob};
@@ -107,7 +107,7 @@ pub(crate) fn host_shown(host: &str, most: usize) -> String {
 
 /// A moment as a date for the certificate page.
 fn day_of(timestamp: i64) -> String {
-    crate::dates::medium(mailcraft_time::DateTime::from_timestamp(timestamp, 0).date)
+    crate::dates::medium(mailsolutions_time::DateTime::from_timestamp(timestamp, 0).date)
 }
 
 /// The words for a setup that didn't work: what happened and what to do.
@@ -122,7 +122,7 @@ pub(super) fn failure_words(failure: EwsSetupFailure) -> String {
         }
         EwsSetupFailure::Unreadable => tl!("The server's answer for automatic setup couldn't be read. Type the server's address in Server settings."),
         EwsSetupFailure::InsecureRedirect => {
-            tl!("The server sent the setup somewhere that isn't encrypted, which MailCraft never follows. Type the server's address in Server settings.")
+            tl!("The server sent the setup somewhere that isn't encrypted, which MailSolutions never follows. Type the server's address in Server settings.")
         }
         EwsSetupFailure::ServerRefused => {
             tl!("The server or the organisation wouldn't give its settings. Ask your administrator for the server's address and type it in Server settings.")
@@ -131,9 +131,9 @@ pub(super) fn failure_words(failure: EwsSetupFailure) -> String {
             tl!("The server answered without the address of Exchange Web Services. Ask your administrator for it and type it in Server settings.")
         }
         EwsSetupFailure::SignInNotSupported => {
-            tl!("MailCraft can't sign in to this server this way yet (it wants Kerberos). Ask your administrator whether it can take a user name and password over an encrypted connection.")
+            tl!("MailSolutions can't sign in to this server this way yet (it wants Kerberos). Ask your administrator whether it can take a user name and password over an encrypted connection.")
         }
-        EwsSetupFailure::SignInNtlm => tl!("Automatic setup can't sign in to this server. Type its address in Server settings and MailCraft will sign in with NTLM."),
+        EwsSetupFailure::SignInNtlm => tl!("Automatic setup can't sign in to this server. Type its address in Server settings and MailSolutions will sign in with NTLM."),
         EwsSetupFailure::Declined => tl!("You didn't agree to send your sign-in to the server the setup led to. Type the server's address in Server settings."),
         EwsSetupFailure::SignInRefused => {
             tl!("The server didn't accept the user name and password. Check them, or type your user name in Server settings (DOMAIN\\user or you@example.org).")
@@ -147,13 +147,13 @@ pub(super) fn failure_words(failure: EwsSetupFailure) -> String {
         }
         EwsSetupFailure::BadSettings => tl!("The server's address or the user name can't be used. Check them in Server settings."),
         EwsSetupFailure::Certificate(EwsCertificateFault::Expired) => {
-            tl!("The server's certificate has expired, so MailCraft won't connect to it. Ask your administrator to renew it.")
+            tl!("The server's certificate has expired, so MailSolutions won't connect to it. Ask your administrator to renew it.")
         }
         EwsSetupFailure::Certificate(EwsCertificateFault::NotYetValid) => {
-            tl!("The server's certificate isn't valid yet, so MailCraft won't connect to it. Check this computer's date and time, or ask your administrator.")
+            tl!("The server's certificate isn't valid yet, so MailSolutions won't connect to it. Check this computer's date and time, or ask your administrator.")
         }
         EwsSetupFailure::Certificate(EwsCertificateFault::WrongName) => {
-            tl!("The server's certificate is for another server's name, so MailCraft won't connect to it. Check the address in Server settings.")
+            tl!("The server's certificate is for another server's name, so MailSolutions won't connect to it. Check the address in Server settings.")
         }
         EwsSetupFailure::Other => tl!("The account couldn't be set up. Check the details, or type the server's address in Server settings."),
     }
@@ -282,7 +282,7 @@ impl AccountSetup {
     /// Whether the address typed in Server settings is on one of Microsoft's mail hosts.
     fn typed_microsoft(&self) -> bool {
         let server = EwsServer { url: self.exchange.url.trim().to_string(), ..Default::default() };
-        server.host().is_some_and(mailcraft_model::is_exchange_online)
+        server.host().is_some_and(mailsolutions_model::is_exchange_online)
     }
 
     /// Connect: have the host search for the server (or use the one typed) and test the account.
@@ -655,7 +655,7 @@ impl AccountSetup {
                     ui,
                     &fmt(
                         tl!(
-                            "The domain {domain} names a server for Exchange's automatic setup (Autodiscover), so this looks like an Exchange server account. Type your password and press Connect: MailCraft looks for the server and checks the account. Nothing is sent until then."
+                            "The domain {domain} names a server for Exchange's automatic setup (Autodiscover), so this looks like an Exchange server account. Type your password and press Connect: MailSolutions looks for the server and checks the account. Nothing is sent until then."
                         ),
                         &[("domain", &shown(&domain, 80))],
                     ),
@@ -665,7 +665,7 @@ impl AccountSetup {
                 note(
                     ui,
                     tl!(
-                        "For a mail server your organisation runs itself. MailCraft looks for the server from your address, or you can type its address in Server settings. Nothing is sent until you press Connect."
+                        "For a mail server your organisation runs itself. MailSolutions looks for the server from your address, or you can type its address in Server settings. Nothing is sent until you press Connect."
                     ),
                     t.text,
                 );
@@ -707,9 +707,9 @@ impl AccountSetup {
                         note(ui, tl!("Asking your domain's DNS…"), t.text_dim);
                     } else if self.exchange.hosts.is_empty() {
                         let none = if self.exchange.looked || self.exchange.found {
-                            tl!("Your domain's DNS names no server for automatic setup. MailCraft still tries the usual places for your address.")
+                            tl!("Your domain's DNS names no server for automatic setup. MailSolutions still tries the usual places for your address.")
                         } else {
-                            tl!("MailCraft tries the usual places for your address.")
+                            tl!("MailSolutions tries the usual places for your address.")
                         };
                         note(ui, none, t.text_dim);
                     } else {
@@ -878,7 +878,7 @@ impl AccountSetup {
             note(
                 ui,
                 tl!(
-                    "Microsoft 365 mail is added as a Microsoft account: you sign in on Microsoft's own page in your browser, and MailCraft never sees your password."
+                    "Microsoft 365 mail is added as a Microsoft account: you sign in on Microsoft's own page in your browser, and MailSolutions never sees your password."
                 ),
                 t.text,
             );

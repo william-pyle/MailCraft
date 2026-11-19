@@ -3,7 +3,7 @@
 //! A run is drawn in the font it was given (#582).
 
 use egui::FontFamily;
-use mailcraft_model::rich::{Font, Style};
+use mailsolutions_model::rich::{Font, Style};
 
 use super::editor::text_format;
 use crate::theme::{Tokens, document_family, regular};

@@ -27,7 +27,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use egui::{FontDefinitions, FontFamily};
-use mailcraft_model::rich::Font;
+use mailsolutions_model::rich::Font;
 
 use crate::font_index::FontIndex;
 
@@ -145,7 +145,7 @@ pub struct Store {
 
 impl Store {
     fn of(ctx: &egui::Context) -> Arc<Mutex<Store>> {
-        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Store>>>(egui::Id::unique("mailcraft-message-fonts")).clone())
+        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Store>>>(egui::Id::unique("mailsolutions-message-fonts")).clone())
     }
 
     /// Use `index` for what is installed and do every read on the window's thread: for tests.
@@ -528,7 +528,7 @@ impl Chooser {
 
     /// The pick, and whether it stays so for this layout.
     fn choose(&mut self, list: &str, bold: bool) -> (Pick, bool) {
-        for name in list.split(',').take(mailcraft_html::MAX_FAMILIES) {
+        for name in list.split(',').take(mailsolutions_html::MAX_FAMILIES) {
             let name = name.trim();
             if name.is_empty() {
                 continue;

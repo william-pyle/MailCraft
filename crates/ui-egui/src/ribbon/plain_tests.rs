@@ -6,7 +6,7 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT, Queryable};
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::{Menu, describe_tab, submenu, usable};
@@ -17,7 +17,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// A new message, in plain text or HTML.
 fn writing(plain: bool) -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.execute("mail.new", json!({})).unwrap();
     app.execute(if plain { "compose.formatPlain" } else { "compose.formatHtml" }, json!({})).unwrap();

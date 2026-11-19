@@ -6,7 +6,7 @@
 
 use egui::accesskit::Role;
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::*;
@@ -20,7 +20,7 @@ const MOCKUPS: &str = "Homepage mockups, round three";
 type Window = egui_kittest::Harness<'static, MailApp>;
 
 fn window() -> Window {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     let mut harness = egui_kittest::Harness::builder()
@@ -146,10 +146,10 @@ fn what_forward_as_attachment_adds_has_names() {
 /// says so, instead of the window waiting for a download that can't come.
 #[test]
 fn a_message_that_will_never_download_is_refused_not_waited_for() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     let id = app.session.mailbox.messages.values().find(|m| m.subject == MOCKUPS).unwrap().id;
     let m = app.session.mailbox.message_mut(id).unwrap();
-    m.server = Some(mailcraft_model::sync::ServerMessage { id: "AAMk1".into(), ..Default::default() });
+    m.server = Some(mailsolutions_model::sync::ServerMessage { id: "AAMk1".into(), ..Default::default() });
     (m.unfetched, m.incomplete) = (true, true);
     let e = app.run("mail.forwardAsAttachment", json!({"id": id})).unwrap_err();
     assert!(e.contains("only the headers"), "{e}");

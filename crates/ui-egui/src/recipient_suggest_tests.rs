@@ -4,9 +4,9 @@
 //! people it offers when what is typed or the mailbox changes, not on every frame it is drawn.
 
 use egui_kittest::Harness;
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::compose::suggest;
-use mailcraft_model::{Contact, Labeled};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::compose::suggest;
+use mailsolutions_model::{Contact, Labeled};
 use serde_json::{Value, json};
 
 use crate::dialogs::Dialog;
@@ -18,7 +18,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// The sample mailbox in the window, after `command`.
 fn window(command: &str, params: Value) -> Harness<'static, MailApp> {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let _ = app.execute("ui.dismissReminder", json!({"all": true}));
     app.execute(command, params).unwrap();

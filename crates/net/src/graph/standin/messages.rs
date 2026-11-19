@@ -34,7 +34,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde_json::{Value, json};
 
 use super::{Answer, Asked, Refusal, State, bad, not_found, refuse, stamp};
@@ -201,7 +201,7 @@ impl Message {
         if self.draft || !self.attachments.is_empty() {
             return super::drafts::mime_of(self);
         }
-        let date = mailcraft_time::DateTime::from_timestamp(self.received, 0);
+        let date = mailsolutions_time::DateTime::from_timestamp(self.received, 0);
         format!(
             "From: {}\r\nTo: {}\r\nSubject: {}\r\nDate: {}\r\nMessage-ID: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n{}\r\n",
             self.from,
@@ -278,7 +278,7 @@ pub(super) fn received_from(filter: &str) -> Option<Timestamp> {
     if words.next().is_some() || name != "receivedDateTime" {
         return None;
     }
-    let at = mailcraft_time::iso_to_timestamp(value, 0)?;
+    let at = mailsolutions_time::iso_to_timestamp(value, 0)?;
     match op {
         "ge" => Some(at),
         "gt" => Some(at.saturating_add(1)),

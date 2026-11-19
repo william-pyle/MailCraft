@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's MCP server (Model Context Protocol, JSON-RPC 2.0 over stdio).
+//! MailSolutions's MCP server (Model Context Protocol, JSON-RPC 2.0 over stdio).
 //!
 //! Two backends: [`Headless`] runs an in-process session on a mailbox (no window);
-//! [`backend::Remote`] talks to a running MailCraft app through its control channel
-//! (`mailcraft --control PORT`), so agents can also click, type and screenshot the real UI.
+//! [`backend::Remote`] talks to a running MailSolutions app through its control channel
+//! (`mailsolutions --control PORT`), so agents can also click, type and screenshot the real UI.
 //!
-//! Agents get only what the owner allows (`mailcraft_engine::agent`): every command has a class,
+//! Agents get only what the owner allows (`mailsolutions_engine::agent`): every command has a class,
 //! no file is named by an agent unless the owner gave a folder for it ([`files`]), and what needs
 //! the owner is refused headless (unless allowed with `--allow`) or asked about in the window.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
@@ -17,15 +17,15 @@ pub mod server;
 pub mod tools;
 
 pub use backend::{Backend, Remote};
-pub use mailcraft_engine::agent::Class;
+pub use mailsolutions_engine::agent::Class;
 pub use server::Server;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::agent::{self, Verdict};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::agent::{self, Verdict};
 use serde_json::{Value, json};
 
 /// Methods that need the desktop app.
-pub const NEEDS_APP: &str = "needs the desktop app: start `mailcraft --control 7991` and run `mailcraft-cli mcp --connect 127.0.0.1:7991`";
+pub const NEEDS_APP: &str = "needs the desktop app: start `mailsolutions --control 7991` and run `mailsolutions-cli mcp --connect 127.0.0.1:7991`";
 
 /// An in-process session, driven by an agent: every command goes through the gate, and what
 /// needs the owner runs only when it is in `allow` (`--allow`).
@@ -87,7 +87,7 @@ impl Backend for Headless {
             }
             "engine.commands" => Ok(self.session.registry.describe()),
             "mailbox.inspect" => self.session.run("file.info", &json!({})).map_err(|e| e.to_string()),
-            "ui.parity" => Ok(mailcraft_engine::catalog::parity(&self.session.registry)),
+            "ui.parity" => Ok(mailsolutions_engine::catalog::parity(&self.session.registry)),
             // Headless, the mailbox is open from the start.
             "app.status" => Ok(json!({"mailbox": "open", "opening": null})),
             m if m.starts_with("ui.") || m.starts_with("app.") => Err(format!("`{m}` {NEEDS_APP}")),

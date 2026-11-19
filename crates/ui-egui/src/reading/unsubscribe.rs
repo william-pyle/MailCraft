@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Unsubscribe from one message (#1207): the bar above a message from a mailing list, and
 //! `ui.unsubscribe`, which does what the engine can't. One click goes to the list's server through
-//! the host ([`crate::Services::unsubscribe`], `mailcraft_net::pictures::unsubscribe`); a web page
+//! the host ([`crate::Services::unsubscribe`], `mailsolutions_net::pictures::unsubscribe`); a web page
 //! opens in the owner's browser; by mail is the engine's `mail.unsubscribe` with `"send": true`.
 //! Each only on the owner's click, after the question of `dialogs::confirmation`.
 //!
-//! The bar is offered only when the engine would answer (`mailcraft_engine::cmd` refuses mail its
+//! The bar is offered only when the engine would answer (`mailsolutions_engine::cmd` refuses mail its
 //! server doesn't vouch for, and mail with a sender warning): a message that can't be
 //! unsubscribed from shows nothing.
 
 use std::sync::mpsc::Receiver;
 
 use egui::{Sense, Ui, vec2};
-use mailcraft_model::Message;
-use mailcraft_model::unsubscribe::{Way, way};
+use mailsolutions_model::Message;
+use mailsolutions_model::unsubscribe::{Way, way};
 use serde_json::{Value, json};
 
 use super::Place;
@@ -124,7 +124,7 @@ pub(super) fn bar(app: &mut MailApp, ui: &mut Ui, m: &Message, place: Place, t: 
             let label = if failed { tl!("Try again") } else { tl!("Unsubscribe") };
             let link = ui
                 .add(egui::Link::new(egui::RichText::new(label).font(semibold(11.5))))
-                .on_hover_text(tl!("Ask the list to stop sending you its mail. MailCraft asks first and says how."));
+                .on_hover_text(tl!("Ask the list to stop sending you its mail. MailSolutions asks first and says how."));
             if place == Place::Pane {
                 app.hit.add("unsubscribe", m.id, link.rect);
             }
@@ -149,12 +149,12 @@ fn shown(app: &MailApp, way: Way) -> Way {
 pub(crate) fn question(app: &MailApp, p: &Value) -> Option<crate::dialogs::Question> {
     let id = p.get("message").and_then(Value::as_u64).or_else(|| app.session.sel.focus())?;
     let m = app.session.mailbox.messages.get(&id)?;
-    let host = |url: &str| mailcraft_link::WebLink::parse(url).map_or_else(String::new, |l| l.host().to_string());
+    let host = |url: &str| mailsolutions_link::WebLink::parse(url).map_or_else(String::new, |l| l.host().to_string());
     let (text, action) = match shown(app, way(app.session.mailbox.account(m.account), m)?) {
         Way::OneClick { url } => (
             crate::i18n::fmt(
                 tl!(
-                    "MailCraft sends {host} the address this list gave for unsubscribing, which may identify you to it, and nothing else: no cookies, no sign-in. Like any connection, it also shows your internet address."
+                    "MailSolutions sends {host} the address this list gave for unsubscribing, which may identify you to it, and nothing else: no cookies, no sign-in. Like any connection, it also shows your internet address."
                 ),
                 &[("host", &host(&url))],
             ),
@@ -228,7 +228,7 @@ fn unsubscribe(app: &mut MailApp, p: &Value) -> Result<Value, String> {
             Ok(json!({"message": id, "way": "mail", "sent": true}))
         }
         Some("page") => {
-            if !mailcraft_html::is_safe_url(&url) {
+            if !mailsolutions_html::is_safe_url(&url) {
                 return Err(tl!("This list's page isn't one that can be opened.").to_string());
             }
             let Some(ctx) = app.ctx.clone() else { return Err(tl!("The window isn't up yet.").to_string()) };

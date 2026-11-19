@@ -29,7 +29,7 @@ pub struct ControlRequest {
     pub reply: Sender<Value>,
     /// From an agent (the MCP bridge marks its requests), with what the owner allowed it in
     /// advance; `None`: the owner's own script.
-    pub agent: Option<Vec<mailcraft_engine::agent::Class>>,
+    pub agent: Option<Vec<mailsolutions_engine::agent::Class>>,
 }
 
 impl ControlRequest {
@@ -39,7 +39,7 @@ impl ControlRequest {
     }
 
     /// The same request, as an agent's that was allowed `allow`.
-    pub fn from_agent(mut self, allow: Vec<mailcraft_engine::agent::Class>) -> Self {
+    pub fn from_agent(mut self, allow: Vec<mailsolutions_engine::agent::Class>) -> Self {
         self.agent = Some(allow);
         self
     }
@@ -47,10 +47,10 @@ impl ControlRequest {
 
 /// What the `agent` field of a control-channel request allows (`{"allow": ["send", …]}`;
 /// names it doesn't know allow nothing).
-pub fn agent_allow(v: &Value) -> Vec<mailcraft_engine::agent::Class> {
+pub fn agent_allow(v: &Value) -> Vec<mailsolutions_engine::agent::Class> {
     v.get("allow")
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(Value::as_str).filter_map(mailcraft_engine::agent::Class::parse).collect())
+        .map(|a| a.iter().filter_map(Value::as_str).filter_map(mailsolutions_engine::agent::Class::parse).collect())
         .unwrap_or_default()
 }
 
@@ -247,13 +247,13 @@ pub fn commands(app: &MailApp) -> Value {
         .iter()
         .map(|c| {
             let mut v = json!({"id": c.id, "label": c.label, "location": c.location, "shortcut": c.shortcut, "params": c.params, "enabled": (c.enabled)(&app.session).is_none()});
-            mailcraft_engine::agent_fields(&mut v, c.id);
+            mailsolutions_engine::agent_fields(&mut v, c.id);
             v
         })
         .collect();
     all.extend(crate::UI_COMMANDS.iter().map(|(id, label, location, params)| {
         let mut v = json!({"id": id, "label": label, "location": location, "shortcut": "", "params": params, "enabled": app.enabled(id)});
-        mailcraft_engine::agent_fields(&mut v, id);
+        mailsolutions_engine::agent_fields(&mut v, id);
         v
     }));
     Value::Array(all)
@@ -309,7 +309,7 @@ fn dispatch(app: &mut MailApp, ctx: &egui::Context, req: &ControlRequest) -> Out
         // Whether the mailbox is open (while it opens, this alone is answered: `opening`), and
         // the one being read in the background, if any.
         "app.status" => ok(json!({"mailbox": "open", "opening": crate::opening::ahead_inspect(app)})),
-        "ui.parity" => ok(mailcraft_engine::catalog::parity(&app.session.registry)),
+        "ui.parity" => ok(mailsolutions_engine::catalog::parity(&app.session.registry)),
         // The desktop alerts the window showed (read only: nothing can ask for one).
         "ui.alerts" => ok(crate::alerts::inspect(app, p)),
         "ui.click" => {
@@ -421,7 +421,7 @@ pub fn inline_screenshot(image: &egui::ColorImage) -> Value {
     if let Err(e) = buffer.write_to(&mut png, image::ImageFormat::Png) {
         return json!({"ok": false, "error": e.to_string()});
     }
-    json!({"ok": true, "result": {"data": mailcraft_engine::cmd::base64_encode(png.get_ref()), "width": w, "height": h}})
+    json!({"ok": true, "result": {"data": mailsolutions_engine::cmd::base64_encode(png.get_ref()), "width": w, "height": h}})
 }
 
 pub fn save_screenshot(image: &egui::ColorImage, path: Option<&str>) -> Value {
@@ -439,7 +439,7 @@ pub fn save_screenshot(image: &egui::ColorImage, path: Option<&str>) -> Value {
     {
         let path = match path {
             Some(p) => std::path::PathBuf::from(p),
-            None => std::env::temp_dir().join("mailcraft-screenshot.png"),
+            None => std::env::temp_dir().join("mailsolutions-screenshot.png"),
         };
         if let Err(e) = buffer.save_with_format(&path, image::ImageFormat::Png) {
             return json!({"ok": false, "error": format!("{}: {e}", path.display())});

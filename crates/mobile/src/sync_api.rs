@@ -10,10 +10,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
 
-use mailcraft_engine::Session;
-use mailcraft_host::sync::Adopted;
-use mailcraft_i18n::Lang;
-use mailcraft_model::AccountKind;
+use mailsolutions_engine::Session;
+use mailsolutions_host::sync::Adopted;
+use mailsolutions_i18n::Lang;
+use mailsolutions_model::AccountKind;
 
 use crate::core::CancelOnDrop;
 use crate::queue::Queue;
@@ -60,7 +60,7 @@ impl Core {
         let _end = CancelOnDrop(over.clone());
         let (timer_over, timer_replies, closing) = (over.clone(), replies.clone(), self.closing.clone());
         std::thread::Builder::new()
-            .name("mailcraft-sync-budget".to_string())
+            .name("mailsolutions-sync-budget".to_string())
             .spawn(move || {
                 let end = std::time::Instant::now().checked_add(budget);
                 while !timer_over.load(Ordering::Acquire) {
@@ -152,12 +152,12 @@ impl Core {
                 Ok(a.email.clone())
             })
             .await?;
-        let tokens = match self.account_sign_in(mailcraft_host::signin::hint_of(&address)).await? {
+        let tokens = match self.account_sign_in(mailsolutions_host::signin::hint_of(&address)).await? {
             Ok((_, tokens)) => tokens,
             Err(SignInOutcome::Cancelled) => return Err(CoreError::Cancelled),
             Err(SignInOutcome::NoBrowser) => return Err(fail(lang, words("The sign-in page couldn't be opened."))),
             Err(SignInOutcome::NeedsApproval) => {
-                return Err(fail(lang, words("Your organisation has to approve MailCraft before you can sign in. Ask an administrator.")));
+                return Err(fail(lang, words("Your organisation has to approve MailSolutions before you can sign in. Ask an administrator.")));
             }
             Err(SignInOutcome::Declined | SignInOutcome::OrganisationBlocks) => return Err(fail(lang, words("The sign-in was declined."))),
             Err(SignInOutcome::TimedOut) => return Err(fail(lang, words("Nothing came back from the sign-in page in time."))),
@@ -172,7 +172,7 @@ impl Core {
 impl Core {
     /// Hand the tokens of a sign-in to Send/Receive: refused when they are somebody else's, kept
     /// for the session otherwise, and remembered in the credential store when the owner lets it be.
-    pub(crate) async fn adopt_tokens(&self, account: u64, tokens: mailcraft_model::sync::Tokens) -> Result<(), CoreError> {
+    pub(crate) async fn adopt_tokens(&self, account: u64, tokens: mailsolutions_model::sync::Tokens) -> Result<(), CoreError> {
         let lang = self.lang();
         let sync = self.sync.clone();
         let adopted = self.call(move |session| Ok(sync.adopt(session, account, tokens))).await?;

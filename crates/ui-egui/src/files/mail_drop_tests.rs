@@ -6,8 +6,8 @@
 
 use std::path::PathBuf;
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Address, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Address, Mailbox, Message};
 use serde_json::{Value, json};
 
 use crate::dialogs::Dialog;
@@ -35,7 +35,7 @@ fn app() -> MailApp {
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("mailcraft-mail-drop-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-mail-drop-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -89,15 +89,15 @@ fn the_question_names_where_the_mail_really_goes() {
     assert!(asked(&a).contains("into Inbox?"), "{}", asked(&a));
     // An Outbox in view: its account's Drafts.
     let local = a.session.mailbox.local_account();
-    if let Some(outbox) = a.session.mailbox.folder_of_kind(local, mailcraft_model::FolderKind::Outbox) {
+    if let Some(outbox) = a.session.mailbox.folder_of_kind(local, mailsolutions_model::FolderKind::Outbox) {
         a.session.view.folder = outbox;
-        let drafts = a.session.mailbox.folder_of_kind(local, mailcraft_model::FolderKind::Drafts).unwrap();
+        let drafts = a.session.mailbox.folder_of_kind(local, mailsolutions_model::FolderKind::Drafts).unwrap();
         let name = crate::nav::folder_name(a.session.mailbox.folder(drafts).unwrap()).to_string();
         assert!(asked(&a).contains(&format!("into {name}?")), "{}", asked(&a));
     }
     // A server's folder: this computer's Imported.
     let imap = a.run("account.add", json!({"email": "ada@mail.example", "incoming": {"host": "imap.mail.example"}})).unwrap()["id"].as_u64().unwrap();
-    a.session.view.folder = a.session.mailbox.folder_of_kind(imap, mailcraft_model::FolderKind::Inbox).unwrap();
+    a.session.view.folder = a.session.mailbox.folder_of_kind(imap, mailsolutions_model::FolderKind::Inbox).unwrap();
     assert!(asked(&a).contains("into Imported?"), "{}", asked(&a));
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -107,7 +107,7 @@ fn a_command_imports_without_a_question() {
     let mut a = app();
     let eml = "From: Bo <bo@example.org>\r\nTo: cy@example.org\r\nSubject: New\r\nMessage-ID: <new@example.org>\r\nDate: Tue, 14 Nov 2023 22:13:20 +0000\r\n\r\nHello\r\n";
     let before = a.session.mailbox.messages.len();
-    a.run("file.import", json!({"name": "new.eml", "data": mailcraft_engine::cmd::base64_encode(eml.as_bytes())})).unwrap();
+    a.run("file.import", json!({"name": "new.eml", "data": mailsolutions_engine::cmd::base64_encode(eml.as_bytes())})).unwrap();
     assert!(a.dialog.is_none());
     assert_eq!(a.session.mailbox.messages.len(), before + 1);
 }

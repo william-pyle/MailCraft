@@ -184,47 +184,47 @@ fn a_zone_reference_without_its_definition_is_not_enough_for_a_time_edit() {
 #[test]
 fn real_ical_writer_duration_conversion_is_refused_before_it_can_mix_end_forms() {
     let source = EVENT.replace("SUMMARY:Old", "SUMMARY:Old\r\nDTSTART:20261024T120000Z\r\nDURATION:PT1H");
-    let mut file = mailcraft_ical::parse(&source, &|_| 0);
+    let mut file = mailsolutions_ical::parse(&source, &|_| 0);
     let event = file.events.first_mut().unwrap();
-    let options = mailcraft_ical::WriteOptions::default();
-    let before = mailcraft_ical::write_in(&[event], &[], &options, Some(mailcraft_time::Zone::UTC));
+    let options = mailsolutions_ical::WriteOptions::default();
+    let before = mailsolutions_ical::write_in(&[event], &[], &options, Some(mailsolutions_time::Zone::UTC));
     assert!(before.contains("DTEND:"));
     assert!(!before.contains("DURATION:"));
     event.start = event.start.add_minutes(120);
     event.end = event.end.add_minutes(120);
-    let after = mailcraft_ical::write_in(&[event], &[], &options, Some(mailcraft_time::Zone::UTC));
+    let after = mailsolutions_ical::write_in(&[event], &[], &options, Some(mailsolutions_time::Zone::UTC));
     assert!(patch(&source, &before, &after, Component::Event).is_err());
 }
 
 #[test]
 fn real_vcard_writer_version_conversion_is_refused() {
     let source = "BEGIN:VCARD\r\nVERSION:4.0\r\nUID:stable\r\nFN:A\r\nTEL;VALUE=uri;TYPE=\"voice,cell\";PREF=1:tel:+1-555-0101\r\nTEL;TYPE=work:+1-555-0102\r\nEND:VCARD\r\n";
-    let mut contacts = mailcraft_vcard::parse(source);
+    let mut contacts = mailsolutions_vcard::parse(source);
     let contact = contacts.first_mut().unwrap();
     assert_eq!(contact.phones.len(), 2);
-    let before = mailcraft_vcard::write(&[contact]);
+    let before = mailsolutions_vcard::write(&[contact]);
     assert!(before.contains("VERSION:3.0"));
     contact.phones.get_mut(1).unwrap().value = "+1-555-0199".into();
-    let after = mailcraft_vcard::write(&[contact]);
+    let after = mailsolutions_vcard::write(&[contact]);
     assert!(patch(source, &before, &after, Component::Card).is_err());
 }
 
 #[test]
 fn real_vcard_writer_edits_a_canonical_card_without_rewriting_the_other_phone() {
     let seed = CARD.replace("FN:Old", "FN:Old\r\nTEL;TYPE=CELL:+1-555-0101\r\nTEL;TYPE=WORK:+1-555-0102");
-    let contacts = mailcraft_vcard::parse(&seed);
-    let canonical = mailcraft_vcard::write(&[contacts.first().unwrap()]);
+    let contacts = mailsolutions_vcard::parse(&seed);
+    let canonical = mailsolutions_vcard::write(&[contacts.first().unwrap()]);
     let preserved = "TEL;TYPE=CELL:+1-555-\r\n 0101\r\nX-BETWEEN:opaque\r\n";
     let source = canonical.replace("TEL;TYPE=CELL:+1-555-0101\r\n", preserved);
     assert!(source.contains(preserved));
-    let mut contacts = mailcraft_vcard::parse(&source);
+    let mut contacts = mailsolutions_vcard::parse(&source);
     let contact = contacts.first_mut().unwrap();
-    let before = mailcraft_vcard::write(&[contact]);
+    let before = mailsolutions_vcard::write(&[contact]);
     contact.phones.get_mut(1).unwrap().value = "+1-555-0199".into();
-    let after = mailcraft_vcard::write(&[contact]);
+    let after = mailsolutions_vcard::write(&[contact]);
     let got = patch(&source, &before, &after, Component::Card).unwrap();
     assert!(got.contains(preserved));
-    let contacts = mailcraft_vcard::parse(&got);
+    let contacts = mailsolutions_vcard::parse(&got);
     assert_eq!(contacts.first().unwrap().phones.get(1).unwrap().value, "+1-555-0199");
 }
 
@@ -234,12 +234,12 @@ fn real_ical_writer_title_edit_preserves_an_email_alarm() {
     let source = EVENT
         .replace("SUMMARY:Old", "SUMMARY:Old\r\nDTSTART:20261024T120000Z\r\nDTEND:20261024T130000Z")
         .replace("END:VEVENT", &format!("{alarm}END:VEVENT"));
-    let mut file = mailcraft_ical::parse(&source, &|_| 0);
+    let mut file = mailsolutions_ical::parse(&source, &|_| 0);
     let event = file.events.first_mut().unwrap();
-    let opts = mailcraft_ical::WriteOptions::default();
-    let before = mailcraft_ical::write_in(&[event], &[], &opts, Some(mailcraft_time::Zone::UTC));
+    let opts = mailsolutions_ical::WriteOptions::default();
+    let before = mailsolutions_ical::write_in(&[event], &[], &opts, Some(mailsolutions_time::Zone::UTC));
     event.title = "New".into();
-    let after = mailcraft_ical::write_in(&[event], &[], &opts, Some(mailcraft_time::Zone::UTC));
+    let after = mailsolutions_ical::write_in(&[event], &[], &opts, Some(mailsolutions_time::Zone::UTC));
     let got = patch(&source, &before, &after, Component::Event).unwrap();
     assert!(got.contains(alarm));
     assert!(got.contains("SUMMARY:New\r\n"));
@@ -314,13 +314,13 @@ fn inserted_properties_and_folds_use_the_sources_line_endings() {
     }
 }
 
-fn real_writer_edit(source: &str, edit: impl Fn(&mut mailcraft_model::Event)) -> Result<String, InvalidDocument> {
-    let mut file = mailcraft_ical::parse(source, &|_| 0);
+fn real_writer_edit(source: &str, edit: impl Fn(&mut mailsolutions_model::Event)) -> Result<String, InvalidDocument> {
+    let mut file = mailsolutions_ical::parse(source, &|_| 0);
     let event = file.events.first_mut().unwrap();
-    let options = mailcraft_ical::WriteOptions::default();
-    let before = mailcraft_ical::write_in(&[&*event], &[], &options, Some(mailcraft_time::Zone::UTC));
+    let options = mailsolutions_ical::WriteOptions::default();
+    let before = mailsolutions_ical::write_in(&[&*event], &[], &options, Some(mailsolutions_time::Zone::UTC));
     edit(event);
-    let after = mailcraft_ical::write_in(&[&*event], &[], &options, Some(mailcraft_time::Zone::UTC));
+    let after = mailsolutions_ical::write_in(&[&*event], &[], &options, Some(mailsolutions_time::Zone::UTC));
     patch(source, &before, &after, Component::Event)
 }
 
@@ -345,10 +345,10 @@ fn an_unmodelled_rdate_is_never_left_behind_by_a_recurrence_edit() {
 #[test]
 fn a_new_rule_matches_a_floating_start() {
     let floating = EVENT.replace("SUMMARY:Old", "SUMMARY:Old\r\nDTSTART:20261024T120000\r\nDTEND:20261024T130000");
-    let rule = mailcraft_model::Recurrence {
-        freq: mailcraft_model::Freq::Daily,
+    let rule = mailsolutions_model::Recurrence {
+        freq: mailsolutions_model::Freq::Daily,
         interval: 1,
-        until: mailcraft_time::Date::new(2026, 10, 31),
+        until: mailsolutions_time::Date::new(2026, 10, 31),
         ..Default::default()
     };
     // RFC 5545 §3.3.10: with a floating DTSTART, UNTIL is floating too.
@@ -389,11 +389,11 @@ fn moving_an_event_refuses_an_unmodelled_absolute_reminder() {
 #[test]
 fn unfavouriting_refuses_an_unmodelled_favourite_alias() {
     let source = "BEGIN:VCARD\r\nVERSION:3.0\r\nUID:stable\r\nFN:A\r\nX-FAVORITE:TRUE\r\nX-MAILCRAFT-FAVORITE:TRUE\r\nEND:VCARD\r\n";
-    let mut contacts = mailcraft_vcard::parse(source);
+    let mut contacts = mailsolutions_vcard::parse(source);
     let contact = contacts.first_mut().unwrap();
-    let before = mailcraft_vcard::write(&[contact]);
+    let before = mailsolutions_vcard::write(&[contact]);
     contact.favorite = false;
-    let after = mailcraft_vcard::write(&[contact]);
+    let after = mailsolutions_vcard::write(&[contact]);
     assert!(patch(source, &before, &after, Component::Card).is_err());
     assert!(patch(&before, &before, &after, Component::Card).is_ok());
 }
@@ -402,10 +402,10 @@ fn unfavouriting_refuses_an_unmodelled_favourite_alias() {
 fn normal_importance_refuses_a_surviving_cdo_alias() {
     let source = EVENT
         .replace("SUMMARY:Old", "SUMMARY:Old\r\nDTSTART:20261024T120000Z\r\nDTEND:20261024T130000Z\r\nPRIORITY:1\r\nX-MICROSOFT-CDO-IMPORTANCE:2");
-    assert!(real_writer_edit(&source, |e| e.importance = mailcraft_model::Importance::Normal).is_err());
+    assert!(real_writer_edit(&source, |e| e.importance = mailsolutions_model::Importance::Normal).is_err());
     let standard = source.replace("X-MICROSOFT-CDO-IMPORTANCE:2\r\n", "");
-    let got = real_writer_edit(&standard, |e| e.importance = mailcraft_model::Importance::Normal).unwrap();
-    assert_eq!(mailcraft_ical::parse(&got, &|_| 0).events.first().unwrap().importance, mailcraft_model::Importance::Normal);
+    let got = real_writer_edit(&standard, |e| e.importance = mailsolutions_model::Importance::Normal).unwrap();
+    assert_eq!(mailsolutions_ical::parse(&got, &|_| 0).events.first().unwrap().importance, mailsolutions_model::Importance::Normal);
 }
 
 #[test]
@@ -420,15 +420,15 @@ fn moving_an_event_with_a_lossless_relative_reminder_still_works() {
     let source = EVENT
         .replace("SUMMARY:Old", "SUMMARY:Old\r\nDTSTART:20261024T120000Z\r\nDTEND:20261024T130000Z")
         .replace("END:VEVENT", "BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:R\r\nTRIGGER:-PT15M\r\nEND:VALARM\r\nEND:VEVENT");
-    let file = mailcraft_ical::parse(&source, &|_| 0);
+    let file = mailsolutions_ical::parse(&source, &|_| 0);
     let event = file.events.first().unwrap();
-    let canonical = mailcraft_ical::write_in(&[event], &[], &mailcraft_ical::WriteOptions::default(), Some(mailcraft_time::Zone::UTC));
+    let canonical = mailsolutions_ical::write_in(&[event], &[], &mailsolutions_ical::WriteOptions::default(), Some(mailsolutions_time::Zone::UTC));
     let got = real_writer_edit(&canonical, |e| {
         e.start = e.start.add_minutes(120);
         e.end = e.end.add_minutes(120);
     })
     .unwrap();
-    let parsed = mailcraft_ical::parse(&got, &|_| 0);
+    let parsed = mailsolutions_ical::parse(&got, &|_| 0);
     let moved = parsed.events.first().unwrap();
     assert_eq!(moved.reminder_minutes, Some(15));
     assert_eq!(moved.start, event.start.add_minutes(120));

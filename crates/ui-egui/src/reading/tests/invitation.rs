@@ -9,9 +9,9 @@
 use std::sync::{Arc, Mutex};
 
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
-use mailcraft_model::remote::RemoteEvent;
-use mailcraft_model::{Address, Attachment, Attendee, Body, FolderKind, Mailbox, Message, Response};
+use mailsolutions_engine::Session;
+use mailsolutions_model::remote::RemoteEvent;
+use mailsolutions_model::{Address, Attachment, Attendee, Body, FolderKind, Mailbox, Message, Response};
 use serde_json::{Value, json};
 
 use super::{NOW, Window, choose, click_at, says, select, window};
@@ -165,7 +165,7 @@ fn outbox(app: &MailApp, account: u64) -> Vec<(String, String, String)> {
 }
 
 /// The events of the calendar that are called `title`.
-fn events(app: &MailApp, title: &str) -> Vec<mailcraft_model::Event> {
+fn events(app: &MailApp, title: &str) -> Vec<mailsolutions_model::Event> {
     app.session.mailbox.events.values().filter(|e| e.title == title).map(|e| e.as_ref().clone()).collect()
 }
 
@@ -219,7 +219,7 @@ ORGANIZER;CN=Bo Marsh:mailto:bo@example.org\r\nATTENDEE;ROLE=REQ-PARTICIPANT;PAR
 UID:040000008200E00074C5B7101A82E00800000000\r\nSUMMARY;LANGUAGE=en-US:Design review\r\nDTSTART;TZID=Example Standard Time:20261015T140000\r\n\
 DTEND;TZID=Example Standard Time:20261015T150000\r\nSEQUENCE:0\r\nLOCATION;LANGUAGE=en-US:Room 4\r\nX-MICROSOFT-CDO-BUSYSTATUS:TENTATIVE\r\n\
 BEGIN:VALARM\r\nTRIGGER:-PT15M\r\nACTION:DISPLAY\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
-    let encoded = mailcraft_engine::cmd::base64_encode(ics.as_bytes());
+    let encoded = mailsolutions_engine::cmd::base64_encode(ics.as_bytes());
     let folded: Vec<String> = encoded.as_bytes().chunks(76).map(|line| String::from_utf8_lossy(line).into_owned()).collect();
     let eml = [
         "From: Bo Marsh <bo@example.org>",
@@ -249,7 +249,7 @@ BEGIN:VALARM\r\nTRIGGER:-PT15M\r\nACTION:DISPLAY\r\nEND:VALARM\r\nEND:VEVENT\r\n
     .join("\r\n");
     // Read as a message that came down from the server is (a file imported into the account's
     // folder would stay on this computer, in Imported, #1401).
-    let (mut app, account, _) = mail_app(vec![mailcraft_mime_model::parse_fetched(eml.as_bytes())]);
+    let (mut app, account, _) = mail_app(vec![mailsolutions_mime_model::parse_fetched(eml.as_bytes())]);
     let inbox = app.session.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
     app.session.view.folder = inbox;
     let request = app.session.mailbox.messages.values().find(|m| m.subject == "Design review").map(|m| m.id).unwrap();
@@ -408,7 +408,7 @@ fn an_account_that_cannot_send_answers_in_its_calendar_only() {
 
 /// The app with a Microsoft account whose calendar the stand-in keeps, and what it has taken in.
 fn microsoft(events: Vec<RemoteEvent>) -> (MailApp, Arc<Mutex<Server>>, u64) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let server = serve(&mut app);
     let account = microsoft_account(&mut app);
@@ -524,7 +524,7 @@ fn asking_the_calendar_about_a_meeting_sends_nothing_and_waits_its_turn() {
 
     use crate::{GraphRequest, GraphResult};
     // A host that notes what it is asked, and answers when the test lets it.
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     type Asked = (usize, bool, bool, Option<(i64, i64)>, bool);
@@ -544,7 +544,7 @@ fn asking_the_calendar_about_a_meeting_sends_nothing_and_waits_its_turn() {
         .mailbox
         .add_message(Message { folder: outbox, ..super::message(1, ("Avery Quinn", OWNER), "Waiting", None, "Waiting".into()) })
         .unwrap();
-    let day = mailcraft_time::Date::new(2026, 12, 10).unwrap();
+    let day = mailsolutions_time::Date::new(2026, 12, 10).unwrap();
     // Asked: the three days round the meeting, and nothing else. No mail, no changes, not the
     // wide stretch, no settings.
     assert_eq!(app.calendar_job_around(account, day), Ok(()));
@@ -558,7 +558,7 @@ fn asking_the_calendar_about_a_meeting_sends_nothing_and_waits_its_turn() {
     assert!(!app.calendar_syncing());
     // Something made here waits to go to the server: that goes first, in a job of the
     // calendar's own. This one never carries it, and doesn't start.
-    let download = mailcraft_model::remote::EventsDownload {
+    let download = mailsolutions_model::remote::EventsDownload {
         from: NOW - 86_400,
         to: NOW + 86_400,
         complete: true,
@@ -566,7 +566,7 @@ fn asking_the_calendar_about_a_meeting_sends_nothing_and_waits_its_turn() {
         ..Default::default()
     };
     let owner = app.session.mailbox.account(account).cloned().unwrap();
-    mailcraft_engine::cmd::remote::apply_events(&mut app.session, &download.for_account(&owner)).unwrap();
+    mailsolutions_engine::cmd::remote::apply_events(&mut app.session, &download.for_account(&owner)).unwrap();
     let review = app.session.mailbox.events.values().find(|e| e.title == "Budget review").map(|e| e.id).unwrap();
     app.execute("calendar.move", json!({"id": review, "start": "2026-10-15T09:00"})).unwrap();
     assert!(app.session.calendar_changes(account).is_some() && app.calendar_job_around(account, day).is_err());
@@ -582,7 +582,7 @@ fn asking_the_calendar_about_a_meeting_sends_nothing_and_waits_its_turn() {
     // An account that signs in nowhere, a day at the end of time, a build without a host.
     assert!(app.calendar_job_around(1, day).is_err() && app.calendar_job_around(u64::MAX, day).is_err());
     assert_eq!(asked.lock().unwrap().len(), 1);
-    assert_eq!(app.calendar_job_around(account, mailcraft_time::Date::new(9999, 12, 31).unwrap()), Ok(()));
+    assert_eq!(app.calendar_job_around(account, mailsolutions_time::Date::new(9999, 12, 31).unwrap()), Ok(()));
     held.lock().unwrap().clear();
     app.poll_calendar();
     app.services.graph = None;
@@ -694,17 +694,17 @@ fn the_calendar_button_shows_the_day_and_the_option_files_the_request_away() {
     press(&mut harness, "invitationCalendar", first);
     harness.run_steps(3);
     let app = harness.state();
-    assert_eq!((app.session.view.module, app.session.view.date.iso().as_str()), (mailcraft_engine::Module::Calendar, "2026-10-15"));
+    assert_eq!((app.session.view.module, app.session.view.date.iso().as_str()), (mailsolutions_engine::Module::Calendar, "2026-10-15"));
     assert_eq!(app.session.sel.event, events(app, "Design review").first().map(|e| e.id));
 }
 
 /// #755: a window that starts without saved settings (a new install) is on a new install's, which
 /// send an answered request from the Inbox to Deleted Items, and saves them so; settings saved
-/// with it off are read back off, and the request stays. The engine on its own (`mailcraft-cli
+/// with it off are read back off, and the request stays. The engine on its own (`mailsolutions-cli
 /// run`, headless `mcp`) leaves it off.
 #[test]
 fn a_new_install_files_an_answered_request_away_and_a_saved_choice_is_kept() {
-    assert!(crate::UiState::default().options.delete_answered_requests && !mailcraft_engine::Prefs::default().delete_answered_requests);
+    assert!(crate::UiState::default().options.delete_answered_requests && !mailsolutions_engine::Prefs::default().delete_answered_requests);
     // As the hosts start when there is no settings file.
     let (mut app, account, ids) = mail_app(vec![Meeting::default().mail()]);
     assert!(!app.session.prefs.delete_answered_requests);
@@ -941,12 +941,12 @@ fn the_bars_command_takes_anything_and_never_panics() {
 }
 
 /// The bar for each kind of meeting mail, in light and dark, as PNG files to look at:
-/// `MAILCRAFT_SHOTS_DIR=<dir> cargo test -p mailcraft-ui-egui shots_of_meeting_mail -- --ignored`
+/// `MAILSOLUTIONS_SHOTS_DIR=<dir> cargo test -p mailsolutions-ui-egui shots_of_meeting_mail -- --ignored`
 #[test]
 #[ignore = "writes screenshots, for looking at them"]
 fn shots_of_meeting_mail() {
-    let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") else {
-        eprintln!("set MAILCRAFT_SHOTS_DIR to the directory to write to");
+    let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") else {
+        eprintln!("set MAILSOLUTIONS_SHOTS_DIR to the directory to write to");
         return;
     };
     let dir = std::path::PathBuf::from(dir);
@@ -1079,8 +1079,8 @@ fn a_message_that_proposes_another_time_offers_to_take_it_up() {
     };
     let (mut app, _, ids) = mail_app(vec![counter.mail(), Meeting::default().mail()]);
     let calendar = app.execute("calendar.addCalendar", json!({"name": "Mine"})).unwrap()["id"].as_u64().unwrap();
-    let at = |day: u8, hour: u8| mailcraft_time::DateTime::new(mailcraft_time::Date::new(2026, 10, day).unwrap(), hour, 0, 0).unwrap();
-    let planning = mailcraft_model::Event {
+    let at = |day: u8, hour: u8| mailsolutions_time::DateTime::new(mailsolutions_time::Date::new(2026, 10, day).unwrap(), hour, 0, 0).unwrap();
+    let planning = mailsolutions_model::Event {
         calendar,
         uid: "uid-planning".into(),
         title: "Planning".into(),
@@ -1116,11 +1116,11 @@ fn a_message_that_proposes_another_time_offers_to_take_it_up() {
     let now = harness.state().session.mailbox.event(planning).cloned().unwrap();
     assert_eq!(
         (now.start, now.end),
-        (at(16, 15), mailcraft_time::DateTime::new(mailcraft_time::Date::new(2026, 10, 16).unwrap(), 16, 30, 0).unwrap())
+        (at(16, 15), mailsolutions_time::DateTime::new(mailsolutions_time::Date::new(2026, 10, 16).unwrap(), 16, 30, 0).unwrap())
     );
     // A second proposal that the calendar knows of: now there is a list, which opens.
     harness.state_mut().session.mailbox.event_mut(planning).unwrap().proposals =
-        vec![mailcraft_model::Proposal { from: Address::new("Cy Tran", "cy@example.org"), start: at(17, 9), end: at(17, 10) }];
+        vec![mailsolutions_model::Proposal { from: Address::new("Cy Tran", "cy@example.org"), start: at(17, 9), end: at(17, 10) }];
     harness.state_mut().session.mailbox_changed();
     harness.run_steps(3);
     assert!(hit(&harness, "invitationProposals", proposal).is_some());

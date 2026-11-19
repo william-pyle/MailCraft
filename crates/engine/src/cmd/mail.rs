@@ -5,7 +5,7 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
-use mailcraft_model::{FlagStatus, FolderKind, Id, Queued, ThreadKey};
+use mailsolutions_model::{FlagStatus, FolderKind, Id, Queued, ThreadKey};
 use serde_json::{Value, json};
 
 use super::{bad, deliver, done, fail, message_json, message_summary, needs_message, select_after_removal, targets, targets_whole};
@@ -82,7 +82,7 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("mail.openAttachment", "Open Attachment", "Attachments › Actions", open_attachment)
             .pure()
             .params(
-                r#"{"index": number, "id"?: number} — opens the file with the computer's own program for it, in the MailCraft window only (never for an agent). Programs, scripts, shortcuts, installers and disk images are refused: save them instead. Anywhere else answers why it opened nothing"#,
+                r#"{"index": number, "id"?: number} — opens the file with the computer's own program for it, in the MailSolutions window only (never for an agent). Programs, scripts, shortcuts, installers and disk images are refused: save them instead. Anywhere else answers why it opened nothing"#,
             )
             .selection(needs_message),
         CommandSpec::new("mail.saveAttachment", "Save Attachment", "Attachments › Actions", save_attachment)
@@ -588,17 +588,17 @@ fn get(s: &mut Session, v: &Value) -> CmdResult {
     // Its text, from where the mailbox keeps it when it isn't in memory (a text that can't be
     // read says so in its place).
     let _ = s.load_where(id, |_| false);
-    // What checking its Digital signature found (#30): MailCraft's own check, read only. (First:
+    // What checking its Digital signature found (#30): MailSolutions's own check, read only. (First:
     // an opaque signed message read by an older build has its content read with it then.)
     let signature = signature_for_agent(s, id);
     let part = s.digital_signature_part(id);
     let m = s.mailbox.messages.get(&id).cloned().ok_or_else(|| failed!("no message with id {id}", id))?;
-    // What may not be what it seems about it (sender warnings): worked out by MailCraft from the
+    // What may not be what it seems about it (sender warnings): worked out by MailSolutions from the
     // account's server's verdict, the sender and the links, never from what the message asks.
     let warnings = s.sender_warnings(&m, true);
     let mut v = message_json(s, &m);
     if let Some(o) = v.as_object_mut() {
-        o.insert("warnings".into(), Value::Array(warnings.iter().map(mailcraft_model::sender_warnings::Warning::json).collect()));
+        o.insert("warnings".into(), Value::Array(warnings.iter().map(mailsolutions_model::sender_warnings::Warning::json).collect()));
         o.insert("digitalSignature".into(), signature);
         // The signature file is the result's, not one of the message's files, as in the window.
         if let (Some(part), Some(Value::Array(files))) = (part, o.get_mut("attachments")) {
@@ -733,7 +733,7 @@ fn move_to_kind(s: &mut Session, ids: &[Id], kind: FolderKind) -> CmdResult {
         let folder = folders
             .entry(account)
             .or_insert_with(|| s.mailbox.folder_of_kind(account, kind))
-            .ok_or_else(|| failed!("this account has no {folder} folder", folder = mailcraft_i18n::Arg::folder(kind.default_name())))?;
+            .ok_or_else(|| failed!("this account has no {folder} folder", folder = mailsolutions_i18n::Arg::folder(kind.default_name())))?;
         moves.push((*id, folder));
     }
     let moved: Vec<Id> = s.mailbox.move_each(&moves)?.into_iter().map(|(id, _)| id).collect();
@@ -802,7 +802,7 @@ fn waiting_for_microsoft(s: &Session) -> HashSet<Id> {
 }
 
 /// Apply `change` to each target; answers how many messages it changed.
-fn each(s: &mut Session, v: &Value, change: impl Fn(&mut mailcraft_model::Message)) -> CmdResult {
+fn each(s: &mut Session, v: &Value, change: impl Fn(&mut mailsolutions_model::Message)) -> CmdResult {
     let ids = targets(s, v)?;
     let mut changed = 0;
     for id in &ids {
@@ -849,7 +849,7 @@ fn flag(s: &mut Session, v: &Value) -> CmdResult {
     let due = p::date(v, "due")?;
     let offset = s.offset_at(s.now());
     // Due at the end of the working day.
-    let due = due.and_then(|d| mailcraft_time::DateTime::new(d, s.prefs.work_end.min(23), 0, 0)).map(|t| t.to_timestamp(offset));
+    let due = due.and_then(|d| mailsolutions_time::DateTime::new(d, s.prefs.work_end.min(23), 0, 0)).map(|t| t.to_timestamp(offset));
     let ids = targets(s, v)?;
     let r = each(s, v, |m| {
         m.flag = FlagStatus::Flagged;
@@ -892,7 +892,7 @@ fn toggle_flag(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn categorize(s: &mut Session, v: &Value) -> CmdResult {
-    let name = mailcraft_model::clean_name(p::req_str(v, "category")?).ok_or_else(|| bad("`category` is empty"))?;
+    let name = mailsolutions_model::clean_name(p::req_str(v, "category")?).ok_or_else(|| bad("`category` is empty"))?;
     let ids = targets(s, v)?;
     let all_have = ids.iter().filter_map(|id| s.mailbox.message(*id)).all(|m| m.has_category(&name));
     let on = p::bool(v, "value").unwrap_or(!all_have);
@@ -930,7 +930,7 @@ fn dismiss_warnings(s: &mut Session, v: &Value) -> CmdResult {
     let mut changed = 0;
     for id in ids.iter().take(1_000) {
         let Some(old) = s.mailbox.message(*id).cloned() else { continue };
-        let kinds = if on { mailcraft_model::sender_warnings::kinds(&s.sender_warnings(&old, true)) } else { Vec::new() };
+        let kinds = if on { mailsolutions_model::sender_warnings::kinds(&s.sender_warnings(&old, true)) } else { Vec::new() };
         if old.warnings_dismissed != kinds {
             s.mailbox.message_mut(*id)?.warnings_dismissed = kinds;
             changed += 1;
@@ -947,7 +947,7 @@ fn find_related(s: &mut Session, _: &Value) -> CmdResult {
     }
     // Written so that the search reads it back as it is: a backslash at its end keeps its
     // closing quote from being read as part of it (#301).
-    s.view.search = format!("subject:{}", mailcraft_model::search::keyword_value(&topic));
+    s.view.search = format!("subject:{}", mailsolutions_model::search::keyword_value(&topic));
     s.view.scope = crate::Scope::Everywhere;
     Ok(json!({"search": s.view.search, "found": listed(&s.rows())}))
 }
@@ -957,7 +957,7 @@ fn find_related(s: &mut Session, _: &Value) -> CmdResult {
 /// narrowed. A quoted name (`"ada smith"@example.org`) is written so that the search reads it
 /// back whole.
 fn find_from_sender(s: &mut Session, v: &Value) -> CmdResult {
-    use mailcraft_model::search::{Query, is_address, keyword_value};
+    use mailsolutions_model::search::{Query, is_address, keyword_value};
     let id = p::message_strict(v)?.or(s.sel.focus()).ok_or_else(|| fail("select a message first"))?;
     let m = s.mailbox.message(id).ok_or_else(|| failed!("no message with id {id}", id))?;
     let address = m.from.email.trim();
@@ -1004,7 +1004,7 @@ fn open_attachment(s: &mut Session, v: &Value) -> CmdResult {
     let name = s.mailbox.message(id).and_then(|m| m.attachments.get(index)).map(|a| a.name.clone()).ok_or_else(|| fail("no such attachment"))?;
     Err(match crate::opening::verdict(&name) {
         crate::opening::Verdict::Blocked => fail(crate::opening::blocked_message(&name)),
-        _ => crate::CmdError::Disabled("attachments are opened in the MailCraft window; `mail.saveAttachment` gives the file".into()),
+        _ => crate::CmdError::Disabled("attachments are opened in the MailSolutions window; `mail.saveAttachment` gives the file".into()),
     })
 }
 

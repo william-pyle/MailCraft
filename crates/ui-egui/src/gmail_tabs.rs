@@ -11,7 +11,7 @@
 //! Gmail's categories are on ([`crate::gmail_move`]).
 
 use egui::{Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_model::GmailCategory;
+use mailsolutions_model::GmailCategory;
 use serde_json::json;
 
 use crate::MailApp;
@@ -43,12 +43,12 @@ pub(crate) fn said(category: GmailCategory, unread: usize) -> String {
 /// The row of tabs, above the list of a Gmail Inbox whose categories are shown as tabs; nothing
 /// for any other list.
 pub(crate) fn row(app: &mut MailApp, ui: &mut Ui) {
-    if !mailcraft_engine::gmail::tabs_shown(&mut app.session) {
+    if !mailsolutions_engine::gmail::tabs_shown(&mut app.session) {
         return;
     }
     let t = Tokens::get(ui.ctx());
     let inbox = app.session.view.folder;
-    let now = mailcraft_engine::gmail::in_view(&app.session);
+    let now = mailsolutions_engine::gmail::in_view(&app.session);
     let counts = app.session.folder_counts();
 
     // Each tab: its name, and the pill of its unread count when it has any.

@@ -22,7 +22,7 @@
 //! (429, 503) hasn't taken it: it waits for the next run. No subject, address or id goes into a
 //! log line.
 
-use mailcraft_model::sync::{DraftDone, MAX_SENDS, SEND_AS_DENIED, SendDone, SendOutcome, SendUp};
+use mailsolutions_model::sync::{DraftDone, MAX_SENDS, SEND_AS_DENIED, SendDone, SendOutcome, SendUp};
 use serde_json::Value;
 
 use super::super::pace::Kind;

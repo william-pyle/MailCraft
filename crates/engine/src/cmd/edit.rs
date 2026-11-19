@@ -8,7 +8,7 @@
 //! message's own undo (`compose.undo`). Neither reaches past the owner's text
 //! ([`super::format::reach`]).
 
-use mailcraft_model::rich::{MAX_FIND, Place};
+use mailsolutions_model::rich::{MAX_FIND, Place};
 use serde_json::{Value, json};
 
 use super::format::{edit, needs_doc, needs_html, reach};

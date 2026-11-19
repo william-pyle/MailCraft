@@ -6,7 +6,7 @@
 
 #![no_main]
 
-use mailcraft_jmap::{ApiResponse, Redactor};
+use mailsolutions_jmap::{ApiResponse, Redactor};
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let mut redactor = Redactor::new();

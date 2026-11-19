@@ -1,8 +1,8 @@
-# Translating MailCraft
+# Translating MailSolutions
 
-> **Last reviewed:** 2026-10-29 · **Last updated:** 2026-11-12 · **Change:** minor
+> **Last reviewed:** 2026-10-29 · **Last updated:** 2026-11-19 · **Change:** minor
 
-MailCraft's interface comes in English and, as preview languages, French, German, Spanish,
+MailSolutions's interface comes in English and, as preview languages, French, German, Spanish,
 Italian, Dutch, Romanian, Hungarian and Simplified Chinese. Preview translations may be marked for further review; the initial Simplified Chinese catalogue was reviewed by its contributor.
 Simplified Chinese is offered on desktop only until the browser build has a CJK font.
 File › Options names each preview in its own words ("Français (aperçu)", "Deutsch (Vorschau)"). Reviewing
@@ -43,7 +43,7 @@ has reviewed a whole language, its entry in `crates/i18n/src/lib.rs` stops being
 - Keep every `{placeholder}` as it is: the program fills it. Its place in the sentence may move.
 - Keep `&` before a letter (a keyboard accelerator), " › " between the parts of a menu path, and
   shortcut text such as `Ctrl+Shift+R`.
-- Don't translate the names of products and protocols: MailCraft, Microsoft 365, Outlook.com,
+- Don't translate the names of products and protocols: MailSolutions, Microsoft 365, Outlook.com,
   Gmail, Graph, IMAP, SMTP.
 - Use the language's own punctuation and the usual words of mail programs in it. Dates have their
   own entries (month and day names, patterns such as `{weekday} {day} {month}`), reordered as the
@@ -71,6 +71,7 @@ Agreement](../CLA.md).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-19 | minor | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-14 | minor | Added the Hungarian preview catalogue (`hu.po`). |
 | 2026-11-12 | minor | #1135: Romanian as a preview language (`ro.po`), with its three plural forms |
 | 2026-11-12 | minor | #1031: Simplified Chinese preview catalogue (`zh_CN.po`), initial catalogue reviewed by its contributor |

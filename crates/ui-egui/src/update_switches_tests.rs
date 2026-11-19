@@ -4,7 +4,7 @@
 //! none (#488).
 
 use egui_kittest::Harness;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -22,7 +22,7 @@ fn window() -> Harness<'static, MailApp> {
         })),
         ..Default::default()
     };
-    let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), 1_791_993_600, 0), services);
+    let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), 1_791_993_600, 0), services);
     app.autosave = false;
     let mut window = Harness::builder().with_accessibility_check(false).allow_missing_glyphs().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
         |ui, app: &mut MailApp| {

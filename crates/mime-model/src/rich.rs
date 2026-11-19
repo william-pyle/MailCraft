@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Rich text (`mailcraft_model::rich`) to HTML and back.
+//! Rich text (`mailsolutions_model::rich`) to HTML and back.
 //!
 //! [`to_html`] writes the owner's text as the HTML part of a message: `<div>` paragraphs, `<ul>`
 //! and `<ol>` lists, `<b>`, `<i>`, `<u>`, `<span style="…">` with a font size, a colour and a
@@ -11,14 +11,14 @@
 //! beside or above the text when it asks for that, in a two-cell table, as Outlook writes it.
 //!
 //! [`from_html`] is the way back, and the way in for anything pasted: the HTML is read by
-//! `mailcraft_html` (which never runs or fetches anything) and what it gives is reduced to the
+//! `mailsolutions_html` (which never runs or fetches anything) and what it gives is reduced to the
 //! set (a link keeps only an address a reader follows, `http`, `https`, `mailto`, `tel` or `cid`; a
 //! draft of this program's, [`from_html_with_pictures`], keeps any the model accepts). Tables give their cells' paragraphs in reading order; colours are kept; pictures, rules,
 //! fonts, alignment and everything else are dropped.
 
-use mailcraft_html::{Block, BlockKind, Marker, Span};
-use mailcraft_model::rich::{Font, ListKind, MAX_LEVEL, MAX_SIZE, MIN_SIZE, OBJECT, Paragraph, RichText, Run, Style, safe_color, safe_link};
-use mailcraft_model::signature::{Layout, Picture, Signature};
+use mailsolutions_html::{Block, BlockKind, Marker, Span};
+use mailsolutions_model::rich::{Font, ListKind, MAX_LEVEL, MAX_SIZE, MIN_SIZE, OBJECT, Paragraph, RichText, Run, Style, safe_color, safe_link};
+use mailsolutions_model::signature::{Layout, Picture, Signature};
 
 /// How a picture of the text is written: its `cid:` address (without the scheme), the width it
 /// is shown at and its description.
@@ -122,13 +122,13 @@ fn paragraph(out: &mut String, p: &Paragraph, pictures: &dyn Fn(u32) -> Option<I
 fn img(out: &mut String, img: &Img) {
     let cid: String = img.content_id.chars().filter(|c| c.is_ascii_graphic() && !matches!(c, '<' | '>' | '"')).collect();
     out.push_str("<img src=\"cid:");
-    out.push_str(&mailcraft_html::escape(&cid));
+    out.push_str(&mailsolutions_html::escape(&cid));
     out.push('"');
     if let Some(w) = img.width {
-        out.push_str(&format!(" width=\"{}\"", w.clamp(1, mailcraft_model::pictures::MAX_SHOWN_WIDTH)));
+        out.push_str(&format!(" width=\"{}\"", w.clamp(1, mailsolutions_model::pictures::MAX_SHOWN_WIDTH)));
     }
     out.push_str(" alt=\"");
-    out.push_str(&mailcraft_html::escape(&img.alt.chars().filter(|c| !c.is_control()).collect::<String>()));
+    out.push_str(&mailsolutions_html::escape(&img.alt.chars().filter(|c| !c.is_control()).collect::<String>()));
     out.push_str("\" style=\"border:0\">");
 }
 
@@ -203,7 +203,7 @@ fn runs(out: &mut String, p: &Paragraph, pictures: &dyn Fn(u32) -> Option<Img>) 
         let mut close: Vec<&str> = Vec::new();
         if let Some(url) = &style.link {
             out.push_str("<a href=\"");
-            out.push_str(&mailcraft_html::escape(url));
+            out.push_str(&mailsolutions_html::escape(url));
             out.push_str("\">");
             close.push("</a>");
         }
@@ -286,7 +286,7 @@ pub fn from_html_with_pictures(html: &str, claim: &mut dyn FnMut(&ImgRef) -> Opt
 /// other `OBJECT` (nothing but this puts one in the text).
 fn mark_pictures(html: &str, claim: &mut dyn FnMut(&ImgRef) -> Option<u32>) -> String {
     // No more than the reading after this looks at.
-    let html = cut(html, mailcraft_html::MAX_INPUT_WITH_PICTURES).replace(OBJECT, "");
+    let html = cut(html, mailsolutions_html::MAX_INPUT_WITH_PICTURES).replace(OBJECT, "");
     let lower = html.to_ascii_lowercase();
     let (mut out, mut at) = (String::with_capacity(html.len()), 0usize);
     while let Some(start) = lower.get(at..).and_then(|rest| rest.find("<img")).map(|rel| at + rel) {
@@ -396,8 +396,8 @@ fn img_ref(attrs: &str) -> Option<ImgRef> {
 
 fn read(html: &str, pictures: bool) -> RichText {
     // The look and the text only: pictures written into the HTML are not decoded for this.
-    let blocks = if pictures { mailcraft_html::parse_text_own(html, safe_link) } else { mailcraft_html::parse_text(html) };
-    let read = html.len().min(mailcraft_html::MAX_INPUT_WITH_PICTURES);
+    let blocks = if pictures { mailsolutions_html::parse_text_own(html, safe_link) } else { mailsolutions_html::parse_text(html) };
+    let read = html.len().min(mailsolutions_html::MAX_INPUT_WITH_PICTURES);
     let copies = read.saturating_mul(COPY_ALLOWANCE).saturating_add(COPY_FLOOR);
     let mut reader = Reader { out: Vec::new(), pictures, copies };
     reader.blocks(&blocks);
@@ -452,7 +452,7 @@ struct Reader {
 impl Reader {
     fn blocks(&mut self, blocks: &[Block]) {
         for b in blocks {
-            if self.out.len() >= mailcraft_model::rich::MAX_PARAGRAPHS {
+            if self.out.len() >= mailsolutions_model::rich::MAX_PARAGRAPHS {
                 return;
             }
             match &b.kind {
@@ -503,7 +503,7 @@ impl Reader {
             let text = span.text.replace('\u{a0}', " ");
             for (i, line) in text.split('\n').enumerate() {
                 if i > 0 {
-                    if self.out.len() >= mailcraft_model::rich::MAX_PARAGRAPHS {
+                    if self.out.len() >= mailsolutions_model::rich::MAX_PARAGRAPHS {
                         return;
                     }
                     self.out.push(Paragraph::new(std::mem::take(&mut cur), list).at_level(level));
@@ -523,7 +523,7 @@ impl Reader {
                 cur.push(Run::new(line, self.charged(&style)));
             }
         }
-        if self.out.len() < mailcraft_model::rich::MAX_PARAGRAPHS {
+        if self.out.len() < mailsolutions_model::rich::MAX_PARAGRAPHS {
             self.out.push(Paragraph::new(cur, list).at_level(level));
         }
     }

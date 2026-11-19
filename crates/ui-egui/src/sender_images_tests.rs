@@ -4,8 +4,8 @@
 
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Contact, FolderKind, Id, Labeled, Mailbox};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Contact, FolderKind, Id, Labeled, Mailbox};
 
 use super::*;
 use crate::Services;
@@ -24,9 +24,9 @@ fn png() -> Vec<u8> {
 fn window(answer: impl Fn(&str) -> Result<Vec<u8>, String> + 'static) -> (MailApp, Arc<Mutex<Vec<String>>>, Vec<Message>) {
     let mut mailbox = Mailbox::with_local_account("Avery Quinn", "avery@lumen-works.example");
     // An account on a mail server, which vouches for every sender (a remembered domain needs it).
-    mailbox.accounts[0].kind = mailcraft_model::AccountKind::Imap;
+    mailbox.accounts[0].kind = mailsolutions_model::AccountKind::Imap;
     mailbox.accounts[0].incoming =
-        Some(mailcraft_model::Server { host: "imap.example.org".into(), port: 993, security: mailcraft_model::Security::Tls });
+        Some(mailsolutions_model::Server { host: "imap.example.org".into(), port: 993, security: mailsolutions_model::Security::Tls });
     let account = mailbox.accounts[0].id;
     let [inbox, sent, junk] = [FolderKind::Inbox, FolderKind::Sent, FolderKind::Junk].map(|kind| mailbox.folder_of_kind(account, kind).unwrap());
     mailbox.add_contact(Contact { display_name: "Ada".into(), emails: vec![Labeled::new("work", " Ada@Example.org ")], ..Default::default() });
@@ -315,7 +315,7 @@ fn a_picture_too_large_to_decode_on_the_window_keeps_the_initials() {
 fn undoing_a_send_takes_back_who_it_went_to() {
     let (mut app, _, _) = window(|_| Ok(png()));
     // A local account files what it sends in Sent Items at once.
-    app.session.mailbox.accounts[0].kind = mailcraft_model::AccountKind::Local;
+    app.session.mailbox.accounts[0].kind = mailsolutions_model::AccountKind::Local;
     app.session.mailbox_changed();
     app.run("mail.new", json!({"to": "lin@new.example", "subject": "Hello"})).unwrap();
     app.run("compose.saveDraft", json!({})).unwrap();
@@ -329,7 +329,7 @@ fn undoing_a_send_takes_back_who_it_went_to() {
     assert!(is_known(&mut app, "lin@new.example"));
 }
 
-/// `cargo test -p mailcraft-ui-egui --release -- --ignored --nocapture known_senders_of_200000`
+/// `cargo test -p mailsolutions-ui-egui --release -- --ignored --nocapture known_senders_of_200000`
 #[test]
 #[ignore = "builds 200,000 messages and prints how long keeping up with them takes; run by hand"]
 fn known_senders_of_200000_messages_during_a_send_receive() {

@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Drafts and sending (#252, E6): `CreateItem` with `SaveOnly` into the server's Drafts, `FindItem`
-//! by MailCraft's marker (a draft whose make was not answered is found, not made twice),
+//! by MailSolutions's marker (a draft whose make was not answered is found, not made twice),
 //! `CreateAttachment` and `DeleteAttachment`, and `CreateItem` with `SendAndSaveCopy` for every
 //! message sent (a saved draft too: `SendItem` of a draft files no copy on some servers) ([MS-OXWSCORE], [MS-OXWSMSG], [MS-OXWSATT]).
 //!
 //! **The marker** is an extended property of the draft (a string in the `PublicStrings` set called
-//! `MailCraftMarker`), which no mail program shows. **Nothing here is sent twice**: the host marks
+//! `MailSolutionsMarker`), which no mail program shows. **Nothing here is sent twice**: the host marks
 //! these requests as ones that are never repeated ([`crate::Client::call_once`]).
 
-use mailcraft_mime_model::WriteOptions;
-use mailcraft_model::sync::AttachmentUp;
-use mailcraft_model::{Address, Importance, Message};
+use mailsolutions_mime_model::WriteOptions;
+use mailsolutions_model::sync::AttachmentUp;
+use mailsolutions_model::{Address, Importance, Message};
 
 use crate::basic::base64;
 use crate::changes::{Saved, id_element, line, recipients};
@@ -22,7 +22,7 @@ use crate::soap::{Element, MESSAGES, TYPES};
 use crate::xml::Node;
 
 /// The name of the marker property.
-const MARKER: &str = "MailCraftMarker";
+const MARKER: &str = "MailSolutionsMarker";
 /// The longest message sent as one MIME document (Exchange takes less by default).
 const MAX_MIME: usize = 64 * 1024 * 1024;
 
@@ -92,7 +92,7 @@ pub struct DraftContent {
     pub read_receipt: bool,
     /// The files.
     pub attachments: Vec<AttachmentUp>,
-    /// MailCraft's marker, a value used once.
+    /// MailSolutions's marker, a value used once.
     pub marker: String,
 }
 
@@ -370,10 +370,10 @@ impl SendMessage {
         if !anyone {
             return Err(Unsendable::NoRecipients);
         }
-        let date = if message.date == 0 { mailcraft_time::now() } else { message.date };
+        let date = if message.date == 0 { mailsolutions_time::now() } else { message.date };
         let dated = Message { date, ..message.clone() };
-        let offset_minutes = mailcraft_time::local_offset_minutes(date);
-        let mime = mailcraft_mime_model::write(&dated, &WriteOptions { include_bcc: true, offset_minutes });
+        let offset_minutes = mailsolutions_time::local_offset_minutes(date);
+        let mime = mailsolutions_mime_model::write(&dated, &WriteOptions { include_bcc: true, offset_minutes });
         if mime.len() > MAX_MIME {
             return Err(Unsendable::TooLarge);
         }

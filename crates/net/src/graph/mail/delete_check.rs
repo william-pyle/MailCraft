@@ -14,7 +14,7 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::sync::{MAX_SHOWN_FOLDERS, MAX_SHOWN_MESSAGES, Shown};
+use mailsolutions_model::sync::{MAX_SHOWN_FOLDERS, MAX_SHOWN_MESSAGES, Shown};
 
 use super::super::{ASK_TIMEOUT, Doing, Graph, MAX_PAGE};
 use super::{FOLDER_FIELDS, FOLDER_PAGE, MAX_DEPTH, children_path, entry_of, folders, id_of};

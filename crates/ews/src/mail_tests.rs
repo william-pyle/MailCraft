@@ -5,8 +5,8 @@
 
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::FolderKind;
-use mailcraft_model::sync::{EwsFetchRequest, EwsFolderState, EwsMailRequest, EwsMailResult, EwsScope};
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::sync::{EwsFetchRequest, EwsFolderState, EwsMailRequest, EwsMailResult, EwsScope};
 
 use crate::standin::{AUTHORIZATION, Hostile, StandIn, block_on};
 use crate::*;
@@ -315,7 +315,7 @@ fn a_run_from_the_states_it_gave_brings_the_changes_alone() {
 }
 
 /// The server's Outbox is left out of the folder list while it holds nothing, so that the account
-/// shows one Outbox, MailCraft's own (#747); with mail in it, it is listed and read like any other.
+/// shows one Outbox, MailSolutions's own (#747); with mail in it, it is listed and read like any other.
 #[test]
 fn the_servers_outbox_is_left_out_while_it_holds_nothing() {
     let standin = StandIn::new();

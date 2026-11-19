@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Exercise arbitrary bytes as well as edits of structured events and cards.
 #![no_main]
-use mailcraft_dav::document::{Component, patch};
+use mailsolutions_dav::document::{Component, patch};
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let data = data.get(..data.len().min(4096)).unwrap_or_default();
     let text = String::from_utf8_lossy(data);

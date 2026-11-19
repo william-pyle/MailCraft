@@ -19,9 +19,9 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{Read, Seek};
 
-use mailcraft_model::{Contact, Labeled, PostalAddress};
-use mailcraft_pst::{Error as PstError, NamedMap, PropName, PropValue, Properties, Pst};
-use mailcraft_time::Date;
+use mailsolutions_model::{Contact, Labeled, PostalAddress};
+use mailsolutions_pst::{Error as PstError, NamedMap, PropName, PropValue, Properties, Pst};
+use mailsolutions_time::Date;
 
 use super::item::{Named, Text, ends_import};
 
@@ -234,7 +234,7 @@ fn day(ft: u64) -> Option<Date> {
 /// A property read whole, on its own when it was too large to come with the rest, within `max`.
 pub(super) fn value<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     id: u16,
     max: u64,
     what: &str,
@@ -262,7 +262,7 @@ pub(super) fn value<R: Read + Seek>(
 
 /// Read the contact or list `m` into a contact of the mailbox. Never fails for what one item
 /// gets wrong, only for what ends the import.
-pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, named: &Named, list: bool) -> Result<Built, PstError> {
+pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailsolutions_pst::Message, named: &Named, list: bool) -> Result<Built, PstError> {
     let ids = &named.contact;
     let mut notes: Vec<String> = Vec::new();
     for part in &m.left_out {
@@ -323,7 +323,7 @@ pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, named
     c.birthday = r.lid_time(BIRTHDAY_LOCAL).or_else(|| r.p.time(0x3A42)).and_then(day);
 
     if let Some(id) = named.keywords {
-        for name in r.text.list(r.p, id).iter().filter_map(|s| mailcraft_model::clean_name(s)) {
+        for name in r.text.list(r.p, id).iter().filter_map(|s| mailsolutions_model::clean_name(s)) {
             if c.categories.len() < MAX_VALUES && !c.categories.iter().any(|o| o.eq_ignore_ascii_case(&name)) {
                 c.categories.push(name);
             }
@@ -341,7 +341,7 @@ pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, named
     if body.is_none()
         && let Some(PropValue::Binary(rtf)) = value(pst, m, 0x1009, MAX_NOTES, "notes (rich text)", &mut notes)?
     {
-        match mailcraft_pst::decompress_rtf(&rtf, MAX_RTF).and_then(|raw| mailcraft_pst::rtf_text(&raw, room().saturating_add(8))) {
+        match mailsolutions_pst::decompress_rtf(&rtf, MAX_RTF).and_then(|raw| mailsolutions_pst::rtf_text(&raw, room().saturating_add(8))) {
             Ok((text, cut)) => {
                 body = Some(text);
                 rtf_cut = cut;
@@ -405,7 +405,7 @@ pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, named
 /// to be ignored: the stream is read when there is one, the two lists only when it can't be.
 fn members_text<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     ids: &ContactIds,
     room: usize,
     notes: &mut Vec<String>,
@@ -422,7 +422,7 @@ fn members_text<R: Read + Seek>(
     // Whether members may be missing because the stream couldn't be read, or only in part.
     let mut missing = stream.is_some();
     let read = match &stream {
-        Some(Some(PropValue::Binary(b))) => match mailcraft_pst::list_stream(b, STREAM_ENTRIES) {
+        Some(Some(PropValue::Binary(b))) => match mailsolutions_pst::list_stream(b, STREAM_ENTRIES) {
             // A stream that breaks before its first member is no better than none.
             Ok(s) if s.members.is_empty() && s.damaged > 0 => {
                 notes.push("its list's stream of members couldn't be read: it ends before its first member".to_string());
@@ -549,7 +549,7 @@ fn one_off_member(entry: &[u8]) -> Option<(String, String)> {
         let units: Vec<u16> = rest.as_chunks::<2>().0.iter().copied().map(u16::from_le_bytes).collect();
         units.split(|u| *u == 0).take(3).map(String::from_utf16_lossy).collect()
     } else {
-        rest.split(|b| *b == 0).take(3).map(|b| mailcraft_charset::decode(b, "windows-1252")).collect()
+        rest.split(|b| *b == 0).take(3).map(|b| mailsolutions_charset::decode(b, "windows-1252")).collect()
     };
     let [name, kind, address] = <[String; 3]>::try_from(texts).ok()?;
     let address = one_line(&address)?;

@@ -8,9 +8,9 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use mailcraft_model::shown::{ShownIds, shown_ids};
-use mailcraft_model::{AccountChoice, Attachment, Category, ContentRef, Id, Importance, Mailbox, Message, RichBody};
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday, Zone};
+use mailsolutions_model::shown::{ShownIds, shown_ids};
+use mailsolutions_model::{AccountChoice, Attachment, Category, ContentRef, Id, Importance, Mailbox, Message, RichBody};
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday, Zone};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -290,13 +290,13 @@ pub struct ViewState {
     /// or search starts with all of them closed. Not kept with the view's settings, which would
     /// write subjects of mail into them.
     #[serde(skip)]
-    pub open: Vec<(Id, mailcraft_model::ThreadKey)>,
+    pub open: Vec<(Id, mailsolutions_model::ThreadKey)>,
     pub filter: Filter,
     /// The Gmail category of the folder in view the list shows (#911): that Inbox's mail Gmail
     /// put in it. Only while that folder is in view (`folder.select` with `gmail`); `None` for
     /// the whole folder. Not kept between sessions: the window opens on the whole folder.
     #[serde(skip)]
-    pub gmail: Option<(Id, mailcraft_model::GmailCategory)>,
+    pub gmail: Option<(Id, mailsolutions_model::GmailCategory)>,
     /// Gmail's categories as a row of tabs above a Gmail Inbox's list, in place of the five
     /// folders under it in the folder pane (#911; `view.gmailCategories`). Off: as folders.
     pub gmail_tabs: bool,
@@ -444,8 +444,8 @@ pub(crate) struct ListOf {
     folder: Id,
     filter: Filter,
     /// The Gmail category it shows, if any (#911).
-    gmail: Option<(Id, mailcraft_model::GmailCategory)>,
-    search: Option<(mailcraft_model::search::Query, Scope)>,
+    gmail: Option<(Id, mailsolutions_model::GmailCategory)>,
+    search: Option<(mailsolutions_model::search::Query, Scope)>,
     /// The day, the first day of the week and the zone, for a search with dates in it:
     /// `received:today` is other messages tomorrow (#329).
     when: Option<String>,
@@ -455,7 +455,7 @@ impl ListOf {
     /// `when` is the day and the zone the search is made in ([`Session::list_of`]); it counts only
     /// for a search with dates in it.
     pub(crate) fn of(view: &ViewState, when: impl FnOnce() -> String) -> Self {
-        let query = mailcraft_model::search::Query::parse(&view.search);
+        let query = mailsolutions_model::search::Query::parse(&view.search);
         let when = query.has_dates().then(when);
         let search = (!query.is_empty()).then_some((query, view.scope));
         ListOf { folder: view.folder, filter: view.filter, gmail: view.gmail, search, when }
@@ -628,7 +628,7 @@ pub enum BodyFormat {
 }
 
 /// The original under a reply or forward that has HTML, carried with its look but without
-/// anything in it that runs, embeds or tracks (`mailcraft_html::quotable`): it goes out below the
+/// anything in it that runs, embeds or tracks (`mailsolutions_html::quotable`): it goes out below the
 /// owner's text and is never edited here.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -696,10 +696,10 @@ pub struct Compose {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<InsertedSignature>,
     /// The pictures put in the text with Insert › Pictures (#547): the text has a picture run for
-    /// each it shows (ids from `mailcraft_model::pictures::FIRST_ID`). Those the text no longer
+    /// each it shows (ids from `mailsolutions_model::pictures::FIRST_ID`). Those the text no longer
     /// shows stay until a cap needs the room, so that undo can bring one back; none is sent then.
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub pictures: Vec<mailcraft_model::signature::Picture>,
+    pub pictures: Vec<mailsolutions_model::signature::Picture>,
     /// How many ids `pictures` have been given, so that none is given twice.
     #[serde(skip_serializing_if = "is_zero_u32")]
     pub picture_seq: u32,
@@ -790,10 +790,10 @@ fn is_zero_u8(n: &u8) -> bool {
 #[serde(default, rename_all = "camelCase")]
 pub struct InsertedSignature {
     pub name: String,
-    pub layout: mailcraft_model::signature::Layout,
-    pub pictures: Vec<mailcraft_model::signature::Picture>,
+    pub layout: mailsolutions_model::signature::Layout,
+    pub pictures: Vec<mailsolutions_model::signature::Picture>,
     /// Its text as it went in.
-    pub text: mailcraft_model::RichText,
+    pub text: mailsolutions_model::RichText,
     /// The owner's own HTML, for an HTML signature: what goes out while the text is unedited.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub html: Option<String>,
@@ -809,7 +809,7 @@ pub struct InsertedSignature {
 pub struct SignatureEdit {
     /// The signature as it was opened (its name, layout and pictures, as they are changed);
     /// its text is `body`'s.
-    pub signature: mailcraft_model::signature::Signature,
+    pub signature: mailsolutions_model::signature::Signature,
     pub body: RichBody,
     /// Changed since it was opened or last saved.
     pub dirty: bool,
@@ -827,8 +827,9 @@ pub struct Doc<'a> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Prefs {
-    /// On Windows, use ContactCraft's shared contacts when its application is installed.
-    pub contactcraft_contacts: bool,
+    /// On Windows, use ContactSolutions's shared contacts when its application is installed.
+    #[serde(alias = "contactcraftContacts")]
+    pub contactsolutions_contacts: bool,
     /// `3:05 PM` rather than `15:05`.
     pub twelve_hour: bool,
     pub week_start: Weekday,
@@ -871,7 +872,7 @@ pub struct Prefs {
     pub week_numbers: bool,
     /// A meeting request (or a cancellation) in an Inbox of the owner's own accounts that was
     /// answered from the mail goes to Deleted Items (`calendar.deleteAnsweredRequests`). Off here,
-    /// so a session without the window's settings (`mailcraft-cli run`, headless `mcp`) keeps the
+    /// so a session without the window's settings (`mailsolutions-cli run`, headless `mcp`) keeps the
     /// request; the window's settings for a new install turn it on, as in Outlook (#755).
     pub delete_answered_requests: bool,
     /// The working hours above are used even when the account's mailbox has its own
@@ -928,7 +929,7 @@ pub struct Prefs {
 impl Default for Prefs {
     fn default() -> Self {
         Prefs {
-            contactcraft_contacts: false,
+            contactsolutions_contacts: false,
             twelve_hour: true,
             week_start: Weekday::Sun,
             clock_chosen: None,
@@ -1000,7 +1001,7 @@ impl Prefs {
     /// Britain: 24-hour, Monday); the ones they chose are kept. Settings saved before this was
     /// kept count what differs from the old defaults (12-hour, Sunday) as chosen, so they behave
     /// as they always did.
-    pub fn follow_conventions(&mut self, own: mailcraft_i18n::date::Conventions) {
+    pub fn follow_conventions(&mut self, own: mailsolutions_i18n::date::Conventions) {
         let old = Prefs::default();
         let clock = *self.clock_chosen.get_or_insert(self.twelve_hour != old.twelve_hour);
         let week = *self.week_start_chosen.get_or_insert(self.week_start != old.week_start);
@@ -1256,7 +1257,7 @@ pub struct Session {
     /// whose body was let go of since matched it ([`Session::load_bodies_for_search`]). Kept
     /// while the list stays as it was searched (`searched_for`), so that a result opened, whose
     /// body comes in, doesn't search everything again.
-    search_pass: Option<(mailcraft_model::search::Query, std::collections::HashMap<Id, bool>)>,
+    search_pass: Option<(mailsolutions_model::search::Query, std::collections::HashMap<Id, bool>)>,
     /// What the list was when `search_pass` was made: its key without the loads and the open
     /// conversations.
     searched_for: Option<String>,
@@ -1268,8 +1269,8 @@ pub struct Session {
     /// and the browser follow the owner's choice; the CLI and a headless MCP server leave it
     /// English). What the engine writes for a person is to follow it; commands, their parameters
     /// and what agents read stay English. Never saved in the mailbox file.
-    pub interface_language: mailcraft_i18n::Lang,
-    /// The region the system's dates are written for (`GB`; `mailcraft_i18n::date::region_of`
+    pub interface_language: mailsolutions_i18n::Lang,
+    /// The region the system's dates are written for (`GB`; `mailsolutions_i18n::date::region_of`
     /// the regional format's tag), set by the host with the language: English writes the day
     /// first outside the US (#978). `None`: the language's own way. Never saved.
     pub date_region: Option<String>,
@@ -1397,7 +1398,7 @@ impl Session {
             search_pass: None,
             searched_for: None,
             index_words: false,
-            interface_language: mailcraft_i18n::Lang::English,
+            interface_language: mailsolutions_i18n::Lang::English,
             date_region: None,
             gmail_category_moves: crate::gmail::GMAIL_CATEGORY_MOVES,
             #[cfg(not(target_arch = "wasm32"))]
@@ -1441,7 +1442,7 @@ impl Session {
     }
 
     pub fn now(&self) -> Timestamp {
-        self.clock.now.unwrap_or_else(mailcraft_time::now)
+        self.clock.now.unwrap_or_else(mailsolutions_time::now)
     }
 
     /// The zone the calendar is shown in, which is the one the mailbox's wall-clock times are
@@ -1507,7 +1508,7 @@ impl Session {
     /// event) is stamped with it, and nothing else changes. One that names another (this
     /// computer was carried to another zone, the owner chose another one in the options, the
     /// file comes from another machine) has its timed events moved to this zone's clock
-    /// ([`Mailbox::rebase`](mailcraft_model::Mailbox::rebase)): they stay at their instants,
+    /// ([`Mailbox::rebase`](mailsolutions_model::Mailbox::rebase)): they stay at their instants,
     /// whole-day events stay on their days, and nothing is noted for a server to be told.
     ///
     /// Called wherever the mailbox or the zone may have changed: when a session is made, before
@@ -1545,20 +1546,20 @@ impl Session {
     }
 
     /// What dates are said in: the interface language, written the way of [`Session::date_region`].
-    pub fn dated(&self) -> mailcraft_i18n::date::Dated {
-        mailcraft_i18n::date::Dated::new(self.interface_language, self.date_region.as_deref())
+    pub fn dated(&self) -> mailsolutions_i18n::date::Dated {
+        mailsolutions_i18n::date::Dated::new(self.interface_language, self.date_region.as_deref())
     }
 
     /// `at`'s time as the interface language says it, on the owner's clock.
     pub fn time_said(&self, at: DateTime) -> String {
-        mailcraft_i18n::date::time(&self.dated(), at.hour, at.minute, self.prefs.twelve_hour)
+        mailsolutions_i18n::date::time(&self.dated(), at.hour, at.minute, self.prefs.twelve_hour)
     }
 
     /// `at`'s date (`Sunday, October 11, 2026`) and time as the interface language says them.
     pub fn date_time_said(&self, at: DateTime) -> String {
         let d = at.date;
-        let day = mailcraft_i18n::date::Day { year: d.year, month: d.month, day: d.day, weekday: d.weekday().index() };
-        format!("{} {}", mailcraft_i18n::date::long(&self.dated(), day), self.time_said(at))
+        let day = mailsolutions_i18n::date::Day { year: d.year, month: d.month, day: d.day, weekday: d.weekday().index() };
+        format!("{} {}", mailsolutions_i18n::date::long(&self.dated(), day), self.time_said(at))
     }
 
     pub fn local_now(&self) -> DateTime {
@@ -1576,8 +1577,8 @@ impl Session {
 
     /// The search in view, made today with the owner's first day of the week (#329): what every
     /// message is matched against (`received:today`, a date without a year).
-    pub(crate) fn search_query(&self) -> mailcraft_model::search::Query {
-        mailcraft_model::search::Query::parse(&self.view.search).on(self.today(), self.prefs.week_start)
+    pub(crate) fn search_query(&self) -> mailsolutions_model::search::Query {
+        mailsolutions_model::search::Query::parse(&self.view.search).on(self.today(), self.prefs.week_start)
     }
 
     // ---- state ----
@@ -1657,7 +1658,7 @@ impl Session {
     /// says: the rows built for the mailbox as it is (in the window, those on screen), but for
     /// those kept for a selection let go of since.
     pub(crate) fn in_list(&mut self, ids: &[Id]) -> HashSet<Id> {
-        if mailcraft_model::search::Query::parse(&self.view.search).is_empty() {
+        if mailsolutions_model::search::Query::parse(&self.view.search).is_empty() {
             let mut shown = crate::list::lists(self, ids);
             // And those of another folder listed under their open conversation (#503).
             if !self.view.open.is_empty() && ids.iter().any(|id| !shown.contains(id)) {
@@ -1782,7 +1783,7 @@ impl Session {
         let day = self.today();
         let list_now = self.list_state();
         #[cfg(not(target_arch = "wasm32"))]
-        self.words_in_step(!mailcraft_model::search::Query::parse(&self.view.search).is_empty());
+        self.words_in_step(!mailsolutions_model::search::Query::parse(&self.view.search).is_empty());
         #[cfg(not(target_arch = "wasm32"))]
         let (decided, unverified) = self.search_words();
         #[cfg(target_arch = "wasm32")]
@@ -1856,7 +1857,7 @@ impl Session {
     /// a large folder. `None` when anything else changed, or nothing did.
     fn list_stands(&self, before: &Mailbox, changes: &[(Id, Option<Arc<Message>>, Option<Arc<Message>>)]) -> Option<Vec<Id>> {
         const MOST: usize = 1024;
-        if self.view.filter != Filter::All || !mailcraft_model::search::Query::parse(&self.view.search).is_empty() {
+        if self.view.filter != Filter::All || !mailsolutions_model::search::Query::parse(&self.view.search).is_empty() {
             return None;
         }
         if changes.is_empty() || changes.len() > MOST || !self.list_cache.as_ref().is_some_and(|c| c.key == self.list_key()) {
@@ -1936,7 +1937,7 @@ impl Session {
         let Some(old) = self.mailbox.messages.get(&id).cloned().filter(|m| !m.read && !m.draft) else { return };
         let carried = light
             && self.view.filter == Filter::All
-            && mailcraft_model::search::Query::parse(&self.view.search).is_empty()
+            && mailsolutions_model::search::Query::parse(&self.view.search).is_empty()
             && self.list_cache.as_ref().is_some_and(|c| c.key == self.list_key());
         let Ok(m) = self.mailbox.message_mut(id) else { return };
         m.read = true;
@@ -2132,7 +2133,7 @@ impl Session {
                             return Some(true);
                         }
                         // A phrase: its words one after another, looked at on the message.
-                        if fields & mailcraft_model::words::BODY != 0 && text_on_disk {
+                        if fields & mailsolutions_model::words::BODY != 0 && text_on_disk {
                             unread_phrase.set(true);
                             return Some(true);
                         }
@@ -2305,7 +2306,7 @@ impl Session {
         if m.header_block.is_loaded() {
             return m;
         }
-        match self.content(m.id, Part::Headers).map(|bytes| mailcraft_model::HeaderBlock::read(&bytes)) {
+        match self.content(m.id, Part::Headers).map(|bytes| mailsolutions_model::HeaderBlock::read(&bytes)) {
             Ok(Some(block)) => {
                 let mut copy = Message::clone(&m);
                 copy.header_block = block;
@@ -2441,7 +2442,7 @@ impl Session {
         }
         let why = if m.original_no_room > 0 {
             Held::NoRoom
-        } else if m.original_tries >= mailcraft_model::ORIGINAL_TRIES {
+        } else if m.original_tries >= mailsolutions_model::ORIGINAL_TRIES {
             Held::NotGiven
         } else {
             Held::Asked
@@ -2530,7 +2531,7 @@ impl Session {
             if kept.text.is_some() && copy.body.text.is_empty() {
                 copy.body.text = crate::store_placeholder().to_string();
             }
-            kept.text_hash = mailcraft_model::text_hash(&copy.body.text);
+            kept.text_hash = mailsolutions_model::text_hash(&copy.body.text);
         }
         // What came in before a part that failed is in memory all the same, and counted.
         let brought = in_memory(&copy).saturating_sub(in_memory(m));
@@ -2578,7 +2579,7 @@ impl Session {
                 kept.hidden = None;
             }
             // (The kept HTML goes with the text as it now reads.)
-            kept.text_hash = mailcraft_model::text_hash(&copy.body.text);
+            kept.text_hash = mailsolutions_model::text_hash(&copy.body.text);
             copy.kept = (!kept.is_empty()).then(|| Box::new(kept));
             self.put_message(body.id, copy);
             took += 1;
@@ -2619,7 +2620,7 @@ impl Session {
                 if gone(kept.text) && copy.body.text.is_empty() {
                     copy.body.text = crate::store_placeholder().to_string();
                 }
-                kept.text_hash = mailcraft_model::text_hash(&copy.body.text);
+                kept.text_hash = mailsolutions_model::text_hash(&copy.body.text);
             }
             self.put_message(*id, copy);
         }
@@ -2638,7 +2639,7 @@ impl Session {
             if let Some(kept) = copy.kept.as_deref_mut() {
                 kept.hidden = None;
             }
-            if copy.kept.as_deref().is_some_and(mailcraft_model::KeptBody::is_empty) {
+            if copy.kept.as_deref().is_some_and(mailsolutions_model::KeptBody::is_empty) {
                 copy.kept = None;
             }
             self.put_message(*id, copy);
@@ -2709,7 +2710,7 @@ impl Session {
             return;
         }
         let Some(path) = self.path.clone() else { return };
-        let mut done = mailcraft_model::messages::Replaced::default();
+        let mut done = mailsolutions_model::messages::Replaced::default();
         // Each version found in a step, as it was and as it is without its content.
         let mut made: Vec<(Arc<Message>, Arc<Message>)> = vec![(old.clone(), new.clone())];
         let live = &self.mailbox.messages;
@@ -3167,7 +3168,7 @@ impl Session {
         self.normalize();
     }
 
-    /// The window replaced ContactCraft's transient contacts or changed which contacts it shows.
+    /// The window replaced ContactSolutions's transient contacts or changed which contacts it shows.
     /// Invalidate contact lookups without treating that live view as unsaved mailbox data.
     pub fn transient_contacts_changed(&mut self) {
         self.rev = self.rev.saturating_add(1);
@@ -3283,7 +3284,7 @@ impl Session {
         added: &[Id],
         contacts: &[Id],
         made: &[Id],
-        categories: Vec<mailcraft_model::Category>,
+        categories: Vec<mailsolutions_model::Category>,
     ) {
         self.keep_import_step_with(label, added, contacts, &ImportedPlans::default(), made, categories);
     }
@@ -3296,7 +3297,7 @@ impl Session {
         contacts: &[Id],
         plans: &ImportedPlans,
         made: &[Id],
-        categories: Vec<mailcraft_model::Category>,
+        categories: Vec<mailsolutions_model::Category>,
     ) {
         if added.is_empty() && contacts.is_empty() && plans.is_empty() && made.is_empty() && categories == self.mailbox.categories {
             return;
@@ -3458,11 +3459,11 @@ impl Session {
     /// with it).
     pub fn undo_removes(&self, redo: bool, item: Id) -> bool {
         let Some(step) = (if redo { self.redo.last() } else { self.history.last() }) else { return false };
-        let uid = |m: &mailcraft_model::Mailbox| m.event(item).map(|e| e.uid.clone());
+        let uid = |m: &mailsolutions_model::Mailbox| m.event(item).map(|e| e.uid.clone());
         let event = uid(&self.mailbox).is_some() && uid(&step.mailbox) != uid(&self.mailbox);
         // (A contact the step didn't touch stays, as undo leaves it: the step's snapshot may
         // hold fewer, or other, contacts than there are now.)
-        let there = |m: &mailcraft_model::Mailbox| m.event(item).is_some() || m.task(item).is_some();
+        let there = |m: &mailsolutions_model::Mailbox| m.event(item).is_some() || m.task(item).is_some();
         let other = there(&self.mailbox) && !there(&step.mailbox);
         let contact = self.mailbox.contact(item).is_some() && step.mailbox.contact(item).is_none() && step.touched.changed_contact(item);
         event || other || contact
@@ -3484,7 +3485,7 @@ impl Session {
         let Some(step) = (if redo { self.redo.last() } else { self.history.last() }) else { return (false, false) };
         match step.mailbox.messages.get(&message) {
             None => (true, false),
-            Some(then) => (false, step.mailbox.folder(then.folder).is_some_and(|f| f.kind == mailcraft_model::FolderKind::Outbox)),
+            Some(then) => (false, step.mailbox.folder(then.folder).is_some_and(|f| f.kind == mailsolutions_model::FolderKind::Outbox)),
         }
     }
 
@@ -3558,7 +3559,7 @@ impl Session {
             return Some(Class::Accounts);
         }
         // A send-bearing change to an event that the mailbox hasn't got: the step brings it back.
-        let same = |a: &mailcraft_model::remote::EventChange, b: &mailcraft_model::remote::EventChange| {
+        let same = |a: &mailsolutions_model::remote::EventChange, b: &mailsolutions_model::remote::EventChange| {
             b.send && a.account == b.account && a.kind == b.kind && a.event == b.event && a.token == b.token
         };
         if to.event_changes.iter().any(|c| c.send && !now.event_changes.iter().any(|n| same(c, n))) {
@@ -3687,7 +3688,7 @@ impl Session {
         let kind = self.mailbox.account(m.account).map(|a| a.kind);
         let source = crate::cmd::mail::check_again::source_copy(&self.mailbox, id);
         let mut copy = Message::clone(m);
-        if copy.original_no_room > 0 && kept.saturating_add(copy.original_no_room) <= mailcraft_model::MAX_ORIGINALS {
+        if copy.original_no_room > 0 && kept.saturating_add(copy.original_no_room) <= mailsolutions_model::MAX_ORIGINALS {
             copy.original_no_room = 0;
         }
         let asked = if source.is_some() {
@@ -3824,7 +3825,7 @@ impl Session {
             Ok(r) => r,
             Err(_) => {
                 log::error!("command `{id}` panicked; the mailbox was restored");
-                Err(failed!("{command} failed unexpectedly; nothing was changed", command = mailcraft_i18n::Arg::words(spec.label)))
+                Err(failed!("{command} failed unexpectedly; nothing was changed", command = mailsolutions_i18n::Arg::words(spec.label)))
             }
         };
         // The message a selection opened is marked read now that the command is done; one that
@@ -3890,7 +3891,7 @@ impl Session {
                 }
                 if !light && self.mailbox != before.mailbox {
                     // The messages the command changed, once: the chunks of the map it left
-                    // alone aren't looked into ([`mailcraft_model::Messages::changes`]).
+                    // alone aren't looked into ([`mailsolutions_model::Messages::changes`]).
                     let changes: Vec<(Id, Option<Arc<Message>>, Option<Arc<Message>>)> =
                         self.mailbox.messages.changes(&before.mailbox.messages).into_iter().map(|(id, a, b)| (id, a.cloned(), b.cloned())).collect();
                     self.hold_replaced(&changes);
@@ -4015,7 +4016,7 @@ pub(crate) fn is_readable_calendar_part(a: &Attachment) -> bool {
 }
 
 /// Whether an `<img>` of the HTML whose ids are `ids` asks for `a` (`cid:`,
-/// [`mailcraft_model::shown`]): a part to bring in with the body. Whether it is a picture is told
+/// [`mailsolutions_model::shown`]): a part to bring in with the body. Whether it is a picture is told
 /// by its bytes once they are here.
 fn shown_in(ids: &ShownIds, a: &Attachment) -> bool {
     ids.shows(&a.content_id)

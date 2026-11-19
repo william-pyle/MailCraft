@@ -3,8 +3,8 @@
 //! #70: whose a calendar is and what the account may do with it: the folder pane's Shared
 //! Calendars, and the commands that refuse a change the rights don't allow.
 
-use mailcraft_model::remote::{CalendarsDownload, RemoteCalendar};
-use mailcraft_model::{CalendarOwner, Id, Rights};
+use mailsolutions_model::remote::{CalendarsDownload, RemoteCalendar};
+use mailsolutions_model::{CalendarOwner, Id, Rights};
 use serde_json::json;
 
 use super::*;

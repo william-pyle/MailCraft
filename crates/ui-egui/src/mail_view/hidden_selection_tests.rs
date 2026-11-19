@@ -4,7 +4,7 @@
 //! there and Delete take only the message the list shows.
 
 use egui::{Event, Key, Modifiers, PointerButton};
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use crate::people_view::testing;
@@ -70,7 +70,7 @@ fn unread_tab(w: &mut testing::Window) -> (Id, Id) {
 fn opened_in_the_all_tab(w: &mut testing::Window, id: Id) {
     w.run_steps(3);
     let s = &w.state().session;
-    assert_eq!((s.view.module, s.view.filter), (mailcraft_engine::Module::Mail, mailcraft_engine::Filter::All));
+    assert_eq!((s.view.module, s.view.filter), (mailsolutions_engine::Module::Mail, mailsolutions_engine::Filter::All));
     assert_eq!(s.sel.messages, vec![id]);
     assert!(drawn(w).contains(&id), "{id} is in the list");
 }
@@ -168,6 +168,6 @@ fn the_all_tab_keeps_what_was_selected_in_the_unread_tab() {
     click_on(&mut w, "message", unread);
     still_selected(&mut w, unread);
     click_on(&mut w, "listTab", 0);
-    assert_eq!(w.state().session.view.filter, mailcraft_engine::Filter::All);
+    assert_eq!(w.state().session.view.filter, mailsolutions_engine::Filter::All);
     still_selected(&mut w, unread);
 }

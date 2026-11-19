@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The menus of the macOS menu bar (#253), as data: which commands each menu holds, in what
 //! order, with the label and ⌘ key each shows and whether it can run now. The desktop app
-//! (`apps/mailcraft/src/menubar.rs`, macOS only) turns this into native menus and hands the item
+//! (`apps/mailsolutions/src/menubar.rs`, macOS only) turns this into native menus and hands the item
 //! chosen back to [`run`]; nothing here touches the operating system, so the table is tested on
 //! every platform.
 //!
@@ -84,7 +84,7 @@ impl Own {
             Own::Edit(EditKey::SelectAll) => "Select All",
             Own::Info => "Info",
             Own::Options => "Options",
-            Own::About => "About MailCraft",
+            Own::About => "About MailSolutions",
             Own::HelpTab => "Help",
             Own::Settings => "Settings…",
         }
@@ -297,7 +297,7 @@ pub fn app_items() -> Vec<Item> {
 
 /// The tray menu's labels, translated with the interface.
 pub fn tray_text() -> (String, String, String) {
-    (tl!("Show MailCraft").to_string(), tl!("Send/Receive All Folders").to_string(), tl!("Quit MailCraft").to_string())
+    (tl!("Show MailSolutions").to_string(), tl!("Send/Receive All Folders").to_string(), tl!("Quit MailSolutions").to_string())
 }
 
 /// The words of the app menu and the Window menu, whose items the system provides.
@@ -311,9 +311,9 @@ pub struct AppText {
 
 pub fn app_text() -> AppText {
     AppText {
-        about: tl!("About MailCraft").to_string(),
-        hide: tl!("Hide MailCraft").to_string(),
-        quit: tl!("Quit MailCraft").to_string(),
+        about: tl!("About MailSolutions").to_string(),
+        hide: tl!("Hide MailSolutions").to_string(),
+        quit: tl!("Quit MailSolutions").to_string(),
         minimize: tl!("Minimize").to_string(),
         zoom: tl!("Zoom").to_string(),
     }

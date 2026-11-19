@@ -6,8 +6,8 @@
 
 use std::sync::Arc;
 
-use mailcraft_html::{Block, BlockKind, is_safe_url, parse, parse_text_own};
-use mailcraft_link::MAX_LINK;
+use mailsolutions_html::{Block, BlockKind, is_safe_url, parse, parse_text_own};
+use mailsolutions_link::MAX_LINK;
 
 /// Every block, with those inside table cells.
 fn flat(blocks: &[Block]) -> Vec<&Block> {
@@ -130,7 +130,7 @@ fn at_the_input_cap_the_link_bytes_stay_linear() {
 }
 
 /// Writes the audit's payload as a seed of the HTML fuzz target (`fuzz/seeds/html/`):
-/// `cargo test -p mailcraft-html --test link_spans_linear -- --ignored write_fuzz_seeds`.
+/// `cargo test -p mailsolutions-html --test link_spans_linear -- --ignored write_fuzz_seeds`.
 #[test]
 #[ignore = "writes files into the repository"]
 fn write_fuzz_seeds() {

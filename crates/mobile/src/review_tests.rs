@@ -8,8 +8,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::task::{Context, Poll, Wake, Waker};
 
-use mailcraft_engine::{Session, sample};
-use mailcraft_model::{Mailbox, Message, Task};
+use mailsolutions_engine::{Session, sample};
+use mailsolutions_model::{Mailbox, Message, Task};
 
 use crate::fake_tests::{FakePlatform, block_on, now, sample_core};
 use crate::queue::{MOST_QUEUED, Queue};
@@ -187,7 +187,7 @@ fn a_conversation_with_an_older_unread_message_is_unread() {
 #[test]
 fn the_device_budget_caps_what_the_session_keeps() {
     let core = crate::Core::start(FakePlatform::with_budget(1 << 20), Session::empty).unwrap();
-    assert_eq!(mailcraft_engine::store::body_budget(), 1 << 20);
+    assert_eq!(mailsolutions_engine::store::body_budget(), 1 << 20);
     assert_eq!(core.memory_budget(), 1 << 20);
 }
 
@@ -268,8 +268,8 @@ fn a_language_set_while_the_queue_is_full_reaches_the_session() {
             }
         }
     };
-    assert_eq!(lang, mailcraft_i18n::Lang::from_pref("fr", None));
-    assert_eq!(core.t("Inbox".into()), mailcraft_i18n::Lang::from_pref("fr", None).t("Inbox"));
+    assert_eq!(lang, mailsolutions_i18n::Lang::from_pref("fr", None));
+    assert_eq!(core.t("Inbox".into()), mailsolutions_i18n::Lang::from_pref("fr", None).t("Inbox"));
 }
 
 #[test]
@@ -351,7 +351,7 @@ fn a_category_heading_says_it_is_one() {
             .add_message(Message { folder: inbox, subject: "Tagged".into(), date: now() - 5, categories: vec!["Today".into()], ..Default::default() })
             .unwrap();
         let mut session = Session::at(mailbox, now(), 0);
-        session.view.sort = mailcraft_engine::SortBy::Categories;
+        session.view.sort = mailsolutions_engine::SortBy::Categories;
         session
     })
     .unwrap();
@@ -371,12 +371,12 @@ fn a_selected_message_that_fails_the_filter_is_not_listed() {
     // Select it in the unread list, then read it: the engine keeps it in that list while selected.
     block_on(core.call(move |s| {
         s.view.folder = folder;
-        s.view.filter = mailcraft_engine::Filter::Unread;
+        s.view.filter = mailsolutions_engine::Filter::Unread;
         s.sel.messages = vec![id];
-        let rows = mailcraft_engine::list::rows(s);
+        let rows = mailsolutions_engine::list::rows(s);
         s.keep_selected(&rows);
         s.run("mail.markRead", &serde_json::json!({"ids": [id]}))?;
-        assert!(mailcraft_engine::list::rows(s).iter().any(|r| r.id == id));
+        assert!(mailsolutions_engine::list::rows(s).iter().any(|r| r.id == id));
         Ok(())
     }))
     .unwrap();

@@ -78,9 +78,9 @@
 use std::collections::HashSet;
 use std::sync::atomic::Ordering;
 
-use mailcraft_mime_model::WriteOptions;
-use mailcraft_model::sync::{JmapMailResult, MAX_LISTED_FOLDERS, MAX_SENDS, SendDone, SendOutcome, SendUp};
-use mailcraft_model::{FlagStatus, Message};
+use mailsolutions_mime_model::WriteOptions;
+use mailsolutions_model::sync::{JmapMailResult, MAX_LISTED_FOLDERS, MAX_SENDS, SendDone, SendOutcome, SendUp};
+use mailsolutions_model::{FlagStatus, Message};
 use serde_json::{Map, Value, json};
 
 use super::{LIST_BYTES, Outcome, Run, Stop, arguments, get, mail_request, refusal, said};
@@ -165,10 +165,10 @@ pub(super) fn recipients(message: &Message) -> Result<Vec<String>, &'static str>
 /// `X-MailCraft-Flag`, are left out: they are nobody else's, and the octets are the same whatever of them
 /// changes between two runs (a copy a first run left is known by its octets).
 pub(super) fn written(message: &Message) -> Vec<u8> {
-    let date = if message.date == 0 { mailcraft_time::now() } else { message.date };
+    let date = if message.date == 0 { mailsolutions_time::now() } else { message.date };
     let message = Message { date, read: false, answered: false, flag: FlagStatus::None, ..message.clone() };
-    let options = WriteOptions { include_bcc: false, offset_minutes: mailcraft_time::local_offset_minutes(message.date) };
-    mailcraft_mime_model::write(&message, &options)
+    let options = WriteOptions { include_bcc: false, offset_minutes: mailsolutions_time::local_offset_minutes(message.date) };
+    mailsolutions_mime_model::write(&message, &options)
 }
 
 /// The identity to send as `email` with, of those an answer to `Identity/get` lists: its id.
@@ -463,7 +463,7 @@ impl<H: HttpExchange> Run<'_, H> {
         if sends.is_empty() {
             return Ok(());
         }
-        let mut report = |message: mailcraft_model::Id, outcome: SendOutcome| {
+        let mut report = |message: mailsolutions_model::Id, outcome: SendOutcome| {
             let done = SendDone { message, outcome, draft: None, draft_left: String::new() };
             emit(self.piece(JmapMailResult { sent: vec![done], partial: true, ..Default::default() }));
         };

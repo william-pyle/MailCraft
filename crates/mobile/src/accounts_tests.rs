@@ -11,8 +11,8 @@ use std::net::TcpListener;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Weak};
 
-use mailcraft_charset::base64::URL_SAFE_NO_PAD;
-use mailcraft_engine::Session;
+use mailsolutions_charset::base64::URL_SAFE_NO_PAD;
+use mailsolutions_engine::Session;
 
 use crate::fake_tests::{FakeSecrets, block_on, now};
 use crate::{
@@ -225,7 +225,7 @@ impl Rig {
     /// The sign-ins kept (Send/Receive's own entries, the index of the names it wrote among them,
     /// are no sign-in).
     fn secrets_kept(&self) -> usize {
-        self.phone.secrets.kept.lock().unwrap().iter().filter(|(k, _)| !k.starts_with("mailcraft:")).count()
+        self.phone.secrets.kept.lock().unwrap().iter().filter(|(k, _)| !k.starts_with("mailsolutions:")).count()
     }
 
     fn accounts(&self) -> Vec<(u64, String)> {
@@ -631,7 +631,8 @@ fn a_check_for_a_removed_account_leaves_a_sign_in_another_account_with_its_addre
     let account = signed_in(&rig);
     // Another account of the same address (a mailbox from a file may have two).
     let other = block_on(rig.core.call(|s| {
-        let mut twin = s.mailbox.accounts.iter().find(|a| a.kind == mailcraft_model::AccountKind::Microsoft).cloned().ok_or(CoreError::Internal)?;
+        let mut twin =
+            s.mailbox.accounts.iter().find(|a| a.kind == mailsolutions_model::AccountKind::Microsoft).cloned().ok_or(CoreError::Internal)?;
         twin.id = twin.id.saturating_add(1000);
         let id = twin.id;
         s.mailbox.accounts.push(twin);
@@ -1034,6 +1035,6 @@ fn an_account_added_on_the_phone_keeps_a_month_and_fetches_whole_only_up_to_a_me
         Ok((a.keep_offline, a.download_in_full, s.mailbox.device_limits))
     }))
     .unwrap();
-    assert_eq!((keep, size), (mailcraft_model::KeepOffline::Month1, mailcraft_model::DownloadInFull::UpTo1Mb));
-    assert_eq!(limits.map(|l| l.storage), Some(mailcraft_model::PHONE_STORAGE));
+    assert_eq!((keep, size), (mailsolutions_model::KeepOffline::Month1, mailsolutions_model::DownloadInFull::UpTo1Mb));
+    assert_eq!(limits.map(|l| l.storage), Some(mailsolutions_model::PHONE_STORAGE));
 }

@@ -9,11 +9,11 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use mailcraft_engine::Session;
-use mailcraft_host::graph::{GraphRequest, GraphResult};
-use mailcraft_host::secrets::secret_key;
-use mailcraft_host::sync::SendReceive;
-use mailcraft_model::{Address, FolderKind, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_host::graph::{GraphRequest, GraphResult};
+use mailsolutions_host::secrets::secret_key;
+use mailsolutions_host::sync::SendReceive;
+use mailsolutions_model::{Address, FolderKind, Message};
 use serde_json::json;
 
 use crate::fake_tests::{FakePlatform, block_on};
@@ -127,7 +127,7 @@ fn subjects(core: &Core) -> Vec<(String, bool)> {
 }
 
 fn on_disk(path: &Path) -> Vec<(String, bool)> {
-    let mut v: Vec<_> = mailcraft_engine::store::open(path).unwrap().mailbox.messages.values().map(|m| (m.subject.clone(), m.sending)).collect();
+    let mut v: Vec<_> = mailsolutions_engine::store::open(path).unwrap().mailbox.messages.values().map(|m| (m.subject.clone(), m.sending)).collect();
     v.sort();
     v
 }
@@ -449,7 +449,7 @@ fn a_restarted_core_keeps_an_index_it_could_not_read_and_a_retry_removes_what_it
     // the index; this run starts with the store out of reach.
     let gone = "refresh:gone@example.org|graph".to_string();
     platform.secrets.kept.lock().unwrap().push((gone.clone(), "old-refresh".to_string()));
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), serde_json::to_string(&[&gone]).unwrap()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), serde_json::to_string(&[&gone]).unwrap()));
     platform.no_store.store(true, Ordering::Relaxed);
     let core = Core::open(platform.clone(), dir.path().to_string()).unwrap();
     fill(&core);
@@ -467,7 +467,7 @@ fn an_index_that_does_not_parse_is_set_aside_and_never_taken_for_an_empty_one() 
     // named it is now garbage.
     let gone = "refresh:gone@example.org|graph".to_string();
     platform.secrets.kept.lock().unwrap().push((gone.clone(), "old-refresh".to_string()));
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "{not a list".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "{not a list".to_string()));
     let core = Core::open(platform.clone(), dir.path().to_string()).unwrap();
     fill(&core);
     // The removal goes through, and says that older sign-ins may be left.
@@ -476,8 +476,8 @@ fn an_index_that_does_not_parse_is_set_aside_and_never_taken_for_an_empty_one() 
     assert!(subjects(&core).is_empty(), "the mail is removed");
     let kept = platform.secrets.kept.lock().unwrap().clone();
     // The garbage is set aside, not lost, and nothing parses as the index any more.
-    assert!(kept.iter().any(|(k, v)| k.starts_with("mailcraft:index.unreadable-") && v == "{not a list"), "set aside: {kept:?}");
-    assert!(!kept.iter().any(|(k, _)| k == "mailcraft:index"), "the fresh index is removed with the rest: {kept:?}");
+    assert!(kept.iter().any(|(k, v)| k.starts_with("mailsolutions:index.unreadable-") && v == "{not a list"), "set aside: {kept:?}");
+    assert!(!kept.iter().any(|(k, _)| k == "mailsolutions:index"), "the fresh index is removed with the rest: {kept:?}");
     // The sign-in only the garbage named can't be found: it is what the message is about.
     assert!(kept.iter().any(|(k, _)| *k == gone), "{kept:?}");
     // Until the app says it was shown, every removal says it again.
@@ -493,7 +493,7 @@ fn with_damaged_index(dir: &Dir) -> (Arc<Core>, Arc<FakePlatform>) {
     let platform = FakePlatform::new();
     let gone = "refresh:gone@example.org|graph".to_string();
     platform.secrets.kept.lock().unwrap().push((gone, "old-refresh".to_string()));
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "{not a list".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "{not a list".to_string()));
     let core = Core::open(platform.clone(), dir.path().to_string()).unwrap();
     fill(&core);
     (core, platform)
@@ -507,7 +507,10 @@ fn a_lost_answer_about_a_damaged_index_is_given_again_until_it_was_shown() {
     let (core, platform) = with_damaged_index(&dir);
     let first = block_on(core.forget_sign_ins()).unwrap();
     assert!(first.may_remain.is_some(), "{first:?}");
-    assert!(platform.secrets.kept.lock().unwrap().iter().any(|(k, _)| k.starts_with("mailcraft:index.unreadable-")), "set aside on the first call");
+    assert!(
+        platform.secrets.kept.lock().unwrap().iter().any(|(k, _)| k.starts_with("mailsolutions:index.unreadable-")),
+        "set aside on the first call"
+    );
     let retry = block_on(core.forget_sign_ins()).unwrap();
     assert!(retry.may_remain.is_some(), "the retry still says it: {retry:?}");
     block_on(core.sign_ins_notice_shown()).unwrap();
@@ -527,8 +530,9 @@ fn a_lost_answer_about_a_damaged_index_is_given_again_until_it_was_shown() {
 fn an_index_that_does_not_parse_starts_a_fresh_one_with_the_names_known_now() {
     let dir = Dir::new();
     let (core, platform) = with_stored_sign_in(&dir);
-    let index = |platform: &FakePlatform| platform.secrets.kept.lock().unwrap().iter().find(|(k, _)| k == "mailcraft:index").map(|(_, v)| v.clone());
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "[not, json".to_string()));
+    let index =
+        |platform: &FakePlatform| platform.secrets.kept.lock().unwrap().iter().find(|(k, _)| k == "mailsolutions:index").map(|(_, v)| v.clone());
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "[not, json".to_string()));
     // The account's sign-in can't be removed this time: the fresh index names it, so a retry
     // finds it, and the notice waits for the removal that succeeds.
     platform.secrets.stuck.store(true, Ordering::Relaxed);
@@ -536,26 +540,26 @@ fn an_index_that_does_not_parse_starts_a_fresh_one_with_the_names_known_now() {
     let fresh = index(&platform).unwrap_or_default();
     let names: Vec<String> = serde_json::from_str(&fresh).unwrap();
     assert!(names.iter().any(|n| n.starts_with("refresh:")), "{fresh}");
-    assert!(platform.secrets.kept.lock().unwrap().iter().any(|(k, v)| k.starts_with("mailcraft:index.unreadable-") && v == "[not, json"));
+    assert!(platform.secrets.kept.lock().unwrap().iter().any(|(k, v)| k.starts_with("mailsolutions:index.unreadable-") && v == "[not, json"));
     platform.secrets.stuck.store(false, Ordering::Relaxed);
     assert!(matches!(block_on(core.delete_local_data()).unwrap(), DataRemoved::SignInsMayRemain { .. }));
     block_on(core.sign_ins_notice_shown()).unwrap();
     let kept = platform.secrets.kept.lock().unwrap().clone();
-    assert!(kept.iter().all(|(k, _)| k.starts_with("mailcraft:index.unreadable-")), "only the set-aside garbage is left: {kept:?}");
+    assert!(kept.iter().all(|(k, _)| k.starts_with("mailsolutions:index.unreadable-")), "only the set-aside garbage is left: {kept:?}");
 }
 
 #[test]
 fn an_index_that_does_not_parse_and_cannot_be_set_aside_is_kept_and_the_rest_removed() {
     let dir = Dir::new();
     let (core, platform) = with_stored_sign_in(&dir);
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "{not a list".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "{not a list".to_string()));
     // The store refuses another name beside the index (and the index itself).
     platform.secrets.fail_index.store(usize::MAX, Ordering::Relaxed);
     let answer = block_on(core.delete_local_data()).unwrap();
     assert!(matches!(answer, DataRemoved::SignInsMayRemain { .. }), "{answer:?}");
     block_on(core.sign_ins_notice_shown()).unwrap();
     let kept = platform.secrets.kept.lock().unwrap().clone();
-    assert_eq!(kept, vec![("mailcraft:index".to_string(), "{not a list".to_string())], "the garbage is kept as it was, the sign-in removed");
+    assert_eq!(kept, vec![("mailsolutions:index".to_string(), "{not a list".to_string())], "the garbage is kept as it was, the sign-in removed");
 }
 
 #[test]
@@ -563,12 +567,12 @@ fn an_index_the_store_cannot_read_is_kept_and_the_removal_refused() {
     // Unchanged by the setting aside: a read error is not garbage.
     let dir = Dir::new();
     let (core, platform) = with_stored_sign_in(&dir);
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "{not a list".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "{not a list".to_string()));
     platform.no_store.store(true, Ordering::Relaxed);
     assert!(matches!(block_on(core.delete_local_data()), Err(CoreError::Failed { .. })));
     platform.no_store.store(false, Ordering::Relaxed);
     let kept = platform.secrets.kept.lock().unwrap().clone();
-    assert!(kept.iter().any(|(k, _)| k == "mailcraft:index") && !kept.iter().any(|(k, _)| k.contains("unreadable")), "{kept:?}");
+    assert!(kept.iter().any(|(k, _)| k == "mailsolutions:index") && !kept.iter().any(|(k, _)| k.contains("unreadable")), "{kept:?}");
 }
 
 #[cfg(unix)]
@@ -576,7 +580,7 @@ fn an_index_the_store_cannot_read_is_kept_and_the_removal_refused() {
 fn the_notice_of_a_damaged_index_waits_for_a_removal_that_succeeds() {
     let dir = Dir::new();
     let (core, platform) = with_stored_sign_in(&dir);
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "{not a list".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "{not a list".to_string()));
     // The sign-ins go, but the mail's folder can't be emptied.
     set_mode(&dir.0, 0o000);
     if std::fs::read_dir(&dir.0).is_ok() {
@@ -596,7 +600,7 @@ fn the_notice_of_a_damaged_index_waits_for_a_removal_that_succeeds() {
 fn the_notice_of_a_damaged_index_outlives_a_restart_before_the_retry() {
     let dir = Dir::new();
     let (core, platform) = with_stored_sign_in(&dir);
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "{not a list".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "{not a list".to_string()));
     // The sign-ins go (the damaged index with them), but the mail's folder can't be emptied.
     set_mode(&dir.0, 0o000);
     if std::fs::read_dir(&dir.0).is_ok() {
@@ -614,7 +618,7 @@ fn the_notice_of_a_damaged_index_outlives_a_restart_before_the_retry() {
     block_on(core.sign_ins_notice_shown()).unwrap();
     let kept = platform.secrets.kept.lock().unwrap().clone();
     assert!(
-        kept.iter().all(|(k, _)| k.starts_with("mailcraft:index.unreadable-")),
+        kept.iter().all(|(k, _)| k.starts_with("mailsolutions:index.unreadable-")),
         "once shown, nothing of it is left but the set-aside garbage: {kept:?}"
     );
     assert_eq!(block_on(core.delete_local_data()).unwrap(), DataRemoved::All, "and says it once it was shown");
@@ -624,13 +628,13 @@ fn the_notice_of_a_damaged_index_outlives_a_restart_before_the_retry() {
 fn a_damaged_index_is_kept_as_it_is_when_its_notice_cannot_be_kept() {
     let dir = Dir::new();
     let (core, platform) = with_stored_sign_in(&dir);
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:index".to_string(), "{not a list".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:index".to_string(), "{not a list".to_string()));
     platform.secrets.notice_unwritable.store(true, Ordering::Relaxed);
     let answer = block_on(core.delete_local_data()).unwrap();
     assert!(matches!(answer, DataRemoved::SignInsMayRemain { .. }), "{answer:?}");
     let kept = platform.secrets.kept.lock().unwrap().clone();
     // Nothing was set aside: the damaged index itself is what a later run finds again.
-    assert_eq!(kept, vec![("mailcraft:index".to_string(), "{not a list".to_string())]);
+    assert_eq!(kept, vec![("mailsolutions:index".to_string(), "{not a list".to_string())]);
 }
 
 #[test]
@@ -638,7 +642,7 @@ fn a_removal_is_not_taken_for_complete_while_a_notice_still_due_cannot_be_read()
     let dir = Dir::new();
     let platform = FakePlatform::new();
     // An earlier run found the index damaged and couldn't say so before it ended.
-    platform.secrets.kept.lock().unwrap().push(("mailcraft:notice-sign-ins-may-remain".to_string(), "1".to_string()));
+    platform.secrets.kept.lock().unwrap().push(("mailsolutions:notice-sign-ins-may-remain".to_string(), "1".to_string()));
     platform.secrets.notice_unreadable.store(true, Ordering::Relaxed);
     let core = Core::open(platform.clone(), dir.path().to_string()).unwrap();
     assert!(matches!(block_on(core.delete_local_data()), Err(CoreError::Failed { .. })));

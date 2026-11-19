@@ -20,8 +20,8 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use egui::{Color32, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_html::{Block, BlockKind, Env, Marker};
-use mailcraft_model::Message;
+use mailsolutions_html::{Block, BlockKind, Env, Marker};
+use mailsolutions_model::Message;
 
 use super::Place;
 use super::colors::Paper;
@@ -89,12 +89,14 @@ impl Doc {
     /// The same for a body of a width and a theme (`env`): the message's `@media` is tested
     /// against it.
     pub fn of_in(message: &Message, can_download: bool, env: Env) -> Doc {
-        let lists: Arc<[String]> = message.body.html.as_deref().map(mailcraft_html::media_lists).unwrap_or_default().into();
+        let lists: Arc<[String]> = message.body.html.as_deref().map(mailsolutions_html::media_lists).unwrap_or_default().into();
         let responsive = !lists.is_empty();
-        let parsed = message.body.html.as_deref().map(|html| mailcraft_html::parse_in(html, &env));
+        let parsed = message.body.html.as_deref().map(|html| mailsolutions_html::parse_in(html, &env));
         let (blocks, sender_dark) = match parsed {
             // HTML that came to nothing (only scripts, only pictures that can't be shown) falls back to the text.
-            Some(read) if mailcraft_html::has_text(&read.blocks) || shows_a_picture(&read.blocks, message) || message.body.text.trim().is_empty() => {
+            Some(read)
+                if mailsolutions_html::has_text(&read.blocks) || shows_a_picture(&read.blocks, message) || message.body.text.trim().is_empty() =>
+            {
                 (read.blocks, read.dark_design)
             }
             Some(read) if can_download => {
@@ -102,9 +104,9 @@ impl Doc {
                 if !doc.remote.is_empty() {
                     return doc;
                 }
-                (mailcraft_html::text_blocks(&message.body.text), false)
+                (mailsolutions_html::text_blocks(&message.body.text), false)
             }
-            _ => (mailcraft_html::text_blocks(&message.body.text), false),
+            _ => (mailsolutions_html::text_blocks(&message.body.text), false),
         };
         Doc { lists, responsive, sender_dark, ..Doc::from_blocks(blocks) }
     }
@@ -113,9 +115,9 @@ impl Doc {
     pub(super) fn from_blocks(blocks: Vec<Block>) -> Doc {
         let mut doc = Doc::default();
         let mut seen = HashSet::new();
-        for picture in mailcraft_html::images(&blocks) {
+        for picture in mailsolutions_html::images(&blocks) {
             let BlockKind::Image { src, width, height, .. } = &picture.kind else { continue };
-            if mailcraft_html::is_embedded(src) {
+            if mailsolutions_html::is_embedded(src) {
                 continue;
             }
             doc.remote_pictures += 1;
@@ -142,7 +144,7 @@ impl Doc {
 
 /// Whether one of the pictures is written into the message or attached to it.
 fn shows_a_picture(blocks: &[Block], message: &Message) -> bool {
-    mailcraft_html::images(blocks).iter().any(|b| match &b.kind {
+    mailsolutions_html::images(blocks).iter().any(|b| match &b.kind {
         BlockKind::Image { data: Some(_), .. } => true,
         BlockKind::Image { src, .. } => super::images::attachment(message, src).is_some(),
         _ => false,
@@ -212,7 +214,7 @@ impl Look {
     }
 
     fn of(lists: &[String], env: Env) -> Look {
-        Look { verdicts: mailcraft_html::media_verdicts(lists, &env), dark: env.dark() }
+        Look { verdicts: mailsolutions_html::media_verdicts(lists, &env), dark: env.dark() }
     }
 }
 
@@ -283,7 +285,7 @@ fn same_body(a: &Message, b: &Message) -> bool {
 
 impl Store {
     fn of(ctx: &egui::Context) -> Arc<Mutex<Store>> {
-        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Store>>>(egui::Id::unique("mailcraft-reading-bodies")).clone())
+        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Store>>>(egui::Id::unique("mailsolutions-reading-bodies")).clone())
     }
 
     /// Let go of every body laid out, and the messages they were laid out from (the window is out
@@ -611,7 +613,7 @@ pub fn page(app: &MailApp, place: Place, ui: &mut Ui) -> egui::Frame {
 }
 
 /// Look at what is laid out of a message's body where it is shown, when it is shown there.
-pub(super) fn with_laid<R>(ctx: &egui::Context, place: Place, message: mailcraft_model::Id, read: impl FnOnce(&Laid) -> R) -> Option<R> {
+pub(super) fn with_laid<R>(ctx: &egui::Context, place: Place, message: mailsolutions_model::Id, read: impl FnOnce(&Laid) -> R) -> Option<R> {
     let store = Store::of(ctx);
     let store = store.lock().unwrap_or_else(|e| e.into_inner());
     store.entries.iter().find(|e| e.place == place && e.message.id == message).map(|e| read(&e.laid))
@@ -620,13 +622,13 @@ pub(super) fn with_laid<R>(ctx: &egui::Context, place: Place, message: mailcraft
 /// What is kept of a message's body where it is shown in the reading pane, for tests: its
 /// layout and where it was last painted.
 #[cfg(test)]
-pub fn kept<R>(ctx: &egui::Context, message: mailcraft_model::Id, read: impl FnOnce(&Laid, egui::Pos2) -> R) -> Option<R> {
+pub fn kept<R>(ctx: &egui::Context, message: mailsolutions_model::Id, read: impl FnOnce(&Laid, egui::Pos2) -> R) -> Option<R> {
     kept_at(ctx, Place::Pane, message, read)
 }
 
 /// The same for any place a message is shown in.
 #[cfg(test)]
-pub fn kept_at<R>(ctx: &egui::Context, place: Place, message: mailcraft_model::Id, read: impl FnOnce(&Laid, egui::Pos2) -> R) -> Option<R> {
+pub fn kept_at<R>(ctx: &egui::Context, place: Place, message: mailsolutions_model::Id, read: impl FnOnce(&Laid, egui::Pos2) -> R) -> Option<R> {
     let store = Store::of(ctx);
     let store = store.lock().unwrap();
     store.entries.iter().find(|e| e.place == place && e.message.id == message).map(|e| read(&e.laid, e.origin))
@@ -640,7 +642,7 @@ pub fn kept_count(ctx: &egui::Context) -> usize {
 
 /// The look of the blocks in use for a message shown at `place`, for tests.
 #[cfg(test)]
-pub fn current_look(ctx: &egui::Context, place: Place, message: mailcraft_model::Id) -> Option<Look> {
+pub fn current_look(ctx: &egui::Context, place: Place, message: mailsolutions_model::Id) -> Option<Look> {
     let store = Store::of(ctx);
     let store = store.lock().unwrap();
     store.entries.iter().find(|e| e.place == place && e.message.id == message).map(|e| e.look.clone())
@@ -648,7 +650,7 @@ pub fn current_look(ctx: &egui::Context, place: Place, message: mailcraft_model:
 
 /// The blocks in use for a message shown at `place`, for tests.
 #[cfg(test)]
-pub fn current_doc(ctx: &egui::Context, place: Place, message: mailcraft_model::Id) -> Option<Arc<Doc>> {
+pub fn current_doc(ctx: &egui::Context, place: Place, message: mailsolutions_model::Id) -> Option<Arc<Doc>> {
     let store = Store::of(ctx);
     let store = store.lock().unwrap();
     store.entries.iter().find(|e| e.place == place && e.message.id == message).map(|e| e.doc.clone())
@@ -788,8 +790,10 @@ pub fn paint(
             }
         }
     }
-    let link =
-        hover.as_ref().and_then(|hover| hover.link.clone()).filter(|url| mailcraft_html::is_safe_url(url) && !mailcraft_html::is_embedded(url));
+    let link = hover
+        .as_ref()
+        .and_then(|hover| hover.link.clone())
+        .filter(|url| mailsolutions_html::is_safe_url(url) && !mailsolutions_html::is_embedded(url));
     // The pointer says what it would do: follow a link, or select text (as it does all over the
     // body, the way a page of a word processor has it); over a picture it is the plain arrow.
     if dragging {
@@ -859,7 +863,7 @@ fn clipped(text: &str, max: usize) -> std::borrow::Cow<'_, str> {
 /// address as it is. Each line at most [`TIP_ADDRESS`] characters.
 pub(super) fn link_tip(href: &str) -> String {
     let as_is = || clipped(href, TIP_ADDRESS).into_owned();
-    let Some(link) = mailcraft_link::WebLink::parse(href.trim()) else { return as_is() };
+    let Some(link) = mailsolutions_link::WebLink::parse(href.trim()) else { return as_is() };
     let goes = crate::i18n::fmt(tl!("Goes to {host}"), &[("host", clipped(link.host(), TIP_ADDRESS).as_ref())]);
     format!("{goes}\n{}", clipped(link.as_str(), TIP_ADDRESS))
 }

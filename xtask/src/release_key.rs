@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `cargo xtask release-key new <dir>` and `cargo xtask release-key sign <file>`: the release
-//! signature that tells a copy of MailCraft that an update is the project's own.
+//! signature that tells a copy of MailSolutions that an update is the project's own.
 //!
 //! - `new <dir>` makes two ed25519 key pairs (the one in use and the spare), writes each private
 //!   key as base64 PKCS#8 into `<dir>` (a folder of the maintainer's, kept offline), and prints
 //!   the two public keys in base64 for `RELEASE_KEYS` in `crates/net/src/update.rs`. It never
 //!   writes over a file that is there, and on Unix the folder and the files are the owner's only.
 //! - `sign <file>` signs the file's bytes with the private key in the environment variable
-//!   `MAILCRAFT_RELEASE_KEY` (base64 PKCS#8, as `new` wrote it) and writes the signature, in
+//!   `MAILSOLUTIONS_RELEASE_KEY` (base64 PKCS#8, as `new` wrote it) and writes the signature, in
 //!   base64 on one line, to `<file>.sig`. The release workflow signs `SHA256SUMS.txt` with it.
 //!
 //! The private key is never printed, logged or put into an error; only the public key is said.
@@ -16,15 +16,15 @@
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use mailcraft_charset::base64::STANDARD;
+use mailsolutions_charset::base64::STANDARD;
 use ring::rand::SystemRandom;
 use ring::signature::{Ed25519KeyPair, KeyPair as _};
 
 /// Where `sign` takes the private key from.
-pub const KEY_VARIABLE: &str = "MAILCRAFT_RELEASE_KEY";
+pub const KEY_VARIABLE: &str = "MAILSOLUTIONS_RELEASE_KEY";
 /// The names of the private keys `new` writes.
-pub const IN_USE: &str = "mailcraft-release-key-in-use.pkcs8.b64";
-pub const SPARE: &str = "mailcraft-release-key-spare.pkcs8.b64";
+pub const IN_USE: &str = "mailsolutions-release-key-in-use.pkcs8.b64";
+pub const SPARE: &str = "mailsolutions-release-key-spare.pkcs8.b64";
 /// Largest key text taken from the environment (a PKCS#8 ed25519 key is 85 bytes, 116 in base64).
 const MAX_KEY_TEXT: usize = 1024;
 
@@ -118,7 +118,7 @@ mod tests {
     use super::*;
 
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("mailcraft-release-key-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-release-key-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         dir
     }
@@ -132,7 +132,7 @@ mod tests {
             assert_eq!(STANDARD.decode(public).unwrap().len(), 32);
         }
         let sums = dir.join("SHA256SUMS.txt");
-        std::fs::write(&sums, "0123  mailcraft-9.9.9-linux-x86_64.AppImage\n").unwrap();
+        std::fs::write(&sums, "0123  mailsolutions-9.9.9-linux-x86_64.AppImage\n").unwrap();
         let key = std::fs::read_to_string(dir.join(IN_USE)).unwrap();
         let (sig, public) = sign(&sums, &key).unwrap();
         assert_eq!(public, in_use);

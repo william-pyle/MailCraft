@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! A message file the system asked MailCraft to open (#505), `file.import` with `"opened":
+//! A message file the system asked MailSolutions to open (#505), `file.import` with `"opened":
 //! true`: into the local folder Imported, whatever is in view, as a read, received message that is
 //! never a draft; the same file again finds the copy already there (by Message-ID, else by the
 //! file's SHA-256), and a hash a file brings with it counts for nothing.
 
-use mailcraft_model::FolderKind;
+use mailsolutions_model::FolderKind;
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -53,7 +53,7 @@ fn an_opened_message_goes_to_the_local_folder_imported_never_the_folder_in_view(
     let m = s.mailbox.message(id).unwrap().clone();
     let folder = s.mailbox.folder(m.folder).unwrap();
     assert_eq!(folder.account, local);
-    assert!(folder.name.eq_ignore_ascii_case(mailcraft_model::IMPORTED), "{}", folder.name);
+    assert!(folder.name.eq_ignore_ascii_case(mailsolutions_model::IMPORTED), "{}", folder.name);
     assert!(!m.draft && m.read && m.folder != drafts, "{m:?}");
     assert_eq!(r["already"], json!(false));
     // A folder named in the params changes nothing.
@@ -145,7 +145,7 @@ fn only_a_message_file_is_opened_so() {
 #[test]
 fn a_path_that_is_not_a_regular_file_is_not_read() {
     let mut s = session();
-    let dir = std::env::temp_dir().join(format!("mailcraft-opened-file-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-opened-file-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("folder.eml")).unwrap();
     let r = s.run("file.import", &json!({"path": dir.join("folder.eml").to_string_lossy(), "opened": true}));

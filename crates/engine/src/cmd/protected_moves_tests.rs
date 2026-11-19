@@ -5,8 +5,8 @@
 //! behind of a server's word (#781) stays behind and the signature still checks there. Synthetic
 //! messages with dummy signatures only.
 
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use crate::Session;
@@ -27,7 +27,7 @@ fn body(bytes: &[u8]) -> &[u8] {
 }
 
 /// An IMAP account whose Inbox follows "INBOX", with `new` in it.
-fn imap_account(s: &mut Session, email: &str, new: Vec<mailcraft_model::Message>) -> Id {
+fn imap_account(s: &mut Session, email: &str, new: Vec<mailsolutions_model::Message>) -> Id {
     let servers = json!({"email": email, "incoming": {"host": "imap.mail.example"}, "outgoing": {"host": "smtp.mail.example"}});
     let a = s.run("account.add", &servers).unwrap()["id"].as_u64().unwrap();
     let uid_seen = new.iter().map(|m| m.uid).max().unwrap_or(0);
@@ -39,14 +39,14 @@ fn imap_account(s: &mut Session, email: &str, new: Vec<mailcraft_model::Message>
 /// What goes onto account `to`'s server for message `bytes`, moved there from another IMAP account.
 fn moved_up(bytes: &[u8]) -> Vec<u8> {
     let mut s = Session::empty();
-    let read = mailcraft_model::Message { uid: 1, ..mailcraft_mime_model::parse_fetched(bytes) };
+    let read = mailsolutions_model::Message { uid: 1, ..mailsolutions_mime_model::parse_fetched(bytes) };
     let from = imap_account(&mut s, "avery@mail.example", vec![read]);
     let to = imap_account(&mut s, "work@mail.example", vec![]);
     let id = s.mailbox.messages.values().find(|m| m.account == from).unwrap().id;
     s.run("mail.move", &json!({"ids": [id], "folder": s.mailbox.folder_of_kind(to, FolderKind::Inbox).unwrap()})).unwrap();
     let asked = sync_request(&s, to).unwrap();
     let [place] = asked.places.as_slice() else { panic!("{:?}", asked.places) };
-    mailcraft_mime_model::write_placed(&place.message, &mailcraft_mime_model::WriteOptions::default(), &place.marker)
+    mailsolutions_mime_model::write_placed(&place.message, &mailsolutions_mime_model::WriteOptions::default(), &place.marker)
 }
 
 #[test]
@@ -66,7 +66,7 @@ fn a_signed_message_moved_to_another_server_leaves_the_stamps_behind() {
 fn a_signed_message_of_lf_lines_goes_up_in_crlf_with_its_body_canonical() {
     // As an mbox or a file of LF lines brings it in.
     let lf: Vec<u8> = String::from_utf8_lossy(STAMPED).replace("\r\n", "\n").into_bytes();
-    let read = mailcraft_mime_model::parse_mbox(&[&b"From boss@example.org Tue Jul  1 08:52:37 2003\n"[..], &lf].concat());
+    let read = mailsolutions_mime_model::parse_mbox(&[&b"From boss@example.org Tue Jul  1 08:52:37 2003\n"[..], &lf].concat());
     let original = read.first().and_then(|m| m.original_bytes()).unwrap().to_vec();
     let put = moved_up(&original);
     assert!(put.windows(2).all(|w| w[1] != b'\n' || w[0] == b'\r'), "a bare LF in\n{}", String::from_utf8_lossy(&put));
@@ -94,7 +94,7 @@ fn two_imap() -> (Session, Id, Id, Id) {
 /// [`two_imap`] with `bytes` for the message.
 fn two_imap_with(bytes: &[u8]) -> (Session, Id, Id, Id) {
     let mut s = Session::empty();
-    let read = mailcraft_model::Message { uid: 1, ..mailcraft_mime_model::parse_fetched(bytes) };
+    let read = mailsolutions_model::Message { uid: 1, ..mailsolutions_mime_model::parse_fetched(bytes) };
     let from = imap_account(&mut s, "avery@mail.example", vec![read]);
     let to = imap_account(&mut s, "work@mail.example", vec![]);
     let id = s.mailbox.messages.values().find(|m| m.account == from).unwrap().id;
@@ -103,7 +103,7 @@ fn two_imap_with(bytes: &[u8]) -> (Session, Id, Id, Id) {
 
 /// A Microsoft account whose server lists an Inbox ("in").
 fn microsoft(s: &mut Session, email: &str) -> Id {
-    use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult};
+    use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult};
     let account = s.run("account.add", &json!({"email": email, "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     let folders = vec![GraphFolder { id: "in".into(), name: "Inbox".into(), kind: FolderKind::Inbox, ..Default::default() }];
     let listing = GraphMailResult { account, email: email.into(), listing: Some(FolderListing { folders, complete: true }), ..Default::default() };
@@ -119,7 +119,7 @@ fn without_original(s: &Session, id: Id, name: &str) -> (Session, std::path::Pat
 
 /// [`without_original`], with `spoil` done to the file that keeps the original instead.
 fn with_original_file(s: &Session, id: Id, name: &str, spoil: impl Fn(&std::path::Path)) -> (Session, std::path::PathBuf) {
-    let dir = std::env::temp_dir().join(format!("mailcraft-protected-moves-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-protected-moves-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("mailbox.mailcraft");
@@ -136,7 +136,7 @@ fn with_original_file(s: &Session, id: Id, name: &str, spoil: impl Fn(&std::path
 
 /// What the IMAP account `account`'s server gives of UID `uid` of its Inbox, downloaded again.
 fn refetched(s: &mut Session, account: Id, uid: u32, bytes: &[u8]) {
-    let read = mailcraft_model::Message { uid, ..mailcraft_mime_model::parse_fetched(bytes) };
+    let read = mailsolutions_model::Message { uid, ..mailsolutions_mime_model::parse_fetched(bytes) };
     let inbox =
         FolderDelta { remote: "INBOX".into(), kind: FolderKind::Inbox, uid_validity: 7, uid_seen: uid, refetched: vec![read], ..Default::default() };
     apply_sync(s, SyncResult { account, folders: vec![inbox], ..Default::default() }).unwrap();
@@ -144,7 +144,7 @@ fn refetched(s: &mut Session, account: Id, uid: u32, bytes: &[u8]) {
 
 /// Whether a request of `account`'s asks its server to delete anything.
 fn deletes(s: &Session, account: Id) -> bool {
-    sync_request(s, account).unwrap().ops.iter().any(|op| matches!(op, mailcraft_model::sync::RemoteOp::Delete { .. }))
+    sync_request(s, account).unwrap().ops.iter().any(|op| matches!(op, mailsolutions_model::sync::RemoteOp::Delete { .. }))
 }
 
 /// A signed message moved to another IMAP server whose original can't be read here waits: the
@@ -207,7 +207,7 @@ fn a_move_into_microsoft_waits_for_the_original_from_the_imap_copy() {
 /// on into the second IMAP account, its original's file gone: the session, the second IMAP
 /// account, the Microsoft account, the message and the folder to remove after.
 fn moved_out_of_microsoft(name: &str) -> (Session, Id, Id, Id, std::path::PathBuf) {
-    use mailcraft_model::sync::{GraphMailResult, MessageOutcome, PlaceDone};
+    use mailsolutions_model::sync::{GraphMailResult, MessageOutcome, PlaceDone};
     let (mut s, from, to, id) = two_imap();
     let ms = microsoft(&mut s, "owner@example.org");
     s.run("mail.move", &json!({"ids": [id], "folder": s.mailbox.folder_of_kind(ms, FolderKind::Inbox).unwrap()})).unwrap();
@@ -216,7 +216,7 @@ fn moved_out_of_microsoft(name: &str) -> (Session, Id, Id, Id, std::path::PathBu
     let placed = asked.places.iter().map(|p| PlaceDone { change: p.without_data(), outcome: made.clone() }).collect();
     let result = GraphMailResult { account: ms, email: "owner@example.org".into(), placed, ..Default::default() };
     crate::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
-    let deleted = vec![mailcraft_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
+    let deleted = vec![mailsolutions_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
     apply_sync(&mut s, SyncResult { account: from, deleted, ..Default::default() }).unwrap();
     s.run("mail.move", &json!({"ids": [id], "folder": s.mailbox.folder_of_kind(to, FolderKind::Inbox).unwrap()})).unwrap();
     assert!(s.mailbox.message(id).unwrap().moving_out.is_some());
@@ -302,7 +302,7 @@ fn not_given(s: &mut Session, account: Id, refused: bool, too_large: bool) {
 /// and Check again asks once more.
 #[test]
 fn a_refusal_from_the_copy_it_came_from_never_lets_it_go() {
-    use mailcraft_model::{ORIGINAL_PATIENCE, ORIGINAL_TRIES};
+    use mailsolutions_model::{ORIGINAL_PATIENCE, ORIGINAL_TRIES};
     for refused in [true, false] {
         let (mut s, from, id, dir) = moved_here_asking(if refused { "refused" } else { "refused-old" });
         let inbox = s.mailbox.folder_of_kind(from, FolderKind::Inbox).unwrap();
@@ -350,7 +350,7 @@ fn a_copy_too_large_to_take_holds_the_move() {
     not_given(&mut s, from, false, true);
     s.note_saved();
     let m = s.mailbox.message(id).unwrap();
-    assert!(!m.refetch && !m.original_asked && m.original_tries == mailcraft_model::ORIGINAL_TRIES);
+    assert!(!m.refetch && !m.original_asked && m.original_tries == mailsolutions_model::ORIGINAL_TRIES);
     assert!(!deletes(&s, from));
     // The owner was told by the IMAP account's run, as the message is on this computer.
     let m = s.mailbox.message(id).cloned().unwrap();
@@ -364,7 +364,7 @@ fn a_copy_too_large_to_take_holds_the_move() {
 #[test]
 fn no_room_for_the_original_holds_the_move_until_there_is() {
     let (mut s, from, id, dir) = moved_here_asking("no-room");
-    let free = mailcraft_model::MAX_ORIGINALS.saturating_sub(s.mailbox.messages.originals_size());
+    let free = mailsolutions_model::MAX_ORIGINALS.saturating_sub(s.mailbox.messages.originals_size());
     // As if they had come with no room: a byte more than there is room for now.
     let m = s.mailbox.message_mut(id).unwrap();
     (m.refetch, m.original_wanted, m.original_no_room) = (false, false, free + 1);
@@ -392,7 +392,7 @@ fn a_move_out_of_a_mailbox_numbered_anew_waits_for_its_uid() {
     let (mut s, dir) = without_original(&s, id, "renumbered");
     let set_uid = |s: &mut Session, to: u32| {
         for p in &mut s.mailbox.pending {
-            if let mailcraft_model::Pending::Move { uid, .. } = p {
+            if let mailsolutions_model::Pending::Move { uid, .. } = p {
                 *uid = to;
             }
         }
@@ -414,7 +414,7 @@ fn a_move_out_of_a_mailbox_numbered_anew_waits_for_its_uid() {
 #[test]
 fn an_ask_of_a_copy_that_went_is_let_go_of() {
     let (mut s, from, id, dir) = moved_here_asking("source-gone");
-    let deleted = vec![mailcraft_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
+    let deleted = vec![mailsolutions_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
     apply_sync(&mut s, SyncResult { account: from, deleted, ..Default::default() }).unwrap();
     let m = s.mailbox.message(id).unwrap();
     assert!(!m.refetch && !m.original_wanted, "{:?}", s.mailbox.pending);
@@ -428,7 +428,7 @@ fn another_mailbox_forgets_what_was_asked_and_said() {
     s.want_original(id);
     let m = s.mailbox.message(id).cloned().unwrap();
     assert!(s.held_notice(&m).is_some());
-    s.replace_mailbox(mailcraft_model::Mailbox::default());
+    s.replace_mailbox(mailsolutions_model::Mailbox::default());
     assert!(s.lost_originals.lock().unwrap().is_empty());
     assert!(s.first_told_held(id, crate::session::Held::Asked));
     let _ = std::fs::remove_dir_all(&dir);
@@ -504,7 +504,7 @@ fn a_move_whose_original_is_damaged_or_alone_asks_and_says_so() {
 /// it, and nothing is let go of; listed after all, it is asked; ended without it, it went.
 #[test]
 fn a_listing_afresh_that_has_not_ended_never_lets_the_copy_go() {
-    use mailcraft_model::sync::{GraphMessage, MessagePage, ServerMessage};
+    use mailsolutions_model::sync::{GraphMessage, MessagePage, ServerMessage};
     for listed in [true, false] {
         let (mut s, to, ms, id, dir) = moved_out_of_microsoft(if listed { "afresh-listed" } else { "afresh-gone" });
         assert!(sync_request(&s, to).unwrap().places.is_empty());
@@ -525,7 +525,7 @@ fn a_listing_afresh_that_has_not_ended_never_lets_the_copy_go() {
         assert!(m.original_wanted && m.moving_out.as_ref().is_some_and(|out| out.left && out.listing), "{listed}");
         assert!(sync_request(&s, to).unwrap().places.is_empty(), "{listed}");
         let changes = crate::cmd::graph_mail::graph_mail_request(&s, ms).unwrap().messages;
-        assert!(!changes.iter().any(|c| matches!(c, mailcraft_model::sync::MessageChange::MovedOut { .. })), "{listed}");
+        assert!(!changes.iter().any(|c| matches!(c, mailsolutions_model::sync::MessageChange::MovedOut { .. })), "{listed}");
         let there = GraphMessage { server: ServerMessage { id: "AAkA2".into(), ..Default::default() }, ..Default::default() };
         let last = page(if listed { vec![there] } else { vec![] }, false, true);
         crate::cmd::graph_down::take_page(&mut s.mailbox, &mut index, ms, &last, &mut down);
@@ -550,10 +550,10 @@ fn placed_wrongly(name: &str, microsoft_too: bool) -> (Session, Id, Id, std::pat
     s.run("mail.move", &json!({"ids": [id], "folder": inbox})).unwrap();
     let (mut s, dir) = without_original(&s, id, name);
     if microsoft_too {
-        use mailcraft_model::sync::{GraphMailResult, MessageOutcome, PlaceDone, PlaceUp};
+        use mailsolutions_model::sync::{GraphMailResult, MessageOutcome, PlaceDone, PlaceUp};
         let m = s.mailbox.message(id).cloned().unwrap();
         let marker = s.mailbox.queued.iter().find_map(|q| match q {
-            mailcraft_model::Queued::PlaceMessage { message, marker, .. } if *message == id => Some(marker.clone()),
+            mailsolutions_model::Queued::PlaceMessage { message, marker, .. } if *message == id => Some(marker.clone()),
             _ => None,
         });
         let change = PlaceUp::of(&m, "in".into(), None, marker.unwrap(), true, None);
@@ -566,7 +566,7 @@ fn placed_wrongly(name: &str, microsoft_too: bool) -> (Session, Id, Id, std::pat
         .unwrap();
         assert!(s.mailbox.message(id).unwrap().server.is_some());
     } else {
-        let placed = vec![mailcraft_model::sync::Placed { message: id, to_folder: inbox, uid: 5, uid_validity: 7, ..Default::default() }];
+        let placed = vec![mailsolutions_model::sync::Placed { message: id, to_folder: inbox, uid: 5, uid_validity: 7, ..Default::default() }];
         apply_sync(&mut s, SyncResult { account: into, placed, ..Default::default() }).unwrap();
         assert_eq!(s.mailbox.message(id).unwrap().uid, 5);
     }
@@ -583,7 +583,7 @@ fn a_copy_placed_wrongly_never_releases_the_original() {
     for microsoft_too in [false, true] {
         let (mut s, from, id, dir) = placed_wrongly(if microsoft_too { "wrong-ms" } else { "wrong-imap" }, microsoft_too);
         assert!(!deletes(&s, from), "{microsoft_too}");
-        assert!(s.mailbox.pending.iter().any(|p| matches!(p, mailcraft_model::Pending::Move { message, .. } if *message == id)));
+        assert!(s.mailbox.pending.iter().any(|p| matches!(p, mailsolutions_model::Pending::Move { message, .. } if *message == id)));
         s.mailbox.message_mut(id).unwrap().original_asked = true;
         assert!(deletes(&s, from), "{microsoft_too}");
         let _ = std::fs::remove_dir_all(&dir);
@@ -600,10 +600,10 @@ fn a_copy_placed_wrongly_never_releases_the_original() {
 /// server until the copy there brought none.
 #[test]
 fn a_copy_placed_wrongly_never_removes_the_microsoft_original() {
-    use mailcraft_model::sync::MessageChange;
+    use mailsolutions_model::sync::MessageChange;
     let (mut s, to, ms, id, dir) = moved_out_of_microsoft("wrong-out-of-ms");
     let inbox = s.mailbox.folder_of_kind(to, FolderKind::Inbox).unwrap();
-    let placed = vec![mailcraft_model::sync::Placed { message: id, to_folder: inbox, uid: 5, uid_validity: 7, ..Default::default() }];
+    let placed = vec![mailsolutions_model::sync::Placed { message: id, to_folder: inbox, uid: 5, uid_validity: 7, ..Default::default() }];
     apply_sync(&mut s, SyncResult { account: to, placed, ..Default::default() }).unwrap();
     assert_eq!(s.mailbox.message(id).unwrap().uid, 5);
     let moved_out =
@@ -636,8 +636,8 @@ fn a_move_here_forced_past_its_wait_never_releases_the_original() {
 /// mailbox alike: its move out of there stays, and goes on waiting for the bytes from there.
 #[test]
 fn review_moving_on_from_a_second_microsoft_account_never_deletes_the_first_original() {
-    use mailcraft_model::sync::{GraphMailResult, MessageOutcome, PlaceDone};
-    use mailcraft_model::{Pending, Queued};
+    use mailsolutions_model::sync::{GraphMailResult, MessageOutcome, PlaceDone};
+    use mailsolutions_model::{Pending, Queued};
     for imap_first in [false, true] {
         let (mut s, from, to, id) = two_imap();
         let place_in = |s: &mut Session, account: Id, email: &str, made: &str| {
@@ -651,7 +651,7 @@ fn review_moving_on_from_a_second_microsoft_account_never_deletes_the_first_orig
         if !imap_first {
             // Its first mailbox a Microsoft one: there, the IMAP copy gone.
             place_in(&mut s, a, "first@example.org", "AAkA2");
-            let deleted = vec![mailcraft_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
+            let deleted = vec![mailsolutions_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
             apply_sync(&mut s, SyncResult { account: from, deleted, ..Default::default() }).unwrap();
             assert!(s.mailbox.message(id).unwrap().moving_out.is_none() && s.mailbox.pending.is_empty());
         }
@@ -720,7 +720,7 @@ fn the_gate_reads_the_original_from_the_disk() {
 /// of it will come, so the copy went; the move goes made of its parts, and says so.
 #[test]
 fn a_folder_gone_while_listed_afresh_lets_the_copy_go_and_says_so() {
-    use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, MessagePage};
+    use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, MessagePage};
     let (mut s, to, ms, id, dir) = moved_out_of_microsoft("afresh-folder-gone");
     s.ask_for_lost_originals();
     let page = MessagePage { folder: "in".into(), link: "next".into(), afresh: true, ..Default::default() };
@@ -762,8 +762,8 @@ fn bytes_in_memory_alone_never_release_the_original() {
 /// server's, never tracked twice), and the copy the shared mailbox was given goes.
 #[test]
 fn undoing_a_move_on_keeps_the_first_copy() {
-    use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, MessageOutcome, PlaceDone};
-    use mailcraft_model::{Pending, Queued};
+    use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, MessageOutcome, PlaceDone};
+    use mailsolutions_model::{Pending, Queued};
     for imap_first in [false, true] {
         let (mut s, from, _, id) = two_imap();
         let place_in = |s: &mut Session, account: Id, email: &str, made: &str| {
@@ -777,7 +777,7 @@ fn undoing_a_move_on_keeps_the_first_copy() {
         let a = microsoft(&mut s, "first@example.org");
         if !imap_first {
             place_in(&mut s, a, "first@example.org", "AAkA2");
-            let deleted = vec![mailcraft_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
+            let deleted = vec![mailsolutions_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
             apply_sync(&mut s, SyncResult { account: from, deleted, ..Default::default() }).unwrap();
         }
         let b = microsoft(&mut s, "second@example.org");
@@ -801,7 +801,7 @@ fn undoing_a_move_on_keeps_the_first_copy() {
             "{imap_first}: {:?}",
             s.mailbox.queued
         );
-        let first_ms = |m: &mailcraft_model::Message| m.moving_out.as_ref().is_some_and(|out| out.account == a && out.id == "AAkA2");
+        let first_ms = |m: &mailsolutions_model::Message| m.moving_out.as_ref().is_some_and(|out| out.account == a && out.id == "AAkA2");
         if imap_first {
             assert!(m.moving_out.is_none(), "{:?}", m.moving_out);
             assert!(s.mailbox.pending.iter().any(|p| matches!(p, Pending::Move { message, .. } if *message == id) && p.account() == from));
@@ -817,7 +817,7 @@ fn undoing_a_move_on_keeps_the_first_copy() {
 /// the copy it had in the mailbox it left being gone, and the owner is told why.
 #[test]
 fn undoing_a_move_on_between_sign_ins_says_why_it_stays() {
-    use mailcraft_model::sync::{GraphMailResult, MessageOutcome, PlaceDone};
+    use mailsolutions_model::sync::{GraphMailResult, MessageOutcome, PlaceDone};
     let (mut s, from, _, id) = two_imap();
     let place_in = |s: &mut Session, account: Id, email: &str, made: &str| {
         s.run("mail.move", &json!({"ids": [id], "folder": s.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap()})).unwrap();
@@ -828,7 +828,7 @@ fn undoing_a_move_on_between_sign_ins_says_why_it_stays() {
     };
     let a = microsoft(&mut s, "first@example.org");
     place_in(&mut s, a, "first@example.org", "AAkA2");
-    let deleted = vec![mailcraft_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
+    let deleted = vec![mailsolutions_model::sync::Deleted { from: "INBOX".into(), uid: 1 }];
     apply_sync(&mut s, SyncResult { account: from, deleted, ..Default::default() }).unwrap();
     let b = microsoft(&mut s, "second@example.org");
     place_in(&mut s, b, "second@example.org", "AAkB3");

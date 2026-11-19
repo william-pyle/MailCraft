@@ -5,7 +5,7 @@
 //! through the same checks, let go of again, written whole into a saved `.eml`, and forgotten
 //! with the message. A missing one leaves the message as one read before they were kept.
 
-use mailcraft_model::Original;
+use mailsolutions_model::Original;
 
 use super::*;
 
@@ -25,7 +25,7 @@ fn signed_bytes() -> Vec<u8> {
 fn with_signed() -> (Mailbox, Id) {
     let mut mb = mailbox(4);
     let inbox = mb.inbox().unwrap();
-    let mut m = mailcraft_mime_model::parse_fetched(&signed_bytes());
+    let mut m = mailsolutions_mime_model::parse_fetched(&signed_bytes());
     assert!(m.has_original());
     m.folder = inbox;
     let id = mb.add_message(m).unwrap();
@@ -58,7 +58,7 @@ fn the_original_is_kept_outside_named_read_back_and_written_whole() {
     // Written whole (Save Message As), its body is the original's byte for byte, under the
     // original's own Content-Type.
     let saved = s.run("file.exportMessage", &serde_json::json!({"id": id})).unwrap();
-    let data = mailcraft_charset::base64::STANDARD.decode(saved["data"].as_str().unwrap()).unwrap();
+    let data = mailsolutions_charset::base64::STANDARD.decode(saved["data"].as_str().unwrap()).unwrap();
     let body = |b: &[u8]| b.windows(4).position(|w| w == b"\r\n\r\n").map(|at| b[at + 4..].to_vec()).unwrap();
     assert_eq!(body(&data), body(&bytes));
     let text = String::from_utf8_lossy(&data);
@@ -98,7 +98,7 @@ fn the_original_is_kept_outside_named_read_back_and_written_whole() {
 fn with_signed_on_imap() -> (Mailbox, Id) {
     let (mut mb, id) = with_signed();
     let account = mb.message(id).unwrap().account;
-    mb.account_mut(account).unwrap().kind = mailcraft_model::AccountKind::Imap;
+    mb.account_mut(account).unwrap().kind = mailsolutions_model::AccountKind::Imap;
     mb.message_mut(id).unwrap().uid = 7;
     (mb, id)
 }
@@ -123,11 +123,11 @@ fn a_missing_original_is_asked_for_again() {
     assert!(m.has_original() && m.original_bytes().is_none());
     assert!(m.original_wanted && m.refetch);
     // Written whole meanwhile, it is built from its parts.
-    let written = String::from_utf8_lossy(&mailcraft_mime_model::write(m, &Default::default())).into_owned();
+    let written = String::from_utf8_lossy(&mailsolutions_mime_model::write(m, &Default::default())).into_owned();
     assert!(written.contains("multipart/") && written.contains("Signed text"), "{written}");
     // What the server gives again is the original once more.
     let mut mb = opened.mailbox;
-    crate::cmd::imap_again::take_again(&mut mb, id, mailcraft_mime_model::parse_fetched(&signed_bytes()));
+    crate::cmd::imap_again::take_again(&mut mb, id, mailsolutions_mime_model::parse_fetched(&signed_bytes()));
     assert_eq!(mb.message(id).unwrap().original_bytes(), Some(signed_bytes().as_slice()));
 }
 
@@ -146,7 +146,7 @@ fn an_original_that_cant_be_read_writes_the_message_from_its_parts_and_is_asked_
     clear_cache();
     let m = s.loaded_message(id).unwrap();
     assert!(m.original.is_none());
-    assert!(!mailcraft_mime_model::write(&m, &Default::default()).is_empty());
+    assert!(!mailsolutions_mime_model::write(&m, &Default::default()).is_empty());
     // Nor can it be put elsewhere whole meanwhile (#451: the server's copy stays).
     assert!(!s.readable_whole(s.mailbox.message(id).unwrap()));
     // At the next command, the file surely gone, it asks for the original again, keeping it
@@ -211,7 +211,7 @@ fn a_local_messages_missing_original_stays_named() {
     // Written from its parts meanwhile.
     let copy = s.loaded_message(id).unwrap();
     assert!(copy.original.is_none());
-    assert!(String::from_utf8_lossy(&mailcraft_mime_model::write(&copy, &Default::default())).contains("Signed text"));
+    assert!(String::from_utf8_lossy(&mailsolutions_mime_model::write(&copy, &Default::default())).contains("Signed text"));
     s.ask_for_lost_originals();
     assert!(s.mailbox.message(id).unwrap().has_original());
     // A save keeps it named, and the file put back is the original again.

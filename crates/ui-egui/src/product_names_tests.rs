@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft names its own features in plain, generic words (#521). Another company's product
+//! MailSolutions names its own features in plain, generic words (#521). Another company's product
 //! name, or a name it coined for one of its features, appears in the interface only to say that
-//! MailCraft connects to that product. Two walks check it: every catalog, ribbon and command
+//! MailSolutions connects to that product. Two walks check it: every catalog, ribbon and command
 //! label, where the exceptions are whole labels ([`ALLOWED`]), and every text the window shows
 //! through `tl!`, as `cargo xtask i18n` gathered it into `messages.pot` (CI fails when that is
 //! stale), where the exceptions are phrases ([`ALLOWED_PHRASES`]): account setup and help text
 //! name Microsoft's products to say which account or which server is meant.
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::{Value, json};
 
 use crate::{MailApp, Services, ribbon};
@@ -17,8 +17,8 @@ use crate::{MailApp, Services, ribbon};
 const NOW: i64 = 1_791_993_600;
 
 /// Names that are not ours to give a feature of our own. Matched case-insensitively. It holds
-/// the names of products MailCraft could be mistaken for, or whose features it has, and names
-/// another company coined for a feature. The brands of services MailCraft connects to, such as
+/// the names of products MailSolutions could be mistaken for, or whose features it has, and names
+/// another company coined for a feature. The brands of services MailSolutions connects to, such as
 /// a Teams meeting or Microsoft To Do, are left out: naming them is how the owner knows what
 /// a meeting link or a task list is kept in step with.
 const FORBIDDEN: &[&str] = &[
@@ -36,7 +36,7 @@ const FORBIDDEN: &[&str] = &[
     "SharePoint",
 ];
 
-/// Labels that may contain one of those names, each with why: they say what MailCraft connects
+/// Labels that may contain one of those names, each with why: they say what MailSolutions connects
 /// to, or the word is not a product's name there. The label must match exactly.
 const ALLOWED: &[(&str, &str)] = &[
     ("Favorites from Outlook", "reads the Favorites the owner keeps in Outlook on the web, through Microsoft Graph"),
@@ -65,7 +65,7 @@ const ALLOWED_PHRASES: &[(&str, &str)] = &[
 
 /// Every text the window shows through `tl!`, singular and plural, from the template.
 fn texts() -> Vec<String> {
-    let template = mailcraft_i18n::po::parse(include_str!("../../i18n/po/messages.pot"));
+    let template = mailsolutions_i18n::po::parse(include_str!("../../i18n/po/messages.pot"));
     template
         .entries
         .iter()
@@ -91,7 +91,7 @@ fn text_offenders(texts: &[String]) -> Vec<String> {
 }
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app
 }
@@ -111,7 +111,7 @@ fn every_tab() -> Vec<(String, Vec<(&'static str, Value)>)> {
 /// Every label the guard looks at, with where it was found.
 fn labels() -> Vec<(String, String)> {
     let mut out: Vec<(String, String)> = Vec::new();
-    for f in mailcraft_engine::catalog::features() {
+    for f in mailsolutions_engine::catalog::features() {
         out.push((format!("catalog tab of {}", f.id), f.tab.to_string()));
         out.push((format!("catalog group of {}", f.id), f.group.to_string()));
         out.push((format!("catalog feature {}", f.id), f.name.to_string()));

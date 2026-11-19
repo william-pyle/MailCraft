@@ -1,15 +1,15 @@
 [package]
-name = "mailcraft-link"
+name = "mailsolutions-link"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "MailCraft's own link handling: a strict reader of web addresses (RFC 3986) that writes them the way they are shown and launched, Punycode (RFC 3492) for international host names, and percent-encoding"
+description = "MailSolutions's own link handling: a strict reader of web addresses (RFC 3986) that writes them the way they are shown and launched, Punycode (RFC 3492) for international host names, and percent-encoding"
 
 [lints]
 workspace = true
 
 [dependencies]
-mailcraft-names = { workspace = true }
+mailsolutions-names = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

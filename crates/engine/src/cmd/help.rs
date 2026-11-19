@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Help and the account page: where MailCraft's own pages are, and what this copy is.
+//! Help and the account page: where MailSolutions's own pages are, and what this copy is.
 //!
 //! The engine opens nothing: each help command answers the address of a page on the project's
 //! own repository, and the window opens it in the system's browser when the owner pressed the
@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 
 use crate::{CmdResult, CommandSpec, Session};
 
-/// The project's repository, as the build names it (`https://github.com/…/mailcraft`).
+/// The project's repository, as the build names it (`https://github.com/…/mailsolutions`).
 pub const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 /// This copy's version.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -18,10 +18,10 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         CommandSpec::new("help.help", "Help", "Help › Help", help).pure().params(
-            r#"{} — answers {"url"}: MailCraft's own help pages (the project's read-me). The window opens it in the system's browser; nothing about the owner is in the address"#,
+            r#"{} — answers {"url"}: MailSolutions's own help pages (the project's read-me). The window opens it in the system's browser; nothing about the owner is in the address"#,
         ),
         CommandSpec::new("help.training", "Show Training", "Help › Help", training).pure().params(
-            r#"{} — answers {"url"}: MailCraft's documentation (the `docs` folder of the project's repository: how it is put together, the parity checklists, driving it from scripts and agents). The window opens it in the system's browser; nothing about the owner is in the address"#,
+            r#"{} — answers {"url"}: MailSolutions's documentation (the `docs` folder of the project's repository: how it is put together, the parity checklists, driving it from scripts and agents). The window opens it in the system's browser; nothing about the owner is in the address"#,
         ),
         CommandSpec::new("help.support", "Get Support", "Help › Help", support).pure().params(
             r#"{} — answers {"url"}: the project's list of issues, where questions are asked and answered in public. The window opens it in the system's browser; nothing about the owner is in the address"#,
@@ -33,7 +33,7 @@ pub fn specs() -> Vec<CommandSpec> {
             r#"{} — answers {"url", "version"}: the release notes of this version, on the project's releases page. The window opens it in the system's browser"#,
         ),
         CommandSpec::new("file.account", "Account", "File", account).pure().params(
-            r#"{} — answers {"version", "accounts": [{"id", "name", "email", "kind"}], "offline": bool}: this copy of MailCraft and the accounts it has. The window shows File › About"#,
+            r#"{} — answers {"version", "accounts": [{"id", "name", "email", "kind"}], "offline": bool}: this copy of MailSolutions and the accounts it has. The window shows File › About"#,
         ),
     ]
 }

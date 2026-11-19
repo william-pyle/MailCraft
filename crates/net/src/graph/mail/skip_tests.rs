@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use mailcraft_model::sync::{GraphLink, GraphMailRequest, GraphMailResult};
+use mailsolutions_model::sync::{GraphLink, GraphMailRequest, GraphMailResult};
 
 use super::whole_run;
 use crate::graph::pace::{Gate, Retry};
@@ -227,8 +227,8 @@ fn a_folder_with_a_round_under_way_is_never_passed_over() {
 /// The Inbox pass never passes anything over, and gives no counts: it lists nothing.
 #[test]
 fn the_inbox_pass_gives_no_counts() {
-    use mailcraft_model::FolderKind;
-    use mailcraft_model::sync::GraphFolder;
+    use mailsolutions_model::FolderKind;
+    use mailsolutions_model::sync::GraphFolder;
     let r = rig();
     r.server.state().mailbox.add(&r.inbox, "Fresh", NOW + 60);
     let folder = GraphFolder { id: r.inbox.clone(), name: "Inbox".into(), kind: FolderKind::Inbox, ..Default::default() };
@@ -246,7 +246,7 @@ fn the_inbox_pass_gives_no_counts() {
 #[test]
 fn a_folder_listed_without_its_counts_is_never_passed_over() {
     let r = rig();
-    let zero = Some(mailcraft_model::FolderCounts { total: 0, unread: 0 });
+    let zero = Some(mailsolutions_model::FolderCounts { total: 0, unread: 0 });
     let links: Vec<GraphLink> = r.links.iter().cloned().map(|l| GraphLink { counts: zero, ..l }).collect();
     r.server.state().uncounted = true;
     let before = r.server.state().requests.len();

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MailSolutions MSI (WiX Toolset v5: `dotnet tool install -g wix`, plus its UI and Util extensions:
+  `wix extension add -g WixToolset.UI.wixext/5.0.2` and the same for WixToolset.Util.wixext).
+  Built by package.ps1:
+
+    wix build mailsolutions.wxs -arch x64 -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext
+      -d Version=1.2.3 -d BinDir=... -d IconPath=... -d LicenseRtf=... -o out.msi
+
+  Per-machine install into Program Files with a Start Menu shortcut. The installer shows the
+  standard WiX dialogs: welcome + license, progress, and a finish page.
+
+  UpgradeCode and the component GUIDs below belong to MailSolutions alone. Never copy them from (or
+  into) a sibling Craft app: Windows Installer treats every package sharing an UpgradeCode as one
+  product, so a shared code makes one app's installer refuse to install ("a newer version is
+  already installed") or silently uninstall the other. packaging-lint.yml checks this.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package
+      Name="MailSolutions"
+      Manufacturer="MailCraft contributors"
+      Version="$(var.Version)"
+      UpgradeCode="647FB3CC-7876-4DC8-84D9-CE2DD295D1C7"
+      Scope="perMachine"
+      Compressed="yes"
+      Language="1033">
+    <SummaryInformation Description="MailSolutions mail and calendar" Manufacturer="MailCraft contributors" />
+    <!-- Any other version replaces the one installed: a newer one, the same X.Y.Z (successive
+         pre-releases of one X.Y.Z replace each other; MSI versions are numeric, so 1.2.3-rc.1 and
+         1.2.3-rc.2 are both 1.2.3; AllowDowngrades takes in AllowSameVersionUpgrades) and an
+         older one. Downgrades are allowed so that MailSolutions can go back to the version an update replaced, when the
+         new one doesn't start (apps/mailsolutions/src/self_update.rs): installing this package over
+         a newer MailSolutions replaces it. The mailbox is in the user's own folder either way. -->
+    <MajorUpgrade AllowDowngrades="yes" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="MailsolutionsIcon.ico" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="MailsolutionsIcon.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/william-pyle/MailSolutions" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/william-pyle/MailSolutions" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/william-pyle/MailSolutions/issues" />
+
+    <!-- Installer UI (#198): WixUI_Minimal is welcome + license, progress, then a finish page so
+         people can see the install worked. Its dialogs and bitmaps are WiX's own
+         (WixToolset.UI.wixext); package.ps1 builds the license RTF from LICENSE-MIT and
+         LICENSE-APACHE. The finish page offers to launch MailSolutions (ticked by default) through
+         WixShellExec (WixToolset.Util.wixext); silent installs (/qn) never show it. -->
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MailSolutions" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[#MailsolutionsExe]" />
+    <CustomAction Id="LaunchMailsolutions" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixShellExec"
+        Impersonate="yes" Return="ignore" />
+    <UI>
+      <ui:WixUI Id="WixUI_Minimal" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchMailsolutions"
+          Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+
+    <!-- An organisation turns MailSolutions's updating by itself off for every user of the computer
+         by installing with DISABLEAUTOMATICUPDATES=1
+         (`msiexec /i mailsolutions-….msi DISABLEAUTOMATICUPDATES=1`): the policy value the program
+         reads (HKLM\Software\Policies\MailCraft, DisableAutomaticUpdates = 1) is written, and
+         removed again with the program. A Group Policy can set the same value instead. -->
+    <Property Id="DISABLEAUTOMATICUPDATES" Secure="yes" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="MailSolutions" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Main" Title="MailSolutions" Level="1">
+      <ComponentGroupRef Id="MailsolutionsFiles" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="MailsolutionsFiles" Directory="INSTALLFOLDER">
+      <Component Id="MailsolutionsApp" Guid="A44DFC9B-C447-477C-8770-62A5CC740460">
+        <File Id="MailsolutionsExe" Source="$(var.BinDir)\mailsolutions.exe" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="MailSolutions"
+              Description="MailSolutions mail and calendar" WorkingDirectory="INSTALLFOLDER" Advertise="yes"
+              Icon="MailsolutionsIcon.ico" IconIndex="0">
+            <!-- The AppUserModelID Windows knows MailSolutions by: it shows the program's desktop
+                 alerts (toasts) only for a program it knows by such a shortcut
+                 (apps/mailsolutions/src/alerts.rs). -->
+            <ShortcutProperty Key="System.AppUserModel.ID" Value="MailSolutions.MailSolutions" />
+          </Shortcut>
+        </File>
+
+        <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\mailsolutions.exe" Value="[#MailsolutionsExe]" Type="string" />
+      </Component>
+
+      <!-- What MailSolutions opens. Each file type gets a MailSolutions ProgId (name, icon, open command)
+           and is listed under the extension's OpenWithProgids, so MailSolutions shows in Explorer's "Open
+           with"; messages, calendar files and contact cards are also MailSolutions's Capabilities
+           (RegisteredApplications), as is the mailto: link type, so MailSolutions appears in Settings ›
+           Default apps, where the owner makes it the mail program. Nothing here sets a default for a
+           type another program may own: the installer never takes over .eml, .ics, .vcf or mailto:.
+           A mailbox file (.mailcraft) is MailSolutions's own and opens with it. A second start hands the
+           file or link to the window that is already open (apps/mailsolutions/src/single_instance.rs).
+           Removed again on uninstall. -->
+      <Component Id="MailsolutionsFileTypes" Guid="EBDB24DB-A2C3-4C35-A0E5-CD7D2DBA2014">
+        <RegistryValue Root="HKLM" Key="Software\RegisteredApplications" Name="MailSolutions" Value="Software\MailSolutions\Capabilities" Type="string" KeyPath="yes" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities" Name="ApplicationName" Value="MailSolutions" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities" Name="ApplicationDescription" Value="Mail, calendar, contacts and tasks; opens messages, calendar files and contact cards." Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities" Name="ApplicationIcon" Value="&quot;[#MailsolutionsExe]&quot;,0" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\mailsolutions.exe" Name="FriendlyAppName" Value="MailSolutions" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\mailsolutions.exe\shell\open\command" Value="&quot;[#MailsolutionsExe]&quot; &quot;%1&quot;" Type="string" />
+
+        <ProgId Id="MailSolutions.Message" Description="Email Message" Icon="MailsolutionsExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\MailSolutions.Message\shell\open\command" Value="&quot;[#MailsolutionsExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.eml\OpenWithProgids" Name="MailSolutions.Message" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\mailsolutions.exe\SupportedTypes" Name=".eml" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities\FileAssociations" Name=".eml" Value="MailSolutions.Message" Type="string" />
+
+        <ProgId Id="MailSolutions.Calendar" Description="iCalendar File" Icon="MailsolutionsExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\MailSolutions.Calendar\shell\open\command" Value="&quot;[#MailsolutionsExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.ics\OpenWithProgids" Name="MailSolutions.Calendar" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\mailsolutions.exe\SupportedTypes" Name=".ics" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities\FileAssociations" Name=".ics" Value="MailSolutions.Calendar" Type="string" />
+
+        <ProgId Id="MailSolutions.Contact" Description="vCard File" Icon="MailsolutionsExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\MailSolutions.Contact\shell\open\command" Value="&quot;[#MailsolutionsExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.vcf\OpenWithProgids" Name="MailSolutions.Contact" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\mailsolutions.exe\SupportedTypes" Name=".vcf" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities\FileAssociations" Name=".vcf" Value="MailSolutions.Contact" Type="string" />
+
+        <ProgId Id="MailSolutions.MailFolder" Description="Mail Folder File" Icon="MailsolutionsExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\MailSolutions.MailFolder\shell\open\command" Value="&quot;[#MailsolutionsExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.mbox\OpenWithProgids" Name="MailSolutions.MailFolder" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\mailsolutions.exe\SupportedTypes" Name=".mbox" Value="" Type="string" />
+
+        <ProgId Id="MailSolutions.Mailbox" Description="MailSolutions Mailbox" Icon="MailsolutionsExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\MailSolutions.Mailbox\shell\open\command" Value="&quot;[#MailsolutionsExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.mailcraft\OpenWithProgids" Name="MailSolutions.Mailbox" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\mailsolutions.exe\SupportedTypes" Name=".mailcraft" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities\FileAssociations" Name=".mailcraft" Value="MailSolutions.Mailbox" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.mailcraft" Value="MailSolutions.Mailbox" Type="string" />
+
+        <!-- mailto: links. `URL Protocol` marks the ProgId as a link handler. -->
+        <ProgId Id="MailSolutions.Url.mailto" Description="MailSolutions Mail Link" Icon="MailsolutionsExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\MailSolutions.Url.mailto" Name="URL Protocol" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\MailSolutions.Url.mailto\shell\open\command" Value="&quot;[#MailsolutionsExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\MailSolutions\Capabilities\URLAssociations" Name="mailto" Value="MailSolutions.Url.mailto" Type="string" />
+      </Component>
+      <Component Id="MailsolutionsUpdatePolicy" Guid="3B0C9E57-5A2D-4F0B-9C0E-7D8E2F61A4C3" Condition="DISABLEAUTOMATICUPDATES = 1">
+        <RegistryValue Root="HKLM" Key="Software\Policies\MailCraft" Name="DisableAutomaticUpdates" Value="1" Type="integer" KeyPath="yes" />
+      </Component>
+      <Component Id="MailsolutionsCli">
+        <File Id="MailsolutionsCliExe" Source="$(var.BinDir)\mailsolutions-cli.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

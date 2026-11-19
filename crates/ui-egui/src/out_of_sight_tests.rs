@@ -3,8 +3,8 @@
 //! A window out of sight a while lets go of what it keeps to show things again quickly, and
 //! shows them again when it is back.
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Address, Attachment, Body, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Address, Attachment, Body, Mailbox, Message};
 use serde_json::json;
 
 use crate::out_of_sight::{AFTER, tick_at, wait_from, window_out_of_sight};

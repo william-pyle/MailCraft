@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Each account's tasks apart, and a new task in the place chosen (#632).
 
-use mailcraft_model::remote_tasks::{RemoteTask, RemoteTaskList, TaskOpKind, TasksDownload};
-use mailcraft_model::{AccountChoice, Category, GREY_CATEGORY, Id, LocalTasks, Rgb, Task};
+use mailsolutions_model::remote_tasks::{RemoteTask, RemoteTaskList, TaskOpKind, TasksDownload};
+use mailsolutions_model::{AccountChoice, Category, GREY_CATEGORY, Id, LocalTasks, Rgb, Task};
 use serde_json::{Value, json};
 
 use super::tasks::{new_task_place, shown_account};
@@ -431,7 +431,7 @@ fn where_a_task_was_put_is_kept_with_the_mailbox() {
     let (mut s, ..) = session();
     run(&mut s, "tasks.new", json!({"title": "Kept", "account": 0}));
     let text = serde_json::to_string(&s.mailbox).unwrap();
-    let back: mailcraft_model::Mailbox = serde_json::from_str(&text).unwrap();
+    let back: mailsolutions_model::Mailbox = serde_json::from_str(&text).unwrap();
     assert_eq!((back.task_place, back.local_tasks), (Some(0), LocalTasks::Unasked));
     assert!(back.tasks.values().any(|t| t.title == "Kept" && t.kept_here));
 }
@@ -477,7 +477,7 @@ fn a_task_kept_here_stays_here_in_a_build_from_before() {
     let mut file = serde_json::to_value(&s.mailbox).unwrap();
     without(&mut file, "keptHere");
     without(&mut file, "taskPlace");
-    let mut back: mailcraft_model::Mailbox = serde_json::from_value(file).unwrap();
+    let mut back: mailsolutions_model::Mailbox = serde_json::from_value(file).unwrap();
     back.repair();
     let mut s = Session::at(back, NOW, 0);
     // Nor once it is changed here again.

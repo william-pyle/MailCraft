@@ -3,8 +3,8 @@
 //! Moving mail between Gmail's categories (#911): who may, what is made here at once, what goes
 //! to Gmail at the next run and what comes back, undo, conversations, and agents.
 
-use mailcraft_model::sync::{FolderDelta, GmailMove, GmailSorted, SyncResult};
-use mailcraft_model::{Address, FolderKind, GmailCategory, Id, Message, OAuth, OAuthProvider};
+use mailsolutions_model::sync::{FolderDelta, GmailMove, GmailSorted, SyncResult};
+use mailsolutions_model::{Address, FolderKind, GmailCategory, Id, Message, OAuth, OAuthProvider};
 use serde_json::json;
 
 use crate::Session;

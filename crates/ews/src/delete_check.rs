@@ -15,7 +15,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::sync::{MAX_SHOWN_FOLDERS, MAX_SHOWN_MESSAGES, Shown};
+use mailsolutions_model::sync::{MAX_SHOWN_FOLDERS, MAX_SHOWN_MESSAGES, Shown};
 
 use crate::error::ResponseCode;
 use crate::hierarchy::SyncFolderHierarchy;

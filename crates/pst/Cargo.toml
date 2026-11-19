@@ -1,9 +1,9 @@
 [package]
-name = "mailcraft-pst"
+name = "mailsolutions-pst"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "MailCraft reader of Outlook .pst files ([MS-PST]): no I/O of its own, any Read + Seek"
+description = "MailSolutions reader of Outlook .pst files ([MS-PST]): no I/O of its own, any Read + Seek"
 
 [features]
 # The test writer (`test_writer`), for other crates' tests: a dev-dependency feature only.
@@ -13,7 +13,7 @@ test-writer = []
 workspace = true
 
 [dependencies]
-mailcraft-charset = { workspace = true }
+mailsolutions-charset = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

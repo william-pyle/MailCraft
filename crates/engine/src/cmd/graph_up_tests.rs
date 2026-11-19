@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Changes of messages of a Microsoft account, as the engine works them out and takes in what
-//! became of them. (Against the Graph stand-in itself: `apps/mailcraft-cli/tests/graph_changes.rs`.)
+//! became of them. (Against the Graph stand-in itself: `apps/mailsolutions-cli/tests/graph_changes.rs`.)
 
-use mailcraft_model::sync::{GraphMailResult, GraphMessage, MessageChangeDone, MessagePage, MovingOut};
-use mailcraft_model::{Account, Folder, Importance, ServerFolder};
+use mailsolutions_model::sync::{GraphMailResult, GraphMessage, MessageChangeDone, MessagePage, MovingOut};
+use mailsolutions_model::{Account, Folder, Importance, ServerFolder};
 use serde_json::json;
 
 use super::*;
@@ -107,7 +107,7 @@ fn copies_and_deletes_for_good_wait_in_the_queue() {
     let all = changes(&s, account);
     let [MessageChange::Copy { copy: c, id, to, marker, .. }] = all.as_slice() else { panic!("{all:?}") };
     assert_eq!((*c, id.as_str(), to.as_str()), (copy, "M-1", "F-ar"));
-    assert!(marker.starts_with("mailcraft-") && marker.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'), "{marker}");
+    assert!(marker.starts_with("mailsolutions-") && marker.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'), "{marker}");
     // Another copy of the same message has another marker.
     let other = s.run("mail.copy", &json!({"ids": [m], "folder": archive})).unwrap()["copies"][0].as_u64().unwrap();
     let markers: Vec<String> =
@@ -191,11 +191,11 @@ fn a_message_whose_text_or_a_file_couldnt_be_read_keeps_its_server_copy_when_mov
     s.note_saved();
     // Whole here, and saved so: the server's copy goes.
     assert_eq!(changes(&s, account), [MessageChange::MovedOut { message: m, id: "M-1".into() }]);
-    s.mailbox.message_mut(m).unwrap().kept = Some(Box::new(mailcraft_model::KeptBody { failed: true, ..Default::default() }));
+    s.mailbox.message_mut(m).unwrap().kept = Some(Box::new(mailsolutions_model::KeptBody { failed: true, ..Default::default() }));
     assert_eq!(changes(&s, account), []);
     // A file kept outside memory that can't be read back (this mailbox has no file to read it from).
-    let mut file = mailcraft_model::Attachment::new("plan.pdf", "application/pdf", Vec::new());
-    file.kept = Some(mailcraft_model::ContentRef { sha256: [7; 32], len: 4096 });
+    let mut file = mailsolutions_model::Attachment::new("plan.pdf", "application/pdf", Vec::new());
+    file.kept = Some(mailsolutions_model::ContentRef { sha256: [7; 32], len: 4096 });
     let here = s.mailbox.message_mut(m).unwrap();
     (here.kept, here.attachments) = (None, vec![file]);
     assert_eq!(changes(&s, account), []);
@@ -214,8 +214,8 @@ fn mail_moved_to_this_computer_past_a_requests_limit_isnt_read_back_for_it() {
     s.run("mail.move", &json!({"ids": [m, other], "folder": kept})).unwrap();
     s.note_saved();
     // A file of the second that can't be read back (this mailbox has no file to read it from).
-    let mut file = mailcraft_model::Attachment::new("plan.pdf", "application/pdf", Vec::new());
-    file.kept = Some(mailcraft_model::ContentRef { sha256: [7; 32], len: 4096 });
+    let mut file = mailsolutions_model::Attachment::new("plan.pdf", "application/pdf", Vec::new());
+    file.kept = Some(mailsolutions_model::ContentRef { sha256: [7; 32], len: 4096 });
     s.mailbox.message_mut(other).unwrap().attachments = vec![file];
     let first = [MessageChange::MovedOut { message: m, id: "M-1".into() }];
     // Past the limit it is counted, not read.
@@ -270,9 +270,9 @@ fn mail_imported_for_a_microsoft_account_goes_to_a_local_folder_and_stays_there(
     let r = s.run("file.import", &json!({"name": "in.eml", "data": eml["data"]})).unwrap();
     let local = r["folder"].as_u64().unwrap();
     let f = s.mailbox.folder(local).unwrap().clone();
-    assert_eq!((f.name.as_str(), r["local"].as_bool(), s.mailbox.accounts.len()), (mailcraft_model::IMPORTED, Some(true), before));
+    assert_eq!((f.name.as_str(), r["local"].as_bool(), s.mailbox.accounts.len()), (mailsolutions_model::IMPORTED, Some(true), before));
     assert_eq!(r["drafts"].as_bool(), Some(false));
-    assert_eq!(s.mailbox.account(f.account).unwrap().kind, mailcraft_model::AccountKind::Local);
+    assert_eq!(s.mailbox.account(f.account).unwrap().kind, mailsolutions_model::AccountKind::Local);
     // It is shown where it went, and nothing of it goes up.
     assert_eq!(s.view.folder, local);
     let imported = r["ids"][0].as_u64().unwrap();
@@ -307,15 +307,18 @@ fn mail_imported_for_a_microsoft_account_goes_to_a_local_folder_and_stays_there(
 fn importing_for_a_microsoft_account_without_a_local_account_makes_one() {
     let mut s = Session::at(Mailbox::with_local_account("", ""), NOW, 0);
     let account = s.run("account.add", &json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
-    assert!(s.mailbox.accounts.iter().all(|a| a.kind == mailcraft_model::AccountKind::Microsoft));
+    assert!(s.mailbox.accounts.iter().all(|a| a.kind == mailsolutions_model::AccountKind::Microsoft));
     let inbox = s.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
     let mbox = "From a@example.org Thu Jan 14 08:00:00 2027\nFrom: a@example.org\nSubject: One\n\nHi\n\nFrom b@example.org Thu Jan 14 09:00:00 2027\nFrom: b@example.org\nSubject: Two\n\nHi\n";
-    let data = mailcraft_charset::base64::STANDARD.encode(mbox);
+    let data = mailsolutions_charset::base64::STANDARD.encode(mbox);
     let r = s.run("file.import", &json!({"name": "all.mbox", "data": data, "folder": inbox})).unwrap();
     assert_eq!(r["messages"], 2);
     let f = s.mailbox.folder(r["folder"].as_u64().unwrap()).unwrap();
     let a = s.mailbox.account(f.account).unwrap();
-    assert_eq!((a.kind, a.name.as_str(), f.name.as_str()), (mailcraft_model::AccountKind::Local, "On this computer", mailcraft_model::IMPORTED));
+    assert_eq!(
+        (a.kind, a.name.as_str(), f.name.as_str()),
+        (mailsolutions_model::AccountKind::Local, "On this computer", mailsolutions_model::IMPORTED)
+    );
     assert_eq!(s.mailbox.messages_in(inbox).count(), 0);
 }
 
@@ -500,9 +503,9 @@ fn categories_changed_on_both_sides_merge_when_the_servers_come_down_first() {
     let (mut s, account, m, _) = setup();
     s.run("mail.categorize", &json!({"ids": [m], "category": "Blue category"})).unwrap();
     // The server's delta comes before this was sent: Red taken away and Green added there.
-    let page = mailcraft_model::sync::MessagePage {
+    let page = mailsolutions_model::sync::MessagePage {
         folder: "F-in".into(),
-        messages: vec![mailcraft_model::sync::GraphMessage {
+        messages: vec![mailsolutions_model::sync::GraphMessage {
             server: ServerMessage {
                 id: "M-1".into(),
                 folder: "F-in".into(),
@@ -531,16 +534,16 @@ fn categories_changed_on_both_sides_merge_when_the_servers_come_down_first() {
 #[test]
 fn outlooks_colours_win_for_the_categories_on_its_list() {
     let (mut s, account, _, _) = setup();
-    let download = mailcraft_model::remote::CategoriesDownload {
+    let download = mailsolutions_model::remote::CategoriesDownload {
         account,
         email: "owner@example.org".into(),
-        categories: vec![mailcraft_model::Category { name: "Blue category".into(), color: mailcraft_model::Rgb(1, 2, 3) }],
+        categories: vec![mailsolutions_model::Category { name: "Blue category".into(), color: mailsolutions_model::Rgb(1, 2, 3) }],
     };
     s.run("sync.applyCategories", &json!({"download": download})).unwrap();
     assert_eq!(s.mailbox.server_categories[&account], ["Blue category"]);
     let refused = s.run("category.set", &json!({"account": account, "name": "blue category", "color": "#2E8B57"})).unwrap_err();
     assert_eq!(refused.to_string(), super::super::category::COLOUR_IN_OUTLOOK);
-    assert_eq!(s.mailbox.category_of(account, "Blue category").unwrap().color, mailcraft_model::Rgb(1, 2, 3));
+    assert_eq!(s.mailbox.category_of(account, "Blue category").unwrap().color, mailsolutions_model::Rgb(1, 2, 3));
     // One that isn't on Outlook's list takes the colour, and says it isn't there.
     s.run("category.set", &json!({"account": account, "name": "Travel", "color": "#2E8B57"})).unwrap();
     let list = s.run("category.list", &json!({"account": account})).unwrap();
@@ -556,7 +559,7 @@ fn outlooks_colours_win_for_the_categories_on_its_list() {
 #[test]
 fn a_message_the_server_wouldnt_give_is_passed_over_in_the_background_but_still_asked_for_when_opened() {
     use crate::cmd::graph_mail::{apply_graph_fetch, graph_fetch_request};
-    use mailcraft_model::sync::GraphFetchResult;
+    use mailsolutions_model::sync::GraphFetchResult;
     let (mut s, account, m, _) = setup();
     s.mailbox.message_mut(m).unwrap().unfetched = true;
     assert_eq!(graph_fetch_request(&s, account, None, 10).unwrap().ids, ["M-1"]);
@@ -570,7 +573,7 @@ fn a_message_the_server_wouldnt_give_is_passed_over_in_the_background_but_still_
     assert!(s.mailbox.message(m).unwrap().unfetched);
     // Given at last, in its own account: Exchange's stamp is its server's word, read here (#781).
     let mime = b"From: boss@example.org\r\nX-MS-Exchange-Organization-AuthAs: Internal\r\n\r\nAll of it.\r\n".to_vec();
-    let fetched = vec![mailcraft_model::sync::GraphFetched { id: "M-1".into(), mime }];
+    let fetched = vec![mailsolutions_model::sync::GraphFetched { id: "M-1".into(), mime }];
     apply_graph_fetch(&mut s, GraphFetchResult { account, email: "owner@example.org".into(), fetched, ..Default::default() }).unwrap();
     let here = s.mailbox.message(m).unwrap();
     assert!(!here.unfetched && here.fresh_stamps && here.headers.len() == 1, "{:?}", here.headers);

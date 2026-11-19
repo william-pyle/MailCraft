@@ -3,7 +3,7 @@
 //! A stand-in for Gmail's API, for the tests: nothing here leaves this machine, and nothing here
 //! is in a build that isn't a test's.
 //!
-//! It answers the one call MailCraft makes (`POST /gmail/v1/users/me/messages/batchModify`) as
+//! It answers the one call MailSolutions makes (`POST /gmail/v1/users/me/messages/batchModify`) as
 //! Google's reference has it, and holds a client to it: `Authorization: Bearer` with the token it
 //! was set up with (401 otherwise), a JSON body (400 otherwise) of 1 to 1,000 `ids` in hex and
 //! `addLabelIds` and `removeLabelIds` holding only label ids it knows, answered 204 with nothing,

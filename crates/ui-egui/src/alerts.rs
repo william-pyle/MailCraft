@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Desktop Alerts (R7.1): a notification MailCraft asks the operating system to show while it
+//! Desktop Alerts (R7.1): a notification MailSolutions asks the operating system to show while it
 //! runs, for a reminder falling due and for new mail in an Inbox of the owner's own accounts.
 //!
 //! - A reminder's alert comes as it falls due, whether the window is in front or not, beside the
 //!   reminders window ([`crate::reminders`]); a reminder put off comes again when it is due again.
 //! - New mail is told of only while the window is not in front, once a Send/Receive is over: what
-//!   arrived is the engine's answer ([`mailcraft_engine::arrivals`]: never an account's first
+//!   arrived is the engine's answer ([`mailsolutions_engine::arrivals`]: never an account's first
 //!   download, mail a rule moved away, Junk E-mail or other folders, a shared mailbox, mail
 //!   already read).
 //! - Up to [`AT_ONCE`] at a time get an alert each; more get one that counts them.
@@ -15,7 +15,7 @@
 //!   characters or characters that show nothing (bidirectional overrides, zero-width marks,
 //!   tags), cut to [`NAME_CHARS`] and [`SUBJECT_CHARS`].
 //! - The window asks the host to show them ([`AlertHost`], [`crate::Services::alert`]); there is
-//!   none in the browser, the command line or the tests, and then nothing is shown. MailCraft
+//!   none in the browser, the command line or the tests, and then nothing is shown. MailSolutions
 //!   plays no sound of its own: sound and Do Not Disturb are the system's.
 //! - A click on one, where the system says so, brings the window in front and opens the message
 //!   (a reminder's: the reminders window). The host hands back only the window's own number for
@@ -26,9 +26,9 @@
 
 use std::collections::VecDeque;
 
-use mailcraft_engine::arrivals::{self, Arrival, InboxMark};
-use mailcraft_engine::cmd::view::Reminder;
-use mailcraft_model::Id;
+use mailsolutions_engine::arrivals::{self, Arrival, InboxMark};
+use mailsolutions_engine::cmd::view::Reminder;
+use mailsolutions_model::Id;
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -78,16 +78,16 @@ pub struct DesktopAlert {
     pub opens: Opens,
 }
 
-/// Why the system won't show MailCraft's alerts, as far as the host can tell
+/// Why the system won't show MailSolutions's alerts, as far as the host can tell
 /// ([`AlertHost::trouble`]). Said beside the switches in File › Options.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlertTrouble {
     /// Windows: this copy wasn't installed by the `.msi`, so Windows doesn't know it as a program
     /// that may show notifications.
     NotInstalled,
-    /// macOS: this copy doesn't run from the MailCraft app.
+    /// macOS: this copy doesn't run from the MailSolutions app.
     OutsideApp,
-    /// The owner (or an organisation's policy) turned MailCraft's notifications off in the
+    /// The owner (or an organisation's policy) turned MailSolutions's notifications off in the
     /// system's settings.
     TurnedOff,
     /// Linux and the BSDs: no notification service answers on the desktop.
@@ -101,10 +101,10 @@ impl AlertTrouble {
         let reason = match self {
             AlertTrouble::NotInstalled => tlc!(
                 "why desktop alerts can't be shown",
-                "this copy of MailCraft wasn't installed with its installer (.msi), so Windows doesn't know it."
+                "this copy of MailSolutions wasn't installed with its installer (.msi), so Windows doesn't know it."
             ),
-            AlertTrouble::OutsideApp => tlc!("why desktop alerts can't be shown", "this copy doesn't run from the MailCraft app."),
-            AlertTrouble::TurnedOff => return tl!("Desktop alerts are turned off for MailCraft in System Settings.").to_string(),
+            AlertTrouble::OutsideApp => tlc!("why desktop alerts can't be shown", "this copy doesn't run from the MailSolutions app."),
+            AlertTrouble::TurnedOff => return tl!("Desktop alerts are turned off for MailSolutions in System Settings.").to_string(),
             AlertTrouble::NoService => tlc!("why desktop alerts can't be shown", "no notification service answers on this desktop."),
         };
         crate::i18n::with_reason(tl!("Desktop alerts can't be shown"), reason)
@@ -151,7 +151,7 @@ pub struct State {
 /// line of plain text, without control characters (a line break or a tab becomes a space) or
 /// characters that show nothing (bidirectional overrides and isolates, zero-width marks, tags),
 /// spaces run together, at most `max` characters with an ellipsis where it was cut.
-pub use mailcraft_names::shown as clean;
+pub use mailsolutions_names::shown as clean;
 
 /// An alert to be shown, before it has its number.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -366,7 +366,7 @@ pub(crate) fn options(app: &mut MailApp, ui: &mut egui::Ui, t: &crate::theme::To
     let mut mail = app.ui.alert_new_mail;
     if ui
         .checkbox(&mut mail, tl!("Show a desktop alert when new mail arrives"))
-        .on_hover_text(tl!("Only while MailCraft isn't the window in front, and only for the Inboxes of your own accounts."))
+        .on_hover_text(tl!("Only while MailSolutions isn't the window in front, and only for the Inboxes of your own accounts."))
         .changed()
     {
         let _ = app.run("ui.desktopAlerts", json!({"newMail": mail}));

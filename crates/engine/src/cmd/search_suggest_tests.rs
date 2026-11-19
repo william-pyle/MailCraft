@@ -3,8 +3,8 @@
 //! #308, part 2: the people the search box offers after `from:`, `to:` and `cc:`, from the
 //! contacts and the mail on this computer, and `view.searchSuggestions`.
 
-use mailcraft_model::{Contact, Labeled};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Contact, Labeled};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use super::compose::suggest;

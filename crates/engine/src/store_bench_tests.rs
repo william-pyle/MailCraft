@@ -6,16 +6,16 @@
 //! let go of. Ignored by `cargo test`; the Bench workflow runs it every week. Run it with
 //!
 //! ```text
-//! cargo test --release -p mailcraft-engine open_bench -- --ignored --nocapture
+//! cargo test --release -p mailsolutions-engine open_bench -- --ignored --nocapture
 //! ```
 //!
-//! The mailbox is made once (about 2 GB, under `MAILCRAFT_BENCH_DIR`, else the system's
-//! temporary folder) and kept for the next run. `MAILCRAFT_BENCH_WARN_MS` names a time past which
+//! The mailbox is made once (about 2 GB, under `MAILSOLUTIONS_BENCH_DIR`, else the system's
+//! temporary folder) and kept for the next run. `MAILSOLUTIONS_BENCH_WARN_MS` names a time past which
 //! the median open is said to be slow, without failing (as a warning a GitHub runner shows).
 
 use std::time::{Duration, Instant};
 
-use mailcraft_model::{Address, Attachment, Body, Mailbox, Message};
+use mailsolutions_model::{Address, Attachment, Body, Mailbox, Message};
 
 use super::*;
 
@@ -104,7 +104,7 @@ fn make(path: &Path) -> Mailbox {
 #[test]
 #[ignore = "a benchmark: makes a mailbox of about 2 GB; see the module's documentation"]
 fn open_bench() {
-    let dir = std::env::var_os("MAILCRAFT_BENCH_DIR").map_or_else(|| std::env::temp_dir().join("mailcraft-open-bench"), PathBuf::from);
+    let dir = std::env::var_os("MAILSOLUTIONS_BENCH_DIR").map_or_else(|| std::env::temp_dir().join("mailsolutions-open-bench"), PathBuf::from);
     let path = dir.join("mailbox.mailcraft");
     let marker = dir.join(SHAPE);
     if !marker.exists() {
@@ -189,7 +189,7 @@ fn open_bench() {
     println!("CLOSE_BENCH word index let go of while it reads: {:.0} ms", letting_go.elapsed().as_secs_f64() * 1e3);
     took.sort();
     let median = took.get(RUNS / 2).copied().unwrap_or_default();
-    if let Some(warn) = std::env::var("MAILCRAFT_BENCH_WARN_MS").ok().and_then(|s| s.parse::<u64>().ok())
+    if let Some(warn) = std::env::var("MAILSOLUTIONS_BENCH_WARN_MS").ok().and_then(|s| s.parse::<u64>().ok())
         && median > Duration::from_millis(warn)
     {
         // (On stdout, where a GitHub runner reads it as a warning on the run.)

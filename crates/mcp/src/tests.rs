@@ -24,7 +24,7 @@ fn tool(s: &mut Server, name: &str, args: Value) -> Value {
 fn lifecycle_and_tools() {
     let mut s = Server::new(Box::new(Headless::default()));
     let init = call(&mut s, 1, "initialize", json!({"protocolVersion": "2025-06-18"}));
-    assert_eq!(init["result"]["serverInfo"]["name"], "mailcraft");
+    assert_eq!(init["result"]["serverInfo"]["name"], "mailsolutions");
     assert!(s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#).is_none());
     let tools = call(&mut s, 2, "tools/list", json!({}));
     assert!(tools["result"]["tools"].as_array().unwrap().len() >= 15);
@@ -41,8 +41,8 @@ fn plain(v: &Value) -> String {
 #[test]
 fn agent_triages_mail_and_books_a_meeting() {
     // The owner allowed sending, and a mailbox of the agent's own.
-    let allow = vec![mailcraft_engine::agent::Class::Send, mailcraft_engine::agent::Class::Mailbox];
-    let mut s = Server::new(Box::new(Headless::new(mailcraft_engine::Session::empty(), allow)));
+    let allow = vec![mailsolutions_engine::agent::Class::Send, mailsolutions_engine::agent::Class::Mailbox];
+    let mut s = Server::new(Box::new(Headless::new(mailsolutions_engine::Session::empty(), allow)));
     tool(&mut s, "open_mailbox", json!({"sample": true}));
     let folders = tool(&mut s, "list_folders", json!({}));
     assert_eq!(folders["accounts"][0]["folders"][0]["name"], "Inbox");
@@ -95,14 +95,14 @@ fn resources() {
     let mut s = Server::new(Box::new(Headless::default()));
     let l = call(&mut s, 1, "resources/list", json!({}));
     assert_eq!(l["result"]["resources"].as_array().unwrap().len(), 2);
-    let r = call(&mut s, 2, "resources/read", json!({"uri": "mailcraft://mailbox"}));
+    let r = call(&mut s, 2, "resources/read", json!({"uri": "mailsolutions://mailbox"}));
     assert!(r["result"]["contents"][0]["text"].as_str().unwrap().contains("accounts"));
 }
 
 #[test]
 fn list_tasks_shows_every_account_whatever_the_window_shows() {
     let allow = vec![crate::Class::Accounts, crate::Class::Send];
-    let mut s = Server::new(Box::new(Headless::new(mailcraft_engine::Session::empty(), allow)));
+    let mut s = Server::new(Box::new(Headless::new(mailsolutions_engine::Session::empty(), allow)));
     let run = |s: &mut Server, command: &str, params: Value| tool(s, "execute", json!({"command": command, "params": params}));
     let account = json!({"email": "work@example.org", "incoming": {"host": "outlook.example.org"}, "auth": "oauth2"});
     let work = run(&mut s, "account.add", account)["id"].clone();
@@ -120,7 +120,7 @@ fn list_tasks_shows_every_account_whatever_the_window_shows() {
 
 #[test]
 fn list_contacts_shows_every_account_whatever_the_window_shows() {
-    let mut session = mailcraft_engine::Session::empty();
+    let mut session = mailsolutions_engine::Session::empty();
     let account = json!({"email": "work@example.org", "incoming": {"host": "outlook.example.org"}, "auth": "oauth2"});
     let work = session.run("account.add", &account).unwrap()["id"].clone();
     let contact = json!({"id": "w1", "displayName": "In work"});
@@ -151,7 +151,7 @@ fn list_contacts_shows_every_account_whatever_the_window_shows() {
 /// (#1200): "sent" reaches "Gesendete Elemente".
 #[test]
 fn list_messages_takes_a_folders_kind_in_any_language() {
-    let mut session = mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0);
+    let mut session = mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0);
     let account = session.mailbox.default_account().unwrap().id;
     let sent = session.mailbox.folders.iter_mut().find(|f| f.account == account && f.name == "Sent Items").expect("the sample's Sent Items");
     sent.name = "Gesendete Elemente".into();
@@ -166,7 +166,7 @@ fn list_messages_takes_a_folders_kind_in_any_language() {
 /// `account` says whose folder a kind means, whatever the window shows (#1200).
 #[test]
 fn list_messages_takes_the_account_a_kind_is_of() {
-    let mut session = mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0);
+    let mut session = mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0);
     // A second account, whose Inbox is still empty and called something else.
     let second = session.run("account.add", &json!({"email": "noor@example.org"})).unwrap()["id"].as_u64().unwrap();
     let theirs = session.mailbox.folders.iter_mut().find(|f| f.account == second && f.name == "Inbox").expect("its Inbox");

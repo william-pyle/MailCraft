@@ -11,7 +11,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 
 ## Views and getting around
 
-| Outlook does | MailCraft |
+| Outlook does | MailSolutions |
 |---|---|
 | Day, Work Week, Week, Month views, switched from the ribbon and with Ctrl+Alt+1…4 | Done (Home › Arrange and View › Arrangement, where the calendar's View tab has them in place of the messages' sorting and preview (#239); the ribbon and the keys are the only switch, as in Outlook; the Simplified ribbon labels them) |
 | Schedule view (people or calendars as rows) | Later |
@@ -31,7 +31,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 
 ## Working with items in the grid
 
-| Outlook does | MailCraft |
+| Outlook does | MailSolutions |
 |---|---|
 | Click selects an item; click an empty slot selects the slot; drag selects a range of slots | Done (a range is within one day in the time grid; across days in Month and the all-day row) |
 | Typing with a slot selected starts the item right there; Enter saves, Escape drops it | Done (a click elsewhere saves what was typed, as Outlook does) |
@@ -42,7 +42,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 | Drag in Month view, and all-day items between days; into and out of the all-day row | Done (a repeating item is not turned all-day or timed by dragging) |
 | Arrow keys move the slot selection, Shift+arrows extend it, Tab goes from item to item, Enter opens, Delete deletes | Done; also Home/End, Page Up/Down, Alt+Up/Down to move the item, Ctrl+C/X/V (a cut item stays in place until it is pasted) |
 | Hovering shows subject, time, location, organizer | Done (and that it is of high or low importance, or held online) |
-| Right-click: Open, Private, Show As, Categorize, Meeting responses, Delete (and Move/Copy to another calendar) | Done: Open, Delete, Show As, Private, Importance (High / Normal / Low), Categorize, Accept / Tentative / Decline, Propose New Time, Forward (and Forward This Occurrence), Join (an online meeting that has a link), Save as iCalendar, Move to Calendar, and a drop in another calendar's block moves the item there (Ctrl: a copy). Between two calendars of the same Microsoft 365 account an appointment moves; the service has no way of moving an event, so it is made in the other calendar first and taken out of the first one only once the copy has been seen there in what the service sends back (one step to undo here; a refusal of either half, or a copy that turns out not to be there, puts it back and says so). Refused, each with its reason: a meeting (everyone invited would get a cancellation and a new invitation), a series and one occurrence of one, an item with files attached (only the server keeps them), and taking an item out of its account. What MailCraft doesn't keep of an item (formatting in its text) is not carried over |
+| Right-click: Open, Private, Show As, Categorize, Meeting responses, Delete (and Move/Copy to another calendar) | Done: Open, Delete, Show As, Private, Importance (High / Normal / Low), Categorize, Accept / Tentative / Decline, Propose New Time, Forward (and Forward This Occurrence), Join (an online meeting that has a link), Save as iCalendar, Move to Calendar, and a drop in another calendar's block moves the item there (Ctrl: a copy). Between two calendars of the same Microsoft 365 account an appointment moves; the service has no way of moving an event, so it is made in the other calendar first and taken out of the first one only once the copy has been seen there in what the service sends back (one step to undo here; a refusal of either half, or a copy that turns out not to be there, puts it back and says so). Refused, each with its reason: a meeting (everyone invited would get a cancellation and a new invitation), a series and one occurrence of one, an item with files attached (only the server keeps them), and taking an item out of its account. What MailSolutions doesn't keep of an item (formatting in its text) is not carried over |
 | A recurring item asks "just this one" or "the entire series" when opened, moved, resized or deleted | Done, for series on this computer and on the server (an occurrence dragged to another day of a series that keeps its weekdays moves alone, without the question) |
 | An item that came from someone else's invitation warns before it is changed here | Done (drag, move, resize, edit, delete, and the form's Save) |
 | Deleting a meeting the owner organizes offers to send a cancellation; deleting an invitation offers to decline | Done: a cancellation with a note (Microsoft 365 has no deleting without telling the attendees); an invitation can be deleted quietly, declined with word to the organizer, or declined without |
@@ -51,7 +51,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 
 ## The appointment and meeting windows
 
-| Outlook does | MailCraft |
+| Outlook does | MailSolutions |
 |---|---|
 | Opens in its own window with its own ribbon: Save & Close, Delete, Show As, Reminder, Recurrence, Time Zones, Categorize, Private, importance | Done: new and existing items open in windows of their own, several at once, each with its own command bar (Save & Close or Send / Send Update, Delete or Cancel Meeting, Forward, Show As, Reminder, Recurrence, Categorize, Private, High Importance, Low Importance, Invite Attendees, and on a meeting Teams Meeting, Response Options, Check Names), Ctrl+S, Ctrl+Enter, and a question before closing with unsaved changes. One row, no tabs; Time Zones is in the row. What doesn't fit goes behind `…`: on a meeting, Low Importance and Response Options first |
 | Subject, location, start and end with date and time pickers, All day | Done |
@@ -67,10 +67,10 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 
 ## Invitations and replies
 
-| Outlook does | MailCraft |
+| Outlook does | MailSolutions |
 |---|---|
 | A meeting request in the Inbox shows Accept, Tentative, Decline and Propose New Time, with a look at the day it falls on | Done: the bar under the header with Accept, Tentative, Decline (each with its three ways of answering), Propose New Time (when the organizer takes proposals) and Calendar…; when, where, who; what else is on at that time, and a look at that part of the day. Updates, cancellations, replies, meetings that are over and the owner's own each say what they are. Meeting mail has its mark in the message list |
-| Accepting puts it on the calendar and answers the organizer (or not, as chosen) | Done from the message and from the calendar item, with Outlook's three choices: send with a note, send now, don't send. On Microsoft 365 the message is answered through the item the server put on the calendar (asked for if it isn't here yet). Moving an answered request out of the Inbox to Deleted Items is an option in File › Options, as in Outlook: on in a new install, a choice already made kept, and off for `mailcraft-cli run` and headless `mcp`, which don't read the window's settings. Only the Inbox of the owner's own accounts is cleared: a request in another folder or a shared mailbox stays |
+| Accepting puts it on the calendar and answers the organizer (or not, as chosen) | Done from the message and from the calendar item, with Outlook's three choices: send with a note, send now, don't send. On Microsoft 365 the message is answered through the item the server put on the calendar (asked for if it isn't here yet). Moving an answered request out of the Inbox to Deleted Items is an option in File › Options, as in Outlook: on in a new install, a choice already made kept, and off for `mailsolutions-cli run` and headless `mcp`, which don't read the window's settings. Only the Inbox of the owner's own accounts is cleared: a request in another folder or a shared mailbox stays |
 | Updates and cancellations from the organizer change or remove the item | Done for what comes down from Microsoft 365; a cancellation in mail offers Remove from Calendar (it is not removed by itself) |
 | Respond from the calendar item itself | Done |
 | Propose New Time | Done, from the meeting request in the mail, the item's menu and the ribbon: a dialog with the proposed start and end, the owner's own calendar on that day with the proposal in it, a note, and "Tentative and Propose" / "Decline and Propose", which are what sends (no key does). It says who is written to. On Microsoft 365 the answer goes with the proposed time (the service refuses one the organizer doesn't allow, which is put back and said); for an account whose calendar is kept here it goes from the Outbox as an iCalendar counter-proposal. Outlook opens Find a Time's grid for this; here it is the one day |
@@ -82,7 +82,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 
 ## Reminders
 
-| Outlook does | MailCraft |
+| Outlook does | MailSolutions |
 |---|---|
 | A reminders window of its own, listing what is due, with Dismiss, Dismiss All and Snooze for a chosen time | Done |
 | Double-click opens the item | Done: in the item's own window; of an item that repeats, the occurrence the reminder is for, without asking |
@@ -91,7 +91,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 
 ## Staying in step with Microsoft 365
 
-| Outlook does | MailCraft |
+| Outlook does | MailSolutions |
 |---|---|
 | Shows what is on the server, within moments of a change made elsewhere | Done: every half minute while the calendar is in front, at once when the window comes back, the calendar is switched to, other days come into view or something is changed here; every five minutes otherwise |
 | Everything made or changed here is on the server at once | Done, meetings and series included: a refusal is put back and said, an unreachable server is tried again. Nothing that mails other people goes without the owner's yes. Undo doesn't reach a change the server already has |
@@ -103,7 +103,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
 | Categories with the mailbox's own names and colours | Done on items both ways; the mailbox's own list and colours come once the owner allows reading mailbox settings (asked for at the next Connect) |
 | Every calendar and calendar group of the account; shared calendars; other people's calendars | Done for the account's own calendars and groups (see the list row above): only the account's main calendar is ticked when the list first comes, the rest wait to be ticked, and what the owner ticks stays. Each calendar has its owner (address and name) and rights (free/busy only, read, edit) as the server says, read again at every listing; a calendar that isn't edit refuses new items, changes and deletes with the reason. Calendars the server lists for somebody else's are under Shared Calendars. A shared mailbox's calendars are listed under My Calendars with its address, unticked, and read once ticked (#70): the owner is asked for `Calendars.ReadWrite.Shared` by itself the first time, and File › Info shows it; a calendar shared for free and busy times only is drawn as blocks (Busy, Tentative, Out of Office, Working Elsewhere) with no subject, read only; none raises a reminder. Where the owner has edit rights on one of a shared mailbox's calendars it is changed as his own is: new items, changes and deletes go to `/users/{address}/…` with his token (never `/me`), a meeting is called off or forwarded from the mailbox, and a meeting request that arrives in the shared mailbox's Inbox is accepted, tentatively accepted, declined or answered with another time proposed there, the answer going out from the mailbox's address (what makes the server send mail from it asks for `Mail.Send.Shared` by itself, with the question the shared mailbox's mail asks, the first time; until it is given the answer waits here). A calendar the owner may only read, or sees only as free and busy times, refuses changes with the reason. A change the server refuses is put back (an item made is kept on this computer only) and the window says why; if the rights shrink at a listing, changes not yet sent are held, not dropped, and the owner is told, and they go if the rights come back. An item doesn't move between the owner's own calendar and a shared mailbox's (that would cross two servers: refused, as moving out of any account's server is); within one shared mailbox it moves as within the owner's own account. Open Shared Calendar (File › Open & Export, Home › Manage Calendars, #70) reads a colleague's calendar by address through `/users/{address}` with the owner's Microsoft work or school sign-in, with the same one permission (`Calendars.ReadWrite.Shared`, asked for by itself, once, for shared mailboxes' calendars and opened ones alike; for an account that only opens calendars, without the shared mailbox mail permissions): kept on this computer only, under Shared Calendars with its own tick, colour and rights; it is read and changed by the same code as a shared mailbox's calendar (free and busy blocks with no subject when nothing more is shared, edit rights taking changes at `/users/{address}/events` and never `/me`, a refused change put back, rights that shrink holding changes); at most 20, removed by right-click; a refusal adds nothing and says why. When the server also lists a shared mailbox's calendar among the account's own (an invitation accepted in Outlook puts it under Shared Calendars), the window offers once to hide that copy (`calendar.hideListedCopy`; the answer, Hide the Copy or Keep Both, is kept in the mailbox file): a hidden copy is neither read from the server nor shown, the shared mailbox's own calendar staying, and right-clicking the shared mailbox's calendar shows it again (the copy's own menu hides it). |
 | Free/busy of other people | Done, in Find a Time (asked for only while it is in view) |
-| Internet Calendars: subscribe to an `.ics` address (webcal://, https://) | Done (#209, D1), desktop only: Calendar › Open Calendar › From Internet… and File › Info › Subscribed calendars (`calendar.subscribe`, `calendar.unsubscribe`, `calendar.refreshSubscribed`, `calendar.subscriptionSettings`). The address is `https://` or `webcal://` (read as https; `http://` is refused with the offer of https; no user name in it; 2,048 characters at most) and nothing is fetched until Subscribe. The file is fetched through `mailcraft_net::subscription` (public hosts only, five redirects at most each re-checked and https only, 8 MB, `If-None-Match` and `If-Modified-Since`, 304 handled, no cookies, referrer or credentials) and read by `mailcraft_ical` (20,000 events a calendar, 100,000 in all; to-dos ignored; the people, organizer and reminders of an event dropped). It is a calendar of its own under Other Calendars, read-only, in its own colour, refreshed every hour (15 minutes to a day, chosen in File › Info), on Send/Receive and from Update Now; each refresh replaces the events wholesale, keyed by `UID` and `RECURRENCE-ID`, so an unchanged event keeps its id. A look that fails (404, not a calendar, too large, a private address) keeps what was there and says why in File › Info; what is over the limits is left out, logged and said there. The address may hold a secret: it is kept in the credential store like a password, or in memory for the session, and only its host is in the mailbox file; after a restart without a store the calendar stays listed and asks for its address again. Unsubscribe removes the calendar and its events and sends nothing. Not yet: the address can't be changed (subscribe again), no `REFRESH-INTERVAL` / `X-PUBLISHED-TTL` hints, no colour from `X-APPLE-CALENDAR-COLOR`, and the browser build doesn't fetch |
+| Internet Calendars: subscribe to an `.ics` address (webcal://, https://) | Done (#209, D1), desktop only: Calendar › Open Calendar › From Internet… and File › Info › Subscribed calendars (`calendar.subscribe`, `calendar.unsubscribe`, `calendar.refreshSubscribed`, `calendar.subscriptionSettings`). The address is `https://` or `webcal://` (read as https; `http://` is refused with the offer of https; no user name in it; 2,048 characters at most) and nothing is fetched until Subscribe. The file is fetched through `mailsolutions_net::subscription` (public hosts only, five redirects at most each re-checked and https only, 8 MB, `If-None-Match` and `If-Modified-Since`, 304 handled, no cookies, referrer or credentials) and read by `mailsolutions_ical` (20,000 events a calendar, 100,000 in all; to-dos ignored; the people, organizer and reminders of an event dropped). It is a calendar of its own under Other Calendars, read-only, in its own colour, refreshed every hour (15 minutes to a day, chosen in File › Info), on Send/Receive and from Update Now; each refresh replaces the events wholesale, keyed by `UID` and `RECURRENCE-ID`, so an unchanged event keeps its id. A look that fails (404, not a calendar, too large, a private address) keeps what was there and says why in File › Info; what is over the limits is left out, logged and said there. The address may hold a secret: it is kept in the credential store like a password, or in memory for the session, and only its host is in the mailbox file; after a restart without a store the calendar stays listed and asks for its address again. Unsubscribe removes the calendar and its events and sends nothing. Not yet: the address can't be changed (subscribe again), no `REFRESH-INTERVAL` / `X-PUBLISHED-TTL` hints, no colour from `X-APPLE-CALENDAR-COLOR`, and the browser build doesn't fetch |
 | Contacts in People, both ways | Done one way (down); Later: both ways |
 
 ## Waves
@@ -152,7 +152,7 @@ server; what has met the real Microsoft 365 service is only what the owner has u
   Windows has no name for goes by its place (`Kathmandu`). They are made from the identifiers the zones have (Windows' and the IANA database's), not from Outlook's list.
 - The rules of the zones come with the program (the IANA database, built in), on every system
   and in the browser the same; Outlook takes them from Windows. A zone whose rules a government
-  changes is right here after an update of MailCraft, not of Windows.
+  changes is right here after an update of MailSolutions, not of Windows.
 - An all-day item is a day, wherever the computer is. In Outlook it is the midnights of the zone
   it was made in, and shows across two days from another zone.
 - An item whose zone has the same clock as the calendar's at its time is kept without a zone of
@@ -221,7 +221,7 @@ contradicts its name, offsets of days); `.ics` and Graph bodies round-trip under
 The stand-in takes the zone names the Graph reference lists and no others, keeps the zones a
 start and an end were told in, and repeats a series by its zone's clock from rules written out
 on its own (checked against the program's tables for every half hour of two years). The flows in
-`apps/mailcraft/src/calendar_flow.rs` run an item made in another zone, series across both
+`apps/mailsolutions/src/calendar_flow.rs` run an item made in another zone, series across both
 zones' changes of the clock, and a mailbox written before zones were kept that is opened and
 carried to Berlin and to Kiritimati and home: not one write reaches the server. Not proven:
 which names beyond the documented ones the real service takes, and what it gives back as an
@@ -231,6 +231,7 @@ item's original zone when another program made the item.
 
 | Date | Change |
 |---|---|
+| 2026-11-19 | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-15 | #209 D1: Internet Calendars (subscribed calendars): the row after Free/busy of other people |
 | 2026-11-04 | #755: an answered meeting request goes from the Inbox to Deleted Items by default in a new install (`calendar.deleteAnsweredRequests`), off for the command line and headless MCP; only from an Inbox of the owner's own accounts |
 | 2026-10-31 | Email Calendar, Insert › Calendar, Search Calendar, Contact Attendees, Reply by Email and Tracking (`calendar.email`, `insert.calendar`, `calendar.search`, `calendar.contactAttendees`, `calendar.respondEmail`, `calendar.tracking`) |

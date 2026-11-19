@@ -3,8 +3,8 @@
 //! Gmail's inbox categories (#911): what a synchronisation brings, the five views of the Inbox,
 //! the search, what agents see and the alerts.
 
-use mailcraft_model::sync::{FolderDelta, GmailSorted, SyncResult};
-use mailcraft_model::{Address, FolderKind, GmailCategory, Id, Message};
+use mailsolutions_model::sync::{FolderDelta, GmailSorted, SyncResult};
+use mailsolutions_model::{Address, FolderKind, GmailCategory, Id, Message};
 use serde_json::json;
 
 use crate::Session;

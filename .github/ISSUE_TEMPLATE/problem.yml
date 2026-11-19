@@ -14,16 +14,16 @@ body:
       label: What kind of problem?
       options:
         - Something I had is gone or changed without my asking (data loss)
-        - MailCraft closed by itself (crash)
-        - MailCraft and Outlook on the web disagree (out of step)
+        - MailSolutions closed by itself (crash)
+        - MailSolutions and Outlook on the web disagree (out of step)
         - Something else doesn't work
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: MailCraft version
-      description: File › About MailCraft, or the release you installed.
+      label: MailSolutions version
+      description: File › About MailSolutions, or the release you installed.
       placeholder: e.g. 0.2.1
     validations:
       required: true
@@ -54,4 +54,4 @@ body:
     id: diagnostics
     attributes:
       label: Diagnostics
-      description: "In MailCraft: Help › Copy Diagnostics, then paste here; or, from Report a Problem, drag the diagnostics file it saved into this box. It has the version, the platform and the end of the log, with addresses, names, paths, hosts, links and quoted text taken out. Read it before you submit. If MailCraft crashed, start it again first: the copy includes the run before. Version 0.3.0 and earlier don't have the button; leave this empty."
+      description: "In MailSolutions: Help › Copy Diagnostics, then paste here; or, from Report a Problem, drag the diagnostics file it saved into this box. It has the version, the platform and the end of the log, with addresses, names, paths, hosts, links and quoted text taken out. Read it before you submit. If MailSolutions crashed, start it again first: the copy includes the run before. Version 0.3.0 and earlier don't have the button; leave this empty."

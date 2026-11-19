@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Interface text. Every string the window shows goes through [`t`] (the `tl!` macro) or, for a
 //! count, [`tn`] (`tln!`), keyed by its English text and looked up in the catalogue of the
-//! window's language (`mailcraft-i18n`). The window's language is set once a frame from the
+//! window's language (`mailsolutions-i18n`). The window's language is set once a frame from the
 //! owner's choice ([`set_current`]); the engine is told it through `Session::interface_language`.
 
 use std::sync::atomic::{AtomicU8, Ordering};
 
-pub use mailcraft_i18n::{AUTO, Lang, fmt};
+pub use mailsolutions_i18n::{AUTO, Lang, fmt};
 
 static CURRENT: AtomicU8 = AtomicU8::new(0);
 
 /// The region the window's dates are written for (`GB`), with the language ([`dated`], #978).
 static REGION: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 
-/// The region the window's dates are written for from now on (`mailcraft_i18n::date::region_of`
+/// The region the window's dates are written for from now on (`mailsolutions_i18n::date::region_of`
 /// the system's regional format).
 pub fn set_region(region: Option<&str>) {
     let _held = hold_language();
@@ -22,10 +22,10 @@ pub fn set_region(region: Option<&str>) {
 }
 
 /// What the window says dates in: its language, the way of its region.
-pub fn dated() -> mailcraft_i18n::date::Dated {
+pub fn dated() -> mailsolutions_i18n::date::Dated {
     let _held = hold_language();
     let region = REGION.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    mailcraft_i18n::date::Dated::new(load_current(), region.as_deref())
+    mailsolutions_i18n::date::Dated::new(load_current(), region.as_deref())
 }
 
 fn store_region(region: Option<&str>) {
@@ -172,7 +172,7 @@ pub fn with_reason(heading: &str, reason: &str) -> String {
 
 /// A command's location (`Home › Respond`) in the interface language, part by part.
 pub fn location(loc: &str) -> String {
-    mailcraft_i18n::location(current(), loc)
+    mailsolutions_i18n::location(current(), loc)
 }
 
 #[cfg(test)]

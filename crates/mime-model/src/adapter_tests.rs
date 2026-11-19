@@ -1,26 +1,26 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! The conversion between `mailcraft-mime`'s messages and the mailbox's (#1235).
+//! The conversion between `mailsolutions-mime`'s messages and the mailbox's (#1235).
 
 use std::sync::Arc;
 
-use mailcraft_model::{Address, Attachment, Body, FlagStatus, Importance, Message, Original};
+use mailsolutions_model::{Address, Attachment, Body, FlagStatus, Importance, Message, Original};
 
 use crate::{from_model, parse, parse_fetched, to_model};
 
-/// The limits `mailcraft-mime` keeps of its own are the model's: a stamp it keeps apart is one
+/// The limits `mailsolutions-mime` keeps of its own are the model's: a stamp it keeps apart is one
 /// the model reads, and an original it keeps is one the model takes.
 #[test]
 fn the_readers_limits_are_the_models() {
-    use mailcraft_model::auth_results;
-    assert_eq!(mailcraft_mime::AUTH_AS, auth_results::AUTH_AS);
-    assert_eq!(mailcraft_mime::DIRECTIONALITY, auth_results::DIRECTIONALITY);
-    assert_eq!(mailcraft_mime::MAX_AUTH_AS, auth_results::MAX_AUTH_AS);
-    assert_eq!(mailcraft_mime::MAX_ORIGINAL, mailcraft_model::MAX_ORIGINAL);
-    assert_eq!(mailcraft_mime::MAX_ARMOUR_SCAN, mailcraft_model::protected::MAX_ARMOUR_SCAN);
+    use mailsolutions_model::auth_results;
+    assert_eq!(mailsolutions_mime::AUTH_AS, auth_results::AUTH_AS);
+    assert_eq!(mailsolutions_mime::DIRECTIONALITY, auth_results::DIRECTIONALITY);
+    assert_eq!(mailsolutions_mime::MAX_AUTH_AS, auth_results::MAX_AUTH_AS);
+    assert_eq!(mailsolutions_mime::MAX_ORIGINAL, mailsolutions_model::MAX_ORIGINAL);
+    assert_eq!(mailsolutions_mime::MAX_ARMOUR_SCAN, mailsolutions_model::protected::MAX_ARMOUR_SCAN);
     for word in ["low", "Normal", " HIGH ", "5", "3", "1", "urgent", "non-urgent", "medium", "whatever", ""] {
-        let theirs =
-            mailcraft_mime::Importance::parse(word).map(|i| to_model(mailcraft_mime::Message { importance: i, ..Default::default() }).importance);
+        let theirs = mailsolutions_mime::Importance::parse(word)
+            .map(|i| to_model(mailsolutions_mime::Message { importance: i, ..Default::default() }).importance);
         assert_eq!(theirs, Importance::parse(word), "{word:?}");
     }
 }
@@ -60,7 +60,7 @@ fn what_the_format_carries_goes_both_ways() {
         answered: true,
         draft: true,
         headers: vec![("List-Id".into(), "<news.example.org>".into())],
-        header_block: mailcraft_model::headers::split(vec![("X-A".into(), "b".into()), ("List-Id".into(), "<news.example.org>".into())]).1,
+        header_block: mailsolutions_model::headers::split(vec![("X-A".into(), "b".into()), ("List-Id".into(), "<news.example.org>".into())]).1,
         fresh_stamps: true,
         original: Original::new(b"Content-Type: multipart/signed\r\n\r\n".to_vec()),
         ..Message::default()

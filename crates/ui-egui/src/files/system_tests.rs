@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! What the system hands MailCraft (#505): the command line, a later start, the Finder. A
+//! What the system hands MailSolutions (#505): the command line, a later start, the Finder. A
 //! `mailto:` link starts a message with what it says and nothing else; a message file opens in a
 //! window of its own; a calendar or contact file is imported only once the owner says so, one
 //! question at a time.
 
 use std::path::PathBuf;
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::{Value, json};
 
 use crate::dialogs::Dialog;
@@ -16,13 +16,13 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("mailcraft-system-open-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-system-open-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir

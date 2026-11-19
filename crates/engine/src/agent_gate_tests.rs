@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The agent gate on undo and redo, the clipboard and the appointment window (AU2-03, 04, 13, 17).
 
-use mailcraft_model::remote::EventChange;
+use mailsolutions_model::remote::EventChange;
 use serde_json::json;
 
 use crate::Session;

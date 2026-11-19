@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Reply and Delete, View Source and Save All Attachments.
 
-use mailcraft_model::{Address, Attachment, Body, FolderKind, Id, Message};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Address, Attachment, Body, FolderKind, Id, Message};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::json;
 
 use crate::agent::{self, Verdict};
@@ -98,7 +98,7 @@ fn view_source_is_text_with_what_hides_made_visible() {
     assert!(source.contains("<a href=\"https://example.org/t\">there</a>"));
     // Nothing that hides or turns text is left as it was.
     assert!(source.contains("<U+202E>exe.txt<U+200B>\u{241b}[31m\u{2400}</p>\n"), "{source}");
-    assert!(!source.chars().any(|c| (c.is_control() && c != '\n' && c != '\t') || mailcraft_names::is_format(c)));
+    assert!(!source.chars().any(|c| (c.is_control() && c != '\n' && c != '\t') || mailsolutions_names::is_format(c)));
     // A message with no HTML shows its text.
     let plain = message(&mut s, Vec::new(), None);
     assert!(s.run("mail.viewSource", &json!({"id": plain})).unwrap()["source"].as_str().unwrap().ends_with("\n\nThe plans."));
@@ -143,7 +143,7 @@ fn save_all_names_are_made_safe_and_numbered() {
 
 #[test]
 fn save_all_never_writes_over_a_file() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-save-all-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-save-all-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("report.pdf"), b"mine").unwrap();

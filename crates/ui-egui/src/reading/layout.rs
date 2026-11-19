@@ -30,8 +30,8 @@ use std::sync::Arc;
 
 use egui::text::{LayoutJob, TextFormat, TextWrapping};
 use egui::{Color32, Rect, Stroke, Vec2, pos2, vec2};
-use mailcraft_html::{Align, Block, BlockKind, Cell, Length, Line, LineHeight, LineStyle, Marker, Sides, Span, Table, VAlign};
-use mailcraft_model::Message;
+use mailsolutions_html::{Align, Block, BlockKind, Cell, Length, Line, LineHeight, LineStyle, Marker, Sides, Span, Table, VAlign};
+use mailsolutions_model::Message;
 
 use super::colors::Paper;
 use super::fonts::{Chooser, Pick};
@@ -967,7 +967,7 @@ fn picture_tile<'a>(cx: &mut Cx<'_>, block: &'a Block, room: f32, padding: f32, 
     };
     if shown {
         cx.stats.placeholders += 1;
-        if !mailcraft_html::is_embedded(src) {
+        if !mailsolutions_html::is_embedded(src) {
             cx.stats.remote += 1;
         }
     }
@@ -1028,7 +1028,7 @@ fn put_tile(cx: &mut Cx<'_>, tile: &Tile<'_>, rect: Rect, paper: Paper, said: &m
     match &tile.data {
         Some(data) => cx.push_seg(rect, ItemKind::Picture(PictureItem { data: data.clone(), alt: tile.label.clone(), link, paper })),
         None => {
-            let remote = !mailcraft_html::is_embedded(src);
+            let remote = !mailsolutions_html::is_embedded(src);
             // A picture that is not shown is copied as its description, when it has one;
             // a space stands between two of those in a line.
             let described = tile.described && !tile.label.is_empty();
@@ -1454,7 +1454,7 @@ struct Grid<'a> {
 /// Give every cell its place, minding the cells that span rows and columns. A cell that finds no
 /// room left in its row goes on in a new one: nothing is ever dropped or laid over another.
 fn grid(table: &Table) -> Grid<'_> {
-    let columns = usize::from(table.columns).clamp(1, mailcraft_html::MAX_TABLE_COLUMNS);
+    let columns = usize::from(table.columns).clamp(1, mailsolutions_html::MAX_TABLE_COLUMNS);
     // Per column, how many rows a cell from above still covers.
     let mut covered = vec![0usize; columns];
     let mut cells = Vec::new();
@@ -1528,7 +1528,7 @@ struct Pad {
 }
 
 impl Pad {
-    fn from_insets(pad: mailcraft_html::Insets) -> Pad {
+    fn from_insets(pad: mailsolutions_html::Insets) -> Pad {
         Pad { left: f32::from(pad.left), top: f32::from(pad.top), right: f32::from(pad.right), bottom: f32::from(pad.bottom) }
     }
 

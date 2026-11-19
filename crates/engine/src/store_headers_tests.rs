@@ -56,7 +56,7 @@ fn every_header_line_is_saved_and_comes_back_in_its_place() {
 fn block_files(path: &Path) -> Vec<PathBuf> {
     files(&blob_dir(path))
         .into_iter()
-        .filter(|(file, _)| fs::read(file).is_ok_and(|bytes| mailcraft_model::HeaderBlock::read(&bytes).is_some_and(|b| !b.lines().is_empty())))
+        .filter(|(file, _)| fs::read(file).is_ok_and(|bytes| mailsolutions_model::HeaderBlock::read(&bytes).is_some_and(|b| !b.lines().is_empty())))
         .map(|(file, _)| file)
         .collect()
 }
@@ -87,7 +87,7 @@ pub(super) fn block_bytes(mb: &Mailbox) -> u64 {
     total
 }
 
-/// A mailbox file of format 3, as MailCraft 0.12.0 wrote it: every header line of a message in
+/// A mailbox file of format 3, as MailSolutions 0.12.0 wrote it: every header line of a message in
 /// its record. The mailbox is given back as it was, its header lines unsplit.
 fn format_3(path: &Path, messages: usize) -> Mailbox {
     let mut mb = mailbox(messages);
@@ -200,7 +200,7 @@ fn a_missing_or_damaged_header_block_leaves_the_message_without_it_and_nothing_e
 
 #[test]
 fn a_hostile_name_for_a_header_block_names_none() {
-    let max = mailcraft_model::headers::MAX_HEADER_BLOCK as u64;
+    let max = mailsolutions_model::headers::MAX_HEADER_BLOCK as u64;
     let name = Digest::of(b"x").hex();
     let at = Some(pack::Loc { pack: 1, at: 0 });
     for (hash, len) in [(name.clone(), max + 1), (name.clone(), u64::MAX), ("not a name".into(), 10), (String::new(), 0)] {
@@ -222,7 +222,7 @@ proptest! {
         at in any::<u64>(),
         junk in proptest::collection::vec(any::<u8>(), 0..256),
     ) {
-        let max = mailcraft_model::headers::MAX_HEADER_BLOCK as u64;
+        let max = mailsolutions_model::headers::MAX_HEADER_BLOCK as u64;
         let json = serde_json::to_vec(&json!({"headers": [name, len]})).unwrap();
         let packed = serde_json::to_vec(&json!({"headers": [name, len, pack, at]})).unwrap();
         for bytes in [json, packed, junk] {
@@ -349,22 +349,22 @@ fn what_writes_a_message_whole_writes_every_header_line_kept_beside_the_mailbox_
     let id = *mb.messages.keys().next().unwrap();
     let was = mb.message(id).unwrap();
     assert!(!s.mailbox.message(id).unwrap().header_block.is_loaded(), "kept beside the file");
-    let opts = mailcraft_mime_model::WriteOptions::default();
-    let expected = mailcraft_mime_model::write(was, &opts);
+    let opts = mailsolutions_mime_model::WriteOptions::default();
+    let expected = mailsolutions_mime_model::write(was, &opts);
     // Byte for byte what the message wrote before its block went outside: what a copy put on
     // another server, the Outbox and a forward as attachment are made of.
-    assert_eq!(mailcraft_mime_model::write(&s.loaded_message(id).unwrap(), &opts), expected);
+    assert_eq!(mailsolutions_mime_model::write(&s.loaded_message(id).unwrap(), &opts), expected);
     let outbox = s.loaded_outbox(vec![Message::clone(s.mailbox.message(id).unwrap())]);
-    assert_eq!(mailcraft_mime_model::write(&outbox[0], &opts), expected);
+    assert_eq!(mailsolutions_mime_model::write(&outbox[0], &opts), expected);
     // Save Message As (.eml) and Export Folder (.mbox): every line, in its place.
     let eml = s.run("file.exportMessage", &json!({"id": id})).unwrap();
     let eml = crate::cmd::base64_decode(eml["data"].as_str().unwrap()).unwrap();
     let lines = |m: &Message| m.all_headers().iter().map(|(n, v)| format!("{n}: {v}")).collect::<Vec<_>>();
-    assert_eq!(lines(&mailcraft_mime_model::parse(&eml)), lines(&mailcraft_mime_model::parse(&expected)));
+    assert_eq!(lines(&mailsolutions_mime_model::parse(&eml)), lines(&mailsolutions_mime_model::parse(&expected)));
     let mbox = s.run("file.exportFolder", &json!({"id": was.folder})).unwrap();
-    let all = mailcraft_mime_model::parse_mbox(&crate::cmd::base64_decode(mbox["data"].as_str().unwrap()).unwrap());
-    assert!(all.iter().any(|m| m.message_id == was.message_id && lines(m) == lines(&mailcraft_mime_model::parse(&expected))));
-    // Save As (one file): every line, in the shape every MailCraft reads.
+    let all = mailsolutions_mime_model::parse_mbox(&crate::cmd::base64_decode(mbox["data"].as_str().unwrap()).unwrap());
+    assert!(all.iter().any(|m| m.message_id == was.message_id && lines(m) == lines(&mailsolutions_mime_model::parse(&expected))));
+    // Save As (one file): every line, in the shape every MailSolutions reads.
     let whole = s.loaded_mailbox().unwrap();
     assert_eq!(whole.message(id).unwrap().all_headers(), was.all_headers());
     let single = crate::io::write_mailbox(&whole).unwrap();

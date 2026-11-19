@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! The line above the status bar that says the settings file couldn't be read, so MailCraft
+//! The line above the status bar that says the settings file couldn't be read, so MailSolutions
 //! started with its own settings. Without it the window just looks different, and the owner is
 //! left to work out why.
 

@@ -4,10 +4,10 @@
 //! of what comes back. (Against the Graph stand-in: `crates/net/src/graph/mail/search_tests.rs`,
 //! and the window's part in `crates/ui-egui/src/server_search.rs`.)
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     FolderListing, GraphFolder, GraphMailResult, GraphMessage, GraphSearchResult, MessagePage, ServerMessage, SharedRefusal,
 };
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use super::*;
@@ -53,11 +53,11 @@ fn search(s: &mut Session, query: &str, scope: &str) {
     s.run("view.search", &json!({"query": query, "scope": scope})).unwrap();
 }
 
-fn asked(s: &mut Session) -> Vec<mailcraft_model::sync::GraphSearchRequest> {
+fn asked(s: &mut Session) -> Vec<mailsolutions_model::sync::GraphSearchRequest> {
     serde_json::from_value(s.run("sync.graphSearchRequest", &json!({})).unwrap()["requests"].clone()).unwrap()
 }
 
-fn answer(s: &mut Session, request: &mailcraft_model::sync::GraphSearchRequest, messages: Vec<GraphMessage>, next: &str) -> Value {
+fn answer(s: &mut Session, request: &mailsolutions_model::sync::GraphSearchRequest, messages: Vec<GraphMessage>, next: &str) -> Value {
     let result = GraphSearchResult {
         account: request.account,
         email: request.email.clone(),
@@ -190,7 +190,7 @@ fn a_day_in_words_is_checked_here_on_the_sessions_day() {
     let request = asked(&mut s).remove(0);
     answer(&mut s, &request, vec![found("AAkA-1", "in", "Budget today", NOW - 60)], "");
     s.clock.now = Some(NOW + 2 * 86_400);
-    s.prefs.week_start = mailcraft_time::Weekday::Mon;
+    s.prefs.week_start = mailsolutions_time::Weekday::Mon;
     assert!(is_current(&s));
     assert_eq!(subjects(&s), ["Budget today"]);
 }

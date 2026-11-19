@@ -6,7 +6,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_time::{DateTime, Timestamp};
 use serde::{Deserialize, Serialize};
 
 use crate::{FolderKind, Id, Mailbox, Message};
@@ -260,8 +260,8 @@ mod tests {
         assert_eq!(KeepOffline::Days3.since(NOW), Some(NOW - 3 * 86_400));
         assert_eq!(KeepOffline::All.since(NOW), None);
         // 31 March 2026 12:00 UTC, a month back: 28 February.
-        let march = DateTime { date: mailcraft_time::Date::new(2026, 3, 31).unwrap(), hour: 12, minute: 0, second: 0 }.to_timestamp(0);
-        let feb = DateTime { date: mailcraft_time::Date::new(2026, 2, 28).unwrap(), hour: 12, minute: 0, second: 0 }.to_timestamp(0);
+        let march = DateTime { date: mailsolutions_time::Date::new(2026, 3, 31).unwrap(), hour: 12, minute: 0, second: 0 }.to_timestamp(0);
+        let feb = DateTime { date: mailsolutions_time::Date::new(2026, 2, 28).unwrap(), hour: 12, minute: 0, second: 0 }.to_timestamp(0);
         assert_eq!(KeepOffline::Month1.since(march), Some(feb));
         assert!(KeepOffline::Years10.since(NOW).unwrap() < KeepOffline::Years5.since(NOW).unwrap());
     }

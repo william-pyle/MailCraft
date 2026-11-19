@@ -5,11 +5,11 @@
 //! event is made, changed, answered and deleted by the `calendar.*` commands through `execute`.
 //! What a server or an invitation wrote is cut to size and every list is held to a count.
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::calendar::current_calendar;
-use mailcraft_engine::cmd::calendar::occurrences;
-use mailcraft_model::{Event, Recurrence};
-use mailcraft_time::Weekday;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::calendar::current_calendar;
+use mailsolutions_engine::cmd::calendar::occurrences;
+use mailsolutions_model::{Event, Recurrence};
+use mailsolutions_time::Weekday;
 
 use crate::queries::{address, bad, code, my_answer, rgb};
 use crate::records::{AttendeeRecord, CalendarList, CalendarRecord, EventDetail, EventOccurrence, RecurrenceRecord};

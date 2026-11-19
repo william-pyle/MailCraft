@@ -10,10 +10,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use mailcraft_model::{Mailbox, Message};
-use mailcraft_pst::test_writer::{self as w, AttachSpec, FileSpec, FolderSpec, Layout, MessageSpec};
-use mailcraft_pst::{Encryption, Format, PS_PUBLIC_STRINGS};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::{Mailbox, Message};
+use mailsolutions_pst::test_writer::{self as w, AttachSpec, FileSpec, FolderSpec, Layout, MessageSpec};
+use mailsolutions_pst::{Encryption, Format, PS_PUBLIC_STRINGS};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use serde_json::{Value as Json, json};
 
 use crate::import_pst::{MEMORY_BUDGET, Staged, run_staged};
@@ -25,7 +25,7 @@ pub(crate) struct Temp(pub(crate) PathBuf);
 
 impl Temp {
     pub(crate) fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-pstmem-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-pstmem-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -239,7 +239,7 @@ fn a_batch_taken_out_again_leaves_the_file_consistent() {
         let outcome = crate::import_pst::read(
             std::io::Cursor::new(std::fs::read(&pst).unwrap()),
             &crate::import_pst::job(&s, &pst, None, false, &json!({})).unwrap().0,
-            mailcraft_pst::Limits::default(),
+            mailsolutions_pst::Limits::default(),
             &crate::import_pst::Progress::default(),
             &mut |b| {
                 batches.push(b);

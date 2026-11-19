@@ -3,7 +3,7 @@
 //! A /query filter that is not one RFC 8620 §5.5 and RFC 8621 allow is an error when read, never a filter
 //! that matches more than was asked (an empty condition matches everything).
 
-use mailcraft_jmap_types::{EmailQueryRequest, Filter, MailboxQueryRequest, QueryRequest};
+use mailsolutions_jmap_types::{EmailQueryRequest, Filter, MailboxQueryRequest, QueryRequest};
 use serde_json::{Value, json};
 
 fn email_query(filter: Value) -> Result<EmailQueryRequest, serde_json::Error> {

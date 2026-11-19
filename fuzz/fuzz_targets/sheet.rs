@@ -8,17 +8,17 @@
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let text = String::from_utf8_lossy(data);
-    let rules = mailcraft_html::style_sheet_rules(&text);
-    assert!(rules <= mailcraft_html::MAX_SHEET_RULES);
+    let rules = mailsolutions_html::style_sheet_rules(&text);
+    assert!(rules <= mailsolutions_html::MAX_SHEET_RULES);
     let html = format!("<style>{text}</style><div id=a class='b c' data-x=y><p class=b>x</p><span>y</span><p>z</p></div>");
-    let _ = mailcraft_html::parse(&html);
-    let _ = mailcraft_html::to_text(&html);
-    let _ = mailcraft_html::quotable(&html);
+    let _ = mailsolutions_html::parse(&html);
+    let _ = mailsolutions_html::to_text(&html);
+    let _ = mailsolutions_html::quotable(&html);
     // The same bytes as a whole message: their tags are the elements the rules meet.
-    let _ = mailcraft_html::parse(&text);
+    let _ = mailsolutions_html::parse(&text);
     let sheeted = format!("<style>*,div,p,.b,#a,[data-x],:not(.q),:nth-child(2n+1),p~span,div>p{{color:red;display:none}}</style>{text}");
-    let _ = mailcraft_html::parse(&sheeted);
-    let _ = mailcraft_html::quotable(&sheeted);
+    let _ = mailsolutions_html::parse(&sheeted);
+    let _ = mailsolutions_html::quotable(&sheeted);
     // The same bytes as media queries and as media blocks, nested, for panes of every width and
     // both themes, and the text the sender hid.
     let media = format!(
@@ -27,11 +27,11 @@ libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     );
     for width in [0.0, 320.0, 481.0, 600.0, 601.0, 1280.0, f32::NAN] {
         for dark in [false, true] {
-            let read = mailcraft_html::parse_in(&media, &mailcraft_html::Env::for_pane(width, dark));
-            assert!(read.blocks.len() <= mailcraft_html::MAX_BLOCKS + 2);
+            let read = mailsolutions_html::parse_in(&media, &mailsolutions_html::Env::for_pane(width, dark));
+            assert!(read.blocks.len() <= mailsolutions_html::MAX_BLOCKS + 2);
         }
     }
-    let (_, hidden) = mailcraft_html::text_and_hidden(&sheeted);
-    assert!(hidden.len() <= mailcraft_html::MAX_HIDDEN_TEXT);
-    let _ = mailcraft_html::media_lists(&media);
+    let (_, hidden) = mailsolutions_html::text_and_hidden(&sheeted);
+    assert!(hidden.len() <= mailsolutions_html::MAX_HIDDEN_TEXT);
+    let _ = mailsolutions_html::media_lists(&media);
 });

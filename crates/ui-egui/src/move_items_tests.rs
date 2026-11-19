@@ -7,8 +7,8 @@
 use egui::accesskit::Role;
 use egui::vec2;
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
-use mailcraft_engine::Session;
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use crate::dialogs::{Dialog, input_dialog};
@@ -22,7 +22,7 @@ const MOCKUPS: &str = "Homepage mockups, round three";
 type Window = egui_kittest::Harness<'static, MailApp>;
 
 fn window() -> Window {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     let mut harness = egui_kittest::Harness::builder()
@@ -86,7 +86,7 @@ fn the_move_key_asks_for_the_folder() {
     press(&mut harness, egui::Key::V);
     assert_eq!(dialog(&harness), Some("moveItems"));
     assert!(harness.query_by_label_contains("Move the selected items to the folder:").is_some());
-    if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+    if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
         for theme in ["light", "dark"] {
             harness.state_mut().execute("ui.theme", json!({"value": theme})).unwrap();
             harness.run_steps(3);
@@ -278,7 +278,7 @@ fn the_folders_are_listed_as_home_move_lists_them() {
     }
     let dialog = crate::move_items::MoveItems::open(harness.state(), false).unwrap();
     let mb = &harness.state().session.mailbox;
-    fn walk(mb: &mailcraft_model::Mailbox, account: Id, parent: Option<Id>, depth: usize, out: &mut Vec<(Id, usize, String)>) {
+    fn walk(mb: &mailsolutions_model::Mailbox, account: Id, parent: Option<Id>, depth: usize, out: &mut Vec<(Id, usize, String)>) {
         for f in mb.children(account, parent) {
             out.push((f.id, depth, crate::nav::folder_path(mb, f.id)));
             walk(mb, account, Some(f.id), depth + 1, out);

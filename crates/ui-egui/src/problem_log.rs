@@ -9,8 +9,8 @@
 //! takes quoted text, addresses, links and ids out of every line as it is written
 //! (`diagnostics::scrub`), and the copied report takes out hosts and paths too.
 
-use mailcraft_i18n::{Arg, Text};
-use mailcraft_model::Id;
+use mailsolutions_i18n::{Arg, Text};
+use mailsolutions_model::Id;
 
 /// New texts of one run put in the log at most (a run is one job's answers together).
 pub(crate) const MAX_LOGGED: usize = 20;

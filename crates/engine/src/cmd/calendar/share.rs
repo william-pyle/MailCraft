@@ -11,10 +11,10 @@
 //! own calendars alone (never of a calendar somebody shared with them), and names nobody who is
 //! invited. Tracking says what is already known here of the answers; it asks no server.
 
-use mailcraft_i18n::date::Dated;
-use mailcraft_model::search::Query;
-use mailcraft_model::{Address, Body, Event, Id, Message, Response, ShowAs};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_i18n::date::Dated;
+use mailsolutions_model::search::Query;
+use mailsolutions_model::{Address, Body, Event, Id, Message, Response, ShowAs};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use super::{bad, fail, needs_event, remote, target};
@@ -123,7 +123,7 @@ pub struct Summary {
 /// Text from an appointment, for one line of a message: no control or format characters, and
 /// not too long.
 fn one_line(text: &str, max: usize) -> String {
-    mailcraft_names::shown(text, max)
+    mailsolutions_names::shown(text, max)
 }
 
 /// The notes of an appointment, for a few lines of a message.
@@ -132,8 +132,8 @@ fn notes_of(text: &str) -> String {
 }
 
 fn day_said(w: Dated, d: Date) -> String {
-    let day = mailcraft_i18n::date::Day { year: d.year, month: d.month, day: d.day, weekday: d.weekday().index() };
-    mailcraft_i18n::date::long(&w, day)
+    let day = mailsolutions_i18n::date::Day { year: d.year, month: d.month, day: d.day, weekday: d.weekday().index() };
+    mailsolutions_i18n::date::long(&w, day)
 }
 
 /// The owner's own calendars that a summary is of: the one `calendar` names (refused when it is
@@ -168,7 +168,7 @@ impl Summary {
         };
         let (shown, name) = calendars(s, v)?;
         let here = remote::offset_of(s);
-        let mut occurrences: Vec<(mailcraft_model::Occurrence, &Event)> = s
+        let mut occurrences: Vec<(mailsolutions_model::Occurrence, &Event)> = s
             .mailbox
             .events
             .values()
@@ -207,7 +207,7 @@ impl Summary {
         let lang = s.interface_language;
         let w = s.dated();
         let twelve = s.prefs.twelve_hour;
-        let clock = |at: DateTime| mailcraft_i18n::date::time(&w, at.hour, at.minute, twelve);
+        let clock = |at: DateTime| mailsolutions_i18n::date::time(&w, at.hour, at.minute, twelve);
         let mut out = String::new();
         out.push_str(&self.subject(w));
         out.push('\n');
@@ -265,7 +265,7 @@ impl Summary {
             .enumerate()
             .map(|(n, item)| Event {
                 id: n as Id + 1,
-                uid: format!("mailcraft-shared-{}-{}@mailcraft.local", item.start.iso().replace([':', '-'], ""), n + 1),
+                uid: format!("mailsolutions-shared-{}-{}@mailsolutions.local", item.start.iso().replace([':', '-'], ""), n + 1),
                 title: if item.title.is_empty() { item.show_as.label().to_string() } else { item.title.clone() },
                 location: item.location.clone(),
                 description: item.notes.clone(),
@@ -277,8 +277,8 @@ impl Summary {
             })
             .collect();
         let refs: Vec<&Event> = events.iter().collect();
-        let opts = mailcraft_ical::WriteOptions { method: "PUBLISH".into(), now: s.now() };
-        mailcraft_ical::write_in(&refs, &[], &opts, Some(s.zone()))
+        let opts = mailsolutions_ical::WriteOptions { method: "PUBLISH".into(), now: s.now() };
+        mailsolutions_ical::write_in(&refs, &[], &opts, Some(s.zone()))
     }
 
     pub fn detail(&self) -> Detail {
@@ -436,7 +436,7 @@ fn tracking(s: &mut Session, v: &Value) -> CmdResult {
 /// An appointment as a message, for the search box's language to read: its title the subject,
 /// its organizer the sender, who is invited the recipients (optional ones on Cc), where it is and
 /// its notes the text, and the day it starts the day it came.
-fn as_message(e: &Event, at: mailcraft_time::Timestamp) -> Message {
+fn as_message(e: &Event, at: mailsolutions_time::Timestamp) -> Message {
     let (optional, required): (Vec<_>, Vec<_>) = e.attendees.iter().partition(|a| a.optional);
     Message {
         subject: e.title.clone(),

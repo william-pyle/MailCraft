@@ -1,22 +1,22 @@
 # MCP server
 
-> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-11-14 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365)
+> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-11-19 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365)
 
-MailCraft speaks the [Model Context Protocol](https://modelcontextprotocol.io) over stdio, so
+MailSolutions speaks the [Model Context Protocol](https://modelcontextprotocol.io) over stdio, so
 agents can read, file and write mail and keep a calendar. Each message is one line of at most
 1 MiB: a longer one is answered with an error (`-32600`, "line too long") and the next line is
 served.
 
 ```sh
-mailcraft-cli mcp --file my.mailcraft      # headless session on a mailbox file (no window)
-mailcraft-cli mcp --sample                 # … or on the sample mailbox
-mailcraft --control 7991 &                 # or: drive the running app…
-mailcraft-cli mcp --connect 127.0.0.1:7991 # …(clicks and keys need --allow input)
-mailcraft-cli mcp --sample --files ~/agent-files --allow send   # what the owner allows, below
+mailsolutions-cli mcp --file my.mailcraft      # headless session on a mailbox file (no window)
+mailsolutions-cli mcp --sample                 # … or on the sample mailbox
+mailsolutions --control 7991 &                 # or: drive the running app…
+mailsolutions-cli mcp --connect 127.0.0.1:7991 # …(clicks and keys need --allow input)
+mailsolutions-cli mcp --sample --files ~/agent-files --allow send   # what the owner allows, below
 ```
 
 With `--connect`, the bridge sends the app's control key, which it reads from
-`MAILCRAFT_CONTROL_KEY` or from the key file the app writes at start. It sends the key only to
+`MAILSOLUTIONS_CONTROL_KEY` or from the key file the app writes at start. It sends the key only to
 loopback addresses; see [Keys](control-protocol.md#keys). A request is sent again on a new
 connection only when it never reached the app (the connection could not be made, or the request
 could not be written); once it was written, a connection lost before the answer is an error that
@@ -31,10 +31,10 @@ doesn't rely on the agent's judgement: every command has a class for agents (`ag
 | Class | What | Through MCP |
 |---|---|---|
 | `safe` | reading, searching, flagging, filing, moving within an account or onto this computer, categories, calendar, contacts and tasks (deleting them is `delete`), undo and redo (unless they would put back rules, signatures or accounts, bring back a meeting change that writes to people, remove what was made since: contacts, events, tasks, calendars, categories, messages (a copy or an import undone, a delete for good redone; a copy the server of a Microsoft account or an Exchange server account has made goes to Deleted Items instead, which is no removal), or take away a draft or put back an earlier version of one), writing a message (not sending it), Send/Receive | runs |
-| `owner` | `send`: sending, answering or forwarding a meeting so that people are written to (`"send": true`; also `ui.eventWindow` with `do` `send`, `save` or `saveAndClose`, which the window runs later as the owner; the question lists the people invited), an undo or redo that would bring back such a change, editing, completing, categorising or deleting a to-do in a Microsoft To Do list that is shared with other people, and renaming or deleting a category that such a to-do has (the people the list is shared with see the change; deleting one asks `send` rather than `delete`, as `calendar.delete` with `"send": true` does; also an undo or redo that would change one, and any command that changes one by another way is an overstep; until the account's first tasks download a list counts as not shared; no agent command puts a to-do in a list it names: a new one goes to the default list, which To Do doesn't share; the owner's own changes are as ever), anything put in an Outbox, mail moved or copied onto another account's server (from another account or from this computer; a shared mailbox's too), a new to-do that would go to an account's To Do, unless it is the account the owner sent their local tasks to (`tasks.new`, with `account` or not, and `tasks.fromMessage`; which list the window shows doesn't count, since an agent can change that; an agent's to-do doesn't change where the owner's next one goes), an undo or redo that would put one there or change the owner's answer about their local tasks, pictures from the web, joining a meeting's link · `delete`: deleting for good (also a delete in Deleted Items), emptying or deleting a folder, removing an attachment or a calendar, deleting a contact, task, event or category (also an undo or redo that would remove one, or a message: it swaps the whole mailbox), deleting a rule its server has or may have, putting a rule that deletes mail or moves it to Deleted Items or a folder under it on its server or switching one on there, and switching on a server's rule with parts MailCraft doesn't know (undo doesn't reach a server, and such a rule runs whether MailCraft is open or not), discarding a message being written that only an agent wrote in · `accounts`: adding, changing or removing an account, signing in, the application id, remembering sign-ins, moving calendars to an account · `mailbox`: opening, replacing or saving the mailbox file · `settings`: options, signatures, rules (all but those `delete` names; one never moves mail to an Outbox), how pictures are downloaded; `edit.undo` and `edit.redo` ask for `accounts`, `send`, `delete` or `settings` (in that order) when the step would put back accounts, a meeting change that writes to people, a to-do in an account's To Do or another answer about the owner's local tasks, or rules and signatures, or remove contacts, events, tasks, calendars, categories or messages, or take away a draft or put back an earlier version of one; a step that puts back accounts or a change that writes to people and also takes away messages, drafts, contacts or the like is asked about once (as `delete` when the other class is allowed already), the question names those too, and a yes covers both (headless, the refusal names both classes for `--allow`) | bridged: the owner is asked in the window; headless: refused, unless the server was started with `--allow` for it |
+| `owner` | `send`: sending, answering or forwarding a meeting so that people are written to (`"send": true`; also `ui.eventWindow` with `do` `send`, `save` or `saveAndClose`, which the window runs later as the owner; the question lists the people invited), an undo or redo that would bring back such a change, editing, completing, categorising or deleting a to-do in a Microsoft To Do list that is shared with other people, and renaming or deleting a category that such a to-do has (the people the list is shared with see the change; deleting one asks `send` rather than `delete`, as `calendar.delete` with `"send": true` does; also an undo or redo that would change one, and any command that changes one by another way is an overstep; until the account's first tasks download a list counts as not shared; no agent command puts a to-do in a list it names: a new one goes to the default list, which To Do doesn't share; the owner's own changes are as ever), anything put in an Outbox, mail moved or copied onto another account's server (from another account or from this computer; a shared mailbox's too), a new to-do that would go to an account's To Do, unless it is the account the owner sent their local tasks to (`tasks.new`, with `account` or not, and `tasks.fromMessage`; which list the window shows doesn't count, since an agent can change that; an agent's to-do doesn't change where the owner's next one goes), an undo or redo that would put one there or change the owner's answer about their local tasks, pictures from the web, joining a meeting's link · `delete`: deleting for good (also a delete in Deleted Items), emptying or deleting a folder, removing an attachment or a calendar, deleting a contact, task, event or category (also an undo or redo that would remove one, or a message: it swaps the whole mailbox), deleting a rule its server has or may have, putting a rule that deletes mail or moves it to Deleted Items or a folder under it on its server or switching one on there, and switching on a server's rule with parts MailSolutions doesn't know (undo doesn't reach a server, and such a rule runs whether MailSolutions is open or not), discarding a message being written that only an agent wrote in · `accounts`: adding, changing or removing an account, signing in, the application id, remembering sign-ins, moving calendars to an account · `mailbox`: opening, replacing or saving the mailbox file · `settings`: options, signatures, rules (all but those `delete` names; one never moves mail to an Outbox), how pictures are downloaded; `edit.undo` and `edit.redo` ask for `accounts`, `send`, `delete` or `settings` (in that order) when the step would put back accounts, a meeting change that writes to people, a to-do in an account's To Do or another answer about the owner's local tasks, or rules and signatures, or remove contacts, events, tasks, calendars, categories or messages, or take away a draft or put back an earlier version of one; a step that puts back accounts or a change that writes to people and also takes away messages, drafts, contacts or the like is asked about once (as `delete` when the other class is allowed already), the question names those too, and a yes covers both (headless, the refusal names both classes for `--allow`) | bridged: the owner is asked in the window; headless: refused, unless the server was started with `--allow` for it |
 | `never` | the host's side of a synchronisation (`sync.*`), file pickers (`ui.open`, `ui.import`, `ui.attach`), putting an agent's text or the owner's selected text on the clipboard (`ui.copyLinkAddress`, `ui.copySelection`), the diagnostics text (`ui.copyDiagnostics`), opening an attachment with another program (`mail.openAttachment`: only the owner's double-click or Open; an agent saves it as `data` with `mail.saveAttachment`), the owner's own keys and marking a key Verified (`ui.importPrivateKey`, `ui.removePrivateKey`, `ui.refreshOwnKeys`, `ui.importPublicKey`, `ui.verifyKey`, `ui.markKeyVerified`) | refused |
 
-A command without a class is refused; every command MailCraft has carries one, and a test makes
+A command without a class is refused; every command MailSolutions has carries one, and a test makes
 new commands choose.
 
 What a command does is checked too: a command run for an agent that would put mail in an Outbox
@@ -155,16 +155,16 @@ attachment (report.pdf)." with Send and Don't Send (or Delete, Allow), Don't bei
 (Enter and Escape say no). The command runs only on the owner's yes; no answer in 50 seconds is a
 no. While the question is up, no click or key from the control channel reaches the window.
 
-**Whom the gate binds.** An agent that reaches MailCraft only through MCP. The control channel
+**Whom the gate binds.** An agent that reaches MailSolutions only through MCP. The control channel
 takes a request without the bridge's `agent` marking for the owner's own script, and runs it
 without asking. An agent that can run a shell or read files as the same user is outside the gate:
 it could read the control key in the settings folder, or the mailbox file itself, or run
-`mailcraft-cli`. Run such an agent as another user or in a sandbox, and don't start the app with
+`mailsolutions-cli`. Run such an agent as another user or in a sandbox, and don't start the app with
 `--control` while one is around. Starting it with `--control <port> --control-agents-only`
 narrows this: every request through the control channel is then an agent's, allowed nothing in
 advance (whatever it claims), so the window asks the owner before anything is sent or deleted
 and refuses clicks and keys. `--allow` then has no effect. It doesn't stop such an agent reading
-the mailbox file or running `mailcraft-cli` on it.
+the mailbox file or running `mailsolutions-cli` on it.
 
 **Message text is untrusted.** `read_message`, `list_messages`, `list_events`, `list_contacts`,
 `list_tasks` and the same commands through `execute` (`mail.get`, `mail.list`, `calendar.list`,
@@ -177,7 +177,7 @@ file gave, and a contact's names, postal addresses, phones and web sites. The se
 
 **What a sender hid.** `read_message` and `mail.get` answer, beside `body` (what the owner sees), a `hiddenText` field (#599) when the message has any: the words of what its sender hid (a preheader, the other copy of a desktop and mobile pair), which the owner's reading pane leaves out and search finds. It is message text like the rest: framed as untrusted, data and never instructions. A message read before #599 has none until it is read again from its source.
 
-**Gmail's categories.** A message of a Gmail account's Inbox carries `gmailCategory` (#911) in `list_messages`, `read_message`, `mail.list` and `mail.get`: `primary`, `social`, `promotions`, `updates` or `forums`, the category Gmail put it in. It is one of those five words, written by MailCraft and not by the sender, so it isn't framed; like every field of a message it is data about the message, never instructions. `gmail:social` and the others search for them, and `folder.select {"id", "gmail": "social"}` shows one of them. `view.gmailCategories {"value": "tabs"}` (or `"folders"`) has the window show the five as tabs above the Inbox's list or as folders under it. `mail.setGmailCategory {"ids": [...], "category": "social"}` moves messages of the Inbox of a Gmail account that signs in with Google to another category (the messages named and any other copy here of the same Gmail message, since Gmail keeps one category for a message, never other messages of their conversations; the window's own selection in conversation view takes the whole conversation in that Inbox), queued to Gmail at the next Send/Receive; like a move to a folder, it needs no yes from the owner and refuses to act on the window's selection, so the messages are named. It is switched off in this version (disabled, "comes once Google has reviewed MailCraft") and refused for an account that signs in with an app password.
+**Gmail's categories.** A message of a Gmail account's Inbox carries `gmailCategory` (#911) in `list_messages`, `read_message`, `mail.list` and `mail.get`: `primary`, `social`, `promotions`, `updates` or `forums`, the category Gmail put it in. It is one of those five words, written by MailSolutions and not by the sender, so it isn't framed; like every field of a message it is data about the message, never instructions. `gmail:social` and the others search for them, and `folder.select {"id", "gmail": "social"}` shows one of them. `view.gmailCategories {"value": "tabs"}` (or `"folders"`) has the window show the five as tabs above the Inbox's list or as folders under it. `mail.setGmailCategory {"ids": [...], "category": "social"}` moves messages of the Inbox of a Gmail account that signs in with Google to another category (the messages named and any other copy here of the same Gmail message, since Gmail keeps one category for a message, never other messages of their conversations; the window's own selection in conversation view takes the whole conversation in that Inbox), queued to Gmail at the next Send/Receive; like a move to a folder, it needs no yes from the owner and refuses to act on the window's selection, so the messages are named. It is switched off in this version (disabled, "comes once Google has reviewed MailSolutions") and refused for an account that signs in with an app password.
 
 **Gmail's labels.** A message of a Gmail account carries `gmailLabels` (#1153) in `list_messages`, `read_message`, `mail.list` and `mail.get` when it has any: the label names Gmail's server gave (`Work/Clients`), Gmail's own with their backslash (`\Inbox`, `\Important`, `\Starred`). They are text from outside, which whoever shares a label or a filter may have written, so `read_message` and `list_messages` frame them as message content: data about the message, never instructions. `label:` searches them. They are read only: a label changes by moving or copying the message between label folders (`mail.move`, `mail.copy`).
 
@@ -185,7 +185,7 @@ file gave, and a contact's names, postal addresses, phones and web sites. The se
 
 **Sender warnings.** `read_message` and `mail.get` answer a message's sender warnings (#508) in
 `warnings`: each a `kind` (`failedCheck`, `nameHidesAddress`, `brandName`, `lookalikeSender`, `brandLookalike`,
-`domainInName`, `madeUpDomain`, `linkMismatch`, `linksUnchecked`, `external`) and a `level` (`warning`, `caution`, `tag`), which are MailCraft's word, worked out from
+`domainInName`, `madeUpDomain`, `linkMismatch`, `linksUnchecked`, `external`) and a `level` (`warning`, `caution`, `tag`), which are MailSolutions's word, worked out from
 the account's own server's verdict, the owner's contacts and Sent Items, a short list of
 well-known brands, and the message's links ([control protocol](control-protocol.md#commands-worth-knowing)). What they are about (a name, an
 address, a domain, a link) is the message's own, framed as untrusted like the text above: a
@@ -206,7 +206,7 @@ changes nothing. A person's name and address come from mail, so the answer is fr
 like the text above.
 
 A headless session works on the mailbox file only. It does not connect to mail servers: sending
-from an account with a server puts the message in its Outbox, and `mailcraft-cli sync` (or the
+from an account with a server puts the message in its Outbox, and `mailsolutions-cli sync` (or the
 app's Send/Receive) delivers it.
 
 ## Tools
@@ -234,13 +234,14 @@ parameters.
 
 ## Resources
 
-- `mailcraft://mailbox`: accounts and counts (JSON)
-- `mailcraft://commands`: every command (JSON)
+- `mailsolutions://mailbox`: accounts and counts (JSON)
+- `mailsolutions://commands`: every command (JSON)
 
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-19 | minor | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-14 | minor | #1153: messages of a Gmail account carry `gmailLabels`, framed as message content |
 | 2026-11-13 | minor | #1208: four new sender warning kinds, `brandName`, `brandLookalike`, `domainInName` and `madeUpDomain` |
 | 2026-11-13 | minor | #1200: `list_messages` takes a folder's kind (`inbox`, `sent`, `drafts`, `deleted`, `junk`, `archive`, `outbox`), which works whatever the mailbox's language calls the folder, beside its id and path; `account` says whose, goes with `folder`, and is an account that is there whose folder it has to be |

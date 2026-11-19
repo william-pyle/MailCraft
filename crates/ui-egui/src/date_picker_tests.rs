@@ -7,7 +7,7 @@ use egui::accesskit::Role;
 use egui::{Id, Key};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{By, NodeT as _, Queryable as _};
-use mailcraft_time::{Date, Weekday};
+use mailsolutions_time::{Date, Weekday};
 
 use super::{Calendar, Picked, moved};
 

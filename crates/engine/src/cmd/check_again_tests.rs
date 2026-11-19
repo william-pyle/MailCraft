@@ -4,8 +4,8 @@
 //! marked to have them downloaded again, by its UID (IMAP) or fetched whole again (Microsoft
 //! Graph, Exchange servers, JMAP), and keeps them once they come. Synthetic messages only.
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{AccountKind, Id, Mailbox};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{AccountKind, Id, Mailbox};
 use serde_json::json;
 
 use crate::Session;
@@ -24,7 +24,7 @@ fn read_before(kind: AccountKind, bytes: &[u8]) -> (Session, Id) {
     let mut mb = Mailbox::with_local_account("Avery", "avery@example.org");
     mb.accounts[0].kind = kind;
     let inbox = mb.inbox().unwrap();
-    let mut m = mailcraft_mime_model::parse(bytes);
+    let mut m = mailsolutions_mime_model::parse(bytes);
     m.folder = inbox;
     match kind {
         AccountKind::Imap => m.uid = 7,
@@ -48,7 +48,7 @@ fn an_imap_message_is_asked_for_again_by_its_uid_and_keeps_its_original() {
     assert!(s.mailbox.message(id).unwrap().refetch);
     assert_eq!(imap_again::wanted(&s.mailbox, account, s.now()).get(&folder).map(Vec::as_slice), Some(&[7u32][..]));
     // What the server gives again is taken in: the bytes it came as, and the mark goes.
-    imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+    imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
     let m = s.mailbox.message(id).unwrap();
     assert_eq!(m.original_bytes(), Some(SIGNED));
     assert!(!m.refetch && m.subject == "Signed");
@@ -109,7 +109,7 @@ fn other_mail_and_mail_no_server_has_are_refused() {
 #[test]
 fn removing_an_attachment_lets_the_original_go() {
     let mut mb = Mailbox::with_local_account("Avery", "avery@example.org");
-    let mut m = mailcraft_mime_model::parse_fetched(SIGNED);
+    let mut m = mailsolutions_mime_model::parse_fetched(SIGNED);
     m.folder = mb.inbox().unwrap();
     let id = mb.add_message(m).unwrap();
     let mut s = Session::new(mb);
@@ -118,7 +118,7 @@ fn removing_an_attachment_lets_the_original_go() {
     let m = s.mailbox.message(id).unwrap();
     assert!(m.original.is_none() && m.attachments.is_empty());
     // Written whole now, it is built from what is left: the file doesn't come back.
-    let written = mailcraft_mime_model::write(m, &Default::default());
+    let written = mailsolutions_mime_model::write(m, &Default::default());
     assert!(!String::from_utf8_lossy(&written).contains("smime.p7s"));
 }
 
@@ -136,7 +136,7 @@ fn what_check_again_brings_is_taken_for_the_original_alone() {
         // Asked for once: a second Check again waits for the first.
         assert!(s.run("mail.checkAgain", &json!({"id": id})).is_err(), "{kind:?}");
         if kind == AccountKind::Imap {
-            imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(&other));
+            imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(&other));
         } else {
             let mut index = Default::default();
             assert!(graph_down::take_fetched(&mut s.mailbox, &mut index, before.account, "AAkA1", &other), "{kind:?}");
@@ -161,14 +161,14 @@ fn a_message_a_part_was_removed_from_is_never_checked_again() {
         assert!(!s.enabled("mail.checkAgain"), "{kind:?}");
         assert!(s.run("mail.checkAgain", &json!({"id": id})).is_err(), "{kind:?}");
         // Nor does a download of it again for another reason (#650) bring the original back.
-        imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+        imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
         assert!(s.mailbox.message(id).unwrap().original.is_none(), "{kind:?}");
     }
     // The mark is kept with the mailbox.
     let (mut s, id) = read_before(AccountKind::Imap, SIGNED);
     s.run("mail.removeAttachment", &json!({"id": id, "index": 0})).unwrap();
     let json = serde_json::to_string(s.mailbox.message(id).unwrap()).unwrap();
-    let back: mailcraft_model::Message = serde_json::from_str(&json).unwrap();
+    let back: mailsolutions_model::Message = serde_json::from_str(&json).unwrap();
     assert!(back.parts_removed);
 }
 
@@ -177,15 +177,15 @@ fn past_the_mailboxs_cap_an_original_isnt_kept_and_can_be_checked_again_later() 
     let (mut s, id) = read_before(AccountKind::Imap, SIGNED);
     // Another message names a whole cap's worth of originals.
     let folder = s.mailbox.message(id).unwrap().folder;
-    let full = mailcraft_model::ContentRef { sha256: [7; 32], len: mailcraft_model::MAX_ORIGINALS };
-    let original = Some(mailcraft_model::Original { data: std::sync::Arc::default(), kept: Some(full) });
-    let other = s.mailbox.add_message(mailcraft_model::Message { folder, original, ..Default::default() }).unwrap();
+    let full = mailsolutions_model::ContentRef { sha256: [7; 32], len: mailsolutions_model::MAX_ORIGINALS };
+    let original = Some(mailsolutions_model::Original { data: std::sync::Arc::default(), kept: Some(full) });
+    let other = s.mailbox.add_message(mailsolutions_model::Message { folder, original, ..Default::default() }).unwrap();
     assert!(s.mailbox.message(other).unwrap().has_original());
     s.run("mail.checkAgain", &json!({"id": id})).unwrap();
-    imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+    imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
     assert!(s.mailbox.message(id).unwrap().original.is_none());
     // Coming in new, too.
-    let mut read = mailcraft_mime_model::parse_fetched(SIGNED);
+    let mut read = mailsolutions_mime_model::parse_fetched(SIGNED);
     read.folder = folder;
     let new = s.mailbox.add_message(read).unwrap();
     assert!(s.mailbox.message(new).unwrap().original.is_none());
@@ -193,14 +193,14 @@ fn past_the_mailboxs_cap_an_original_isnt_kept_and_can_be_checked_again_later() 
     s.mailbox.message_mut(other).unwrap().original = None;
     assert!(s.enabled("mail.checkAgain"));
     s.run("mail.checkAgain", &json!({"id": id})).unwrap();
-    imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+    imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
     assert_eq!(s.mailbox.message(id).unwrap().original_bytes(), Some(SIGNED));
 }
 
 #[test]
 fn the_size_of_a_message_counts_its_original() {
-    let m = mailcraft_mime_model::parse_fetched(SIGNED);
-    let without = mailcraft_model::Message { original: None, ..m.clone() };
+    let m = mailsolutions_mime_model::parse_fetched(SIGNED);
+    let without = mailsolutions_model::Message { original: None, ..m.clone() };
     assert_eq!(m.size(), without.size() + SIGNED.len() as u64);
 }
 
@@ -234,15 +234,15 @@ fn a_message_not_downloaded_yet_isnt_checked_again() {
 #[test]
 fn an_original_taken_again_counts_only_what_it_adds() {
     let (mut s, id) = read_before(AccountKind::Imap, SIGNED);
-    s.mailbox.message_mut(id).unwrap().original = mailcraft_model::Original::new(SIGNED.to_vec());
+    s.mailbox.message_mut(id).unwrap().original = mailsolutions_model::Original::new(SIGNED.to_vec());
     let folder = s.mailbox.message(id).unwrap().folder;
-    let rest = mailcraft_model::ContentRef { sha256: [7; 32], len: mailcraft_model::MAX_ORIGINALS - SIGNED.len() as u64 };
-    let original = Some(mailcraft_model::Original { data: std::sync::Arc::default(), kept: Some(rest) });
-    s.mailbox.add_message(mailcraft_model::Message { folder, original, ..Default::default() }).unwrap();
+    let rest = mailsolutions_model::ContentRef { sha256: [7; 32], len: mailsolutions_model::MAX_ORIGINALS - SIGNED.len() as u64 };
+    let original = Some(mailsolutions_model::Original { data: std::sync::Arc::default(), kept: Some(rest) });
+    s.mailbox.add_message(mailsolutions_model::Message { folder, original, ..Default::default() }).unwrap();
     assert!(!s.mailbox.room_for_original(1));
     // Downloaded again (#650), the same bytes come: the mailbox holds no more than before.
     s.mailbox.message_mut(id).unwrap().refetch = true;
-    imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+    imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
     assert_eq!(s.mailbox.message(id).unwrap().original_bytes(), Some(SIGNED));
 }
 
@@ -254,7 +254,7 @@ fn a_whole_download_again_takes_the_files_and_the_original_together() {
     let (mut s, id) = read_before(AccountKind::Imap, SIGNED);
     s.run("mail.removeAttachment", &json!({"id": id, "index": 0})).unwrap();
     s.mailbox.message_mut(id).unwrap().refetch = true;
-    imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+    imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
     let m = s.mailbox.message(id).unwrap();
     assert!(m.original.is_none() && m.attachments.is_empty() && m.parts_removed);
 
@@ -277,7 +277,7 @@ const UNPROTECTED: &[u8] =
 /// [`read_before`], the message keeping the bytes it came as.
 fn kept_whole(kind: AccountKind) -> (Session, Id) {
     let (mut s, id) = read_before(kind, SIGNED);
-    s.mailbox.message_mut(id).unwrap().original = mailcraft_model::Original::new(SIGNED.to_vec());
+    s.mailbox.message_mut(id).unwrap().original = mailsolutions_model::Original::new(SIGNED.to_vec());
     (s, id)
 }
 
@@ -289,7 +289,7 @@ fn a_download_without_an_original_keeps_the_one_here() {
         let (mut s, id) = kept_whole(AccountKind::Imap);
         let m = s.mailbox.message_mut(id).unwrap();
         (m.refetch, m.original_wanted) = (true, wanted);
-        imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(UNPROTECTED));
+        imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(UNPROTECTED));
         assert_eq!(s.mailbox.message(id).unwrap().original_bytes(), Some(SIGNED), "IMAP, wanted {wanted}");
 
         let (mut s, id) = kept_whole(AccountKind::Microsoft);
@@ -314,10 +314,10 @@ fn a_message_whose_server_copy_isnt_protected_keeps_its_original() {
     let mut index = Default::default();
     assert!(graph_down::take_fetched(&mut s.mailbox, &mut index, account, "AAkA1", UNPROTECTED));
     let saved = s.run("file.exportMessage", &json!({"id": id})).unwrap();
-    let data = mailcraft_charset::base64::STANDARD.decode(saved["data"].as_str().unwrap()).unwrap();
+    let data = mailsolutions_charset::base64::STANDARD.decode(saved["data"].as_str().unwrap()).unwrap();
     let body = |b: &[u8]| b.windows(4).position(|w| w == b"\r\n\r\n").map(|at| b[at + 4..].to_vec()).unwrap();
     assert_eq!(body(&data), body(SIGNED));
-    let placed = mailcraft_mime_model::write_placed(&s.loaded_message(id).unwrap(), &Default::default(), "m");
+    let placed = mailsolutions_mime_model::write_placed(&s.loaded_message(id).unwrap(), &Default::default(), "m");
     assert_eq!(body(&placed), body(SIGNED));
 }
 
@@ -329,7 +329,7 @@ fn check_again_on_text_read_wrongly_takes_the_text_too() {
     s.mailbox.message_mut(id).unwrap().body.text = "Signed t\u{fffd}xt.".into();
     s.run("mail.checkAgain", &json!({"id": id})).unwrap();
     assert_eq!(imap_again::mark_unreadable(&mut s.mailbox), 0, "marked already");
-    imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+    imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
     let m = s.mailbox.message(id).unwrap();
     assert_eq!(m.original_bytes(), Some(SIGNED));
     assert_eq!(m.body.text.trim(), "Signed text.");
@@ -342,7 +342,7 @@ fn check_again_on_text_read_wrongly_takes_the_text_too() {
 fn check_again_on_text_read_wrongly_on_disk_takes_the_text_too() {
     let (mut s, id) = read_before(AccountKind::Imap, SIGNED);
     s.mailbox.message_mut(id).unwrap().body.text = format!("Signed t\u{fffd}xt. {}", "More. ".repeat(400));
-    let dir = std::env::temp_dir().join(format!("mailcraft-check-again-disk-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-check-again-disk-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("mailbox.mailcraft");
@@ -355,10 +355,10 @@ fn check_again_on_text_read_wrongly_on_disk_takes_the_text_too() {
     let m = s.mailbox.message(id).unwrap();
     assert!(m.refetch && !m.original_wanted);
     // Let go of again before the download comes.
-    let mut thin = mailcraft_model::Message::clone(m);
+    let mut thin = mailsolutions_model::Message::clone(m);
     thin.body.text = String::new();
     *s.mailbox.message_mut(id).unwrap() = thin;
-    imap_again::take_again(&mut s.mailbox, id, mailcraft_mime_model::parse_fetched(SIGNED));
+    imap_again::take_again(&mut s.mailbox, id, mailsolutions_mime_model::parse_fetched(SIGNED));
     let m = s.mailbox.message(id).unwrap();
     assert_eq!(m.original_bytes(), Some(SIGNED));
     assert_eq!(m.body.text.trim(), "Signed text.");

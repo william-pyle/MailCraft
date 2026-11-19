@@ -8,10 +8,10 @@ use std::collections::VecDeque;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::{Module, Session};
-use mailcraft_model::remote::{CalendarAsk, CalendarsDownload, EventsDownload, RemoteCalendar, RemoteEvent};
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{CalendarOwner, Id, Rights};
+use mailsolutions_engine::{Module, Session};
+use mailsolutions_model::remote::{CalendarAsk, CalendarsDownload, EventsDownload, RemoteCalendar, RemoteEvent};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{CalendarOwner, Id, Rights};
 use serde_json::json;
 
 use crate::shared_calendars::Permission;
@@ -30,13 +30,13 @@ type Answers = Arc<Mutex<VecDeque<GraphResult>>>;
 type SignIns = Arc<Mutex<Vec<(Id, bool, bool)>>>;
 
 fn tokens(access: &str, refresh: &str) -> Tokens {
-    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 /// A window with a Microsoft account signed in this session and a shared mailbox under it, the
 /// calendar in front, and hosts that note what they are asked.
 fn window(page: Result<Tokens, String>) -> (MailApp, Id, Id, Answers, Jobs, SignIns) {
-    let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
     app.autosave = false;
     let owner = app.execute("account.add", json!({"email": OWNER, "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     app.tokens.insert(owner, tokens("own-access", "ref-1"));
@@ -75,7 +75,7 @@ fn window(page: Result<Tokens, String>) -> (MailApp, Id, Id, Answers, Jobs, Sign
     (app, owner, shared, answers, jobs, sign_ins)
 }
 
-fn calendar_of(app: &MailApp, account: Id, name: &str) -> mailcraft_model::Calendar {
+fn calendar_of(app: &MailApp, account: Id, name: &str) -> mailsolutions_model::Calendar {
     app.session.mailbox.calendars.iter().find(|c| c.origin.account == account && c.name == name).cloned().unwrap_or_else(|| panic!("no {name}"))
 }
 
@@ -163,7 +163,7 @@ fn ticking_one_reads_the_list_and_what_is_ticked_with_the_owners_sign_in_and_not
     assert!(!app.graph_tokens.contains_key(&shared), "not mixed with the mail's");
     assert_eq!(app.session.driver.calendar.shared_perm.get(&shared), Some(&Permission::Given));
     // Nothing of it is a reminder; and a change to it is refused, so nothing waits to go.
-    assert!(mailcraft_engine::cmd::view::due_reminders(&app.session, app.session.local_now()).is_empty());
+    assert!(mailsolutions_engine::cmd::view::due_reminders(&app.session, app.session.local_now()).is_empty());
     let event = app.session.mailbox.events.values().find(|e| e.title == "Stand-up").map(|e| e.id).unwrap();
     assert!(app.execute("calendar.edit", json!({"id": event, "title": "Changed"})).is_err());
     assert!(app.session.calendar_changes(shared).is_none());

@@ -9,10 +9,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use mailcraft_engine::io::{BackgroundSave, SaveProgress, SaveReport, SaveStage};
-use mailcraft_engine::{Session, store};
-use mailcraft_model::{Attachment, Mailbox, Message};
-use mailcraft_ui_egui::{MailApp, Services};
+use mailsolutions_engine::io::{BackgroundSave, SaveProgress, SaveReport, SaveStage};
+use mailsolutions_engine::{Session, store};
+use mailsolutions_model::{Attachment, Mailbox, Message};
+use mailsolutions_ui_egui::{MailApp, Services};
 use serde_json::json;
 
 /// Wednesday 2026-10-14 16:00 UTC.
@@ -23,7 +23,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-autosave-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-autosave-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -39,7 +39,7 @@ impl Drop for Temp {
 /// The sample mailbox and one message with a sizeable file, kept in `path` and saved by itself
 /// through `saver`.
 fn app(path: &Path, saver: Box<dyn BackgroundSave>) -> MailApp {
-    let mut mailbox = mailcraft_engine::sample::mailbox(NOW, 0);
+    let mut mailbox = mailsolutions_engine::sample::mailbox(NOW, 0);
     let scan = Attachment::new("scan.pdf", "application/pdf", (0..50_000u32).map(|i| (i * 31 % 251) as u8).collect());
     mailbox.add_message(Message { folder: mailbox.inbox().unwrap(), subject: "Scan".into(), attachments: vec![scan], ..Default::default() }).unwrap();
     let mut session = Session::at(mailbox, NOW, 0);
@@ -212,7 +212,7 @@ fn a_long_save_shows_how_far_it_has_got_and_closing_waits_for_it_with_the_window
     assert!(!app.close_requested());
     assert!(!app.quit_requested);
     app.logic(&ctx);
-    assert!(!app.quit_requested && app.saving_text().unwrap().ends_with("MailCraft closes when it is done"));
+    assert!(!app.quit_requested && app.saving_text().unwrap().ends_with("MailSolutions closes when it is done"));
     assert!(!path.exists());
     // Written: the window closes.
     progress(None);
@@ -251,7 +251,7 @@ fn closing_again_while_it_waits_keeps_waiting_and_never_leaves_the_last_changes_
         app.logic(&ctx);
         assert!(!app.quit_requested);
     }
-    assert!(app.saving_text().unwrap().ends_with("MailCraft closes when it is done"));
+    assert!(app.saving_text().unwrap().ends_with("MailSolutions closes when it is done"));
     assert_eq!(app.saving_inspect()["closing"], json!(true));
     // Written: it closes, and the close request that follows goes through.
     *script.progress.lock().unwrap() = None;
@@ -344,8 +344,8 @@ fn a_close_held_by_a_question_waits_for_the_saver_again_next_time() {
     assert!(!app.close_requested());
     // Meanwhile a message is being written, and something is typed into it. (With no Drafts to
     // save it to, so that closing asks about it rather than saving it unasked, #286.)
-    for f in app.session.mailbox.folders.iter_mut().filter(|f| f.kind == mailcraft_model::FolderKind::Drafts) {
-        f.kind = mailcraft_model::FolderKind::Custom;
+    for f in app.session.mailbox.folders.iter_mut().filter(|f| f.kind == mailsolutions_model::FolderKind::Drafts) {
+        f.kind = mailsolutions_model::FolderKind::Custom;
     }
     app.session.run("mail.new", &json!({})).unwrap();
     app.session.compose.as_mut().unwrap().dirty = true;
@@ -388,7 +388,7 @@ fn save_new_and_open_never_write_on_the_window_while_the_saver_is_busy() {
     *script.progress.lock().unwrap() = Some(SaveProgress { stage: SaveStage::Messages, done: 5, total: 200_000, millis: 60_000 });
     let mut app = app(&path, Box::new(Handle(script.clone())));
     // Another mailbox to open, written before the window's saver was busy.
-    store::save(&other, &mailcraft_engine::sample::mailbox(NOW, 0)).unwrap();
+    store::save(&other, &mailsolutions_engine::sample::mailbox(NOW, 0)).unwrap();
     let id = unread(&app);
     app.execute("mail.markRead", json!({"id": id})).unwrap();
     let rev = app.session.rev();
@@ -442,7 +442,7 @@ fn open_during_a_download_runs_once_the_saver_is_done_and_says_so() {
     let ctx = egui::Context::default();
     let script = Arc::new(Scripted::default());
     let mut app = app(&path, Box::new(Handle(script.clone())));
-    store::save(&other, &mailcraft_engine::sample::mailbox(NOW, 0)).unwrap();
+    store::save(&other, &mailsolutions_engine::sample::mailbox(NOW, 0)).unwrap();
     let busy = SaveProgress { stage: SaveStage::Messages, done: 5, total: 200_000, millis: 60_000 };
     let id = unread(&app);
     app.execute("mail.markRead", json!({"id": id})).unwrap();
@@ -502,7 +502,7 @@ fn open_waits_for_a_sweep_of_the_content_folder_too() {
     let ctx = egui::Context::default();
     let script = Arc::new(Scripted::default());
     let mut app = app(&path, Box::new(Handle(script.clone())));
-    store::save(&other, &mailcraft_engine::sample::mailbox(NOW, 0)).unwrap();
+    store::save(&other, &mailsolutions_engine::sample::mailbox(NOW, 0)).unwrap();
     let sweeping = SaveProgress { stage: SaveStage::Sweeping, done: 0, total: 0, millis: 5_000 };
     *script.progress.lock().unwrap() = Some(sweeping);
     // A sweep on its own is nothing to tell.
@@ -532,7 +532,7 @@ fn closing_while_an_open_waits_for_the_saver_closes_and_opens_nothing_on_the_way
     let script = Arc::new(Scripted::default());
     let busy = SaveProgress { stage: SaveStage::Messages, done: 5, total: 200_000, millis: 60_000 };
     let mut app = app(&path, Box::new(Handle(script.clone())));
-    store::save(&other, &mailcraft_engine::sample::mailbox(NOW, 0)).unwrap();
+    store::save(&other, &mailsolutions_engine::sample::mailbox(NOW, 0)).unwrap();
     let id = unread(&app);
     app.execute("mail.markRead", json!({"id": id})).unwrap();
     let rev = app.session.rev();
@@ -548,7 +548,7 @@ fn closing_while_an_open_waits_for_the_saver_closes_and_opens_nothing_on_the_way
     assert_eq!((&saving["closing"], &saving["pending"]), (&json!(true), &json!(null)));
     // An agent answered `"pending": "save"` hears that the Open gave way.
     assert_eq!((&saving["last"]["command"], &saving["last"]["ok"]), (&json!("file.open"), &json!(false)));
-    assert!(app.saving_text().unwrap().ends_with("MailCraft closes when it is done"));
+    assert!(app.saving_text().unwrap().ends_with("MailSolutions closes when it is done"));
 
     // Written: the window closes on the mailbox it had, and the other one never opened.
     *script.progress.lock().unwrap() = None;
@@ -571,7 +571,7 @@ fn an_open_asked_for_while_closing_waits_is_refused_and_an_open_alone_never_clos
     let script = Arc::new(Scripted::default());
     let busy = SaveProgress { stage: SaveStage::Messages, done: 5, total: 200_000, millis: 60_000 };
     let mut app = app(&path, Box::new(Handle(script.clone())));
-    store::save(&other, &mailcraft_engine::sample::mailbox(NOW, 0)).unwrap();
+    store::save(&other, &mailsolutions_engine::sample::mailbox(NOW, 0)).unwrap();
     let id = unread(&app);
     app.execute("mail.markRead", json!({"id": id})).unwrap();
     let rev = app.session.rev();

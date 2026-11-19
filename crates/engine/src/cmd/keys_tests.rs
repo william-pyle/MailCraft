@@ -3,9 +3,9 @@
 //! The Public keys kept per address (#30): listed, imported, removed, undone; never Verified by
 //! a command. The keys are synthetic `example.org` people's, made for these tests.
 
-use mailcraft_charset::base64::STANDARD;
-use mailcraft_model::Mailbox;
-use mailcraft_model::public_keys::KeySource;
+use mailsolutions_charset::base64::STANDARD;
+use mailsolutions_model::Mailbox;
+use mailsolutions_model::public_keys::KeySource;
 use serde_json::{Value, json};
 
 use crate::Session;

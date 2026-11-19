@@ -26,7 +26,7 @@ impl Write for Server {
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     // The sign-in is made of the input too, so what the client refuses to send is fuzzed as well.
     let secret = String::from_utf8_lossy(data.get(..16).unwrap_or(data)).into_owned();
-    let Ok(mut imap) = mailcraft_proto::imap::Imap::connect(Server(Cursor::new(data.to_vec()))) else { return };
+    let Ok(mut imap) = mailsolutions_proto::imap::Imap::connect(Server(Cursor::new(data.to_vec()))) else { return };
     let _ = imap.capabilities();
     let _ = imap.login("ada", &secret);
     let _ = imap.list();

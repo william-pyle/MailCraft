@@ -8,9 +8,9 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::Id;
-use mailcraft_model::sync::{IdleEnd, IdleNote, SyncRequest};
+use mailsolutions_engine::Session;
+use mailsolutions_model::Id;
+use mailsolutions_model::sync::{IdleEnd, IdleNote, SyncRequest};
 use serde_json::json;
 
 use super::*;

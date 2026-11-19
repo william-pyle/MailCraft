@@ -150,7 +150,7 @@ fn left_out_the_selection_is_still_taken() {
     s.run("mail.markRead", &json!({})).unwrap();
     assert!(s.mailbox.message(first).unwrap().read);
     s.run("mail.flag", &json!({"ids": [first]})).unwrap();
-    assert_eq!(s.mailbox.message(first).unwrap().flag, mailcraft_model::FlagStatus::Flagged);
+    assert_eq!(s.mailbox.message(first).unwrap().flag, mailsolutions_model::FlagStatus::Flagged);
     let got = s.run("mail.get", &json!({})).unwrap();
     assert_eq!(got["id"], json!(first));
     let got = s.run("mail.get", &json!({"ids": [first]})).unwrap();

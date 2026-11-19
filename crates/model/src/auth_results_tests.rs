@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Whose `Authentication-Results` is believed: on Exchange Online only the one it writes with its
 //! own id above the hop where it took the mail in from the internet, for mail it says came in
-//! (AU3-V5); and none that MailCraft itself carried onto a server (AU3-11).
+//! (AU3-V5); and none that MailSolutions itself carried onto a server (AU3-11).
 //!
 //! The headers are shaped as Exchange Online writes them, with invented hosts, addresses and ids.
 
@@ -205,7 +205,7 @@ fn headers_in_another_order_are_read_by_where_they_stand() {
 }
 
 #[test]
-fn a_message_placed_on_a_server_by_mailcraft_forgets_every_verdict_it_carried() {
+fn a_message_placed_on_a_server_by_mailsolutions_forgets_every_verdict_it_carried() {
     let mut m = message("alerts@example.org", external(OWN_PASS, Vec::new()));
     m.headers.push(h("ARC-Authentication-Results", "i=1; mx.microsoft.com 1; dmarc=pass header.from=example.org"));
     m.headers.push(h("authentication-results", FORGED_PASS));

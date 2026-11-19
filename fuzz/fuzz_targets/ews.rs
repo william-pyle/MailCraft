@@ -8,10 +8,10 @@
 
 #![no_main]
 
-use mailcraft_ews::{DistinguishedFolder, GetFolder, GetItemMime, HttpResponse, Reply, Shape, SyncFolderHierarchy, SyncFolderItems};
+use mailsolutions_ews::{DistinguishedFolder, GetFolder, GetItemMime, HttpResponse, Reply, Shape, SyncFolderHierarchy, SyncFolderItems};
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
-    let _ = mailcraft_ews::xml::parse(data);
+    let _ = mailsolutions_ews::xml::parse(data);
     for status in [200, 500] {
         let response = HttpResponse::new(status, data.to_vec());
         if let Ok(reply) = Reply::judge(&response, 1 << 20) {

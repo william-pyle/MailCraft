@@ -83,7 +83,7 @@ fn every_folder_is_listed_whole_under_its_parent() {
 
 #[test]
 fn the_servers_outbox_is_left_out_while_it_holds_nothing() {
-    // MailCraft's own Outbox is the one shown: an empty one of the server's beside it made the
+    // MailSolutions's own Outbox is the one shown: an empty one of the server's beside it made the
     // folder pane show two Outboxes.
     let server = StandIn::start().unwrap();
     let outbox = server.state().well_known("outbox");
@@ -211,7 +211,7 @@ fn a_folder_the_server_says_is_its_own_is_answered_so_and_the_run_goes_on() {
         &server,
         vec![
             FolderChange::Move { folder: 40, id: rss.clone(), parent: deleted.clone() },
-            FolderChange::Delete { id: feeds.clone(), shown: mailcraft_model::sync::Shown::of("Feeds kept", [feeds.as_str()], []) },
+            FolderChange::Delete { id: feeds.clone(), shown: mailsolutions_model::sync::Shown::of("Feeds kept", [feeds.as_str()], []) },
             FolderChange::Move { folder: 42, id: kept, parent: deleted.clone() },
             FolderChange::Move { folder: 43, id: odd, parent: deleted },
         ],

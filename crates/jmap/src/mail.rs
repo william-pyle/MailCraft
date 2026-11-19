@@ -55,7 +55,7 @@
 //! as they come has what became of the changes and of the Outbox even when the reading fails after.
 //!
 //! **A change the server refuses, and a message it will not send**, are told where they belong
-//! ([`JmapOutcome`](mailcraft_model::sync::JmapOutcome), [`SendOutcome`](mailcraft_model::sync::SendOutcome))
+//! ([`JmapOutcome`](mailsolutions_model::sync::JmapOutcome), [`SendOutcome`](mailsolutions_model::sync::SendOutcome))
 //! and are nothing wrong with the run: no line, and `whole` as the reading has it. A change that got no
 //! answer and a message that was not taken are not reported at all, so the engine brings them again. Only
 //! a step that could not be asked (the call for the changes failed as a whole, the identities could not be
@@ -103,9 +103,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use mailcraft_jmap_types::{Comparator, EmailFilterCondition, EmailQueryRequest, Filter, GetRequest, QueryRequest};
-use mailcraft_model::FolderKind;
-use mailcraft_model::sync::{
+use mailsolutions_jmap_types::{Comparator, EmailFilterCondition, EmailQueryRequest, Filter, GetRequest, QueryRequest};
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::sync::{
     FolderListing, GraphMessage, GraphProgress, JmapMailRequest, JmapMailResult, JmapScope, MAX_JMAP_WINDOW, MAX_THREAD_ASKS, MessagePage, ThreadOf,
     thread_id,
 };

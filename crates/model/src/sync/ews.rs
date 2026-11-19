@@ -37,7 +37,7 @@
 //! changes with every edit. A message is matched by its `Id` alone (`id` of
 //! [`ServerMessage`](super::ServerMessage)), so that an edit made elsewhere is the same message; the
 //! change key is kept apart (`change_key` of the same, where a later step's changes up read it).
-//! A folder's `id` ([`GraphFolder`]) is its `Id`. Both are opaque: only `mailcraft-ews` knows what
+//! A folder's `id` ([`GraphFolder`]) is its `Id`. Both are opaque: only `mailsolutions-ews` knows what
 //! they are made of, and nothing else relies on their shape. Each is at most [`MAX_EWS_ID`]
 //! bytes, with no control character.
 //!
@@ -448,7 +448,7 @@ impl EwsMailResult {
             return Err("has a certificate fingerprint that can't be one");
         }
         if !matches!(self.signed_in_with.as_str(), "" | "basic" | "ntlm") {
-            return Err("has a way of signing in that MailCraft doesn't speak");
+            return Err("has a way of signing in that MailSolutions doesn't speak");
         }
         if self.pages.iter().map(|p| p.state.len().saturating_add(p.from.len())).fold(0usize, usize::saturating_add) > MAX_EWS_STATE_BYTES {
             return Err(TOO_MANY);

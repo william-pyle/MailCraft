@@ -21,19 +21,19 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use mailcraft_mime::PLACE_HEADER;
-use mailcraft_mime_model::WriteOptions;
-use mailcraft_model::sync::{
+use mailsolutions_mime::PLACE_HEADER;
+use mailsolutions_mime_model::WriteOptions;
+use mailsolutions_model::sync::{
     Created, Deleted, FlagsPushed, ImapPlace, MAX_PLACES, Moved, Placed, RemoteFlags, RemoteOp, SyncRequest, SyncResult, SyncStage, SyncStep,
 };
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_proto::ProtoError;
-use mailcraft_proto::imap::{Copied, Imap, Mailbox, decode_utf7, encode_utf7, searchable, uid_sets};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_proto::ProtoError;
+use mailsolutions_proto::imap::{Copied, Imap, Mailbox, decode_utf7, encode_utf7, searchable, uid_sets};
 
 use crate::sync::{Run, because, label, shown, subject_said};
 use crate::transport::Stream;
 use crate::{NetError, kinds};
-use mailcraft_i18n::{Text, said};
+use mailsolutions_i18n::{Text, said};
 
 /// Most changes pushed in one run; the rest waits for the next one.
 const MAX_OPS: usize = 10_000;
@@ -571,7 +571,7 @@ impl<'a> Push<'a> {
             let marker = Some(marker.as_str()).filter(|m| marked(m));
             // What the copy is looked for by: its `Message-ID`, which servers are asked for alike,
             // or else the marker itself.
-            let id = mailcraft_mime::written_message_id(&message.message_id).filter(|id| searchable(id));
+            let id = mailsolutions_mime::written_message_id(&message.message_id).filter(|id| searchable(id));
             let key = marker.map(|m| id.map_or((PLACE_HEADER, m.to_string()), |id| ("Message-ID", id)));
             // Said, for the run ends there: a server that cuts off the same look every time keeps
             // the account's new mail away until the message is moved out of it.
@@ -621,23 +621,23 @@ impl<'a> Push<'a> {
             let date = crate::sync::imap_date_time(received);
             // Without who got a blind copy: the copy is for anyone else who can open the mailbox
             // to see too.
-            let options = WriteOptions { include_bcc: false, offset_minutes: mailcraft_time::local_offset_minutes(message.date) };
+            let options = WriteOptions { include_bcc: false, offset_minutes: mailsolutions_time::local_offset_minutes(message.date) };
             // A protected message with a part sent as `binary` (#30) goes written from its parts:
             // its bytes aren't the lines an APPEND carries (RFC 3501; the BINARY extension's
             // literals, RFC 3516, aren't sent), and a server may refuse or change them. Its
             // Digital signature doesn't check on that copy; the one kept here, and the copy it
             // came from, stay as they came.
             let parts;
-            let message = if message.original_bytes().is_some_and(mailcraft_mime::has_binary) {
+            let message = if message.original_bytes().is_some_and(mailsolutions_mime::has_binary) {
                 log::info!("message {}: a part of it is binary, so the copy put on the server is written from its parts", message.id);
-                parts = mailcraft_model::Message { original: None, ..message.clone() };
+                parts = mailsolutions_model::Message { original: None, ..message.clone() };
                 &parts
             } else {
                 message
             };
-            let written = mailcraft_mime_model::write_placed(message, &options, marker.unwrap_or_default());
+            let written = mailsolutions_mime_model::write_placed(message, &options, marker.unwrap_or_default());
             // Written from the bytes it came as (#30): what it was moved out of may go then.
-            let original = mailcraft_mime_model::writes_original(message);
+            let original = mailsolutions_mime_model::writes_original(message);
             match imap.append_at(&destination.raw, &flags, date.as_deref(), &written) {
                 Ok(appended) => {
                     let (mut uid_validity, mut uid) = appended.map_or((0, 0), |a| (a.uid_validity, a.uid));
@@ -732,7 +732,7 @@ impl<'a> Push<'a> {
     fn carrying(&mut self, imap: &mut Imap<Stream<'_>>, uids: &[u32], marker: &str) -> Result<Option<(u32, RemoteFlags)>, NetError> {
         for uid in uids.iter().rev().take(MAX_LOOKED_AT) {
             match imap.uid_fetch_header(*uid) {
-                Ok(Some(fetched)) if mailcraft_mime::carries_place(fetched.body.as_deref().unwrap_or_default(), marker) => {
+                Ok(Some(fetched)) if mailsolutions_mime::carries_place(fetched.body.as_deref().unwrap_or_default(), marker) => {
                     return Ok(Some((*uid, crate::sync::remote_flags(&fetched).at(*uid))));
                 }
                 Ok(_) => {}

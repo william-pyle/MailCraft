@@ -5,12 +5,12 @@
 //!
 //! A message is hostile, and so is its source: nothing of it is rendered or fetched here, and it
 //! comes back as text alone. Its characters are already text (the message's character set was
-//! read when it came in, `mailcraft-charset`); what can't be seen is made visible: a control
+//! read when it came in, `mailsolutions-charset`); what can't be seen is made visible: a control
 //! character as its picture (`␛`), a format character or another that shows nothing as its code
 //! (`<U+202E>`), so that a right-to-left override or a zero-width space can't hide or turn what is
 //! around it. The whole is at most [`MAX_SOURCE`] bytes.
 
-use mailcraft_model::{Message, format_list};
+use mailsolutions_model::{Message, format_list};
 use serde_json::{Value, json};
 
 use crate::cmd::fail;
@@ -36,7 +36,7 @@ pub(super) fn view_source(s: &mut Session, v: &Value) -> CmdResult {
     Ok(json!({"id": id, "subject": m.subject, "source": source, "truncated": truncated}))
 }
 
-/// The message's header lines, as it was read: those MailCraft models, then the rest it kept.
+/// The message's header lines, as it was read: those MailSolutions models, then the rest it kept.
 fn header_lines(m: &Message, offset: i32) -> String {
     let mut out = String::new();
     let mut line = |name: &str, value: &str| {
@@ -53,7 +53,7 @@ fn header_lines(m: &Message, offset: i32) -> String {
     line("Cc", &format_list(&m.cc));
     line("Bcc", &format_list(&m.bcc));
     line("Subject", &m.subject);
-    line("Date", &mailcraft_time::format_rfc5322(m.date, offset));
+    line("Date", &mailsolutions_time::format_rfc5322(m.date, offset));
     line("Message-ID", &angled(&m.message_id));
     line("In-Reply-To", &angled(&m.in_reply_to));
     line("References", &m.references.iter().map(|r| angled(r)).collect::<Vec<_>>().join(" "));
@@ -99,9 +99,9 @@ pub fn visible(text: &str, max: usize) -> (String, bool) {
 }
 
 /// Whether `c` shows nothing itself or changes how what is around it shows: a format character
-/// (`mailcraft-names`), a line or paragraph separator, a variation selector, a filler.
+/// (`mailsolutions-names`), a line or paragraph separator, a variation selector, a filler.
 fn shows_nothing(c: char) -> bool {
-    mailcraft_names::is_format(c)
+    mailsolutions_names::is_format(c)
         || matches!(
             c,
             '\u{2028}' | '\u{2029}' | '\u{034f}' | '\u{115f}' | '\u{1160}' | '\u{3164}' | '\u{ffa0}' | '\u{fe00}'..='\u{fe0f}' | '\u{e0100}'..='\u{e01ef}'

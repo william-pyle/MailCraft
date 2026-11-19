@@ -1,15 +1,15 @@
 # DAV model and documents
 
-> **Last reviewed:** 2026-10-24 · **Last updated:** 2026-11-02 · **Change:** patch
+> **Last reviewed:** 2026-10-24 · **Last updated:** 2026-11-19 · **Change:** minor
 
 **Status:** foundation only.
 
-`mailcraft_model::dav` describes a discovered calendar or address book and a resource snapshot.
+`mailsolutions_model::dav` describes a discovered calendar or address book and a resource snapshot.
 Snapshots retain the original document, the parsed contacts or events and the opaque ETag.
 Unknown collection permissions default to read-only. These types are not yet added to the
 mailbox file, account settings, or a sync command, and contain no passwords or tokens.
 
-`mailcraft_dav` currently contains pure document helpers only. Nothing calls a server,
+`mailsolutions_dav` currently contains pure document helpers only. Nothing calls a server,
 opens a socket, reads a file or schedules a job. There is no discovery or upload implementation.
 
 ## Editing a document
@@ -67,7 +67,7 @@ daylight-saving boundary. They use synthetic documents and arbitrary generated i
 server. They exercise preservation, conservative refusals, namespace separation, successful
 and failed propstats, hostile XML and the size/depth/count budgets.
 
-The pure `mailcraft-dav` crate is at layer 3 and builds for WebAssembly. Cargo-fuzz targets
+The pure `mailsolutions-dav` crate is at layer 3 and builds for WebAssembly. Cargo-fuzz targets
 `dav_xml` and `dav_document` exercise both readers, and `dav_answers` the typed multistatus answers, addresses and statuses; CI runs them when `crates/dav` changes.
 Structured property tests also mutate valid cards and events (folds, stray CRs, quotes and
 missing END lines).
@@ -82,6 +82,7 @@ Protocol sources: [WebDAV, RFC 4918](https://www.rfc-editor.org/rfc/rfc4918),
 
 | Date | Change |
 |---|---|
+| 2026-11-19 | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-15 | #209 D2: the `dav_answers` fuzz target for the typed answers, addresses and statuses |
 | 2026-11-02 | Validate changed recurrence UNTIL against the effective surviving DTSTART |
 | 2026-11-02 | Refuse lossy alarm and alias edits; strengthen unsafe-edit assertions |

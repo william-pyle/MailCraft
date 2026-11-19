@@ -5,9 +5,9 @@
 //! refused, naming the message, when one of them can't go whole; at most 200 messages and 64 MB
 //! together, judged before any is read in; and each original marked forwarded once it has gone.
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{Answers, Attachment, Body, ContentRef, Id, KeptBody, Message, NOT_DOWNLOADED};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{Answers, Attachment, Body, ContentRef, Id, KeptBody, Message, NOT_DOWNLOADED};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::json;
 
 use crate::{ComposeMode, Session, sample};
@@ -36,7 +36,7 @@ fn three(s: &mut Session) -> [Id; 3] {
 
 /// The message being written's attachments: their names and types, and each parsed back.
 fn attached(s: &Session) -> Vec<(String, String, Message)> {
-    s.compose.as_ref().unwrap().attachments.iter().map(|a| (a.name.clone(), a.mime.clone(), mailcraft_mime_model::parse(&a.data))).collect()
+    s.compose.as_ref().unwrap().attachments.iter().map(|a| (a.name.clone(), a.mime.clone(), mailsolutions_mime_model::parse(&a.data))).collect()
 }
 
 /// Why the command is greyed, if it is.
@@ -123,7 +123,7 @@ fn named_messages_go_in_the_lists_order_from_the_last_ones_account() {
     let [a, b, c] = three(&mut s);
     // Another account's message, which the list in view doesn't show, and the focus.
     let other = s.run("account.add", &json!({"email": "kit@example.org", "kind": "local"})).unwrap()["id"].as_u64().unwrap();
-    let inbox = s.mailbox.folder_of_kind(other, mailcraft_model::FolderKind::Inbox).unwrap();
+    let inbox = s.mailbox.folder_of_kind(other, mailsolutions_model::FolderKind::Inbox).unwrap();
     let elsewhere = s
         .mailbox
         .add_message(Message {
@@ -406,9 +406,9 @@ fn each_original_is_marked_forwarded_once_it_has_gone() {
         let sent = s.mailbox.message(r["id"].as_u64().unwrap()).unwrap();
         assert!(sent.answers.is_none(), "{command}: marked, so done with");
         // As it goes out, both are in it whole.
-        let out = mailcraft_mime_model::write(&s.loaded_message(sent.id).unwrap(), &mailcraft_mime_model::WriteOptions::default());
+        let out = mailsolutions_mime_model::write(&s.loaded_message(sent.id).unwrap(), &mailsolutions_mime_model::WriteOptions::default());
         let subjects: Vec<String> =
-            mailcraft_mime_model::parse(&out).attachments.iter().map(|eml| mailcraft_mime_model::parse(&eml.data).subject).collect();
+            mailsolutions_mime_model::parse(&out).attachments.iter().map(|eml| mailsolutions_mime_model::parse(&eml.data).subject).collect();
         assert_eq!(subjects, [MOCKUPS, INVOICE], "{command}");
     }
 }

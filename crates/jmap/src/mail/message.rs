@@ -12,9 +12,9 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::sync::{GraphMessage, ServerMessage};
-use mailcraft_model::{Address, FlagStatus};
-use mailcraft_time::Timestamp;
+use mailsolutions_model::sync::{GraphMessage, ServerMessage};
+use mailsolutions_model::{Address, FlagStatus};
+use mailsolutions_time::Timestamp;
 use serde_json::Value;
 
 use crate::Id;
@@ -126,9 +126,9 @@ pub(super) fn whole(id: &str, mailbox: &str, entry: &Value, marks: Marks) -> Gra
         .get("receivedAt")
         .and_then(Value::as_str)
         .filter(|date| date.len() <= MAX_DATE)
-        .and_then(|date| mailcraft_time::iso_to_timestamp(date, 0));
+        .and_then(|date| mailsolutions_time::iso_to_timestamp(date, 0));
     // The thread it is in (RFC 8621 §4.1.1, #795): an id as opaque as the email's; anything odd is none.
-    let thread = mailcraft_model::sync::thread_id(entry.get("threadId").and_then(Value::as_str).unwrap_or_default());
+    let thread = mailsolutions_model::sync::thread_id(entry.get("threadId").and_then(Value::as_str).unwrap_or_default());
     GraphMessage {
         server: ServerMessage { thread, ..server(id, mailbox, marks, entry.get("size").and_then(Value::as_u64).unwrap_or(0)) },
         message_id: fields.message_id,
@@ -161,7 +161,7 @@ impl Fields {
         if block.is_empty() {
             return Fields::default();
         }
-        let message = mailcraft_mime_model::parse(block.as_bytes());
+        let message = mailsolutions_mime_model::parse(block.as_bytes());
         Fields {
             message_id: message.message_id.chars().filter(|c| !c.is_control() && !c.is_whitespace()).take(MAX_TEXT).collect(),
             subject: line(&message.subject, MAX_TEXT),

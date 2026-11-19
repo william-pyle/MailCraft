@@ -3,7 +3,7 @@
 //! **Sender warnings** in a session: the **known correspondents** gathered from the mailbox and
 //! kept up to date, and each message's warnings worked out when it is read and kept until what
 //! they were measured against changes ([`Session::sender_warnings`]). The rules themselves are
-//! `mailcraft_model::sender_warnings`; nothing here is stored in the mailbox file.
+//! `mailsolutions_model::sender_warnings`; nothing here is stored in the mailbox file.
 //!
 //! The known correspondents are the contacts' addresses and whoever mail in Sent Items or the
 //! Outbox went to. The same set says whose pictures sender images may ask for
@@ -13,10 +13,10 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Weak};
 
-use mailcraft_html::{Block, BlockKind};
-use mailcraft_model::messages::Chunk;
-use mailcraft_model::sender_warnings::{self, Facts, FactsBuilder, Warning};
-use mailcraft_model::{Account, Contact, FolderKind, Id, Message};
+use mailsolutions_html::{Block, BlockKind};
+use mailsolutions_model::messages::Chunk;
+use mailsolutions_model::sender_warnings::{self, Facts, FactsBuilder, Warning};
+use mailsolutions_model::{Account, Contact, FolderKind, Id, Message};
 
 use crate::Session;
 
@@ -41,7 +41,7 @@ struct Known {
     /// Whoever mail in Sent Items or the Outbox went to (by address alone: the name the owner
     /// wrote is not the correspondent's own), with how many of those messages went to each.
     written_to: HashMap<String, u32>,
-    /// Per chunk of the map of messages ([`mailcraft_model::Messages::chunks`]): the chunk as it
+    /// Per chunk of the map of messages ([`mailsolutions_model::Messages::chunks`]): the chunk as it
     /// was read, held weakly (one changed since is another allocation), and the addresses its
     /// messages in `outgoing` went to. A change reads only the chunks it changed.
     chunks: BTreeMap<Id, (Weak<Chunk>, Vec<String>)>,
@@ -75,7 +75,7 @@ impl Known {
             self.accounts = accounts;
             self.changed();
         }
-        let chosen = mailbox.contacts.iter().filter(|(_, c)| c.contactcraft_id.is_empty() != session.prefs.contactcraft_contacts);
+        let chosen = mailbox.contacts.iter().filter(|(_, c)| c.contactsolutions_id.is_empty() != session.prefs.contactsolutions_contacts);
         let same = self.contacts.len() == chosen.clone().count()
             && self.contacts.iter().zip(chosen.clone()).all(|((was, kept), (id, now))| was == id && Arc::ptr_eq(kept, now));
         if fresh || !same {
@@ -240,17 +240,17 @@ pub fn links(blocks: &[Block]) -> Vec<(String, String)> {
 }
 
 /// The links of `html` in every look its style sheets give it (AU3-14): a pane of each width and
-/// theme its `@media` rules tell apart ([`mailcraft_html::media_envs`]), each link once, at most
+/// theme its `@media` rules tell apart ([`mailsolutions_html::media_envs`]), each link once, at most
 /// [`sender_warnings::MAX_LINKS`]. A deceptive link that only a narrow pane or a dark window shows
 /// is judged as one the default look shows. With them comes whether every look was looked at:
 /// not when the message has more than are tried.
 pub fn links_in_every_look(html: &str) -> (Vec<(String, String)>, bool) {
-    let lists = mailcraft_html::media_lists(html);
+    let lists = mailsolutions_html::media_lists(html);
     let mut out: Vec<(String, String)> = Vec::new();
     let mut seen: HashSet<(String, String)> = HashSet::new();
-    let (envs, every) = mailcraft_html::media_envs(&lists);
+    let (envs, every) = mailsolutions_html::media_envs(&lists);
     for env in envs {
-        for link in links(&mailcraft_html::parse_in(html, &env).blocks) {
+        for link in links(&mailsolutions_html::parse_in(html, &env).blocks) {
             if out.len() >= sender_warnings::MAX_LINKS {
                 return (out, every);
             }
@@ -306,7 +306,7 @@ impl Session {
         known
     }
 
-    /// The sender warnings of `m` (`mailcraft_model::sender_warnings`): with its links looked at
+    /// The sender warnings of `m` (`mailsolutions_model::sender_warnings`): with its links looked at
     /// when `links` is set and its body is here. Worked out once and kept, until the message, or
     /// what they are measured against (the contacts, Sent Items, the owner's accounts), changes.
     pub fn sender_warnings(&mut self, m: &Message, links: bool) -> Arc<Vec<Warning>> {

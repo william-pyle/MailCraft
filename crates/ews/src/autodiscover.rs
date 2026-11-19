@@ -51,9 +51,9 @@
 use std::collections::VecDeque;
 use std::fmt;
 
-pub use mailcraft_model::is_exchange_online;
-use mailcraft_model::provider;
-use mailcraft_model::{is_microsoft_domain, is_within};
+pub use mailsolutions_model::is_exchange_online;
+use mailsolutions_model::provider;
+use mailsolutions_model::{is_microsoft_domain, is_within};
 
 use crate::http::{HttpExchange, HttpRequest, HttpResponse, Method, Secret, TransportError, check_endpoint};
 use crate::xml::{self, Node};
@@ -301,7 +301,7 @@ impl fmt::Display for Failure {
             Self::ServerRefused => "The server or the organisation would not give its settings. Ask your administrator for the server's address and type it in Server settings.",
             Self::NoExchangeAddress => "The server answered without the address of Exchange Web Services. Ask your administrator for it and type it in Server settings.",
             Self::SignInNotSupported => "The server wants a way of signing in (Kerberos) that this program cannot do yet. Ask your administrator whether the server can take a user name and password over an encrypted connection.",
-            Self::SignInNtlmOnly => "Automatic setup can't sign in to this server. Type its address in Server settings, and MailCraft will sign in with NTLM.",
+            Self::SignInNtlmOnly => "Automatic setup can't sign in to this server. Type its address in Server settings, and MailSolutions will sign in with NTLM.",
             Self::Declined => "You did not agree to send your sign-in to the server the setup led to. Type the server's address in Server settings.",
             Self::SignInRefused => "The server did not accept the user name and password. Check them, or type the user name in Server settings (DOMAIN\\user or user@example.org).",
             Self::TooManyRedirects => "The setup was sent from one server to another too many times. Type the server's address in Server settings.",

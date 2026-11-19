@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `cargo xtask parity`: write docs/parity-checklist.md from the live command registry compared with the
-//! word-processor feature catalog (via `mailcraft-cli parity --markdown`).
+//! word-processor feature catalog (via `mailsolutions-cli parity --markdown`).
 
 use std::path::Path;
 
 pub fn run(root: &Path) -> Result<(), String> {
     let out = crate::cargo()
-        .args(["run", "--locked", "-q", "-p", "mailcraft-cli", "--", "parity", "--markdown"])
+        .args(["run", "--locked", "-q", "-p", "mailsolutions-cli", "--", "parity", "--markdown"])
         .output()
-        .map_err(|e| format!("cargo run mailcraft-cli: {e}"))?;
+        .map_err(|e| format!("cargo run mailsolutions-cli: {e}"))?;
     if !out.status.success() {
-        return Err(format!("mailcraft-cli parity failed:\n{}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!("mailsolutions-cli parity failed:\n{}", String::from_utf8_lossy(&out.stderr)));
     }
     let md = String::from_utf8_lossy(&out.stdout).to_string();
     let path = root.join("docs/parity-checklist.md");

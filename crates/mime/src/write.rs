@@ -29,7 +29,7 @@ const OWN_FIELDS: [&str; 17] = [
     "mime-version",
 ];
 
-/// Whether a kept header (`lower`, in lower case) is a note of MailCraft's own that stays in
+/// Whether a kept header (`lower`, in lower case) is a note of MailSolutions's own that stays in
 /// the mailbox: what was answered to a meeting (with this mailbox's mark), the file a message was
 /// opened from. Neither goes into a file, a server's copy or what is sent. `X-MailCraft-Flag` is
 /// written from the message's flag, and `X-MailCraft-Not-Downloaded` travels: it tells another
@@ -113,7 +113,7 @@ pub fn writes_original(message: &Message) -> bool {
 /// The header fields [`write()`] writes from the message, before `MIME-Version` and the content
 /// fields.
 fn write_header(out: &mut Vec<u8>, message: &Message, opts: &WriteOptions) {
-    write_field(out, "Date", &mailcraft_time::format_rfc5322(message.date, opts.offset_minutes));
+    write_field(out, "Date", &mailsolutions_time::format_rfc5322(message.date, opts.offset_minutes));
     addresses(out, "From", std::slice::from_ref(&message.from));
     addresses(out, "To", &message.to);
     addresses(out, "Cc", &message.cc);

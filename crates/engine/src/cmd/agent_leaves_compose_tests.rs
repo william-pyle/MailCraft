@@ -5,8 +5,8 @@
 //! leave, headless too: it goes to Drafts first, as #442 made it. A command that starts another
 //! message opens it beside the owner's, which stays as it is (#286).
 
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::agent::{Access, Class, Verdict, answered, check, classify, describe, needs_owner};

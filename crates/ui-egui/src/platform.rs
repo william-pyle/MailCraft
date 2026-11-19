@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 use std::thread::ThreadId;
 use std::time::Duration;
 
-use mailcraft_host::{Notification, NotificationKind, Platform, PlatformError, SecretStore};
+use mailsolutions_host::{Notification, NotificationKind, Platform, PlatformError, SecretStore};
 
 use crate::Services;
 use crate::alerts::{AlertKind, DesktopAlert, Opens};

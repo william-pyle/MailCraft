@@ -3,8 +3,8 @@
 //! `file.importFolderTree` (#420): a tree of mbox files comes in as subfolders, found by their
 //! bytes, within caps, and nothing in a name or a file can climb out or crash it.
 
-use mailcraft_model::{AccountKind, FolderKind, Id};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::{AccountKind, FolderKind, Id};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use serde_json::{Value, json};
 
 use crate::Session;

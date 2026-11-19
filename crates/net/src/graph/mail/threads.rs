@@ -20,7 +20,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use mailcraft_model::sync::{GraphMailRequest, MAX_THREAD_ASKS, ThreadOf, thread_id};
+use mailsolutions_model::sync::{GraphMailRequest, MAX_THREAD_ASKS, ThreadOf, thread_id};
 use serde_json::{Value, json};
 
 use super::super::pace::Kind;
@@ -58,7 +58,7 @@ pub(super) fn conversations(graph: &Graph<'_>, request: &GraphMailRequest, cance
         let reply = match graph.call(Kind::Read, &graph.url(BATCH), "POST", &headers, Some(&body), ASK_TIMEOUT, MAX_BATCH) {
             Ok(reply) if reply.status == 200 => reply,
             Ok(reply) if matches!(reply.status, 429 | 503 | 504) => {
-                busy_for = Some(wait_of(reply.retry_after.as_deref(), mailcraft_time::now()).unwrap_or(0).max(paused()));
+                busy_for = Some(wait_of(reply.retry_after.as_deref(), mailsolutions_time::now()).unwrap_or(0).max(paused()));
                 break;
             }
             Ok(reply) => {

@@ -1,25 +1,25 @@
-# Releasing MailCraft
+# Releasing MailSolutions
 
-> **Last reviewed:** 2026-10-18 · **Last updated:** 2026-11-15 · **Change:** minor · **Status:** the owner fork builds and publishes Windows x64 release files only, beginning with 0.13.2. The Windows operating-system publisher signature is not configured yet (gap #18).
+> **Last reviewed:** 2026-10-18 · **Last updated:** 2026-11-19 · **Change:** minor · **Status:** the owner fork builds and publishes Windows x64 release files only, beginning with 0.13.2. The Windows operating-system publisher signature is not configured yet (gap #18).
 
-This file is MailCraft's release recipe. The scripts in `packaging/` are WordCraft's with MailCraft's
+This file is MailSolutions's release recipe. The scripts in `packaging/` are WordCraft's with MailSolutions's
 names, and differ from them only where the program does (what it opens, its description, its
 permissions, its own installer identity), so a release has exactly the files a Craft app's has,
 under the same names.
 
-MailCraft lives outside the storytold organisation, so it cannot use the organisation's shared
+MailSolutions lives outside the storytold organisation, so it cannot use the organisation's shared
 release workflow (that one needs the organisation's runners and its `release` environment).
-`.github/workflows/release.yml` and `package.yml` are MailCraft's own and run on GitHub's
+`.github/workflows/release.yml` and `package.yml` are MailSolutions's own and run on GitHub's
 standard runners in any public repository, a fork included. If the repository moves into the
 organisation, call `storytold/craft-common-actions/.github/workflows/release.yml` instead, as
 WordCraft does.
 
-This fork keeps `origin` at `william-pyle/MailCraft` for its own tags and signed releases and
+This fork keeps `origin` at `william-pyle/MailSolutions` for its own tags and signed releases and
 `upstream` at `UCS-Care-Group/mailcraft` for core changes. For each upstream release, fetch
 `upstream` (after a fresh clone, add it with
 `git remote add upstream https://github.com/UCS-Care-Group/mailcraft.git`), merge
 its `main` into this fork's `main`, resolve conflicts while retaining the
-ContactCraft option, icon, fork repository URL and release keys, then run `cargo xtask ci`.
+ContactSolutions option, icon, fork repository URL and release keys, then run `cargo xtask ci`.
 Choose a new fork version above the upstream version before tagging. Push the merge and its
 follow-up fixes to `origin` only after the checks pass; publish the fork tag through this workflow.
 
@@ -31,7 +31,7 @@ The sections below about other platforms describe existing upstream packaging su
 paused in this fork.
 
 1. Release notes: `packaging/release-notes.md` is the release's text on GitHub and on the
-   website's changelog, which shows it as written. It opens with **MailCraft <version> in short**:
+   website's changelog, which shows it as written. It opens with **MailSolutions <version> in short**:
    a headline list of six to ten lines, a few words each, of what a tester would notice (the main
    new features, then safety and sturdiness in a line each, then a line pointing to the fixes), each with
    its issue linked where there is one. **What's new** then says what each feature does. Under
@@ -65,27 +65,27 @@ paused in this fork.
    them. Pull requests don't touch status lines, so this is the only place they change.
 2. Bump the version: `cargo xtask version set 0.2.0` (the one source of truth is
    `[workspace.package] version`; the app shows it in `--version` and About, with the commit from
-   `MAILCRAFT_BUILD_SHA`), commit, and get `cargo xtask ci` green.
+   `MAILSOLUTIONS_BUILD_SHA`), commit, and get `cargo xtask ci` green.
 3. Tag that commit `v0.2.0` and push the tag. The workflow refuses a tag that isn't the version in
    `Cargo.toml`, then builds:
 
    If GitHub does not enqueue the tag's push event, run
-   `gh workflow run release.yml --repo william-pyle/MailCraft --ref v<version>`.
+   `gh workflow run release.yml --repo william-pyle/MailSolutions --ref v<version>`.
    Dispatching on a version tag uses the same passing-CI gate, signed packages and protected
    `release` environment. Dispatching on a branch remains an unsigned packaging dry run.
 
 | Platform | Artifacts | Signing |
 |---|---|---|
-| Windows x64 | `.msi` and portable `.zip` | MailCraft release signature over checksums; Windows publisher signing when configured |
+| Windows x64 | `.msi` and portable `.zip` | MailSolutions release signature over checksums; Windows publisher signing when configured |
 
-4. The run makes ONE **draft** GitHub release, `MailCraft v<version>` on that tag, with every file
+4. The run makes ONE **draft** GitHub release, `MailSolutions v<version>` on that tag, with every file
    and a `SHA256SUMS.txt` (`sha256sum` format; `packaging/release-notes.md` is its text). Running
    the same tag again replaces the files of that draft; a release that is already published is
    never changed by the workflow (the run fails instead). A version with a suffix
    (`0.2.0-rc.1`) is marked as a pre-release.
 5. When the checksum signature is present, the workflow publishes the verified draft. This makes the release visible to the app version check. Without a signing key, the draft remains unpublished and the workflow fails; an unsigned release cannot be installed by the updater. Review the published assets, checksums and notes after the run.
 6. Announce it to the testers: a comment on [#11](https://github.com/UCS-Care-Group/mailcraft/issues/11)
-   headed `## MailCraft v<version> is out`, with the download link and the release's headlines
+   headed `## MailSolutions v<version> is out`, with the download link and the release's headlines
    (the tester welcome promises it): the notes' **in short** list. Add anyone who signed up since to #11's Testers table.
 
 A pushed tag builds and signs only if its commit is on `main` and `ci-ok` passed on it: the first
@@ -109,8 +109,8 @@ checks them all before it makes `SHA256SUMS.txt`, which it signs with the runner
 with anything compiled from this repository. `cargo xtask workflows` (part of `cargo xtask ci`)
 fails when a job with a signing secret, an Azure sign-in, a keychain import or the `release`
 environment runs cargo, rustup or a built program. Release builds use no build cache
-(`Swatinem/rust-cache` is for CI only). The Google desktop client (`MAILCRAFT_GOOGLE_CLIENT_ID`,
-`MAILCRAFT_GOOGLE_CLIENT_SECRET`) is read by the build jobs, which name no environment, so it is
+(`Swatinem/rust-cache` is for CI only). The Google desktop client (`MAILSOLUTIONS_GOOGLE_CLIENT_ID`,
+`MAILSOLUTIONS_GOOGLE_CLIENT_SECRET`) is read by the build jobs, which name no environment, so it is
 a secret of the repository, not of the `release` environment.
 
 Signing secrets (`APPLE_*`, `WINDOWS_CERTIFICATE*` and `AZURE_*`) are secrets of the `release`
@@ -120,7 +120,21 @@ federated credential accepts only from the `release` environment; its secrets ar
 `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT` and
 `AZURE_CERT_PROFILE`. The owner fork restricts that environment to version tags (`v*`); the Windows and macOS jobs that sign, and the job that makes the
 draft, run in it, and only for a pushed version tag. Without the secrets the builds are unsigned
-(ad-hoc on macOS) and the scripts say so, so forks still build. The owner fork has the MailCraft checksum signing key, but no Windows or macOS operating-system signing credentials. There is no riscv64 Linux build, and no Flathub manifest is published.
+(ad-hoc on macOS) and the scripts say so, so forks still build. The owner fork has the MailSolutions checksum signing key, but no Windows or macOS operating-system signing credentials. There is no riscv64 Linux build, and no Flathub manifest is published.
+
+## MC-RENAME 0.14.0 release contract
+
+This owner-authorized rename preserves historical tags/releases and release signing
+keys. Read [migration and recovery](rename-migration.md). Current GitHub secret
+bindings `MAILCRAFT_RELEASE_KEY` and `MAILCRAFT_GOOGLE_CLIENT_*` are intentionally
+mapped into `MAILSOLUTIONS_*` build inputs; do not rotate or print their contents.
+The MSI upgrade family stays unchanged. The Windows package check now reads its
+MSI tables and runs the portable CLI version command without installation. Earlier
+instructions describing install/uninstall checks are historical; neither happens
+for this rename. Installed upgrades and UI acceptance remain unverified.
+MailCraft 0.13.2 needs a manual initial upgrade because its API reader rejects
+redirects and its updater expects old asset names. New builds resolve MailSolutions.
+Do not announce on upstream tester issues as part of this fork release.
 
 ## Google Desktop OAuth release readiness
 
@@ -166,9 +180,9 @@ interoperability limits remain in [gaps](gaps.md) and [Google acceptance scope](
 
 ## The release signature (`SHA256SUMS.txt.sig`)
 
-Besides the operating systems' signatures, every release is signed by MailCraft itself: the job
+Besides the operating systems' signatures, every release is signed by MailSolutions itself: the job
 that makes the draft signs `SHA256SUMS.txt` with an ed25519 key and puts the signature beside it
-as `SHA256SUMS.txt.sig` (64 bytes in base64, one line). A copy of MailCraft that updates itself
+as `SHA256SUMS.txt.sig` (64 bytes in base64, one line). A copy of MailSolutions that updates itself
 takes a downloaded file only when that signature verifies by one of the two public keys it carries
 (`RELEASE_KEYS` in `crates/net/src/update.rs`: the key in use and a spare), the file's SHA-256 is
 the one the signed list gives for its name, and its version is newer than the running one. Until
@@ -176,12 +190,12 @@ the program carries real keys, it downloads nothing.
 
 Such a file is installed when the owner presses Restart to update or quits: on Windows by Windows
 Installer (`msiexec /i <file> /passive /norestart`, from a copy of the program in the data folder
-once MailCraft has gone), on macOS by attaching the disk image read-only and swapping the app (it
+once MailSolutions has gone), on macOS by attaching the disk image read-only and swapping the app (it
 must pass `codesign --verify` when the running app is signed), and for an AppImage by renaming the
 new file over the old. Windows Installer and `hdiutil` are given a copy of the file in a folder
 made for it alone, checked against the signed list's SHA-256 as it is opened, never the download
 itself. So a release's packages must keep their names
-(`mailcraft-<version>-<os>-<arch>.<ext>`), the `.dmg` must hold the app at its top, and the `.msi`
+(`mailsolutions-<version>-<os>-<arch>.<ext>`), the `.dmg` must hold the app at its top, and the `.msi`
 must keep its `UpgradeCode` and `AllowDowngrades` (going back installs the older `.msi` over the
 newer). An organisation installs the `.msi` with `DISABLEAUTOMATICUPDATES=1` to turn updating by
 itself off for every user of the computer.
@@ -192,19 +206,19 @@ ad hoc and not notarized (the project has no Apple Team ID yet), and an app swap
 the program, in a folder it may not fully control, is what macOS's checks then judge; one update
 that went wrong (0.8.1) left an app that wouldn't start. The code that installs from the disk
 image is still built and tested, and comes back on with one switch, `MAC_SELF_INSTALL` in
-`apps/mailcraft/src/install.rs`, once releases are signed with a Developer ID and notarized and
+`apps/mailsolutions/src/install.rs`, once releases are signed with a Developer ID and notarized and
 `mac_swap` requires the project's Team ID of the new app. On every system, a copy whose folder
 (the one holding the app or the AppImage) it can't write to is told of new versions and installs
 nothing; the `.msi`, installed by Windows Installer, isn't affected.
 
 - **Making the keys (once):** `cargo xtask release-key new <folder>` writes two private keys,
-  `mailcraft-release-key-in-use.pkcs8.b64` and `mailcraft-release-key-spare.pkcs8.b64` (base64
+  `mailsolutions-release-key-in-use.pkcs8.b64` and `mailsolutions-release-key-spare.pkcs8.b64` (base64
   PKCS#8, readable by their owner only), and prints the two public keys. It never writes over
   keys that are there. Keep both private keys offline, in two places; the spare is never used
   until the key in use is lost or stolen.
-- **The secret:** the key in use goes into the `release` environment as `MAILCRAFT_RELEASE_KEY`
+- **The secret:** the key in use goes into the `release` environment as `MAILSOLUTIONS_RELEASE_KEY`
   (Settings › Environments › release › Environment secrets, or
-  `gh secret set MAILCRAFT_RELEASE_KEY --env release < mailcraft-release-key-in-use.pkcs8.b64`),
+  `gh secret set MAILSOLUTIONS_RELEASE_KEY --env release < mailsolutions-release-key-in-use.pkcs8.b64`),
   and nowhere else. The public keys go into `RELEASE_KEYS`; they are not secret.
 - **Signing:** `packaging/sign-sums.sh <folder>` signs `<folder>/SHA256SUMS.txt` with the key
   from the environment, using OpenSSL 3 (`openssl pkeyutl -sign -rawin`, the same signature
@@ -213,14 +227,14 @@ nothing; the `.msi`, installed by Windows Installer, isn't affected.
   compiled or downloaded in that job, and no program built from this repository runs with the
   key. Locally, without OpenSSL 3, the script falls back to `cargo xtask release-key sign`.
   Without the secret (for example a dry run) it says "unsigned" and the run goes on:
-  such a release has no `.sig`, and no copy of MailCraft installs it by itself.
+  such a release has no `.sig`, and no copy of MailSolutions installs it by itself.
 - **Checking by hand:** the signature is a plain ed25519 signature over the bytes of
   `SHA256SUMS.txt`; any ed25519 tool verifies it with the public key from `RELEASE_KEYS`.
 - **A lost or stolen key:** there is no way to take a key back from copies already out. Every
   copy shipped trusts both keys in its `RELEASE_KEYS` for good, and asks nobody whether one of
   them has been withdrawn, so whoever holds a leaked key can sign a release those copies will
   install, for as long as they run. When the key in use leaks (or may have):
-  1. Take `MAILCRAFT_RELEASE_KEY` out of the `release` environment at once, and put the spare in
+  1. Take `MAILSOLUTIONS_RELEASE_KEY` out of the `release` environment at once, and put the spare in
      its place; the leaked key never signs again.
   2. Make a new spare (`cargo xtask release-key new <another folder>`; keep its private half
      offline as before), and set `RELEASE_KEYS` to the old spare and the new one, dropping the
@@ -240,7 +254,7 @@ nothing; the `.msi`, installed by Windows Installer, isn't affected.
 
 Every file of a release also gets a build provenance attestation (`actions/attest-build-provenance`):
 a signed statement, kept by GitHub outside the release, of the workflow run and commit that made
-it. Check a download with `gh attestation verify <file> -R UCS-Care-Group/mailcraft`.
+it. Check a download with `gh attestation verify <file> -R william-pyle/MailSolutions`.
 
 What the build fetches is pinned: every action by full commit SHA (Dependabot moves them, a week
 after their release), the shared workflows of `storytold/craft-common-actions` by full commit SHA
@@ -263,43 +277,43 @@ the job that made it. A dry run names
 no environment, is given no secrets and publishes nothing.
 
 
-Each release also carries `mailcraft-<version>.intoto.jsonl`: the build provenance GitHub attests
+Each release also carries `mailsolutions-<version>.intoto.jsonl`: the build provenance GitHub attests
 (which workflow run, at which commit, made each file), as a file, so it can be checked without
-GitHub's command line (`gh attestation verify <file> -R UCS-Care-Group/mailcraft` does the same
+GitHub's command line (`gh attestation verify <file> -R william-pyle/MailSolutions` does the same
 online).
 ## ArtCraft Launcher
 
 The launcher installs a Craft app from its GitHub releases, finding the right file by name
 (`<app>-<version>-<os>-<arch>.<ext>`) and checking it against `SHA256SUMS.txt`. What it needs of
-MailCraft, and where each part stands:
+MailSolutions, and where each part stands:
 
 | Needs | State |
 |---|---|
 | One release per version with Craft file names and `SHA256SUMS.txt` | The workflow above produces it; twenty-two have been published, v0.1.0 to v0.13.0 |
-| An icon in the Craft style: an engraved animal in black ink and cream on one flat app colour, in the rounded tile (`rx` 112 of 512, the figure clipped 6 units in) | MailCraft's icon is its own instead (an envelope that is also a calendar page, on a blue tile): `cargo xtask icon` builds every size from `assets/app-icon/source/mailcraft.svg`. The launcher takes its 128 px PNG as it is |
+| An icon in the Craft style: an engraved animal in black ink and cream on one flat app colour, in the rounded tile (`rx` 112 of 512, the figure clipped 6 units in) | MailSolutions's icon is its own instead (an envelope that is also a calendar page, on a blue tile): `cargo xtask icon` builds every size from `assets/app-icon/source/mailsolutions.svg`. The launcher takes its 128 px PNG as it is |
 | A row in the launcher's catalog (`crates/core/src/catalog.rs` in `storytold/craft-launcher`): id, name, tagline, what it is like, colours, `owner/repo`; for an app outside the organisation also its own reverse-DNS id and publisher (the "community apps" group) | A pull request on that repository, after the first release; the 128 px icon goes with it |
 
 ## What the installers do
 
 - **Windows (`.msi`, WiX 5):** per-machine install into Program Files, a Start Menu shortcut, an
-  App Paths entry, and the registrations that let the owner choose MailCraft in Settings › Default
+  App Paths entry, and the registrations that let the owner choose MailSolutions in Settings › Default
   apps for `mailto:` links and `.eml`, `.ics` and `.vcf` files ("Open with" for `.mbox`). It never
-  takes a type over from another program; only MailCraft's own `.mailcraft` opens with it by
-  default. `mailcraft.exe` is a Windows program with no console window; `mailcraft-cli.exe` is the
+  takes a type over from another program; only MailSolutions's own `.mailcraft` opens with it by
+  default. `mailsolutions.exe` is a Windows program with no console window; `mailsolutions-cli.exe` is the
   console program. The portable `.zip` holds the same two files and registers nothing.
-- **Linux (`.deb`, `.rpm`, `.AppImage`, `.tar.gz`):** `/usr/bin/mailcraft` and `mailcraft-cli`, a
-  desktop entry that offers MailCraft for `mailto:` links, messages, calendar files and contact
+- **Linux (`.deb`, `.rpm`, `.AppImage`, `.tar.gz`):** `/usr/bin/mailsolutions` and `mailsolutions-cli`, a
+  desktop entry that offers MailSolutions for `mailto:` links, messages, calendar files and contact
   cards, AppStream metadata and the icons. The binaries need glibc 2.35 or later.
 - **macOS (the app in a disk image):** `Info.plist` declares messages, calendar files and contact
-  cards, each as an alternative (`LSHandlerRank` Alternate), so MailCraft is offered in Open With
+  cards, each as an alternative (`LSHandlerRank` Alternate), so MailSolutions is offered in Open With
   and never takes a type over. There is no `mailto:` declaration yet: a link would arrive as an
   Apple event the app can't receive (#505).
 - **One window per mailbox:** started a second time (the shortcut again, a link, a file from the
-  file manager), MailCraft hands what it was started with to the window already open, which comes
-  to the front, and exits (`apps/mailcraft/src/single_instance.rs`), so two windows never save
-  over each other. No installer makes MailCraft the default for anything but its own
+  file manager), MailSolutions hands what it was started with to the window already open, which comes
+  to the front, and exits (`apps/mailsolutions/src/single_instance.rs`), so two windows never save
+  over each other. No installer makes MailSolutions the default for anything but its own
   `.mailcraft`: the owner chooses it in the system's settings.
-- **Product identity:** the MSI's UpgradeCode and component GUIDs are MailCraft's own. Never copy
+- **Product identity:** the MSI's UpgradeCode and component GUIDs are MailSolutions's own. Never copy
   them from or into a sibling Craft app (Windows would treat the two as one product).
 
 ## Building the packages on your own machine
@@ -327,7 +341,7 @@ Both write to `dist/release/`. Also: `packaging/macos/package.sh --arch universa
 
 ## The Rust toolchain
 
-Every workflow that builds MailCraft (CI, the packages, the release, FreeBSD) uses one pinned Rust
+Every workflow that builds MailSolutions (CI, the packages, the release, FreeBSD) uses one pinned Rust
 version, **1.98.1**, not whatever `stable` is that day, so a release built again from its tag uses
 the same compiler, with `Cargo.lock` pinning the crates and the actions pinned by commit. Fuzzing
 alone uses nightly, as cargo-fuzz needs. Moving to a newer Rust is a change of its own: replace the
@@ -355,7 +369,7 @@ the programs inside them that compare.
 
 Checked on 2026-10-12, on a Windows 11 machine and an Ubuntu 22.04 WSL distribution:
 
-- `package.ps1 -Arch x64` builds `mailcraft-<version>-windows-x64.msi` and the portable zip; the
+- `package.ps1 -Arch x64` builds `mailsolutions-<version>-windows-x64.msi` and the portable zip; the
   MSI was read back (identity, files, shortcut, registrations) and unpacked; the program in it is
   a GUI program and the CLI answers `--version`.
 - `package.sh` builds the AppImage (with `.zsync`), `.deb`, `.rpm` and `.tar.gz`; the `.deb` was
@@ -380,6 +394,7 @@ and in the Flatpak (which is granted `org.freedesktop.secrets` for it).
 
 | Date | Change |
 |---|---|
+| 2026-11-19 | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-15 | Owner fork: Windows x64 is the only CI and release build target until further notice; the first published fork release is 0.13.2. |
 | 2026-11-15 | Owner fork: manual dispatch on a version tag can publish when GitHub misses its push event; branch dispatch remains an unsigned dry run. |
 | 2026-11-15 | Owner fork: signed automatic release publication and update trust for 0.13.1. |

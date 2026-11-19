@@ -6,7 +6,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use mailcraft_jmap_types::method_error;
+use mailsolutions_jmap_types::method_error;
 use serde_json::{Map, Value};
 
 use crate::classify::parse_json;

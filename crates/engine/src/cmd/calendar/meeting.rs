@@ -11,7 +11,7 @@
 //! `calendar.propose` answers somebody else's meeting tentatively, or declines it, and proposes
 //! another time with the answer; `calendar.forward` sends a meeting on. **Both are mail to other
 //! people and nothing else**: they refuse unless told `"send": true`, they note the mail with
-//! that yes ([`mailcraft_model::remote::EventChange::send`]), and a note without it is never
+//! that yes ([`mailsolutions_model::remote::EventChange::send`]), and a note without it is never
 //! handed to a host (`remote::permitted`). The engine sends nothing itself: a host with sockets
 //! carries the note to the account's server, which writes the mail.
 //!
@@ -19,9 +19,9 @@
 //! only when it is an `https` address ([`OnlineMeeting::clean_link`]), handed out as it is, and
 //! never followed here.
 
-use mailcraft_model::remote::{EventTime, MAX_FORWARD, forward_recipients};
-use mailcraft_model::{Address, Calendar, Event, Id, Importance, OnlineMeeting, Response};
-use mailcraft_time::DateTime;
+use mailsolutions_model::remote::{EventTime, MAX_FORWARD, forward_recipients};
+use mailsolutions_model::{Address, Calendar, Event, Id, Importance, OnlineMeeting, Response};
+use mailsolutions_time::DateTime;
 use serde_json::{Value, json};
 
 use super::super::{bad, fail, remote};
@@ -116,7 +116,7 @@ pub(super) fn online_fits(s: &Session, e: &Event, before: Option<&Event>) -> Res
 /// Whose a server calendar is: the account that keeps it and, for one opened by address (#70),
 /// the person's address. Two calendars with the same of these are one mailbox's.
 fn mailbox_of(c: &Calendar) -> (Id, Option<String>) {
-    (c.origin.account, mailcraft_model::remote::opened_address(&c.origin.id).map(|address| address.to_ascii_lowercase()))
+    (c.origin.account, mailsolutions_model::remote::opened_address(&c.origin.id).map(|address| address.to_ascii_lowercase()))
 }
 
 /// Whether an event that an account's server keeps (`before`) may go into the calendar `e`
@@ -163,7 +163,7 @@ pub(super) fn movable(s: &Session, before: &Event, e: &Event, who: &str) -> Resu
             "This item has files attached, which only the server keeps and which would be lost: it can't be moved to another calendar from here.",
         ));
     }
-    let waits = |change: &mailcraft_model::remote::EventChange| {
+    let waits = |change: &mailsolutions_model::remote::EventChange| {
         change.account == before.origin.account && (change.event == before.id || (!change.remote.is_empty() && change.remote == before.origin.id))
     };
     if before.origin.id.is_empty() || s.mailbox.event_changes.iter().any(waits) {

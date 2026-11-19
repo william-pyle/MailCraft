@@ -10,13 +10,13 @@
 //! word in the window marks an OpenPGP key so ([`Session::set_key_verified`]), and no command's
 //! params reach that. An import and a removal are steps of the history, as other changes to the
 //! mailbox are; an undo puts back only what the step changed of the keys, never takes a
-//! revocation away and never marks a key Verified ([`mailcraft_model::public_keys::PublicKeys::put_back`]).
+//! revocation away and never marks a key Verified ([`mailsolutions_model::public_keys::PublicKeys::put_back`]).
 
 use std::sync::Arc;
 
-use mailcraft_model::digital_signature::SignatureFormat;
-use mailcraft_model::public_keys::{KeySource, MAX_KEY_BYTES, PublicKey};
-use mailcraft_model::{ContactKey, KeyKind};
+use mailsolutions_model::digital_signature::SignatureFormat;
+use mailsolutions_model::public_keys::{KeySource, MAX_KEY_BYTES, PublicKey};
+use mailsolutions_model::{ContactKey, KeyKind};
 use serde_json::{Value, json};
 
 use super::{bad, fail, source};
@@ -119,7 +119,7 @@ fn import(s: &mut Session, v: &Value) -> CmdResult {
     if bytes.is_empty() {
         return Err(fail("the file is empty"));
     }
-    if mailcraft_smime::import::holds_private_key(&bytes) || mailcraft_openpgp::secret::holds_secret(&bytes) {
+    if mailsolutions_smime::import::holds_private_key(&bytes) || mailsolutions_openpgp::secret::holds_secret(&bytes) {
         return Err(fail(PRIVATE_KEY));
     }
     let now = s.now();
@@ -167,7 +167,7 @@ pub(crate) fn preview(s: &Session, v: &Value) -> Option<Vec<(String, &'static st
     if bytes.is_empty() || bytes.len() > MAX_IMPORT_BYTES {
         return None;
     }
-    if mailcraft_smime::import::holds_private_key(&bytes) || mailcraft_openpgp::secret::holds_secret(&bytes) {
+    if mailsolutions_smime::import::holds_private_key(&bytes) || mailsolutions_openpgp::secret::holds_secret(&bytes) {
         return None;
     }
     let mut out = Vec::new();
@@ -185,12 +185,12 @@ pub(crate) fn preview(s: &Session, v: &Value) -> Option<Vec<(String, &'static st
 /// The Public keys in `bytes`: certificates for mail, else OpenPGP keys. What isn't one is
 /// refused with the reason.
 fn read_keys(bytes: &[u8], now: i64) -> Result<Vec<Found>, crate::CmdError> {
-    let certificates = mailcraft_smime::import::certificates_in(bytes);
+    let certificates = mailsolutions_smime::import::certificates_in(bytes);
     if !certificates.is_empty() {
         let mut out = Vec::new();
         let mut refused: Option<&str> = None;
         for der in certificates.iter().take(MAX_IMPORTED) {
-            let Some(info) = mailcraft_smime::import::certificate_info(der) else { continue };
+            let Some(info) = mailsolutions_smime::import::certificate_info(der) else { continue };
             if info.authority {
                 refused.get_or_insert("the certificate is a certification authority's, not a person's Public key");
                 continue;
@@ -219,7 +219,7 @@ fn read_keys(bytes: &[u8], now: i64) -> Result<Vec<Found>, crate::CmdError> {
             _ => Ok(out),
         };
     }
-    let keys = mailcraft_openpgp::PublicKey::parse(bytes)
+    let keys = mailsolutions_openpgp::PublicKey::parse(bytes)
         .map_err(|_| fail("the file holds no Public key that can be read: an X.509 certificate (DER or PEM) or OpenPGP Public keys"))?;
     let mut out = Vec::new();
     for key in keys.iter().take(MAX_IMPORTED) {
@@ -235,13 +235,13 @@ fn read_keys(bytes: &[u8], now: i64) -> Result<Vec<Found>, crate::CmdError> {
 /// `key` (OpenPGP) merged with the copy of it kept for `address` already, so that neither
 /// copy's revocations are lost.
 fn merged(s: &Session, address: &str, key: &PublicKey) -> Option<PublicKey> {
-    let mut ring = mailcraft_openpgp::KeyRing::new();
+    let mut ring = mailsolutions_openpgp::KeyRing::new();
     if let Some(kept) = s.mailbox.public_keys.of(address).iter().find(|k| k.format == SignatureFormat::OpenPgp && k.fingerprint == key.fingerprint) {
-        for k in mailcraft_openpgp::PublicKey::parse(&kept.data).unwrap_or_default() {
+        for k in mailsolutions_openpgp::PublicKey::parse(&kept.data).unwrap_or_default() {
             ring.insert(k);
         }
     }
-    let new = mailcraft_openpgp::PublicKey::parse(&key.data).ok()?.into_iter().next()?;
+    let new = mailsolutions_openpgp::PublicKey::parse(&key.data).ok()?.into_iter().next()?;
     let fp = new.fingerprint().clone();
     ring.insert(new);
     let merged = kept_pgp_key(ring.get(&fp)?, key.seen)?;
@@ -274,12 +274,12 @@ pub fn card_key_from(bytes: &[u8]) -> Result<ContactKey, crate::CmdError> {
     if bytes.len() > MAX_IMPORT_BYTES {
         return Err(fail("the file is larger than a file of Public keys can be (1 MB)"));
     }
-    if mailcraft_smime::import::holds_private_key(bytes) || mailcraft_openpgp::secret::holds_secret(bytes) {
+    if mailsolutions_smime::import::holds_private_key(bytes) || mailsolutions_openpgp::secret::holds_secret(bytes) {
         return Err(fail(PRIVATE_KEY));
     }
     let too_large = || fail("the key is larger than a contact's card keeps one");
-    if let Some(der) = mailcraft_smime::import::certificates_in(bytes).into_iter().next() {
-        let info = mailcraft_smime::import::certificate_info(&der).ok_or_else(|| fail("the certificate can't be read"))?;
+    if let Some(der) = mailsolutions_smime::import::certificates_in(bytes).into_iter().next() {
+        let info = mailsolutions_smime::import::certificate_info(&der).ok_or_else(|| fail("the certificate can't be read"))?;
         if info.authority {
             return Err(fail("the certificate is a certification authority's, not a person's Public key"));
         }
@@ -291,7 +291,7 @@ pub fn card_key_from(bytes: &[u8]) -> Result<ContactKey, crate::CmdError> {
         }
         return Ok(ContactKey { kind: KeyKind::X509, data: info.der, ..ContactKey::default() });
     }
-    let key = mailcraft_openpgp::PublicKey::parse(bytes)
+    let key = mailsolutions_openpgp::PublicKey::parse(bytes)
         .ok()
         .and_then(|keys| keys.into_iter().next())
         .ok_or_else(|| fail("the file holds no Public key that can be read: an X.509 certificate (DER or PEM) or an OpenPGP Public key"))?;
@@ -316,16 +316,16 @@ pub struct KeyFacts {
     /// The addresses it names.
     pub addresses: Vec<String>,
     /// Valid until; 0 when it doesn't say.
-    pub not_after: mailcraft_time::Timestamp,
+    pub not_after: mailsolutions_time::Timestamp,
     /// When the OpenPGP key was made; 0 for a certificate.
-    pub created: mailcraft_time::Timestamp,
+    pub created: mailsolutions_time::Timestamp,
 }
 
 /// What a kept Public key's bytes of `format` say of themselves. A key the readers can't read
 /// says nothing (an empty [`KeyFacts`]).
 pub fn key_facts(format: SignatureFormat, data: &[u8]) -> KeyFacts {
     match format {
-        SignatureFormat::Smime => match mailcraft_smime::import::certificate_info(data) {
+        SignatureFormat::Smime => match mailsolutions_smime::import::certificate_info(data) {
             Some(info) => KeyFacts {
                 format: Some(SignatureFormat::Smime),
                 fingerprint: info.fingerprint,
@@ -337,7 +337,7 @@ pub fn key_facts(format: SignatureFormat, data: &[u8]) -> KeyFacts {
             },
             None => KeyFacts::default(),
         },
-        SignatureFormat::OpenPgp => match mailcraft_openpgp::PublicKey::parse(data).ok().and_then(|k| k.into_iter().next()) {
+        SignatureFormat::OpenPgp => match mailsolutions_openpgp::PublicKey::parse(data).ok().and_then(|k| k.into_iter().next()) {
             Some(key) => KeyFacts {
                 format: Some(SignatureFormat::OpenPgp),
                 fingerprint: key.fingerprint().grouped(),
@@ -365,10 +365,10 @@ pub fn card_key_facts(key: &ContactKey) -> KeyFacts {
 /// The keys a contact's card is to have after `people.new` or `people.edit` (#30 R11), from the
 /// `keys` param: in order, `{"keep": n}` keeps the card's key at that place, `{"data": base64}`
 /// adds a Public key from a file ([`card_key_from`]). What isn't kept goes. At most
-/// [`mailcraft_model::Contact::MAX_KEYS`].
+/// [`mailsolutions_model::Contact::MAX_KEYS`].
 pub fn card_keys_param(had: &[ContactKey], list: &Value) -> Result<Vec<ContactKey>, crate::CmdError> {
     let list = list.as_array().ok_or_else(|| bad("`keys` is a list of {\"keep\": number} and {\"data\": base64}"))?;
-    if list.len() > mailcraft_model::Contact::MAX_KEYS {
+    if list.len() > mailsolutions_model::Contact::MAX_KEYS {
         return Err(fail("a contact's card keeps at most 32 keys"));
     }
     let mut out = Vec::with_capacity(list.len());

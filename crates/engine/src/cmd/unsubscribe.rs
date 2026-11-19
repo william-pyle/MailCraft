@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Unsubscribe from one message (#1207): how its headers say it can be unsubscribed from
-//! ([`mailcraft_model::unsubscribe`]), and by mail, the message that asks for it.
+//! ([`mailsolutions_model::unsubscribe`]), and by mail, the message that asks for it.
 //!
 //! Anybody can write `List-Unsubscribe`, and an unsubscribe link from a phisher only tells them
 //! the address is read: a message is offered nothing unless its account's server vouches that it
-//! came from its sender's domain ([`mailcraft_model::auth_results::vouched`]), it is outside
+//! came from its sender's domain ([`mailsolutions_model::auth_results::vouched`]), it is outside
 //! Junk E-mail and it has no sender warning. Nothing is fetched here: one click and a web page are the window's
 //! (`ui.unsubscribe`), which has a host to reach the web with.
 
-use mailcraft_model::unsubscribe::{Way, way};
-use mailcraft_model::{Address, Body, FolderKind, Id, Message, auth_results, sender_warnings};
+use mailsolutions_model::unsubscribe::{Way, way};
+use mailsolutions_model::{Address, Body, FolderKind, Id, Message, auth_results, sender_warnings};
 use serde_json::{Value, json};
 
 use super::{fail, needs_message};
@@ -85,7 +85,7 @@ fn request(s: &Session, id: Id, to: &str, subject: &str, body: &str) -> Result<M
     let account = s.mailbox.message(id).map(|m| m.account).ok_or_else(|| fail("that message isn't here"))?;
     let owner = s.mailbox.account(account).cloned().ok_or_else(|| fail("the account is gone"))?;
     if !owner.kind.sends_mail() {
-        return Err(fail("This account doesn't send mail from MailCraft, so it can't unsubscribe by mail."));
+        return Err(fail("This account doesn't send mail from MailSolutions, so it can't unsubscribe by mail."));
     }
     let outbox = s.mailbox.folder_of_kind(owner.id, FolderKind::Outbox).ok_or_else(|| fail("this account has no Outbox folder"))?;
     let now = s.now();
@@ -94,7 +94,7 @@ fn request(s: &Session, id: Id, to: &str, subject: &str, body: &str) -> Result<M
     Ok(Message {
         account: owner.id,
         folder: outbox,
-        message_id: mailcraft_mime::new_message_id(domain, now, s.rev().wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ id.rotate_left(23)),
+        message_id: mailsolutions_mime::new_message_id(domain, now, s.rev().wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ id.rotate_left(23)),
         from: owner.address(),
         to: vec![Address::new("", to)],
         subject: words(subject, "Unsubscribe"),

@@ -6,13 +6,13 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-use mailcraft_charset::base64::STANDARD;
+use mailsolutions_charset::base64::STANDARD;
 use serde_json::{Value, json};
 
 use crate::graph::standin::{StandIn, TOKEN};
 
 const NOW: i64 = 1_790_000_000;
-const MARKER: &str = "String {6d1c4e3a-8f2b-4c5d-9e0a-1b2c3d4e5f60} Name MailCraftMarker";
+const MARKER: &str = "String {6d1c4e3a-8f2b-4c5d-9e0a-1b2c3d4e5f60} Name MailSolutionsMarker";
 
 /// One request: the status (0 when the connection closed without an answer), the headers (names
 /// in lower case) and the body. `auth` false sends no Authorization; `kind` is the body's type.
@@ -63,7 +63,7 @@ fn a_draft_made_from_json_is_in_drafts_and_found_by_its_marker() {
         "toRecipients": [{"emailAddress": {"address": "kit@example.org", "name": "Kit"}}],
         "bccRecipients": [{"emailAddress": {"address": "lee@example.org"}}],
         "importance": "high",
-        "singleValueExtendedProperties": marker("mailcraft-draft-1"),
+        "singleValueExtendedProperties": marker("mailsolutions-draft-1"),
         "internetMessageHeaders": [{"name": "x-mailcraft-test", "value": "1"}],
     });
     let (status, answer) = send(&server, "POST", "/v1.0/me/messages", Some(&draft));
@@ -71,10 +71,10 @@ fn a_draft_made_from_json_is_in_drafts_and_found_by_its_marker() {
     assert_eq!((answer["isDraft"].clone(), answer["subject"].clone()), (json!(true), json!("Plans for Friday")));
     assert_eq!(answer["parentFolderId"], json!(server.state().well_known("drafts")));
     assert_eq!(answer["bccRecipients"][0]["emailAddress"]["address"], "lee@example.org");
-    let found = by_marker(&server, "mailcraft-draft-1");
+    let found = by_marker(&server, "mailsolutions-draft-1");
     assert_eq!(found.len(), 1);
     assert_eq!(found[0]["id"], answer["id"]);
-    assert!(by_marker(&server, "mailcraft-draft-2").is_empty());
+    assert!(by_marker(&server, "mailsolutions-draft-2").is_empty());
 
     // Headers that aren't x- headers are Graph's to write; a property it hasn't is 400.
     for wrong in [json!({"internetMessageHeaders": [{"name": "In-Reply-To", "value": "<a@b>"}]}), json!({"isFancy": true}), json!({"subject": 3})] {
@@ -111,7 +111,7 @@ fn an_answer_stays_in_its_conversation_and_a_forward_carries_the_attachments() {
             ..Default::default()
         })
     });
-    let body = json!({"message": {"singleValueExtendedProperties": marker("mailcraft-draft-r")}});
+    let body = json!({"message": {"singleValueExtendedProperties": marker("mailsolutions-draft-r")}});
     let (status, reply) = send(&server, "POST", &format!("/v1.0/me/messages/{source}/createReply"), Some(&body));
     assert_eq!(status, 201, "{reply}");
     let state = server.state();
@@ -121,7 +121,7 @@ fn an_answer_stays_in_its_conversation_and_a_forward_carries_the_attachments() {
     assert_eq!((made.subject.as_str(), made.in_reply_to.as_str()), ("RE: Invoice 42", orig.internet_id.as_str()));
     assert_eq!(made.to, std::slice::from_ref(&orig.from));
     assert!(made.draft && made.attachments.is_empty());
-    assert_eq!(by_marker(&server, "mailcraft-draft-r").len(), 1);
+    assert_eq!(by_marker(&server, "mailsolutions-draft-r").len(), 1);
 
     let (status, forward) = send(&server, "POST", &format!("/v1.0/me/messages/{source}/createForward"), None);
     assert_eq!(status, 201, "{forward}");
@@ -214,10 +214,10 @@ fn attachments_are_added_listed_and_deleted_and_large_ones_go_by_upload_session(
 fn an_answer_can_be_lost_after_the_draft_was_made() {
     let server = StandIn::start().unwrap();
     server.state().lose_next.push("POST /v1.0/me/messages".into());
-    let body = json!({"subject": "Lost", "singleValueExtendedProperties": marker("mailcraft-draft-lost")});
+    let body = json!({"subject": "Lost", "singleValueExtendedProperties": marker("mailsolutions-draft-lost")});
     let (status, _) = send(&server, "POST", "/v1.0/me/messages", Some(&body));
     assert_eq!(status, 0, "no answer");
-    assert_eq!(by_marker(&server, "mailcraft-draft-lost").len(), 1, "but the draft was made");
+    assert_eq!(by_marker(&server, "mailsolutions-draft-lost").len(), 1, "but the draft was made");
     // Once only.
     let (status, _) = send(&server, "POST", "/v1.0/me/messages", Some(&json!({"subject": "Kept"})));
     assert_eq!(status, 201);

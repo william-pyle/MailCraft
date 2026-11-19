@@ -7,7 +7,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -47,7 +47,7 @@ fn frame(ctx: &egui::Context, app: &mut MailApp, minimized: bool) {
 fn a_window_opened_while_the_main_window_is_minimized_waits_for_it() {
     let asked = Rc::new(Cell::new(0));
     let ctx = backend(&asked);
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     let message = app.session.mailbox.messages.values().find(|m| !m.draft).map(|m| m.id).unwrap();

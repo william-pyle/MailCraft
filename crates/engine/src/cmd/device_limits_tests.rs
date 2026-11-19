@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device limits (MB3.16): the setting.
 
-use mailcraft_model::device_limits::{MIN_STORAGE, PHONE_STORAGE};
+use mailsolutions_model::device_limits::{MIN_STORAGE, PHONE_STORAGE};
 use serde_json::json;
 
 use crate::Session;
@@ -47,7 +47,7 @@ fn account_edit_takes_the_one_megabyte_step() {
     let mut s = Session::empty();
     let id = s.run("account.add", &json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     s.run("account.edit", &json!({"id": id, "downloadInFull": "upTo1Mb"})).unwrap();
-    assert_eq!(s.mailbox.account(id).unwrap().download_in_full, mailcraft_model::DownloadInFull::UpTo1Mb);
+    assert_eq!(s.mailbox.account(id).unwrap().download_in_full, mailsolutions_model::DownloadInFull::UpTo1Mb);
 }
 
 /// 2027-01-15.
@@ -55,7 +55,7 @@ pub(super) const NOW: i64 = 1_800_000_000;
 
 /// A session at [`NOW`] with a Microsoft account keeping a month, whose Inbox the server has.
 pub(super) fn graph_session() -> (Session, u64, u64) {
-    use mailcraft_model::{FolderKind, Mailbox, ServerFolder};
+    use mailsolutions_model::{FolderKind, Mailbox, ServerFolder};
     let mut s = Session::at(Mailbox::with_local_account("", ""), NOW, 0);
     let account = s.run("account.add", &json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     s.run("account.edit", &json!({"id": account, "keepOffline": "1m"})).unwrap();
@@ -76,7 +76,7 @@ fn only_a_phone_asks_its_server_for_the_windows_mail_alone() {
     assert_eq!(request.since, None, "a computer lists everything");
     s.run("account.deviceLimits", &json!({"storage": PHONE_STORAGE})).unwrap();
     let request = crate::cmd::graph_mail::graph_mail_request(&s, account).unwrap();
-    assert_eq!(request.since, mailcraft_model::KeepOffline::Month1.since(NOW));
+    assert_eq!(request.since, mailsolutions_model::KeepOffline::Month1.since(NOW));
     assert_eq!(crate::cmd::graph_mail::graph_inbox_request(&s, account).unwrap().since, request.since);
 }
 
@@ -96,7 +96,7 @@ fn a_longer_window_on_a_phone_lists_the_folders_afresh_and_a_shorter_one_does_no
     assert!(link.afresh && link.link.is_empty(), "the old link is never followed");
     assert!(crate::cmd::graph_mail::graph_inbox_request(&s, account).is_none(), "the whole run lists it");
     // A page of the new listing taken in: it goes on from there.
-    let page = mailcraft_model::sync::MessagePage {
+    let page = mailsolutions_model::sync::MessagePage {
         folder: "in".into(),
         link: "https://graph.microsoft.com/v1.0/x?$deltatoken=2".into(),
         afresh: true,
@@ -114,8 +114,8 @@ const DAY: i64 = 86_400;
 /// A message of `account` in `folder` (the server's "in" unless it is another), received
 /// `days_ago`, with `body` bytes of text; its id.
 pub(super) fn add(s: &mut Session, account: u64, folder: u64, days_ago: i64, body: usize) -> u64 {
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{Body, Message};
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{Body, Message};
     let server_folder = s.mailbox.folder(folder).and_then(|f| f.server.as_ref()).map_or("in".to_string(), |f| f.id.clone());
     let server = ServerMessage { id: format!("M{}", s.mailbox.messages.len() + 1), folder: server_folder, ..Default::default() };
     let body = Body { text: "x".repeat(body), html: None };
@@ -124,7 +124,7 @@ pub(super) fn add(s: &mut Session, account: u64, folder: u64, days_ago: i64, bod
 
 #[test]
 fn mail_older_than_the_window_leaves_a_phone_but_never_what_the_server_lacks() {
-    use mailcraft_model::FolderKind;
+    use mailsolutions_model::FolderKind;
     let (mut s, account, inbox) = graph_session();
     let recent = add(&mut s, account, inbox, 2, 10);
     let old = add(&mut s, account, inbox, 60, 10);
@@ -134,7 +134,7 @@ fn mail_older_than_the_window_leaves_a_phone_but_never_what_the_server_lacks() {
     let outbox = s.mailbox.folder_of_kind(account, FolderKind::Outbox).unwrap();
     let draft = add(&mut s, account, drafts, 60, 10);
     let waiting = add(&mut s, account, outbox, 60, 10);
-    let mut unsent = mailcraft_model::Message { account, folder: inbox, received: NOW - 90 * DAY, ..Default::default() };
+    let mut unsent = mailsolutions_model::Message { account, folder: inbox, received: NOW - 90 * DAY, ..Default::default() };
     unsent.subject = "only here".into();
     let unsent = s.mailbox.add_message(unsent).unwrap();
     // A computer keeps it all.
@@ -192,7 +192,7 @@ fn the_message_shown_never_leaves() {
 
 #[test]
 fn a_page_of_an_earlier_listing_never_meets_a_later_request_to_list_afresh() {
-    use mailcraft_model::sync::MessagePage;
+    use mailsolutions_model::sync::MessagePage;
     let (mut s, account, inbox) = graph_session();
     s.run("account.deviceLimits", &json!({"storage": PHONE_STORAGE})).unwrap();
     let relisting = |s: &Session| s.mailbox.folder(inbox).unwrap().server.as_ref().unwrap().relist;
@@ -228,15 +228,15 @@ fn a_device_with_no_limits_starts_from_the_phones_when_one_is_set() {
     let mut s = Session::empty();
     s.run("account.deviceLimits", &json!({"storage": MIN_STORAGE})).unwrap();
     let l = s.mailbox.device_limits.unwrap();
-    assert_eq!(l.defaults, mailcraft_model::PHONE_DEFAULTS, "not moved to the defaults again at the next open");
-    assert_eq!(l.messages, mailcraft_model::DeviceLimits::phone(None).messages);
+    assert_eq!(l.defaults, mailsolutions_model::PHONE_DEFAULTS, "not moved to the defaults again at the next open");
+    assert_eq!(l.messages, mailsolutions_model::DeviceLimits::phone(None).messages);
 }
 
 #[test]
 fn a_message_with_a_change_waiting_stays_however_many_changes_wait() {
     let (mut s, account, inbox) = graph_session();
     // One more than a request carries: the last in line is as safe as the first.
-    let ids: Vec<u64> = (0..=mailcraft_model::sync::MAX_MESSAGE_CHANGES)
+    let ids: Vec<u64> = (0..=mailsolutions_model::sync::MAX_MESSAGE_CHANGES)
         .map(|_| {
             let id = add(&mut s, account, inbox, 60, 0);
             s.mailbox.message_mut(id).unwrap().read = true; // the server still has it unread

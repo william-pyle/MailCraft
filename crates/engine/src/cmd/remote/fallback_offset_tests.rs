@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use std::sync::Arc;
 
-use mailcraft_time::{Date, DateTime, Zone};
+use mailsolutions_time::{Date, DateTime, Zone};
 
 use super::offset_of;
 use crate::{Clock, Session, sample};

@@ -14,7 +14,7 @@
 //! capped by the HTTP layer, the records looked at and the hosts handed back are capped, and a
 //! target that isn't a plain host name is passed over.
 
-use mailcraft_proto::ProtoError;
+use mailsolutions_proto::ProtoError;
 use serde_json::Value;
 
 use crate::NetError;

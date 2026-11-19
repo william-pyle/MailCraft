@@ -50,10 +50,10 @@ enum Clause {
     Importance(&'static str),
 }
 
-/// Whether `text` is one whole address, as MailCraft's search has it, so that a test of both
-/// finds the same mail ([`mailcraft_model::search::is_address`]).
+/// Whether `text` is one whole address, as MailSolutions's search has it, so that a test of both
+/// finds the same mail ([`mailsolutions_model::search::is_address`]).
 fn is_whole_address(text: &str) -> bool {
-    mailcraft_model::search::is_address(text)
+    mailsolutions_model::search::is_address(text)
 }
 
 /// The words of `text` as a search reads them: runs of letters and digits, in lower case.
@@ -150,7 +150,7 @@ fn clauses(value: &str) -> Result<Vec<Clause>, Refusal> {
                 };
                 let people = properties.iter().all(|p| ["from", "to", "cc", "bcc"].contains(p));
                 match people && is_whole_address(&text) {
-                    true => Clause::Address { properties, address: mailcraft_model::search::address_key(&text) },
+                    true => Clause::Address { properties, address: mailsolutions_model::search::address_key(&text) },
                     false => Clause::Words { properties, words },
                 }
             }
@@ -172,7 +172,7 @@ fn matches(m: &super::Message, clause: &Clause) -> bool {
         Clause::HasAttachments(has) => m.attachments.iter().any(|a| !a.inline) == *has,
         Clause::Importance(importance) => m.importance == *importance,
         Clause::Address { properties, address } => properties.iter().any(|property| {
-            let people = |list: &[String]| list.iter().any(|p| mailcraft_model::search::address_key(p) == *address);
+            let people = |list: &[String]| list.iter().any(|p| mailsolutions_model::search::address_key(p) == *address);
             match *property {
                 "from" => people(std::slice::from_ref(&m.from)),
                 "to" => people(&m.to),

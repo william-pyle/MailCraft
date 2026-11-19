@@ -62,7 +62,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::{Arc, Mutex, PoisonError};
 
-use mailcraft_model::{Address, Message};
+use mailsolutions_model::{Address, Message};
 use serde_json::{Map, Value, json};
 
 use crate::{
@@ -440,7 +440,7 @@ impl Data {
             return self.token.as_deref() == Some(credentials);
         }
         if scheme.eq_ignore_ascii_case("basic") {
-            let decoded = mailcraft_charset::base64::STANDARD.decode(credentials).ok().and_then(|bytes| String::from_utf8(bytes).ok());
+            let decoded = mailsolutions_charset::base64::STANDARD.decode(credentials).ok().and_then(|bytes| String::from_utf8(bytes).ok());
             return decoded.and_then(|text| text.split_once(':').map(|(user, password)| user == USER && password == PASSWORD)).unwrap_or(false);
         }
         false
@@ -975,7 +975,7 @@ fn email_json(email: &Email, properties: &[String]) -> Value {
     let text = String::from_utf8_lossy(&email.raw);
     let (fields, body) = split_message(&text);
     // What a store of the standard kind parses out of the header, read by the program's own reader.
-    let parsed = properties.iter().any(|p| EMAIL_PARSED.contains(&p.as_str())).then(|| mailcraft_mime_model::parse(&email.raw));
+    let parsed = properties.iter().any(|p| EMAIL_PARSED.contains(&p.as_str())).then(|| mailsolutions_mime_model::parse(&email.raw));
     let truths = |set: &BTreeSet<String>| Value::Object(set.iter().map(|k| (k.clone(), Value::Bool(true))).collect());
     let mut out = Map::new();
     out.insert("id".into(), json!(email.id));
@@ -1001,10 +1001,10 @@ fn email_json(email: &Email, properties: &[String]) -> Value {
 /// The thread of an email (RFC 8621 §3), as a server that threads by the header would name it: after
 /// the first message its `References` name, else the one it answers, else itself.
 fn thread_of(email: &Email) -> String {
-    let m = mailcraft_mime_model::parse(&email.raw);
+    let m = mailsolutions_mime_model::parse(&email.raw);
     let root = m.references.first().cloned().filter(|r| !r.is_empty()).unwrap_or(m.in_reply_to);
     let root = if root.is_empty() { m.message_id } else { root };
-    if root.is_empty() { format!("T{}", email.id) } else { format!("T{:016x}", mailcraft_model::text_hash(&root)) }
+    if root.is_empty() { format!("T{}", email.id) } else { format!("T{:016x}", mailsolutions_model::text_hash(&root)) }
 }
 
 /// A field of the header as RFC 8621 §4.1.2 shows it: `null` when the message has none.
@@ -1023,7 +1023,7 @@ fn parsed_field(property: &str, message: &Message) -> Value {
         "messageId" if message.message_id.is_empty() => Value::Null,
         "messageId" => json!([message.message_id]),
         "sentAt" if message.date == 0 => Value::Null,
-        "sentAt" => json!(mailcraft_time::format_iso_utc(message.date)),
+        "sentAt" => json!(mailsolutions_time::format_iso_utc(message.date)),
         _ => Value::Null,
     }
 }

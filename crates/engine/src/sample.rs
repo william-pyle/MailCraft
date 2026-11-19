@@ -3,11 +3,11 @@
 //! The sample mailbox (`--sample`, `?sample`, File › New › Sample): our own invented people,
 //! mail, calendar and tasks, dated around "now" so every date group has something in it.
 
-use mailcraft_model::{
+use mailsolutions_model::{
     Action, Address, Attachment, Attendee, Body, Condition, Contact, Event, FlagStatus, FolderKind, Freq, Id, Importance, Labeled, Mailbox, Message,
     PostalAddress, Recurrence, Response, Rule, ShowAs, Signature, Task,
 };
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday};
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday};
 
 const ME: (&str, &str) = ("Avery Quinn", "avery@lumen.example");
 const MAYA: (&str, &str) = ("Maya Okafor", "maya@lumen.example");

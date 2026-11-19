@@ -8,8 +8,8 @@ use std::cell::Cell;
 use std::future::Future;
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::FlagStatus;
-use mailcraft_model::sync::{DraftUp, EwsMailRequest, EwsMailResult, FlagUp, MessageChange, MessageOutcome, SendOutcome, SendUp};
+use mailsolutions_model::FlagStatus;
+use mailsolutions_model::sync::{DraftUp, EwsMailRequest, EwsMailResult, FlagUp, MessageChange, MessageOutcome, SendOutcome, SendUp};
 
 use crate::standin::{AUTHORIZATION, StandIn, block_on};
 use crate::*;
@@ -244,13 +244,13 @@ fn a_send_after_the_version_steps_down_makes_one_message() {
     // The send is the run's first request: refused for its version, made again once, and the server
     // holds one message, with one copy in Sent Items.
     let standin = exchange2010();
-    let message = Box::new(mailcraft_model::Message {
+    let message = Box::new(mailsolutions_model::Message {
         subject: "Quarterly".into(),
-        from: mailcraft_model::Address::new("Ada", "ada@example.org"),
-        to: vec![mailcraft_model::Address::new("Zoe", "zoe@example.org")],
+        from: mailsolutions_model::Address::new("Ada", "ada@example.org"),
+        to: vec![mailsolutions_model::Address::new("Zoe", "zoe@example.org")],
         date: 1_791_993_600,
         message_id: "m1@example.org".into(),
-        body: mailcraft_model::Body { text: "Numbers attached.".into(), ..Default::default() },
+        body: mailsolutions_model::Body { text: "Numbers attached.".into(), ..Default::default() },
         ..Default::default()
     });
     let send = SendUp { message: 3, draft: None, mime: Some(message) };

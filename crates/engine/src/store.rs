@@ -43,7 +43,7 @@
 //! - **What comes into memory** ([`fill`]): every message's headers, and the bodies of the newest
 //!   mail (by date) up to a budget, the smaller of [`MAX_CONTENT`] and a sixteenth of the
 //!   machine's memory ([`body_budget`]). Attachments, and the bodies of older mail, stay on disk
-//!   and are named on the message ([`mailcraft_model::Attachment::kept`], [`Message::kept`]);
+//!   and are named on the message ([`mailsolutions_model::Attachment::kept`], [`Message::kept`]);
 //!   they are read when something needs them ([`fetch`], behind `Session::content`): a message
 //!   shown, searched, answered, exported or sent, a file saved. What is fetched is kept for a
 //!   while in a cache bounded by bytes ([`CACHE_MAX`]); what a session brings into its messages
@@ -72,8 +72,8 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock, Weak};
 use std::time::{Duration, Instant, SystemTime};
 
-use mailcraft_model::load_limit::{self, Budget};
-use mailcraft_model::{Contact, ContentRef, Event, Id, KeptBody, Mailbox, Message, Task};
+use mailsolutions_model::load_limit::{self, Budget};
+use mailsolutions_model::{Contact, ContentRef, Event, Id, KeptBody, Mailbox, Message, Task};
 use serde::{Deserialize, Serialize};
 
 use crate::io::{BackgroundSave, ContentSource, MAX_FILE, MAX_MAILBOX_JSON, OpenProgress, SaveProgress, SaveReport, SaveStage};
@@ -502,7 +502,7 @@ impl WireParts {
     /// The name of the header block, unless it says more bytes than a block can be (a hostile
     /// file): then there is none, and the message's other header lines are all it has.
     fn header_wire(&self) -> Option<HeaderWire> {
-        self.headers.clone().filter(|h| h.len <= mailcraft_model::headers::MAX_HEADER_BLOCK as u64)
+        self.headers.clone().filter(|h| h.len <= mailsolutions_model::headers::MAX_HEADER_BLOCK as u64)
     }
 }
 
@@ -1687,7 +1687,7 @@ fn starts_like_json(file: &Path) -> Result<bool, String> {
 }
 
 /// Whether the file at `path` begins as a mailbox file in this form does. A file that begins as
-/// one of a form a newer MailCraft writes is an error that says so.
+/// one of a form a newer MailSolutions writes is an error that says so.
 fn is_index(file: &Path) -> Result<bool, String> {
     let mut head = [0u8; 16];
     // (Without waiting, and only a regular file: a pipe put where a mailbox was named can't hold
@@ -1896,7 +1896,7 @@ fn open_locked(st: &mut State, path: &Path, progress: &OpenProgress, launch: Lau
     // Only a file that starts like JSON is a mailbox of the forms before this one: anything else
     // (zeros left by a write the system cut short, another program's file) is not "too large".
     if !starts_like_json(&file).map_err(|e| format!("{show}: {e}"))? {
-        return Err(format!("{show} isn't a MailCraft mailbox (it doesn't start like one; it may be damaged, and it is left as it is)"));
+        return Err(format!("{show} isn't a MailSolutions mailbox (it doesn't start like one; it may be damaged, and it is left as it is)"));
     }
     // A file that would not fit in memory whole (or is more than is read whole) is read as a
     // stream, its content going to the content folder as it is read (#649).
@@ -1916,7 +1916,7 @@ fn open_locked(st: &mut State, path: &Path, progress: &OpenProgress, launch: Lau
             format!("{show} is too large for this computer's memory ({} MB)", len >> 20)
         } else {
             format!(
-                "{show} is {} MB, more than MailCraft opens as one file on a computer whose free memory it can't measure ({} MB)",
+                "{show} is {} MB, more than MailSolutions opens as one file on a computer whose free memory it can't measure ({} MB)",
                 len >> 20,
                 UNMEASURED_JSON_MAX >> 20
             )
@@ -1936,7 +1936,8 @@ fn open_locked(st: &mut State, path: &Path, progress: &OpenProgress, launch: Lau
     // (What parsing builds is charged while it is built, every list element at any depth: a file
     // that would cost more memory than it may is refused before it does, `load_limit`.)
     let budget = open_budget();
-    let mut mailbox: Mailbox = load_limit::read_json(&bytes, &budget).map_err(|e| refused(&show, "this isn't a MailCraft mailbox", &e, &budget))?;
+    let mut mailbox: Mailbox =
+        load_limit::read_json(&bytes, &budget).map_err(|e| refused(&show, "this isn't a MailSolutions mailbox", &e, &budget))?;
     let version = mailbox.version;
     let (split, filled) = match version {
         0 | 1 => (false, Filled::default()),
@@ -1944,7 +1945,7 @@ fn open_locked(st: &mut State, path: &Path, progress: &OpenProgress, launch: Lau
             let head: Head = load_limit::read_json(&bytes, &budget).map_err(|e| refused(&show, "this mailbox file is damaged", &e, &budget))?;
             (true, fill(st, &blob_dir(&file), &mut mailbox, head, None, Launch::default()))
         }
-        newer => return Err(format!("{show}: this mailbox was written by a newer MailCraft (format {newer})")),
+        newer => return Err(format!("{show}: this mailbox was written by a newer MailSolutions (format {newer})")),
     };
     // In memory a mailbox is whole, whichever form it came from.
     mailbox.version = 1;
@@ -1993,7 +1994,7 @@ fn parse_item(key: &Key, item: &index::Item, budget: &Arc<Budget>) -> Result<(Pa
     let parsed = match key.0 {
         Coll::Message => {
             let mut m: Message = load_limit::read_json(item.json(), budget).map_err(damaged)?;
-            // What nothing reads by name goes to the message's block (`mailcraft_model::headers`).
+            // What nothing reads by name goes to the message's block (`mailsolutions_model::headers`).
             m.split_headers();
             let refs = item.refs();
             let wire = if refs.is_empty() { None } else { Some(Box::new(load_limit::read_json::<WireParts>(refs, budget).map_err(damaged)?)) };
@@ -2028,7 +2029,7 @@ fn stash_block((parsed, fp): (Parsed, Fp), pack: Option<&Mutex<pack::Writer>>) -
                 }
             };
             if let Some(m) = Arc::get_mut(&mut m) {
-                m.header_block = mailcraft_model::HeaderBlock { data: Arc::default(), kept: Some(r.to_model()) };
+                m.header_block = mailsolutions_model::HeaderBlock { data: Arc::default(), kept: Some(r.to_model()) };
             }
             let mut wire = wire.unwrap_or_default();
             wire.headers = Some(HeaderWire { hash: r.hash.hex(), len: r.len, at: Some(at) });
@@ -2403,7 +2404,7 @@ const MIN_JSON_ITEMS: usize = 250_000;
 /// which a one-line `{}` message already costs. A file with more is refused while it is read, not
 /// after it has used the memory.
 pub(crate) fn max_json_items() -> usize {
-    usize::try_from(body_budget().saturating_mul(4) / mailcraft_model::MIN_ITEM_BYTES).unwrap_or(usize::MAX).max(MIN_JSON_ITEMS)
+    usize::try_from(body_budget().saturating_mul(4) / mailsolutions_model::MIN_ITEM_BYTES).unwrap_or(usize::MAX).max(MIN_JSON_ITEMS)
 }
 
 /// Bytes of parsed values (every list element, map entry and compound value of the mailbox, at any
@@ -2682,7 +2683,7 @@ fn fill(st: &mut State, dir: &Path, mailbox: &mut Mailbox, head: Head, mut parts
             let text = want(&wire.text, true, now, &mut st.live);
             let html = want(&wire.html, true, now, &mut st.live);
             // (A name for more than a hidden text can be is not read: the cap holds in a hostile file.)
-            let hidden_wire = wire.hidden.clone().filter(|(_, len)| *len <= mailcraft_model::MAX_HIDDEN_TEXT as u64);
+            let hidden_wire = wire.hidden.clone().filter(|(_, len)| *len <= mailsolutions_model::MAX_HIDDEN_TEXT as u64);
             let hidden = want(&hidden_wire, true, now, &mut st.live);
             let attachments: Vec<Option<Want>> = wire.attachments.iter().map(|a| want(a, false, true, &mut st.live)).collect();
             // (A message's original, #30, is never brought in at opening: it is read when it is
@@ -2846,7 +2847,7 @@ fn fill(st: &mut State, dir: &Path, mailbox: &mut Mailbox, head: Head, mut parts
             }
         }
         // (A missing HTML is noted on the text, which is otherwise there to read.)
-        kept.text_hash = mailcraft_model::text_hash(&m.body.text);
+        kept.text_hash = mailsolutions_model::text_hash(&m.body.text);
         m.kept = (!kept.is_empty()).then(|| Box::new(kept));
         for (i, want) in attachments.iter().enumerate() {
             let (Some(want), Some(a)) = (want, m.attachments.get_mut(i)) else { continue };
@@ -2861,8 +2862,9 @@ fn fill(st: &mut State, dir: &Path, mailbox: &mut Mailbox, head: Head, mut parts
         if let Some(want) = &original {
             // (Not counted among what is unavailable: without it the message is as one read
             // before it was kept, #30. A name that isn't one: no original.)
-            m.original =
-                stand(want, &mut Filled::default()).zip(want.kept()).map(|(_, r)| mailcraft_model::Original { data: Arc::default(), kept: Some(r) });
+            m.original = stand(want, &mut Filled::default())
+                .zip(want.kept())
+                .map(|(_, r)| mailsolutions_model::Original { data: Arc::default(), kept: Some(r) });
             if let Some(p) = held.as_mut().and_then(|p| p.original.as_mut()) {
                 p.held = false;
             }
@@ -2877,7 +2879,7 @@ fn fill(st: &mut State, dir: &Path, mailbox: &mut Mailbox, head: Head, mut parts
         // The header block stays on disk, named on the message (HS); a name that isn't one: no
         // block, and the message has the header lines it reads by name.
         if let Some(want) = &headers {
-            m.header_block = mailcraft_model::HeaderBlock { data: Arc::default(), kept: want.kept() };
+            m.header_block = mailsolutions_model::HeaderBlock { data: Arc::default(), kept: want.kept() };
             if let Some(p) = held.as_mut().and_then(|p| p.headers.as_mut()) {
                 p.held = false;
             }
@@ -3041,7 +3043,7 @@ pub fn load_all(path: &Path, mailbox: &mut Mailbox) -> Result<usize, String> {
         // A header block that can't be read is unavailable (HS): the message is whole without
         // it, with the header lines it reads by name.
         if let Some(r) = m.header_block.kept.filter(|_| m.header_block.data.is_empty()) {
-            match take(&r).map(|bytes| mailcraft_model::HeaderBlock::read(&bytes)) {
+            match take(&r).map(|bytes| mailsolutions_model::HeaderBlock::read(&bytes)) {
                 Ok(Some(block)) => {
                     m.header_block = block;
                     n += 1;
@@ -3147,13 +3149,13 @@ pub fn evictable(path: &Path, id: Id, m: &Message) -> Option<Message> {
             .map_or_else(|| Digest::of(block), |(_, hash)| *hash)
             == p.r.hash
     {
-        lean.header_block = mailcraft_model::HeaderBlock { data: Arc::default(), kept: Some(p.r.to_model()) };
+        lean.header_block = mailsolutions_model::HeaderBlock { data: Arc::default(), kept: Some(p.r.to_model()) };
         any = true;
     }
     if !any {
         return None;
     }
-    kept.text_hash = mailcraft_model::text_hash(&lean.body.text);
+    kept.text_hash = mailsolutions_model::text_hash(&lean.body.text);
     lean.kept = (!kept.is_empty()).then(|| Box::new(kept));
     Some(lean)
 }
@@ -3238,7 +3240,7 @@ fn save_locked(mut st: MutexGuard<'_, State>, shared: &Shared, path: &Path, mail
 pub fn save_single(path: &Path, mailbox: &Mailbox) -> Result<u64, String> {
     // This export uses the model's direct serializer, not the indexed writer above.
     let mut portable = mailbox.clone();
-    portable.contacts.retain(|_, c| c.contactcraft_id.is_empty());
+    portable.contacts.retain(|_, c| c.contactsolutions_id.is_empty());
     let bytes = crate::io::write_mailbox(&portable)?;
     // Never write a file a later open would refuse.
     if bytes.len() as u64 > MAX_MAILBOX_JSON {
@@ -3367,7 +3369,7 @@ fn prepare(
         lean.original = None;
     }
     if parts.headers.is_some() {
-        lean.header_block = mailcraft_model::HeaderBlock::default();
+        lean.header_block = mailsolutions_model::HeaderBlock::default();
     }
     let json = serde_json::to_vec(&lean).map_err(|e| e.to_string())?;
     let refs = if parts.is_empty() { Vec::new() } else { parts.json().into_bytes() };
@@ -3607,9 +3609,9 @@ fn delta<'m>(st: &mut State, path: &Path, mailbox: &'m Mailbox, d: &Disk, pack: 
         index::delete(&mut group, (Coll::Message, *id)).map_err(io_error)?;
         records = records.saturating_add(1);
     }
-    // ContactCraft records are only a live view of its own database, never mailbox data.
-    let local_contacts: BTreeMap<Id, Arc<mailcraft_model::Contact>> =
-        mailbox.contacts.iter().filter(|(_, c)| c.contactcraft_id.is_empty()).map(|(id, c)| (*id, c.clone())).collect();
+    // ContactSolutions records are only a live view of its own database, never mailbox data.
+    let local_contacts: BTreeMap<Id, Arc<mailsolutions_model::Contact>> =
+        mailbox.contacts.iter().filter(|(_, c)| c.contactsolutions_id.is_empty()).map(|(id, c)| (*id, c.clone())).collect();
     let contacts = changes(&local_contacts, Coll::Contact, &d.contacts, &mut group, &mut records)?;
     let events = changes(&mailbox.events, Coll::Event, &d.events, &mut group, &mut records)?;
     let tasks = changes(&mailbox.tasks, Coll::Task, &d.tasks, &mut group, &mut records)?;
@@ -3819,7 +3821,7 @@ fn keep_aside(path: &Path, what: &str) -> std::io::Result<PathBuf> {
 
 /// Why a save wasn't written: the file would be one a later open refuses.
 fn too_big_to_open(len: u64) -> String {
-    format!("the mailbox file would be {} MB, more than MailCraft opens ({} GB); nothing was written", len >> 20, MAX_INDEX >> 30)
+    format!("the mailbox file would be {} MB, more than MailSolutions opens ({} GB); nothing was written", len >> 20, MAX_INDEX >> 30)
 }
 
 fn write_index(st: &mut State, path: &Path, mailbox: &Mailbox, held: &[Ref], progress: &Progress) -> Result<Saved, String> {
@@ -4114,8 +4116,8 @@ fn compact_with(
         records = records.checked_add(1).ok_or_else(too_many)?;
         d.messages.insert(*id, Msg { entry: Entry { of: p.of, fp: p.fp, size }, parts: p.parts });
     }
-    let local_contacts: BTreeMap<Id, Arc<mailcraft_model::Contact>> =
-        mailbox.contacts.iter().filter(|(_, c)| c.contactcraft_id.is_empty()).map(|(id, c)| (*id, c.clone())).collect();
+    let local_contacts: BTreeMap<Id, Arc<mailsolutions_model::Contact>> =
+        mailbox.contacts.iter().filter(|(_, c)| c.contactsolutions_id.is_empty()).map(|(id, c)| (*id, c.clone())).collect();
     compact_items(&local_contacts, Coll::Contact, &mut out, &mut d.contacts, &mut d.live, &mut records)?;
     compact_items(&mailbox.events, Coll::Event, &mut out, &mut d.events, &mut d.live, &mut records)?;
     compact_items(&mailbox.tasks, Coll::Task, &mut out, &mut d.tasks, &mut d.live, &mut records)?;
@@ -4140,7 +4142,7 @@ fn compact_with(
     // before the file names them.
     pack.sync().map_err(|e| format!("{}: the header lines couldn't be written ({e})", dir.display()))?;
     // Before a newer format than the file's is first written over it: the file as it was, for
-    // the MailCraft before this one (`store_before`).
+    // the MailSolutions before this one (`store_before`).
     if !legacy {
         crate::store_before::keep_before_newer_format(path, INDEX_VERSION, env!("CARGO_PKG_VERSION"))
             .map_err(|e| format!("the mailbox file couldn't be kept before its format changes ({e})"))?;
@@ -4159,7 +4161,7 @@ fn compact_with(
     let (given_up, moved) = pack.done();
 
     // What the pack took the place of goes, unless a file kept aside (after damage, another
-    // writer's changes, or for an earlier MailCraft) names it, or one can't be read through: then
+    // writer's changes, or for an earlier MailSolutions) names it, or one can't be read through: then
     // a sweep takes it once those are gone.
     let aside = if given_up.is_some() || !moved.is_empty() { named_by_kept_aside(path) } else { None };
     if let (Some(n), Some((_, packs))) = (given_up, &aside)
@@ -4372,7 +4374,7 @@ fn pack_after(bytes: &[u8]) -> Option<u32> {
 
 /// What the mailbox files kept aside beside `file` name (damaged, changed by somebody else, or of
 /// an earlier form), by the look of every byte of them: they may name content the mailbox no
-/// longer does, which someone may want back, or an older MailCraft may open. `None` when one of
+/// longer does, which someone may want back, or an older MailSolutions may open. `None` when one of
 /// them can't be read through (or there are too many): then nothing is swept. With the content
 /// names, the packs of header blocks they name.
 fn named_by_kept_aside(file: &Path) -> Option<(HashSet<Digest>, HashSet<u32>)> {
@@ -4578,7 +4580,7 @@ pub fn sweep(path: &Path, grace: Duration) -> Result<Swept, String> {
     }
     // Packs of header blocks nothing names (#1376): one a whole rewrite gave up, or that one cut
     // short left. Not one a file kept aside names (after damage, another writer's changes, or for
-    // an earlier MailCraft).
+    // an earlier MailSolutions).
     packs.extend(aside_packs);
     for (n, stale) in pack::on_disk(&dir) {
         let Ok(meta) = fs::symlink_metadata(&stale) else { continue };

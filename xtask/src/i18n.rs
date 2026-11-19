@@ -23,8 +23,8 @@ use std::path::{Path, PathBuf};
 
 use crate::i18n_kotlin;
 
-use mailcraft_i18n::plural::Rule;
-use mailcraft_i18n::po::{self, Entry};
+use mailsolutions_i18n::plural::Rule;
+use mailsolutions_i18n::po::{self, Entry};
 
 /// Functions whose `&'static str` is a name the window shows through `tl!`.
 const NAME_FNS: &[&str] = &["label", "title", "detail", "about", "default_name", "notice", "said", "what", "unit"];
@@ -217,7 +217,7 @@ fn gather(root: &Path) -> Result<Texts, String> {
 
 /// The texts of the Android app's Kotlin sources (not its tests, and not the generated bindings).
 fn kotlin(root: &Path, texts: &mut Texts) -> Result<(), String> {
-    let dir = root.join("apps/mailcraft-android/app/src/main/kotlin");
+    let dir = root.join("apps/mailsolutions-android/app/src/main/kotlin");
     if !dir.is_dir() {
         return Ok(());
     }
@@ -739,7 +739,7 @@ fn names(toks: &[Tok], file: &str, texts: &mut Texts) {
                     // A standard folder's default name is also looked up as the folder's
                     // (`Lang::folder`): "Archive" the folder isn't "Archive" the command.
                     if name == "default_name" {
-                        add_in(texts, Some(mailcraft_i18n::FOLDER), s, None, file, "folder name");
+                        add_in(texts, Some(mailsolutions_i18n::FOLDER), s, None, file, "folder name");
                     }
                 }
             }
@@ -901,7 +901,7 @@ fn dates(toks: &[Tok], file: &str, texts: &mut Texts) {
 
 // ---- The template and the catalogues. ----
 
-const HEADER: &str = "Project-Id-Version: MailCraft\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n";
+const HEADER: &str = "Project-Id-Version: MailSolutions\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n";
 
 /// The entry of a text found under `key` ([`Texts`]).
 fn entry_of(key: &str, f: &Found, forms: usize) -> Entry {
@@ -922,7 +922,7 @@ fn entry_of(key: &str, f: &Found, forms: usize) -> Entry {
 
 fn template(found: &Texts) -> String {
     let mut out = String::from(
-        "# The English text of MailCraft's interface, gathered by `cargo xtask i18n` (never edit it by\n# hand). A language's catalogue is `<code>.po` beside it, kept up to date by the same command.\n",
+        "# The English text of MailSolutions's interface, gathered by `cargo xtask i18n` (never edit it by\n# hand). A language's catalogue is `<code>.po` beside it, kept up to date by the same command.\n",
     );
     let mut entries = vec![Entry { strs: vec![HEADER.into()], ..Entry::default() }];
     entries.extend(found.iter().map(|(id, f)| entry_of(id, f, 2)));

@@ -3,7 +3,7 @@
 //! Importing a .pst file (`file.importPst`, #815): the mail of every folder the owner sees in it, Deleted Items and Junk E-mail too,
 //! as ordinary folders on this computer, and a report that accounts for every item found.
 //!
-//! The file is read by `mailcraft-pst` from [MS-PST], over `Read + Seek`, never whole into
+//! The file is read by `mailsolutions-pst` from [MS-PST], over `Read + Seek`, never whole into
 //! memory; each item is read into a message from [MS-OXCMSG], [MS-OXPROPS] and [MS-OXOMSG]
 //! ([`item`]). Mail lands in local folders alone, never in an account on a server, and nothing
 //! of it leaves the computer. Contacts, calendar items, tasks, notes and journal entries come
@@ -12,7 +12,7 @@
 //! The work ([`read`]) takes no `Session`, so that a host runs it on a thread: it hands what it
 //! has read over in batches, which go into the mailbox as they come ([`apply`]); cancelling
 //! keeps what is in, and another run of the same file brings the rest, as every item brought in
-//! remembers where in the file it was ([`mailcraft_mime::PST_ITEM_HEADER`]: the file's identity
+//! remembers where in the file it was ([`mailsolutions_mime::PST_ITEM_HEADER`]: the file's identity
 //! and the item's node id) and is counted "already here".
 //!
 //! The import fails unless every item found is accounted for: brought in, already here, left
@@ -28,8 +28,8 @@ use std::io::{Read, Seek};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use mailcraft_model::{AccountKind, Calendar, Contact, Event as CalendarEvent, Id, MAX_FOLDER_DEPTH, Mailbox, Message, Rgb, Task};
-use mailcraft_pst::{Error as PstError, FolderKind, Limits, Nid, PS_PUBLIC_STRINGS, PropName, PropValue, Pst, node_types};
+use mailsolutions_model::{AccountKind, Calendar, Contact, Event as CalendarEvent, Id, MAX_FOLDER_DEPTH, Mailbox, Message, Rgb, Task};
+use mailsolutions_pst::{Error as PstError, FolderKind, Limits, Nid, PS_PUBLIC_STRINGS, PropName, PropValue, Pst, node_types};
 use serde_json::{Value, json};
 
 use crate::cmd::{base64_decode, fail};
@@ -38,7 +38,7 @@ use crate::{CmdError, Session, p};
 use item::{Named, Text, ends_import, item_ref};
 use report::{Report, Row};
 
-pub use mailcraft_mime::PST_ITEM_HEADER;
+pub use mailsolutions_mime::PST_ITEM_HEADER;
 
 /// Most messages handed over in one batch.
 pub const BATCH_MESSAGES: usize = if cfg!(test) { 3 } else { 500 };
@@ -167,8 +167,8 @@ pub struct Batch {
     /// Calendar items, each with the calendar asked for (0: a new one, [`Batch::calendar_name`]).
     pub events: Vec<CalendarEvent>,
     pub tasks: Vec<Task>,
-    pub notes: Vec<mailcraft_model::Note>,
-    pub journal: Vec<mailcraft_model::JournalEntry>,
+    pub notes: Vec<mailsolutions_model::Note>,
+    pub journal: Vec<mailsolutions_model::JournalEntry>,
     /// The name of the calendar made for the file, when one is.
     pub calendar_name: String,
     /// The file's identity: a batch of another file starts an import of its own.
@@ -234,7 +234,7 @@ pub fn read_path(path: &str, job: &Job, progress: &Progress, send: &mut dyn FnMu
         let mut sink = |batch: Batch| if send(Event::Batch(batch)) { Ok(()) } else { Err(fail("the import was stopped")) };
         open_path(path).and_then(|f| read(f, job, Limits::default(), progress, &mut sink))
     }))
-    .unwrap_or_else(|_| Err(fail("MailCraft stopped reading the .pst file before it was done: what came in is kept")));
+    .unwrap_or_else(|_| Err(fail("MailSolutions stopped reading the .pst file before it was done: what came in is kept")));
     let _ = send(Event::Done(done.map(Box::new)));
 }
 
@@ -267,12 +267,12 @@ fn known_plans_and_people(mb: &Mailbox) -> impl Iterator<Item = String> + '_ {
 /// items of the same node ids count as already here, and only its new ones come in. A file
 /// without a record key is known by its size, its name inside and the start of the file (its
 /// header, `head`), which changes when the file does: a changed copy of such a file is another.
-fn identity<R: Read + Seek>(pst: &Pst<R>, store: &mailcraft_pst::Store, head: &[u8]) -> String {
+fn identity<R: Read + Seek>(pst: &Pst<R>, store: &mailsolutions_pst::Store, head: &[u8]) -> String {
     match &store.record_key {
         Some(k) if !k.is_empty() => k.iter().take(32).map(|b| format!("{b:02x}")).collect(),
         _ => {
             let name = store.display_name.clone().unwrap_or_default();
-            format!("size{}-{:08x}-{:08x}", pst.sizes().1, mailcraft_pst::crc32(name.as_bytes()), mailcraft_pst::crc32(head))
+            format!("size{}-{:08x}-{:08x}", pst.sizes().1, mailsolutions_pst::crc32(name.as_bytes()), mailsolutions_pst::crc32(head))
         }
     }
 }
@@ -310,9 +310,9 @@ pub fn password_opens(path: &str, password: &str) -> bool {
     Pst::open(std::io::BufReader::new(file)).is_ok_and(|pst| pst.check_password(password))
 }
 
-fn format_name(f: mailcraft_pst::Format) -> &'static str {
+fn format_name(f: mailsolutions_pst::Format) -> &'static str {
     match f {
-        mailcraft_pst::Format::Ansi => "ANSI",
+        mailsolutions_pst::Format::Ansi => "ANSI",
         _ => "Unicode",
     }
 }
@@ -564,7 +564,7 @@ pub fn read<R: Read + Seek>(
             Err(e) if ends_import(&e) => return Err(pst_error(&e)),
             Err(e) => {
                 report.damaged(format!("the list of items of {}: {e}", report::short(&b.shown)));
-                mailcraft_pst::ItemList::default()
+                mailsolutions_pst::ItemList::default()
             }
         };
         // Its items: those its list names, and those the node tree puts in it that the list
@@ -762,7 +762,7 @@ pub fn read<R: Read + Seek>(
                 }
                 let mut c = built.contact;
                 c.imported = key(&identity, nid);
-                c.imported_from = job.file.chars().take(mailcraft_model::MAX_NAME).collect();
+                c.imported_from = job.file.chars().take(mailsolutions_model::MAX_NAME).collect();
                 let shown = if c.name().is_empty() { "contact".to_string() } else { format!("contact \"{}\"", c.name()) };
                 if let Some(n) = built.members {
                     report.note(&shown, &b.shown, &format!("a distribution list, kept as a contact listing its members ({n})"));
@@ -906,7 +906,11 @@ fn named<R: Read + Seek>(pst: &mut Pst<R>, charset: Option<&'static str>, kept_r
 
 /// The file's list of categories, with their colours: the associated item that keeps it, in
 /// whichever of the owner's folders has it.
-fn category_list<R: Read + Seek>(pst: &mut Pst<R>, tree: &mailcraft_pst::FolderTree, report: &mut Report) -> Result<Vec<(String, Rgb)>, CmdError> {
+fn category_list<R: Read + Seek>(
+    pst: &mut Pst<R>,
+    tree: &mailsolutions_pst::FolderTree,
+    report: &mut Report,
+) -> Result<Vec<(String, Rgb)>, CmdError> {
     for entry in tree.folders.iter().filter(|e| e.in_ipm_subtree && e.folder.kind != FolderKind::Search) {
         let items = match pst.associated_items(entry.folder.id) {
             Ok(l) => l.items,
@@ -924,7 +928,7 @@ fn category_list<R: Read + Seek>(pst: &mut Pst<R>, tree: &mailcraft_pst::FolderT
                     continue;
                 }
             };
-            let list = categories(&mailcraft_charset::guess(xml.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(&xml)));
+            let list = categories(&mailsolutions_charset::guess(xml.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(&xml)));
             if !list.is_empty() {
                 return Ok(list);
             }
@@ -946,10 +950,10 @@ pub fn categories(xml: &str) -> Vec<(String, Rgb)> {
         if !tag.starts_with(char::is_whitespace) {
             continue;
         }
-        let Some(name) = attribute(tag, "name").and_then(|n| mailcraft_model::clean_name(&n)) else { continue };
-        let color = attribute(tag, "color").and_then(|c| c.trim().parse::<i64>().ok()).and_then(mailcraft_model::preset_category_color);
+        let Some(name) = attribute(tag, "name").and_then(|n| mailsolutions_model::clean_name(&n)) else { continue };
+        let color = attribute(tag, "color").and_then(|c| c.trim().parse::<i64>().ok()).and_then(mailsolutions_model::preset_category_color);
         if !out.iter().any(|(n, _)| n.eq_ignore_ascii_case(&name)) {
-            out.push((name, color.unwrap_or(mailcraft_model::GREY_CATEGORY)));
+            out.push((name, color.unwrap_or(mailsolutions_model::GREY_CATEGORY)));
         }
         if out.len() >= MAX_CATEGORIES {
             break;
@@ -1143,7 +1147,7 @@ impl Running {
         let mb = &s.mailbox;
         let mut names: HashMap<Option<Id>, HashMap<String, Option<Id>>> = HashMap::new();
         for f in mb.folders.iter().filter(|f| f.account == account) {
-            let usable = f.kind == mailcraft_model::FolderKind::Custom && !mb.is_send_queue(f.id) && f.remote.is_empty();
+            let usable = f.kind == mailsolutions_model::FolderKind::Custom && !mb.is_send_queue(f.id) && f.remote.is_empty();
             names.entry(f.parent).or_default().insert(f.name.to_lowercase(), usable.then_some(f.id));
         }
         let mut run = Running {
@@ -1378,7 +1382,7 @@ fn check_top(s: &Session, top: Id) -> Result<(), CmdError> {
     let mut found = false;
     while let Some(f) = cur.and_then(|c| s.mailbox.folder(c)) {
         found = true;
-        if f.kind == mailcraft_model::FolderKind::Deleted {
+        if f.kind == mailsolutions_model::FolderKind::Deleted {
             return Err(fail("the folder the .pst file was being imported into was moved to Deleted Items: the import stopped"));
         }
         cur = f.parent;
@@ -1573,7 +1577,7 @@ pub fn end_staged(s: &mut Session) {
 fn write_report(s: &Session, report: &Report) -> Option<String> {
     use std::io::Write;
     let dir = s.path.as_ref()?.parent()?.to_path_buf();
-    let when = mailcraft_time::format_iso_utc(s.now());
+    let when = mailsolutions_time::format_iso_utc(s.now());
     let stem: String = folder_name(&report.file).chars().take(REPORT_NAME_CHARS).collect();
     let text = report.to_text(&when);
     for n in 1..=100u32 {

@@ -4,9 +4,9 @@
 //! follow-up's due date and "complete" itself, so both are compared, as they always were; a JMAP
 //! server keeps `$flagged` alone, so only that bit is.
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::time::Timestamp;
-use mailcraft_model::{AccountKind, FlagStatus, Folder, FolderKind, Mailbox, Message, ServerFolder};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::time::Timestamp;
+use mailsolutions_model::{AccountKind, FlagStatus, Folder, FolderKind, Mailbox, Message, ServerFolder};
 
 use super::*;
 

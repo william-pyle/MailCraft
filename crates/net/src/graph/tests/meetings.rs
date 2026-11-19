@@ -4,8 +4,8 @@
 //! what the people invited are asked for, Teams meetings and the link to join by, proposals of
 //! another time, and forwarding. Nothing here leaves this machine.
 
-use mailcraft_model::remote::RemoteProposal;
-use mailcraft_model::{Importance, OnlineMeeting, OnlineProvider};
+use mailsolutions_model::remote::RemoteProposal;
+use mailsolutions_model::{Importance, OnlineMeeting, OnlineProvider};
 use serde_json::json;
 
 use super::*;

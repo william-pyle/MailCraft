@@ -6,7 +6,7 @@
 //! of the crates above (`standin`, behind the `stand-in` feature). Discovery, sync, account
 //! settings and writes are not wired in here.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
-pub use mailcraft_model::dav::{Collection, Resource};
+pub use mailsolutions_model::dav::{Collection, Resource};
 pub mod answer;
 pub mod document;
 pub mod href;

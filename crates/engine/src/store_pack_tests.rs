@@ -41,7 +41,7 @@ fn header_blocks_go_into_one_pack_and_come_back_whole() {
     assert_eq!(file.file_name().unwrap(), "headers-1.pack");
     assert_eq!(bytes.len() as u64, block_bytes(&mb));
     // No content file of its own for any block.
-    assert!(files(&blob_dir(&path)).iter().all(|(f, _)| f == &file || mailcraft_model::HeaderBlock::read(&fs::read(f).unwrap()).is_none()));
+    assert!(files(&blob_dir(&path)).iter().all(|(f, _)| f == &file || mailsolutions_model::HeaderBlock::read(&fs::read(f).unwrap()).is_none()));
     // The record names where each is.
     let record = String::from_utf8_lossy(&fs::read(&path).unwrap()).into_owned();
     assert!(record.contains(",1,0]"), "a block at the start of pack 1");
@@ -263,7 +263,7 @@ fn blocks_a_development_build_kept_a_file_each_are_read_and_moved_into_a_pack() 
 fn a_file_of_format_3_is_upgraded_into_a_pack_end_to_end() {
     let tmp = Temp::new("pack-format-3");
     let path = tmp.file();
-    // As MailCraft 0.12.0 wrote it: every header line in its message's record.
+    // As MailSolutions 0.12.0 wrote it: every header line in its message's record.
     let mut mb = super::mailbox(8);
     let ids: Vec<Id> = mb.messages.keys().copied().collect();
     for (n, id) in ids.into_iter().enumerate() {
@@ -281,7 +281,7 @@ fn a_file_of_format_3_is_upgraded_into_a_pack_end_to_end() {
     clear_cache();
     open_for_window(&path, &OpenProgress::default()).unwrap();
     assert_eq!(crate::store_before::format_on_disk(&path), Some(INDEX_VERSION));
-    // The file as it was is kept for the MailCraft before this one, as it was.
+    // The file as it was is kept for the MailSolutions before this one, as it was.
     let before = fs::read_dir(&tmp.0).unwrap().flatten().find(|e| e.file_name().to_string_lossy().contains(".before-")).unwrap();
     assert_eq!(fs::read(before.path()).unwrap(), bytes);
     assert_eq!(packs(&path).len(), 1);
@@ -655,7 +655,7 @@ fn a_block_is_named_where_it_went_though_another_program_appended_meanwhile() {
 /// how many files, and how much of the disk.
 ///
 /// ```text
-/// cargo test --release -p mailcraft-engine header_pack_bench -- --ignored --nocapture
+/// cargo test --release -p mailsolutions-engine header_pack_bench -- --ignored --nocapture
 /// ```
 #[test]
 #[ignore = "a benchmark: writes a mailbox of 20,000 messages"]

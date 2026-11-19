@@ -3,8 +3,8 @@
 //! The budget of textures for the pictures of the message on screen holds, however large the
 //! pictures are that the message declares small.
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Address, Attachment, Body, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Address, Attachment, Body, Mailbox, Message};
 use serde_json::json;
 
 use super::images::{CACHE_BYTES, CACHE_PICTURES, Pictures};

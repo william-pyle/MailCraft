@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Where a link of a message really goes. Only `http`, `https`, `mailto`, `tel` and `cid` are
-//! followed; a web address is read by `mailcraft-link`, which writes it the way it is shown and
+//! followed; a web address is read by `mailsolutions-link`, which writes it the way it is shown and
 //! launched, so that the host shown is the host reached. Everything else is no link.
 
-use mailcraft_link::WebLink;
+use mailsolutions_link::WebLink;
 
 use crate::records::{LinkKind, LinkTarget};
 
@@ -14,7 +14,7 @@ use crate::records::{LinkKind, LinkTarget};
 #[uniffi::export]
 pub fn link_target(url: String) -> Option<LinkTarget> {
     let url = url.trim_matches(' ');
-    if !mailcraft_html::is_safe_url(url) {
+    if !mailsolutions_html::is_safe_url(url) {
         return None;
     }
     let scheme = url.split_once(':').map(|(s, _)| s.to_ascii_lowercase())?;

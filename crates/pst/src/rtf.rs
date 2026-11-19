@@ -317,7 +317,7 @@ impl Out {
 
     fn decode(&mut self, bytes: &[u8]) {
         if !bytes.is_empty() {
-            let decoded = mailcraft_charset::decode(bytes, code_page_label(i64::from(self.pending_cp)).unwrap_or("windows-1252"));
+            let decoded = mailsolutions_charset::decode(bytes, code_page_label(i64::from(self.pending_cp)).unwrap_or("windows-1252"));
             self.push_str(&decoded);
         }
     }

@@ -10,7 +10,7 @@ use std::time::Duration;
 use serde_json::{Value, json};
 
 /// Something that answers control-channel methods (`engine.execute`, `mailbox.inspect`,
-/// `ui.click`, `ui.screenshot`, …). See `mailcraft_ui_egui::control` for the full list.
+/// `ui.click`, `ui.screenshot`, …). See `mailsolutions_ui_egui::control` for the full list.
 pub trait Backend {
     /// Call one method. `Ok` carries the `result`, `Err` the error message.
     fn call(&mut self, method: &str, params: Value) -> Result<Value, String>;
@@ -33,7 +33,7 @@ const MAX_REPLY: usize = 256 << 20;
 /// Looks up the control key for an address (`HOST:PORT`).
 type KeyFinder = Box<dyn Fn(&str) -> Result<String, String> + Send>;
 
-/// A running MailCraft app, reached through its loopback control port.
+/// A running MailSolutions app, reached through its loopback control port.
 pub struct Remote {
     addr: String,
     conn: Option<(BufReader<TcpStream>, TcpStream)>,
@@ -49,29 +49,29 @@ pub struct Remote {
     /// What the owner allowed the agent in advance (`--allow`). Every request carries it in its
     /// `agent` field, set here and never from a tool's arguments: the app knows the request is
     /// an agent's, and asks the owner about the rest.
-    allow: Vec<mailcraft_engine::agent::Class>,
+    allow: Vec<mailsolutions_engine::agent::Class>,
 }
 
-/// The control key: `env` (`MAILCRAFT_CONTROL_KEY`) when set, else the app's key file for
+/// The control key: `env` (`MAILSOLUTIONS_CONTROL_KEY`) when set, else the app's key file for
 /// `port` in `settings`. The error says where it looked.
 fn lookup_key(env: Option<String>, settings: Option<&Path>, port: Option<u16>) -> Result<String, String> {
     if let Some(k) = env.map(|k| k.trim().to_string()).filter(|k| !k.is_empty()) {
         return Ok(k);
     }
     let (Some(settings), Some(port)) = (settings, port) else {
-        return Err("no control key: set MAILCRAFT_CONTROL_KEY (no settings folder or port to find the key file)".to_string());
+        return Err("no control key: set MAILSOLUTIONS_CONTROL_KEY (no settings folder or port to find the key file)".to_string());
     };
-    let path = mailcraft_control_key::key_path(settings, port);
+    let path = mailsolutions_control_key::key_path(settings, port);
     match std::fs::read_to_string(&path).map(|k| k.trim().to_string()) {
         Ok(k) if !k.is_empty() => Ok(k),
-        _ => Err(format!("no control key: set MAILCRAFT_CONTROL_KEY, or start the app with --control {port} (it writes {})", path.display())),
+        _ => Err(format!("no control key: set MAILSOLUTIONS_CONTROL_KEY, or start the app with --control {port} (it writes {})", path.display())),
     }
 }
 
 /// The key for the app at `addr`, from the environment or the app's key file.
 fn find_key(addr: &str) -> Result<String, String> {
     let port = addr.rsplit_once(':').and_then(|(_, p)| p.parse().ok());
-    lookup_key(std::env::var("MAILCRAFT_CONTROL_KEY").ok(), mailcraft_control_key::settings_dir().as_deref(), port)
+    lookup_key(std::env::var("MAILSOLUTIONS_CONTROL_KEY").ok(), mailsolutions_control_key::settings_dir().as_deref(), port)
 }
 
 /// Whether `addr` (`HOST:PORT`, as given to `--connect`) names a loopback address: 127.0.0.0/8,
@@ -164,7 +164,7 @@ impl Remote {
     }
 
     /// What the owner allows the agent without being asked (`--allow`).
-    pub fn with_allow(mut self, allow: Vec<mailcraft_engine::agent::Class>) -> Self {
+    pub fn with_allow(mut self, allow: Vec<mailsolutions_engine::agent::Class>) -> Self {
         self.allow = allow;
         self
     }
@@ -207,13 +207,14 @@ impl Remote {
 
     /// Make the program at the other end prove it holds the control key, before the key or any
     /// request is sent to it: it must answer HMAC-SHA256 over a fresh nonce, keyed with the key
-    /// read from the environment or the key file (`mailcraft_control_key::proof`). Anything else
+    /// read from the environment or the key file (`mailsolutions_control_key::proof`). Anything else
     /// that listens on the port, started before the app or instead of it, cannot. A stale key (the
     /// app restarted on this port) is read again once, on a new connection.
     fn authenticate(&mut self) -> Result<(), Auth> {
         for attempt in 0..2 {
             let key = (self.find_key)(&self.addr).map_err(Auth::Refused)?;
-            let nonce = mailcraft_control_key::proof::new_nonce().ok_or_else(|| Auth::Refused("no random bytes for the challenge".to_string()))?;
+            let nonce =
+                mailsolutions_control_key::proof::new_nonce().ok_or_else(|| Auth::Refused("no random bytes for the challenge".to_string()))?;
             let line = json!({"id": 0, "method": "auth.challenge", "params": {"nonce": nonce}}).to_string();
             let reply = match self.roundtrip(&line, MAX_LINE) {
                 Ok(reply) => reply,
@@ -227,7 +228,7 @@ impl Remote {
             };
             let v: Value = serde_json::from_str(reply.trim()).unwrap_or(Value::Null);
             let proof = v.pointer("/result/proof").and_then(Value::as_str).unwrap_or("");
-            if v.get("ok").and_then(Value::as_bool) == Some(true) && mailcraft_control_key::proof::proof_ok(&key, &nonce, proof) {
+            if v.get("ok").and_then(Value::as_bool) == Some(true) && mailsolutions_control_key::proof::proof_ok(&key, &nonce, proof) {
                 self.key = Some(key);
                 self.verified = true;
                 return Ok(());
@@ -242,7 +243,7 @@ impl Remote {
 
     fn not_proved(&self) -> String {
         format!(
-            "the program at {} did not prove it is the MailCraft app that wrote the control key, so neither the key nor any request was sent to it (an older MailCraft that cannot answer the challenge, or another program on that port)",
+            "the program at {} did not prove it is the MailSolutions app that wrote the control key, so neither the key nor any request was sent to it (an older MailSolutions that cannot answer the challenge, or another program on that port)",
             self.addr
         )
     }
@@ -286,7 +287,7 @@ impl Remote {
     /// answer is replaced before anything is written on it. Once the line is written, no answer
     /// is an error: the app may have run the request, so it is never sent twice.
     fn exchange(&mut self, id: u64, method: &str, params: &Value) -> Result<Value, String> {
-        let unreachable = |addr: &str, e: std::io::Error| format!("MailCraft app at {addr} is not reachable: {e}");
+        let unreachable = |addr: &str, e: std::io::Error| format!("MailSolutions app at {addr} is not reachable: {e}");
         let mut first = true;
         let reply = loop {
             if self.conn.as_ref().is_some_and(|(reader, stream)| !still_open(reader, stream)) {
@@ -321,13 +322,13 @@ impl Remote {
                 Err(Trip::Lost(e)) => {
                     self.conn = None;
                     return Err(format!(
-                        "the MailCraft app at {} did not answer ({e}): it may have run the request, so it was not sent again; look at the app before trying again",
+                        "the MailSolutions app at {} did not answer ({e}): it may have run the request, so it was not sent again; look at the app before trying again",
                         self.addr
                     ));
                 }
                 Err(Trip::TooLong) => {
                     self.conn = None;
-                    return Err(format!("the answer of the MailCraft app at {} was too long, so the connection was dropped", self.addr));
+                    return Err(format!("the answer of the MailSolutions app at {} was too long, so the connection was dropped", self.addr));
                 }
             }
         };
@@ -354,7 +355,7 @@ impl Backend for Remote {
             Err(self.key_warning().map_or_else(
                 || {
                     format!(
-                        "unauthorized: the MailCraft app at {} refused the control key (from MAILCRAFT_CONTROL_KEY or the app's key file)",
+                        "unauthorized: the MailSolutions app at {} refused the control key (from MAILSOLUTIONS_CONTROL_KEY or the app's key file)",
                         self.addr
                     )
                 },
@@ -370,7 +371,7 @@ impl Backend for Remote {
     }
 
     fn describe(&self) -> String {
-        format!("connected to the MailCraft app at {}", self.addr)
+        format!("connected to the MailSolutions app at {}", self.addr)
     }
 }
 

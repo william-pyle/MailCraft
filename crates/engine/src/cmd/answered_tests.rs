@@ -3,8 +3,8 @@
 //! The replied and forwarded marks (#154): an original is marked once its reply or forward has
 //! gone (the server took it), not when Send is pressed; a reply that never went leaves no mark.
 
-use mailcraft_model::sync::{FolderDelta, GraphMailResult, RemoteOp, SendDone, SendOutcome, ServerMessage, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, Message};
+use mailsolutions_model::sync::{FolderDelta, GraphMailResult, RemoteOp, SendDone, SendOutcome, ServerMessage, SyncResult};
+use mailsolutions_model::{Address, FolderKind, Id, Message};
 use serde_json::json;
 
 use crate::Session;

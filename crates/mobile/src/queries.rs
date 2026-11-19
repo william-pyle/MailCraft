@@ -7,10 +7,10 @@
 
 use std::collections::BTreeMap;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::calendar::occurrences;
-use mailcraft_model::{Address, Contact, Event, FolderKind, Id, Importance, Message, Task};
-use mailcraft_time::Date;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::calendar::occurrences;
+use mailsolutions_model::{Address, Contact, Event, FolderKind, Id, Importance, Message, Task};
+use mailsolutions_time::Date;
 
 use crate::records::{
     AccountRecord, AddressRecord, CalendarRange, EventRecord, FolderList, FolderRecord, MessageRow, MessageWindow, PeopleWindow, PersonRecord,
@@ -29,7 +29,7 @@ pub(crate) fn bad(message: &str) -> CoreError {
     CoreError::BadRequest { reason: message.to_string() }
 }
 
-pub(crate) fn rgb(c: mailcraft_model::Rgb) -> u32 {
+pub(crate) fn rgb(c: mailsolutions_model::Rgb) -> u32 {
     (u32::from(c.0) << 16) | (u32::from(c.1) << 8) | u32::from(c.2)
 }
 
@@ -69,8 +69,8 @@ fn event_record(s: &Session, e: &Event, start: String, end: String) -> EventReco
 /// What the owner has answered to a meeting somebody else organizes: the response of the
 /// attendee that is one of the mailbox's own addresses (`none` when there isn't one).
 pub(crate) fn my_answer(s: &Session, e: &Event) -> String {
-    let mine = |a: &mailcraft_model::Attendee| s.mailbox.accounts.iter().any(|x| x.email.eq_ignore_ascii_case(&a.address.email));
-    code(&e.attendees.iter().find(|a| mine(a)).map_or(mailcraft_model::Response::None, |a| a.response))
+    let mine = |a: &mailsolutions_model::Attendee| s.mailbox.accounts.iter().any(|x| x.email.eq_ignore_ascii_case(&a.address.email));
+    code(&e.attendees.iter().find(|a| mine(a)).map_or(mailsolutions_model::Response::None, |a| a.response))
 }
 
 fn events_between(s: &Session, from: Date, to: Date) -> Vec<EventRecord> {
@@ -106,7 +106,7 @@ fn preview_of(s: &Session, m: &Message) -> String {
     if m.kept.as_deref().is_some_and(|k| kept_len(k) > MAX_PREVIEW_READ) {
         return String::new();
     }
-    s.loaded_message_where(m.id, |_| false).map(|loaded| mailcraft_engine::list::preview(&loaded, MAX_PREVIEW)).unwrap_or_default()
+    s.loaded_message_where(m.id, |_| false).map(|loaded| mailsolutions_engine::list::preview(&loaded, MAX_PREVIEW)).unwrap_or_default()
 }
 
 /// The most a body kept on disk may be for its row's preview to be read from it: 256 KiB, the
@@ -116,11 +116,11 @@ fn preview_of(s: &Session, m: &Message) -> String {
 pub(crate) const MAX_PREVIEW_READ: u64 = 256 * 1024;
 
 /// How many bytes reading back what is kept of a body would bring in, by the lengths the store names.
-fn kept_len(k: &mailcraft_model::KeptBody) -> u64 {
+fn kept_len(k: &mailsolutions_model::KeptBody) -> u64 {
     [k.text, k.html, k.hidden].into_iter().flatten().fold(0u64, |n, r| n.saturating_add(r.len))
 }
 
-pub(crate) fn row(s: &Session, m: &Message, r: &mailcraft_engine::list::Row) -> MessageRow {
+pub(crate) fn row(s: &Session, m: &Message, r: &mailsolutions_engine::list::Row) -> MessageRow {
     MessageRow {
         id: m.id,
         account: m.account,
@@ -129,9 +129,9 @@ pub(crate) fn row(s: &Session, m: &Message, r: &mailcraft_engine::list::Row) -> 
         from_address: text::clip(&m.from.email, MAX_ADDRESS),
         subject: text::clip(&m.subject, MAX_SUBJECT),
         preview: preview_of(s, m),
-        when: mailcraft_engine::list::when(m),
+        when: mailsolutions_engine::list::when(m),
         unread: r.unread > 0,
-        flagged: m.flag == mailcraft_model::FlagStatus::Flagged,
+        flagged: m.flag == mailsolutions_model::FlagStatus::Flagged,
         has_attachments: m.attachments.iter().any(|a| !a.inline),
         important: m.importance == Importance::High,
         answered: m.answered,
@@ -163,8 +163,8 @@ pub(crate) fn date_of(s: &str) -> Result<Date, CoreError> {
 }
 
 /// The kind of an account in the words the app reads.
-fn account_kind(kind: mailcraft_model::AccountKind) -> &'static str {
-    use mailcraft_model::AccountKind;
+fn account_kind(kind: mailsolutions_model::AccountKind) -> &'static str {
+    use mailsolutions_model::AccountKind;
     match kind {
         AccountKind::Microsoft => "microsoft",
         AccountKind::Imap => "imap",

@@ -4,7 +4,7 @@
 
 **251 of 316 in-scope catalog features have a command (79.4%); 0 are Complete (0%).** 17 more rows are out of scope and left out of both. The registry holds 365 commands.
 
-**Has a command** means the behaviour is reachable by id (ribbon, shortcut, CLI, control channel, MCP); it says nothing of how closely it behaves as the incumbent's does. **Complete** means the behaviour matches the incumbent's as far as MailCraft's rules allow, a test shows it, and `docs/gaps.md` has no open row for it. How far the rest falls short is tracked in `docs/gaps.md` and the per-area parity checklists.
+**Has a command** means the behaviour is reachable by id (ribbon, shortcut, CLI, control channel, MCP); it says nothing of how closely it behaves as the incumbent's does. **Complete** means the behaviour matches the incumbent's as far as MailSolutions's rules allow, a test shows it, and `docs/gaps.md` has no open row for it. How far the rest falls short is tracked in `docs/gaps.md` and the per-area parity checklists.
 
 | Tab | Has a command | Complete | In scope |
 |---|---|---|---|

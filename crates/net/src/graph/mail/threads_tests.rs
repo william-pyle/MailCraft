@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use mailcraft_model::sync::{GraphMailRequest, GraphMailResult, ThreadOf};
+use mailsolutions_model::sync::{GraphMailRequest, GraphMailResult, ThreadOf};
 
 use super::whole_run;
 use crate::graph::pace::{Gate, Retry};
@@ -89,7 +89,7 @@ fn a_server_that_wont_answer_ends_the_look_up_and_never_the_run() {
     assert!(last.errors.is_empty(), "{:?}", last.errors);
     let state = server.state();
     let asked = state.requests.iter().filter(|r| r.query.iter().any(|(k, v)| k == "$select" && v == "conversationId")).count();
-    assert!(asked <= mailcraft_model::sync::MAX_THREAD_ASKS, "{asked}");
+    assert!(asked <= mailsolutions_model::sync::MAX_THREAD_ASKS, "{asked}");
 }
 
 #[test]

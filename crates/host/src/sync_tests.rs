@@ -8,10 +8,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::sync_driver::ClientIds;
-use mailcraft_model::sync::{GraphMailResult, Tokens};
-use mailcraft_model::{AccountKind, Mailbox, OAuth, OAuthProvider};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::sync_driver::ClientIds;
+use mailsolutions_model::sync::{GraphMailResult, Tokens};
+use mailsolutions_model::{AccountKind, Mailbox, OAuth, OAuthProvider};
 
 use crate::graph::{GraphRequest, GraphResult};
 use crate::secrets::{SecretError, SecretStore, secret_key};
@@ -362,7 +362,7 @@ fn a_busy_calendar_job_makes_the_account_wait_and_another_kind_is_the_front_ends
 
 #[test]
 fn something_made_here_during_a_long_run_calls_it_off_and_it_goes_first_again() {
-    use mailcraft_model::{Address, FolderKind, Message};
+    use mailsolutions_model::{Address, FolderKind, Message};
     let (mut s, id, store) = one_with_a_sign_in();
     let flag: Arc<Mutex<Option<Arc<AtomicBool>>>> = Arc::default();
     let (release, gate) = std::sync::mpsc::channel::<()>();
@@ -395,7 +395,7 @@ fn something_made_here_during_a_long_run_calls_it_off_and_it_goes_first_again() 
 
 #[test]
 fn an_explicit_stop_after_a_call_off_never_puts_the_run_back() {
-    use mailcraft_model::{Address, FolderKind, Message};
+    use mailsolutions_model::{Address, FolderKind, Message};
     let (mut s, id, store) = one_with_a_sign_in();
     let (release, gate) = std::sync::mpsc::channel::<()>();
     let gate = Mutex::new(gate);

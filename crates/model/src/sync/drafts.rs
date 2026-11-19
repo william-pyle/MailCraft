@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Drafts of a Microsoft account up through Graph (R3.4.1; R3 spec S23–S26).
 //!
-//! A draft written here is made in the server's Drafts carrying MailCraft's marker (an invisible
+//! A draft written here is made in the server's Drafts carrying MailSolutions's marker (an invisible
 //! extended property with a value used once), so that a make whose answer was lost is found by it
 //! instead of made twice (S23). Saved again, it is changed in place, field by field, its
 //! attachments added and removed (S24). What the server last had of it is kept with the draft
@@ -109,7 +109,7 @@ pub fn attachment_hash(a: &Attachment) -> u64 {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ServerDraft {
-    /// MailCraft's marker on the server's copy: a value used once, by which a make whose answer
+    /// MailSolutions's marker on the server's copy: a value used once, by which a make whose answer
     /// was lost is found (S23).
     pub marker: String,
     /// The message on the server it answers or forwards, when it was begun as one.

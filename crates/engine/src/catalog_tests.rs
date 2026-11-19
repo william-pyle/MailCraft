@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The parity catalog: the floors that only rise, the Complete and Out of scope marks.
 
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_time::{Date, DateTime};
 
 use crate::{Session, catalog, sample};
 

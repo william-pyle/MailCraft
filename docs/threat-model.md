@@ -1,8 +1,8 @@
 # Threat model
 
-> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-11-12 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365)
+> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-11-19 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365)
 
-What MailCraft protects, from whom, and how, with the code that does it. Rules for working in the
+What MailSolutions protects, from whom, and how, with the code that does it. Rules for working in the
 code are in [`CLAUDE.md`](../CLAUDE.md) and [`AGENTS.md`](../AGENTS.md); how to report a
 vulnerability is in [`SECURITY.md`](../SECURITY.md). A claim here that the code doesn't keep is a
 bug: report it like one.
@@ -13,11 +13,11 @@ bug: report it like one.
 |---|---|
 | The owner's correspondence (messages, attachments, drafts) | the `.mailcraft` mailbox file and the folder of message content beside it; the servers |
 | Sign-ins: passwords, OAuth refresh and access tokens | memory for the session (`MailApp::passwords`, `MailApp::tokens`); the operating system's credential store when the owner wants them remembered |
-| The owner's own private keys imported into MailCraft (OpenPGP everywhere; S/MIME on Linux and FreeBSD) | the operating system's credential store, the file as it came and still protected by its passphrase, under `key:openpgp:<fingerprint>` or `key:smime:<sha-256>`; only their public facts in `ui.json` |
+| The owner's own private keys imported into MailSolutions (OpenPGP everywhere; S/MIME on Linux and FreeBSD) | the operating system's credential store, the file as it came and still protected by its passphrase, under `key:openpgp:<fingerprint>` or `key:smime:<sha-256>`; only their public facts in `ui.json` |
 | Contacts, calendars, tasks | the mailbox file; the servers |
 | The owner's privacy: when and whether they read a message, where they are, who they are | everything that leaves the computer |
 
-## Adversaries and what MailCraft does about them
+## Adversaries and what MailSolutions does about them
 
 ### A hostile sender
 
@@ -61,7 +61,7 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
   placeholder; a `data:` address is never a link nor a background (`crates/html/src/data.rs`).
   Under a reply or forward, each one the reading pane would show goes as a part of its own beside
   the HTML, which refers to it by a Content-ID naming nothing of the owner (#602,
-  `mailcraft_html::quotable_with_pictures`); one refused, hidden or past the caps is left out, and
+  `mailsolutions_html::quotable_with_pictures`); one refused, hidden or past the caps is left out, and
   a `data:` address is never sent on. Pictures on the web only on the owner's say-so, and only
   `<img>` addresses (no backgrounds, style sheets, fonts or frames, nothing 2 px or smaller), so a
   tracking pixel doesn't fire.
@@ -84,7 +84,7 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
   transport; mail another program puts into the mailbox (IMAP `APPEND`, an upload) is not
   filtered, so headers it carries may be forged; for another account one whose
   authserv-id (RFC 8601) is a known id of its IMAP host's provider
-  (`mailcraft_model::provider::authserv_ids`: `mx.google.com` for `imap.gmail.com`) or is the IMAP
+  (`mailsolutions_model::provider::authserv_ids`: `mx.google.com` for `imap.gmail.com`) or is the IMAP
   host's domain one label up, or a name under it (`imap.lumen.example` takes `mx.lumen.example`; a bare
   suffix such as `co.uk` never matches). Anything else, a message without that, or an account that
   is not IMAP or Microsoft is asked about one message at a time. On Exchange Online, mail from
@@ -101,7 +101,7 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
   organisation's domains is not vouched for this way. A message moved or copied onto the
   server from another account or from this computer leaves the stamp behind (`forget_stamps`),
   and with it every `Authentication-Results` and `ARC-Authentication-Results` it carried, so that
-  no copy MailCraft puts on a server (`APPEND`, a Graph upload) is vouched for by what another
+  no copy MailSolutions puts on a server (`APPEND`, a Graph upload) is vouched for by what another
   server, or its author, wrote of it (AU3-11),
   and the reader keeps room for it past its caps on header fields and header bytes too; an undo
   that moves mail back from a shared mailbox leaves it behind as well. Versions from before kept
@@ -146,7 +146,7 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
   `dmarc` that is the server's word, judged from the full list; a signer chooses its own
   `header.d`, so a suffix missing from the short list (`uk.com`, `eu.org`) could sign for every
   name under it. Only whoever holds that suffix's own DNS can publish a key for it.
-- **Sender warnings say what the server said, and what MailCraft can see, nothing more** (#508).
+- **Sender warnings say what the server said, and what MailSolutions can see, nothing more** (#508).
   Above a message, a red banner for a **warning**: the account's own server's topmost
   `Authentication-Results` (read as for vouching, above, and like it never from a last clause
   cut off at 4,000 characters or left open) says `dmarc=fail` for the sender's domain, or, with no
@@ -157,7 +157,7 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
   name on an address that isn't theirs. Amber for **cautions** alone: a `dmarc=fail` for a domain
   whose policy is `p=none` (said in the server's comment, `(p=NONE …)`, or a `policy.` property),
   which asks for nothing to be done about mail that fails; the sender's domain is one character
-  (an edit, or two letters swapped) or one look-alike character (MailCraft's own small skeleton
+  (an edit, or two letters swapped) or one look-alike character (MailSolutions's own small skeleton
   table after Unicode TR39, `crates/model/src/confusables.rs`, Cyrillic and Greek letters,
   accents, full-width forms, `0`/`1`, `rn`/`vv`/`cl`) from a known correspondent's, measured
   between registrable parts; or a link's text is a web address or a domain and the link goes to
@@ -178,7 +178,7 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
   shown in the banner lose their direction marks. The rules are
   `crates/model/src/sender_warnings.rs`; the known correspondents are gathered in
   `crates/engine/src/sender_warnings.rs`. What they rely on: the server's verdict (a server that
-  writes none, or a message from a file, gives no failed check: MailCraft does no DNS, DKIM or SPF
+  writes none, or a message from a file, gives no failed check: MailSolutions does no DNS, DKIM or SPF
   of its own); the owner's contacts and Sent Items (an attacker who was once written to is known
   for lookalikes; for names only contacts and the owner's own count, since a name the owner wrote
   is not the correspondent's word); a short look-alike table and a short public-suffix list (a
@@ -215,7 +215,7 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
   its checks for the sender's domain (`Mailbox::sort_junk`, `failed_check`, AU3-12): the `From:`
   line is the sender's to write.
 - **Links** are shown with their real destination; only `http`, `https`, `mailto`, `tel` and `cid`
-  are followed. A web address is read by MailCraft's own strict reader (`crates/link`, RFC 3986;
+  are followed. A web address is read by MailSolutions's own strict reader (`crates/link`, RFC 3986;
   no `url` crate): the host shown (after any `@`, an international name as `xn--`, a number as
   dotted decimal) is the host in the string that is launched, and what is ambiguous (a
   backslash, a control character, no `//`, a space or `%` in the host) is no link. The opener is
@@ -236,14 +236,14 @@ Writes any bytes into a message: crafted MIME, HTML, headers, attachments, pictu
 
 Gets the request for a picture the owner asked for.
 
-- `mailcraft_net::pictures::fetch` (`crates/net/src/pictures.rs`) is the only way a picture is
+- `mailsolutions_net::pictures::fetch` (`crates/net/src/pictures.rs`) is the only way a picture is
   fetched. It sends the address and nothing else: no cookies, no referrer, no credentials.
 - **No pivot into the owner's network:** public hosts only. Loopback, private, link-local,
   unique-local and similar addresses are refused, checked on every redirect and against the
   addresses actually connected to (DNS rebinding).
 - **Bounded:** at most five redirects (`MAX_REDIRECTS`), 8 MB (`MAX_BYTES`), a time limit, and what
   arrives must be a PNG, JPEG, GIF or WebP by its own bytes.
-- The picture cache (`apps/mailcraft/src/picture_cache.rs`) names files by hashes and never writes
+- The picture cache (`apps/mailsolutions/src/picture_cache.rs`) names files by hashes and never writes
   the address; it is capped and read back through the same checks as a download.
 
 ### A hostile or compromised mail server
@@ -267,7 +267,7 @@ Answers IMAP, SMTP or Microsoft Graph with whatever it likes.
 
 ### A network attacker
 
-Watches or changes traffic between MailCraft and its servers.
+Watches or changes traffic between MailSolutions and its servers.
 
 - **Encrypt or refuse.** Every connection that carries mail or a sign-in is TLS (rustls) or STARTTLS,
   with the server's certificate checked by the operating system's own verifier
@@ -282,10 +282,10 @@ Watches or changes traffic between MailCraft and its servers.
 - **No silent downgrade:** a server that doesn't offer STARTTLS when it was asked for is an error
   ("the server doesn't offer STARTTLS", `crates/net/src/sync.rs`, `crates/net/src/send.rs`).
 - **Provider discovery** asks a DNS-over-HTTPS resolver about the domain alone, never the mailbox
-  name, and only when the owner presses Connect: for its mail exchangers (`mailcraft_net::lookup_mx`)
+  name, and only when the owner presses Connect: for its mail exchangers (`mailsolutions_net::lookup_mx`)
   and, for a domain nobody here knows, for its mail servers' SRV records of RFC 6186
-  (`mailcraft_net::discover`, #1063), the hosts its `_autodiscover._tcp` SRV record names and
-  the host `autodiscover.<domain>` is an alias of (CNAME; `mailcraft_net::autodiscover_hosts`).
+  (`mailsolutions_net::discover`, #1063), the hosts its `_autodiscover._tcp` SRV record names and
+  the host `autodiscover.<domain>` is an alias of (CNAME; `mailsolutions_net::autodiscover_hosts`).
   The Autodiscover hosts only choose a page, and none of them is asked anything for it:
   Microsoft's is Microsoft 365, signed in on Microsoft's page; cPanel's is IMAP; any other is a
   question to the owner, an Exchange server or IMAP, with neither the default. IMAP is the servers
@@ -373,7 +373,7 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
   `ui.copyLinkAddress` is; saving or sending an appointment in its window
   (`ui.eventWindow` `do`) runs later as the owner, so it asks `send` and the question names the
   people invited.
-- **The bridge checks the app.** The MCP bridge (`mailcraft-cli mcp --connect`) sends the control
+- **The bridge checks the app.** The MCP bridge (`mailsolutions-cli mcp --connect`) sends the control
   key only to a program that has proved it holds it: it sends a random nonce and the app answers
   HMAC-SHA256 over it keyed with the control key (`auth.challenge`,
   [control protocol](control-protocol.md#keys)). A program that only took the loopback port, before
@@ -401,15 +401,15 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
 
 - **Files are the owner's alone:** on Unix the mailbox file and its message content are created
   0600 and their folders 0700 (`crates/engine/src/store.rs`), and so are the settings folder, the
-  logs and the pictures kept from the web (`apps/mailcraft/src/logging.rs`,
-  `apps/mailcraft/src/picture_cache.rs`); a settings, log or picture folder that an earlier version
-  left open to others is closed when MailCraft next uses it. On Windows they live in the owner's
+  logs and the pictures kept from the web (`apps/mailsolutions/src/logging.rs`,
+  `apps/mailsolutions/src/picture_cache.rs`); a settings, log or picture folder that an earlier version
+  left open to others is closed when MailSolutions next uses it. On Windows they live in the owner's
   profile.
 - **Secrets are in the operating system's credential store** (Windows Credential Manager, the macOS
-  keychain, the Secret Service: GNOME Keyring, KWallet; `apps/mailcraft/src/secrets.rs`), never in
+  keychain, the Secret Service: GNOME Keyring, KWallet; `apps/mailsolutions/src/secrets.rs`), never in
   the mailbox file, `ui.json`, a command line, a URL or a log line. They are `#[serde(skip)]` and redacted
   from `Debug` output (`SyncRequest`, `Tokens` in `crates/model/src/sync.rs`) and from error text. Access tokens are never stored.
-  `ui.json` holds the key names of the entries MailCraft wrote, moved or read (`rememberedKeys`,
+  `ui.json` holds the key names of the entries MailSolutions wrote, moved or read (`rememberedKeys`,
   names only), so that the full wipe and turning Remember sign-in off delete all of them, whichever
   mailbox they were for, and report any that stay (AU2-18, AU3-18); removing an account deletes
   its entries under every name it may have had. A secret belongs to one confirmed account as it
@@ -430,7 +430,7 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
   the address of the account open now; a shared mailbox's sign-in is checked against its owner's
   address (AU3-08, AU3-09, AU3-10, AU3-21, AU3-V8). A message handed to a server to be sent is
   marked so in the mailbox file first, and the run's answer clears the mark: a message still marked
-  at the account's next run (the answer was let go of, or MailCraft stopped mid-send) is held as
+  at the account's next run (the answer was let go of, or MailSolutions stopped mid-send) is held as
   one that may have been sent, never sent again until the owner says so (AU3-26). A
   `mailto:` link handed in from outside saves a message with changes to Drafts first (AU2-19).
 - **The owner's own private keys** (#30; File › Options › Security). An imported key never
@@ -439,7 +439,7 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
   params, `ui.json`, a log or an error. The rules are in one place
   (`crates/engine/src/private_keys.rs`): an OpenPGP key must have a passphrase, and not an empty
   one (each secret part is tried with an empty passphrase, its key derivation capped); a `.p12`
-  kept by MailCraft must have its private key encrypted in the file, not only under its MAC; the
+  kept by MailSolutions must have its private key encrypted in the file, not only under its MAC; the
   file holds one secret key and nothing else, since the whole file is what is kept; and no RSA
   private-key operation runs in the process (an OpenPGP key with any RSA part, a subkey for
   encryption too, is refused, and a `.p12`'s kind is its private key's own PKCS #8 algorithm and
@@ -448,12 +448,12 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
   or `key:smime:<sha-256>` (S/MIME only on Linux and FreeBSD: on Windows and macOS a `.p12` goes
   into the certificate store or the keychain, which keep it themselves), at most 64 of them, and
   nothing is kept that the page doesn't list; nothing is kept where there is no credential store.
-  `ui.json` holds only their public facts, and removing MailCraft's data deletes them from the
+  `ui.json` holds only their public facts, and removing MailSolutions's data deletes them from the
   store. A key is removed, and an OpenPGP key marked Verified, only by the owner's own click: the
   commands are never an agent's, and the buttons don't answer input the control channel
   injected (`MailApp::driven`), so an agent allowed to click can't do either. Marking the owner's
   own key Verified on import covers only the User IDs that are the mailbox's accounts' addresses.
-- **GnuPG is run, never a shell** (`apps/mailcraft/src/own_keys/gnupg.rs`): `gpgconf
+- **GnuPG is run, never a shell** (`apps/mailsolutions/src/own_keys/gnupg.rs`): `gpgconf
   --list-components` names `gpg`, and `gpg` lists the owner's secret keys and the User IDs it
   holds valid, with fixed arguments and no input, for at most 20 seconds and 4 MB of output (a
   program that runs longer or writes more is stopped and said not to work), and its colon
@@ -464,10 +464,10 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
   front, at most once a minute.
 - **The control channel** (only when started with `--control`) listens on `127.0.0.1` only, and every
   request must carry a key: 32 random bytes from the operating system, written to a key file created
-  0600 on Unix and compared in constant time (`apps/mailcraft/src/control_server.rs`,
+  0600 on Unix and compared in constant time (`apps/mailsolutions/src/control_server.rs`,
   `crates/control-key`). Another user can't drive the app; another program running as the owner
   can read the key, which is the next item's problem.
-- **The hand-over between two starts** (#505). A second start on the mailbox file a MailCraft
+- **The hand-over between two starts** (#505). A second start on the mailbox file a MailSolutions
   started with doesn't open it again: the first start holds a lock beside it (`<mailbox>.lock`, let go of by the system however the
   program ends) and listens on `127.0.0.1`, on a port the system picks, for a later start's one
   line; the port and 32 random bytes from the operating system are in `<mailbox>.instance`,
@@ -481,7 +481,7 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
   message, calendar, contact, mbox or `.mailcraft` file that is there and can be read, at most 32
   message files at a time; anything else is dropped, and only how many is logged. A file is opened
   once, without waiting (`O_NONBLOCK` on Unix), checked through that handle to be a regular file
-  and read from it (`mailcraft_engine::io::read_regular_file`), so a pipe or device swapped in
+  and read from it (`mailsolutions_engine::io::read_regular_file`), so a pipe or device swapped in
   for it is refused rather than read or waited on; every open of a `.mailcraft` file
   (`store::open`) goes the same way. Windows has no such flag: there a named pipe's path is
   refused only once it is open. A message file is put into the local folder Imported, never a
@@ -489,29 +489,29 @@ An `.eml`, `.mbox`, `.ics`, `.vcf` or `.mailcraft` file from somewhere else.
   that is never a draft (a file that says it is unsent too), selected and shown in the list, and
   opens read-only in a window of its own. Opened again it is the copy already there: the same
   Message-ID and, when that copy keeps the SHA-256 of the file it came from, the same SHA-256; a
-  copy without one by its Message-ID alone. The SHA-256 is kept in a header of MailCraft's own,
+  copy without one by its Message-ID alone. The SHA-256 is kept in a header of MailSolutions's own,
   `X-MailCraft-Opened-File-SHA256`, which no message brings in (the MIME reader drops it, and
   every import too) and which, like the meeting-answer note, is never written into a saved file,
   an mbox, a server's copy or what is sent (`crates/mime/src/write.rs`). A calendar or
   contact file is imported only when the owner answers the window's question (an agent names no
   file to import). Another user can't reach the window: the key file
-  is not theirs to read. A start that finds the lock held but nobody answering says MailCraft is
+  is not theirs to read. A start that finds the lock held but nobody answering says MailSolutions is
   already open and does not open the mailbox twice; a crashed run's lock is gone, and its stale
   `.instance` is replaced. The sample mailbox and a run without preferences that names no
-  `--mailbox` take no lock and don't listen at the start (`apps/mailcraft/src/single_instance.rs`). A
+  `--mailbox` take no lock and don't listen at the start (`apps/mailsolutions/src/single_instance.rs`). A
   `.mailcraft` file the window opens later (File › Open, a recent one, a drop, a hand-over) or saves
   to has its lock taken first, before anything is read or asked, while the open mailbox's is still
   held; one another window has open is refused and the open mailbox stays as it was. Once the
   window has the other file open, later starts are told of it and the old lock is let go of; after
   File › New nothing is held (#517).
 - **Agents on the same computer.** The agent gate ([MCP](mcp.md#agents-get-only-what-the-owner-allows))
-  binds agents that reach MailCraft only through MCP. The control channel takes a request without
+  binds agents that reach MailSolutions only through MCP. The control channel takes a request without
   the bridge's `agent` marking for the owner's own script, so an agent that can run a shell or read
   files as the owner (it could read the control key in the settings folder, or the mailbox file
-  itself, or run `mailcraft-cli`) is outside the gate. Run such an agent as another user or in a
+  itself, or run `mailsolutions-cli`) is outside the gate. Run such an agent as another user or in a
   sandbox, and don't start the app with `--control` while one is around. With
   `--control-agents-only` every control request is an agent's, allowed nothing in advance, so the
-  running window can't be driven past the owner's question; the mailbox file and `mailcraft-cli`
+  running window can't be driven past the owner's question; the mailbox file and `mailsolutions-cli`
   stay within such an agent's reach.
 
 ### A supply-chain compromise
@@ -542,14 +542,14 @@ A malicious or vulnerable dependency, GitHub Action or build step.
   release downloads by URL (nfpm, appimagetool and the AppImage runtime, the Artifact Signing
   client, rustup-init, wasm-opt) and WiX (a NuGet package) is an exact version checked against a recorded sha256 before
   use; trunk runs offline. Every release file gets a build provenance attestation
-  (`gh attestation verify <file> -R UCS-Care-Group/mailcraft`).
+  (`gh attestation verify <file> -R william-pyle/MailSolutions`).
 - Pure-Rust TLS (rustls), and no handwritten JavaScript.
 
 ## Assurance case
 
-Why MailCraft's security requirements are met, and the evidence for it.
+Why MailSolutions's security requirements are met, and the evidence for it.
 
-**Claim.** MailCraft keeps the owner's correspondence and sign-ins confidential and intact against
+**Claim.** MailSolutions keeps the owner's correspondence and sign-ins confidential and intact against
 the adversaries above: nothing in a message runs or reaches out by itself, sign-ins never leave
 memory or the operating system's credential store, and hostile input never crashes it or
 corrupts the mailbox.
@@ -560,7 +560,7 @@ the file that holds it.
 **Trust boundaries.** Everything from outside is hostile and checked where it crosses in:
 messages and attachments (`crates/mime`, `crates/html`, `crates/ical`, `crates/vcard`,
 `crates/charset`); mail servers and Microsoft Graph (`crates/proto`, `crates/net`); the web, for
-pictures the owner asked for (`mailcraft_net::pictures::fetch`, the only way out); mailbox and
+pictures the owner asked for (`mailsolutions_net::pictures::fetch`, the only way out); mailbox and
 settings files (`crates/engine/src/store.rs`); commands from the control channel and MCP
 (`crates/engine`, the agent gate in `docs/mcp.md`).
 
@@ -587,7 +587,7 @@ settings files (`crates/engine/src/store.rs`); commands from the control channel
 | Cleartext transmission (CWE-319) | TLS or STARTTLS for everything of the owner's; rustls, TLS 1.2 and 1.3 only |
 | Insecure storage of credentials (CWE-256, -522) | Sign-ins in memory or the operating system's credential store only; redacted from logs and errors |
 | Path traversal and deceptive file names (CWE-22, -451) | Every name from mail cleaned before saving: no directions reversed, invisible characters or reserved names |
-| Download of code without integrity check (CWE-494) | Updates kept only when MailCraft's own ed25519 signature over `SHA256SUMS.txt` verifies and the checksum matches |
+| Download of code without integrity check (CWE-494) | Updates kept only when MailSolutions's own ed25519 signature over `SHA256SUMS.txt` verifies and the checksum matches |
 
 **Evidence.**
 
@@ -605,7 +605,7 @@ settings files (`crates/engine/src/store.rs`); commands from the control channel
 ## Out of scope and known limits
 
 - **Malware running as the owner.** A program with the owner's rights can read the mailbox, the
-  control key and, usually, the credential store. MailCraft doesn't defend against its own user's
+  control key and, usually, the credential store. MailSolutions doesn't defend against its own user's
   account being compromised.
 - **No end-to-end encryption yet.** Messages are protected in transit (TLS) but not end to end:
   S/MIME and OpenPGP signatures are checked where a message is read (S/MIME without a revocation
@@ -613,7 +613,7 @@ settings files (`crates/engine/src/store.rs`); commands from the control channel
   (#30).
 - **The mailbox isn't encrypted at rest.** It relies on the operating system's disk encryption
   (BitLocker, FileVault, LUKS, GELI).
-- **Builds not signed by Windows or macOS.** Releases carry MailCraft's own signature over their
+- **Builds not signed by Windows or macOS.** Releases carry MailSolutions's own signature over their
   checksums, which the program checks before it installs an update, but the Windows and macOS
   builds aren't code-signed yet, so the systems warn before running them; check a first download
   against the release's checksums. For that reason a macOS copy doesn't install updates by itself
@@ -629,6 +629,7 @@ settings files (`crates/engine/src/store.rs`); commands from the control channel
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-19 | minor | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-15 | patch | Known limits: S/MIME and OpenPGP signatures are checked; encrypting and signing sent mail are not built |
 | 2026-11-12 | minor | #1103: provider discovery asks the DNS for the domain's Autodiscover hosts (SRV record and `autodiscover.<domain>` alias) beside its exchangers; the Exchange search's alias step, in the place of MS-OXDISCO's plain-HTTP redirect and specified in autodiscover.md, asks the owner before the sign-in goes to the alias's host |
 | 2026-11-11 | minor | #30 part 4: the owner's own private keys kept in the credential store (`key:openpgp:`, `key:smime:`; passphrase-protected, S/MIME on Linux and FreeBSD only) and the rules they pass; running GnuPG (fixed arguments, no shell, a time limit and a cap on its output, the direct trust model) |

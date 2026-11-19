@@ -3,13 +3,13 @@
 //! What a mail-server synchronisation is asked to do and what it brings back.
 //!
 //! Plain data, so the pieces stay apart: the engine builds a [`SyncRequest`] and applies a
-//! [`SyncResult`] (both pure), and a host with sockets (`mailcraft-net`, on the desktop and in the
+//! [`SyncResult`] (both pure), and a host with sockets (`mailsolutions-net`, on the desktop and in the
 //! CLI) does the talking in between, usually on a background thread.
 
 use serde::{Deserialize, Serialize};
 
 use crate::{Account, Address, FlagStatus, FolderCounts, FolderKind, Id, Importance, Message};
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 
 mod drafts;
 mod ews;
@@ -803,7 +803,7 @@ pub struct SyncResult {
     /// way ([`SyncResult::problem`]); [`SyncResult::problems`] pairs them with `errors`. Never
     /// sent anywhere: an answer that crosses as JSON has the English only.
     #[serde(skip)]
-    pub said: Vec<mailcraft_i18n::Text>,
+    pub said: Vec<mailsolutions_i18n::Text>,
     /// This is a piece of an answer, and more follows. The last piece doesn't have it.
     #[serde(skip_serializing_if = "is_false")]
     pub partial: bool,
@@ -825,7 +825,7 @@ pub struct SyncResult {
 
 impl SyncResult {
     /// Tell a problem: its English among `errors`, and the text it is made of for the window.
-    pub fn problem(&mut self, said: mailcraft_i18n::Text) {
+    pub fn problem(&mut self, said: mailsolutions_i18n::Text) {
         self.errors.push(said.to_string());
         self.said.push(said);
     }
@@ -834,13 +834,13 @@ impl SyncResult {
     /// with ([`SyncResult::problem`]) when its English is that line still, else the line as it
     /// is. (A line changed after it was told, a password blanked out of it say, is said as it
     /// now stands.)
-    pub fn problems(&self) -> Vec<mailcraft_i18n::Text> {
-        let mut unused: Vec<Option<&mailcraft_i18n::Text>> = self.said.iter().map(Some).collect();
+    pub fn problems(&self) -> Vec<mailsolutions_i18n::Text> {
+        let mut unused: Vec<Option<&mailsolutions_i18n::Text>> = self.said.iter().map(Some).collect();
         self.errors
             .iter()
             .map(|line| {
                 let found = unused.iter_mut().find(|t| t.is_some_and(|t| t.to_string() == *line)).and_then(Option::take);
-                found.cloned().unwrap_or_else(|| mailcraft_i18n::Text::verbatim(line.clone()))
+                found.cloned().unwrap_or_else(|| mailsolutions_i18n::Text::verbatim(line.clone()))
             })
             .collect()
     }
@@ -990,11 +990,11 @@ impl SyncResult {
 
 /// `3 new messages, 1 sent`, `Up to date`, or the error.
 pub fn summary_line(error: Option<&str>, new: usize, sent: usize) -> String {
-    summary_line_in(mailcraft_i18n::Lang::English, error, new, sent)
+    summary_line_in(mailsolutions_i18n::Lang::English, error, new, sent)
 }
 
 /// [`summary_line`] in `lang` (an error is said as it came).
-pub fn summary_line_in(lang: mailcraft_i18n::Lang, error: Option<&str>, new: usize, sent: usize) -> String {
+pub fn summary_line_in(lang: mailsolutions_i18n::Lang, error: Option<&str>, new: usize, sent: usize) -> String {
     if let Some(e) = error {
         return e.to_string();
     }
@@ -1005,7 +1005,7 @@ pub fn summary_line_in(lang: mailcraft_i18n::Lang, error: Option<&str>, new: usi
         (0, _) => lang.tn(count(sent), "{sent} message sent", "{sent} messages sent"),
         (_, _) => lang.tn(count(new), "{n} new message, {sent} sent", "{n} new messages, {sent} sent"),
     };
-    mailcraft_i18n::fmt(template, &[("n", &new.to_string()), ("sent", &sent.to_string())])
+    mailsolutions_i18n::fmt(template, &[("n", &new.to_string()), ("sent", &sent.to_string())])
 }
 
 // ---- Microsoft Graph (R3) ----
@@ -1225,7 +1225,7 @@ pub enum MessageChange {
         to_folder: Option<Id>,
     },
     /// The message was copied here into another folder of the account (`copy` is the copy here):
-    /// the server copies it, after giving the source MailCraft's invisible marker of the value
+    /// the server copies it, after giving the source MailSolutions's invisible marker of the value
     /// `marker`, by which a copy whose answer was lost is found (S21).
     #[serde(rename_all = "camelCase")]
     Copy {

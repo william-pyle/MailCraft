@@ -1,17 +1,17 @@
 [package]
-name = "mailcraft-smime"
+name = "mailsolutions-smime"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "MailCraft S/MIME (RFC 8551): Digital signatures checked from CMS (RFC 5652) and X.509 (RFC 5280), no I/O"
+description = "MailSolutions S/MIME (RFC 8551): Digital signatures checked from CMS (RFC 5652) and X.509 (RFC 5280), no I/O"
 
 [lints]
 workspace = true
 
 [dependencies]
-mailcraft-model = { workspace = true }
-mailcraft-ber = { workspace = true }
-mailcraft-time = { workspace = true }
+mailsolutions-model = { workspace = true }
+mailsolutions-ber = { workspace = true }
+mailsolutions-time = { workspace = true }
 cms = { workspace = true }
 x509-cert = { workspace = true }
 der = { workspace = true }
@@ -21,7 +21,7 @@ rsa = { workspace = true }
 p256 = { workspace = true }
 p384 = { workspace = true }
 sha2 = { workspace = true }
-mailcraft-charset = { workspace = true }
+mailsolutions-charset = { workspace = true }
 thiserror = { workspace = true }
 # A PKCS #12 file opened for the window to import (#30 R13): its key derivation (RFC 7292
 # Appendix B), PBES2 (RFC 8018) and the old triple-DES scheme, all RustCrypto of the generation

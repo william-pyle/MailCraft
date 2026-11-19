@@ -1,10 +1,10 @@
 [package]
-name = "mailcraft-mobile"
+name = "mailsolutions-mobile"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "MailCraft's binding for the phone apps: the Rust core as one object with typed queries and an event stream, exported to Kotlin and Swift through UniFFI"
+description = "MailSolutions's binding for the phone apps: the Rust core as one object with typed queries and an event stream, exported to Kotlin and Swift through UniFFI"
 
 [lints]
 workspace = true
@@ -15,15 +15,15 @@ workspace = true
 crate-type = ["cdylib", "staticlib", "lib"]
 
 [dependencies]
-mailcraft-engine = { workspace = true }
-mailcraft-model = { workspace = true }
-mailcraft-html = { workspace = true }
-mailcraft-host = { workspace = true }
-mailcraft-link = { workspace = true }
-mailcraft-i18n = { workspace = true }
-mailcraft-names = { workspace = true }
-mailcraft-net = { workspace = true }
-mailcraft-time = { workspace = true }
+mailsolutions-engine = { workspace = true }
+mailsolutions-model = { workspace = true }
+mailsolutions-html = { workspace = true }
+mailsolutions-host = { workspace = true }
+mailsolutions-link = { workspace = true }
+mailsolutions-i18n = { workspace = true }
+mailsolutions-names = { workspace = true }
+mailsolutions-net = { workspace = true }
+mailsolutions-time = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
@@ -37,6 +37,6 @@ jni = "0.22.4"
 rustls-platform-verifier = { workspace = true }
 
 [dev-dependencies]
-mailcraft-engine = { workspace = true, features = ["test-support"] }
-mailcraft-charset = { workspace = true }
+mailsolutions-engine = { workspace = true, features = ["test-support"] }
+mailsolutions-charset = { workspace = true }
 

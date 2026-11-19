@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Calendar: appointments, meetings, recurrence, calendars.
 
-use mailcraft_model::{Address, Attendee, Calendar, Event, Freq, Id, Recurrence, Response, Rgb, ShowAs, clean_name};
-use mailcraft_time::{Date, DateTime, Weekday};
+use mailsolutions_model::{Address, Attendee, Calendar, Event, Freq, Id, Recurrence, Response, Rgb, ShowAs, clean_name};
+use mailsolutions_time::{Date, DateTime, Weekday};
 use serde_json::{Value, json};
 
 use super::{bad, done, fail, needs_message, remote};
@@ -34,7 +34,7 @@ fn own_specs() -> Vec<CommandSpec> {
     vec![
         CommandSpec::new("calendar.freeBusy", "Free and Busy Times", "Meeting › Attendees", free_busy)
             .pure()
-            .params(r#"{"people": ["a@x", …] | "a@x; b@y", "from": "YYYY-MM-DDTHH:MM", "to": same (62 days at most), "result"?: FreeBusy} — without "result": what a host is to ask the account's server ({"ask": {"people", "from": seconds, "to": seconds}}, for `mailcraft-net`'s `graph::schedule`); with what the host brought back: when each of them is busy, as stretches that don't overlap ({"from", "to", "people": [{"email", "busy": [{"start", "end", "showAs": "tentative"|"busy"|"outOfOffice"|"workingElsewhere"}], "error"?: string}]}), in the times of this computer"#),
+            .params(r#"{"people": ["a@x", …] | "a@x; b@y", "from": "YYYY-MM-DDTHH:MM", "to": same (62 days at most), "result"?: FreeBusy} — without "result": what a host is to ask the account's server ({"ask": {"people", "from": seconds, "to": seconds}}, for `mailsolutions-net`'s `graph::schedule`); with what the host brought back: when each of them is busy, as stretches that don't overlap ({"from", "to", "people": [{"email", "busy": [{"start", "end", "showAs": "tentative"|"busy"|"outOfOffice"|"workingElsewhere"}], "error"?: string}]}), in the times of this computer"#),
         CommandSpec::new("calendar.new", "New Appointment", "Home › New", new).key("Mod+Shift+A").params(EVENT),
         CommandSpec::new("calendar.newMeeting", "New Meeting", "Home › New", new_meeting).key("Mod+Shift+Q").params(EVENT),
         CommandSpec::new("calendar.edit", "Edit Event", "Appointment", edit)
@@ -197,7 +197,7 @@ fn may_send(v: &Value, people: usize, doing: &str) -> Result<bool, CmdError> {
 /// The note that goes with a cancellation or an answer: lines of text, not too long.
 fn comment(v: &Value) -> String {
     let words = p::str(v, "comment").unwrap_or("");
-    words.chars().filter(|c| *c == '\n' || !c.is_control()).take(mailcraft_model::remote::MAX_COMMENT).collect::<String>().trim().to_string()
+    words.chars().filter(|c| *c == '\n' || !c.is_control()).take(mailsolutions_model::remote::MAX_COMMENT).collect::<String>().trim().to_string()
 }
 
 /// The calendar the owner works in, which is where an event made here goes when none is named:
@@ -253,7 +253,7 @@ const COLORS: [Rgb; 6] =
     [Rgb(0x2E, 0x8B, 0x57), Rgb(0xE0, 0x7B, 0x1F), Rgb(0x7E, 0x57, 0xC2), Rgb(0xD1, 0x3B, 0x3B), Rgb(0x1A, 0x9B, 0xA6), Rgb(0xD9, 0xA4, 0x0C)];
 
 /// The colour the mailbox's next calendar gets.
-pub(crate) fn next_color(mailbox: &mailcraft_model::Mailbox) -> Rgb {
+pub(crate) fn next_color(mailbox: &mailsolutions_model::Mailbox) -> Rgb {
     COLORS.get(mailbox.calendars.len() % COLORS.len()).copied().unwrap_or_default()
 }
 
@@ -488,13 +488,13 @@ fn may_change(s: &Session, v: &Value, before: &Event, e: &Event) -> Result<bool,
     let fields = remote::changed_fields(before, e, &remote::offset_of(s));
     if before.origin.guest {
         let why = if fields.attendees.is_some() {
-            mailcraft_i18n::Arg::words("Who is invited is for its organizer to say.")
+            mailsolutions_i18n::Arg::words("Who is invited is for its organizer to say.")
         } else if fields.repeat.is_some() {
-            mailcraft_i18n::Arg::words("How it repeats is for its organizer to say.")
+            mailsolutions_i18n::Arg::words("How it repeats is for its organizer to say.")
         } else if fields.online.is_some() {
-            mailcraft_i18n::Arg::words("Whether it is held online is for its organizer to say.")
+            mailsolutions_i18n::Arg::words("Whether it is held online is for its organizer to say.")
         } else if fields.request_responses.is_some() || fields.allow_proposals.is_some() {
-            mailcraft_i18n::Arg::words("What the people invited are asked for is for its organizer to say.")
+            mailsolutions_i18n::Arg::words("What the people invited are asked for is for its organizer to say.")
         } else {
             return Ok(false);
         };
@@ -522,7 +522,7 @@ fn change_one(s: &mut Session, v: &Value, series: &Event, day: Date, changed: Ev
     }
     let apart = series.start.date.days_until(day);
     let origin = if kept {
-        mailcraft_model::Origin {
+        mailsolutions_model::Origin {
             account: series.origin.account,
             series: series.origin.id.clone(),
             guest: series.origin.guest,
@@ -530,7 +530,7 @@ fn change_one(s: &mut Session, v: &Value, series: &Event, day: Date, changed: Ev
             ..Default::default()
         }
     } else {
-        mailcraft_model::Origin::default()
+        mailsolutions_model::Origin::default()
     };
     // An event of its own has a name of its own (the server gives one it keeps the series' own).
     let uid = String::new();
@@ -549,7 +549,7 @@ fn change_one(s: &mut Session, v: &Value, series: &Event, day: Date, changed: Ev
     if series.zone().is_some() && !series.all_day && !one.all_day {
         // A series by another zone's clock has this occurrence wherever that clock puts it
         // here: it is changed by as long as the series was (an hour later is an hour later).
-        let instant = |wall: DateTime| mailcraft_model::zoned::instant_at(wall.add_days(-apart), &here);
+        let instant = |wall: DateTime| mailsolutions_model::zoned::instant_at(wall.add_days(-apart), &here);
         let (from, to, at) = (series.instants(&here), (instant(one.start), instant(one.end)), was.instants(&here));
         one.set_instants(at.0.saturating_add(to.0.saturating_sub(from.0)), at.1.saturating_add(to.1.saturating_sub(from.1)), &here);
     }
@@ -820,8 +820,8 @@ fn event_json(s: &Session, e: &Event) -> Value {
         "time": e.time_label(s.prefs.twelve_hour),
         // The zones it has of its own (`start` and `end` are by the calendar's clock either
         // way), and its times by their clock when that shows another time.
-        "startZone": e.zone().map(mailcraft_time::Zone::id), "endZone": e.zone_of_end().map(mailcraft_time::Zone::id),
-        "ownTime": mailcraft_model::zoned::own_time_label(e, &remote::offset_of(s), s.prefs.twelve_hour),
+        "startZone": e.zone().map(mailsolutions_time::Zone::id), "endZone": e.zone_of_end().map(mailsolutions_time::Zone::id),
+        "ownTime": mailsolutions_model::zoned::own_time_label(e, &remote::offset_of(s), s.prefs.twelve_hour),
         // An account's server keeps it; somebody else organizes it; it is one occurrence of a
         // series that was changed on its own (the day it stands for).
         "onServer": kept_by(s, e).is_some(), "guest": e.origin.guest, "occurrenceOf": e.origin.occurrence.map(|day| day.iso()),
@@ -842,11 +842,11 @@ fn get(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 /// What happens on the days `from`–`to` in the calendars that are shown, in order.
-pub fn occurrences(s: &Session, from: Date, to: Date) -> Vec<mailcraft_model::Occurrence> {
+pub fn occurrences(s: &Session, from: Date, to: Date) -> Vec<mailsolutions_model::Occurrence> {
     let shown: Vec<Id> = s.mailbox.calendars.iter().filter(|c| c.visible).map(|c| c.id).collect();
     // (A series by another zone's clock is wherever that clock puts each occurrence here.)
     let here = remote::offset_of(s);
-    let mut out: Vec<mailcraft_model::Occurrence> =
+    let mut out: Vec<mailsolutions_model::Occurrence> =
         s.mailbox.events.values().filter(|e| shown.contains(&e.calendar)).flat_map(|e| e.occurrences_in(from, to, &here)).collect();
     out.sort_by_key(|o| (o.start, o.end, o.event));
     out
@@ -1201,8 +1201,8 @@ fn weight(show_as: ShowAs) -> u8 {
 /// Somebody's time within `from`..`to` as stretches that don't overlap, in order: where several
 /// things are on at once the strongest shows (out of office over busy over tentative), stretches
 /// that touch and show alike are one, and free time is left out.
-pub fn merge_busy(times: &[mailcraft_model::remote::BusyTime], from: i64, to: i64) -> Vec<mailcraft_model::remote::BusyTime> {
-    use mailcraft_model::remote::{BusyTime, MAX_BUSY};
+pub fn merge_busy(times: &[mailsolutions_model::remote::BusyTime], from: i64, to: i64) -> Vec<mailsolutions_model::remote::BusyTime> {
+    use mailsolutions_model::remote::{BusyTime, MAX_BUSY};
     let clipped: Vec<BusyTime> = times
         .iter()
         .take(MAX_BUSY)
@@ -1227,7 +1227,7 @@ pub fn merge_busy(times: &[mailcraft_model::remote::BusyTime], from: i64, to: i6
 }
 
 fn free_busy(s: &mut Session, v: &Value) -> CmdResult {
-    use mailcraft_model::remote::{FreeBusy, FreeBusyAsk, MAX_SCHEDULE_STRETCH, MAX_SCHEDULES};
+    use mailsolutions_model::remote::{FreeBusy, FreeBusyAsk, MAX_SCHEDULE_STRETCH, MAX_SCHEDULES};
     let offset_at = remote::offset_of(s);
     let instant = |wall: DateTime| wall.to_timestamp(offset_at(wall.to_timestamp(offset_at(wall.to_timestamp(0)))));
     let from = p::datetime(v, "from")?.ok_or_else(|| bad("`from` is required"))?;

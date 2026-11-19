@@ -38,14 +38,14 @@
 //! the rest of the mailbox is read, and the items lost are reported (the host then fetches the
 //! mail again: `crate::store`).
 //!
-//! A file that begins `MailCraft ` but not as this form does, or has a higher format number, was
-//! written by a newer MailCraft and is said to be.
+//! A file that begins `MailSolutions ` but not as this form does, or has a higher format number, was
+//! written by a newer MailSolutions and is said to be.
 
 use std::collections::HashMap;
 use std::io::{Read, Write};
 
-use mailcraft_model::Id;
-use mailcraft_model::load_limit::{self, Budget};
+use mailsolutions_model::Id;
+use mailsolutions_model::load_limit::{self, Budget};
 
 pub use crate::io::INDEX_MAGIC as MAGIC;
 
@@ -380,8 +380,8 @@ fn next(r: &mut impl Read, left: u64) -> std::io::Result<Result<(Rec, u64), Stop
 /// runs out.
 pub const MAX_RECORDS: usize = 20_000_000;
 
-/// Whether the bytes of a file's beginning say it was written by a MailCraft, in any form that
-/// isn't JSON: this one, or one a newer MailCraft writes, which begins the same way.
+/// Whether the bytes of a file's beginning say it was written by a MailSolutions, in any form that
+/// isn't JSON: this one, or one a newer MailSolutions writes, which begins the same way.
 pub fn is_ours(head: &[u8]) -> bool {
     head.starts_with(crate::io::FAMILY)
 }
@@ -424,11 +424,15 @@ pub fn replay_within(mut r: impl Read, file_len: u64, max_records: usize, budget
     let head = head.get(..got).unwrap_or(&[]);
     if !head.starts_with(&MAGIC[..]) {
         // Another form of ours (a newer program's) is said to be that, not something else.
-        return Err(if is_ours(head) { "this mailbox was written by a newer MailCraft".into() } else { "this isn't a MailCraft mailbox".into() });
+        return Err(if is_ours(head) {
+            "this mailbox was written by a newer MailSolutions".into()
+        } else {
+            "this isn't a MailSolutions mailbox".into()
+        });
     }
     let version = head.get(16..20).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes);
     if let Some(version) = version.filter(|v| *v > VERSION) {
-        return Err(format!("this mailbox was written by a newer MailCraft (format {version})"));
+        return Err(format!("this mailbox was written by a newer MailSolutions (format {version})"));
     }
     let Some(version) = version.filter(|v| (OLDEST..=VERSION).contains(v)).filter(|_| head.get(20..24) == Some(&[0u8; 4][..])) else {
         return Err("this mailbox file is damaged (its header)".into());

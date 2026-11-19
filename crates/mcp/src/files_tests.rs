@@ -6,7 +6,7 @@
 use crate::files::FilesDir;
 
 fn folder(name: &str) -> std::path::PathBuf {
-    let d = std::env::temp_dir().join(format!("mailcraft-mcp-risky-{name}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("mailsolutions-mcp-risky-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     d

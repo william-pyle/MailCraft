@@ -16,7 +16,7 @@
 use egui::{Key, Ui, vec2};
 use std::collections::HashMap;
 
-use mailcraft_model::{Folder, FolderKind, Id, Mailbox};
+use mailsolutions_model::{Folder, FolderKind, Id, Mailbox};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -130,7 +130,7 @@ impl MoveItems {
             ui.add(egui::TextEdit::singleline(&mut self.query).hint_text(tl!("Search folders")).char_limit(QUERY_MAX).desired_width(f32::INFINITY));
         let resp = crate::text_menu::field(resp);
         crate::text_menu::hold(&resp);
-        let wanted = mailcraft_model::words::fold(&self.query);
+        let wanted = mailsolutions_model::words::fold(&self.query);
         // (Every folder is searched; the rows drawn stop at the most a list shows.)
         let shown: Vec<usize> = (0..self.rows.len()).filter(|i| wanted.is_empty() || self.rows[*i].fold.contains(&wanted)).take(ROWS_MAX).collect();
         let choosable: Vec<Id> = shown.iter().map(|i| self.rows[*i].folder).filter(|f| Some(*f) != here).collect();
@@ -228,7 +228,7 @@ fn rows(mb: &Mailbox, account: Id) -> Vec<Row> {
             }
             let name = crate::nav::folder_name(f).to_string();
             let path = if above.is_empty() { name.clone() } else { format!("{above}/{name}") };
-            let fold = mailcraft_model::words::fold(&path);
+            let fold = mailsolutions_model::words::fold(&path);
             out.push(Row { folder: f.id, name, path: path.clone(), fold, depth });
             walk(under, Some(f.id), &path, depth + 1, out);
         }

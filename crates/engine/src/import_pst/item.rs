@@ -12,8 +12,8 @@
 
 use std::io::{Read, Seek};
 
-use mailcraft_model::{Address, Attachment, FlagStatus, Importance, Message};
-use mailcraft_pst::{AttachmentContent, Error as PstError, MessageRef, PropValue, Properties, Pst, RecipientKind};
+use mailsolutions_model::{Address, Attachment, FlagStatus, Importance, Message};
+use mailsolutions_pst::{AttachmentContent, Error as PstError, MessageRef, PropValue, Properties, Pst, RecipientKind};
 
 /// Most bytes one item brings in: its text, its HTML and its attachments, with those of the
 /// messages attached to it.
@@ -56,7 +56,7 @@ pub fn filetime(ft: u64) -> Option<i64> {
     (seconds > 0 && seconds < 253_402_300_800).then_some(seconds)
 }
 
-pub use mailcraft_pst::code_page_label as code_page;
+pub use mailsolutions_pst::code_page_label as code_page;
 
 /// How the 8-bit text of one item is read: its own code page, else the file's, else
 /// Windows-1252 (what an ANSI file in Western Europe and America holds).
@@ -75,7 +75,7 @@ impl Text {
     /// 8-bit text as text: in its code page, without the NULs that may end it.
     pub fn decode(&self, bytes: &[u8]) -> String {
         let end = bytes.iter().rposition(|b| *b != 0).map_or(0, |i| i.saturating_add(1));
-        mailcraft_charset::decode(bytes.get(..end).unwrap_or_default(), self.charset)
+        mailsolutions_charset::decode(bytes.get(..end).unwrap_or_default(), self.charset)
     }
 
     /// A text property, whole (Unicode, or 8-bit text in the item's code page).
@@ -135,7 +135,7 @@ pub const PSETID_TASK: [u8; 16] = [0x03, 0x20, 0x06, 0x00, 0x00, 0x00, 0x00, 0x0
 /// Whether an error ends the import rather than leaving one part out: the reader under the file
 /// failing, or the file's read allowance spent.
 pub fn ends_import(e: &PstError) -> bool {
-    matches!(e, PstError::Io(_) | PstError::Cap(mailcraft_pst::Cap::TotalRead))
+    matches!(e, PstError::Io(_) | PstError::Cap(mailsolutions_pst::Cap::TotalRead))
 }
 
 /// One item read into a message, and what of it couldn't be.
@@ -151,8 +151,8 @@ const OVERHEAD: u64 = 32;
 /// batches (a message of a few bytes of body may carry thousands of recipients or headers).
 pub fn held(m: &Message) -> u64 {
     let text = |s: &str| (s.len() as u64).saturating_add(OVERHEAD);
-    let address = |a: &mailcraft_model::Address| text(&a.name).saturating_add(text(&a.email));
-    let addresses = |list: &[mailcraft_model::Address]| list.iter().map(address).fold(0u64, u64::saturating_add);
+    let address = |a: &mailsolutions_model::Address| text(&a.name).saturating_add(text(&a.email));
+    let addresses = |list: &[mailsolutions_model::Address]| list.iter().map(address).fold(0u64, u64::saturating_add);
     let texts = |list: &[String]| list.iter().map(|s| text(s)).fold(0u64, u64::saturating_add);
     [
         text(&m.message_id),
@@ -181,9 +181,10 @@ pub fn held(m: &Message) -> u64 {
 }
 
 /// About how much memory a contact holds: its texts and lists.
-pub fn held_contact(c: &mailcraft_model::Contact) -> u64 {
+pub fn held_contact(c: &mailsolutions_model::Contact) -> u64 {
     let text = |s: &str| (s.len() as u64).saturating_add(OVERHEAD);
-    let labeled = |l: &[mailcraft_model::Labeled]| l.iter().map(|l| text(&l.label).saturating_add(text(&l.value))).fold(0u64, u64::saturating_add);
+    let labeled =
+        |l: &[mailsolutions_model::Labeled]| l.iter().map(|l| text(&l.label).saturating_add(text(&l.value))).fold(0u64, u64::saturating_add);
     let texts = |l: &[String]| l.iter().map(|s| text(s)).fold(0u64, u64::saturating_add);
     let places = c.addresses.iter().map(|a| (a.one_line().len() as u64).saturating_add(6 * OVERHEAD)).fold(0u64, u64::saturating_add);
     [
@@ -238,7 +239,7 @@ impl Item<'_> {
 
 /// Reads the item `id` (read already as `m`) into a message: never fails for what one item gets
 /// wrong, only for what ends the import ([`ends_import`]).
-pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, named: &Named) -> Result<Built, PstError> {
+pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailsolutions_pst::Message, named: &Named) -> Result<Built, PstError> {
     let mut item = Item { named, left: MAX_ITEM_BYTES, notes: Vec::new(), more_notes: 0 };
     let message = message_of(pst, m, &mut item, 0)?;
     if item.more_notes > 0 {
@@ -247,7 +248,7 @@ pub fn build<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, named
     Ok(Built { message, notes: item.notes })
 }
 
-fn message_of<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, item: &mut Item, depth: usize) -> Result<Message, PstError> {
+fn message_of<R: Read + Seek>(pst: &mut Pst<R>, m: &mailsolutions_pst::Message, item: &mut Item, depth: usize) -> Result<Message, PstError> {
     let p = &m.properties;
     let text = Text::of(p, item.named.charset);
     let mut out = Message::default();
@@ -277,7 +278,7 @@ fn message_of<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, item
         if cut.len() < h.len() {
             item.note("its Internet headers were longer than the limit and are cut".to_string());
         }
-        let parsed = mailcraft_mime_model::parse(format!("{}\r\n\r\n", cut.trim_end()).as_bytes());
+        let parsed = mailsolutions_mime_model::parse(format!("{}\r\n\r\n", cut.trim_end()).as_bytes());
         out.from = parsed.from;
         out.reply_to = parsed.reply_to;
         out.to = parsed.to;
@@ -382,7 +383,7 @@ fn message_of<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, item
         out.headers.push(("Sensitivity".to_string(), s.to_string()));
     }
     if let Some(id) = item.named.keywords {
-        let own: Vec<String> = text.list(p, id).iter().filter_map(|c| mailcraft_model::clean_name(c)).take(MAX_CATEGORIES).collect();
+        let own: Vec<String> = text.list(p, id).iter().filter_map(|c| mailsolutions_model::clean_name(c)).take(MAX_CATEGORIES).collect();
         if !own.is_empty() {
             out.categories = own;
         }
@@ -398,7 +399,7 @@ fn message_of<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, item
     body(pst, m, &text, item, &mut out)?;
 
     // Attachments, and the pictures the HTML shows by content id (looked for once).
-    let cids = mailcraft_model::shown::shown_ids(out.body.html.as_deref().unwrap_or(""));
+    let cids = mailsolutions_model::shown::shown_ids(out.body.html.as_deref().unwrap_or(""));
     for a in &m.attachments {
         attachment(pst, a, &text, item, depth, &cids, &mut out)?;
     }
@@ -465,7 +466,7 @@ fn ids(value: &str) -> Vec<String> {
 /// within [`MAX_BODY`] and what the item may still bring.
 fn body_value<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     id: u16,
     item: &mut Item,
     what: &str,
@@ -475,7 +476,7 @@ fn body_value<R: Read + Seek>(
         Some(PropValue::Large { size }) => {
             let max = MAX_BODY.min(item.left);
             if *size > max {
-                item.note(format!("its {what} ({}) is larger than the limit and is left out", mailcraft_model::size_label(*size)));
+                item.note(format!("its {what} ({}) is larger than the limit and is left out", mailsolutions_model::size_label(*size)));
                 return Ok(None);
             }
             match pst.read_property(&m.id, id, max) {
@@ -518,14 +519,14 @@ fn html_charset(bytes: &[u8]) -> Option<String> {
     (!label.is_empty()).then(|| label.to_string())
 }
 
-fn body<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, text: &Text, item: &mut Item, out: &mut Message) -> Result<(), PstError> {
+fn body<R: Read + Seek>(pst: &mut Pst<R>, m: &mailsolutions_pst::Message, text: &Text, item: &mut Item, out: &mut Message) -> Result<(), PstError> {
     let p = &m.properties;
     let html = match body_value(pst, m, 0x1013, item, "HTML")? {
         Some(PropValue::Binary(b)) => {
             let label = p.int(0x3FDE).and_then(code_page).map(str::to_string).or_else(|| html_charset(&b));
             Some(match label {
-                Some(label) => mailcraft_charset::decode(&b, &label),
-                None => mailcraft_charset::guess(&b),
+                Some(label) => mailsolutions_charset::decode(&b, &label),
+                None => mailsolutions_charset::guess(&b),
             })
         }
         Some(v) => value_text(&v, text),
@@ -534,8 +535,8 @@ fn body<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, text: &Tex
     .filter(|h| !h.trim().is_empty());
     let plain = body_value(pst, m, 0x1000, item, "text")?.and_then(|v| value_text(&v, text));
     let plain = plain.map(|t| t.trim_end_matches('\0').replace("\r\n", "\n"));
-    let (from_html, hidden) = html.as_deref().map(mailcraft_html::text_and_hidden).unzip();
-    out.hidden_text = cut_at(&hidden.unwrap_or_default(), mailcraft_model::MAX_HIDDEN_TEXT).to_string();
+    let (from_html, hidden) = html.as_deref().map(mailsolutions_html::text_and_hidden).unzip();
+    out.hidden_text = cut_at(&hidden.unwrap_or_default(), mailsolutions_model::MAX_HIDDEN_TEXT).to_string();
     out.body.text = match (plain, from_html) {
         (Some(t), Some(h)) if t.trim().is_empty() => h,
         (Some(t), _) => t,
@@ -558,14 +559,16 @@ fn body<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, text: &Tex
 
 /// The categories an item keeps (PidNameKeywords).
 pub(super) fn own_categories(p: &Properties, named: &Named, text: &Text) -> Vec<String> {
-    named.keywords.map_or_else(Vec::new, |id| text.list(p, id).iter().filter_map(|c| mailcraft_model::clean_name(c)).take(MAX_CATEGORIES).collect())
+    named
+        .keywords
+        .map_or_else(Vec::new, |id| text.list(p, id).iter().filter_map(|c| mailsolutions_model::clean_name(c)).take(MAX_CATEGORIES).collect())
 }
 
 /// The text of an item that isn't mail (an appointment's notes, a task's): its plain text, else
 /// the text of its rich text, else of its HTML, within `max` characters; and what couldn't be.
 pub(super) fn plain_body<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     named: &Named,
     max: usize,
 ) -> Result<(String, Vec<String>), PstError> {
@@ -580,7 +583,7 @@ pub(super) fn plain_body<R: Read + Seek>(
     {
         let room = named.rtf_room.get();
         let most = usize::try_from(room).unwrap_or(usize::MAX).min(max.saturating_add(8));
-        match mailcraft_pst::decompress_rtf(&stored, MAX_RTF).and_then(|raw| mailcraft_pst::rtf_text(&raw, most)) {
+        match mailsolutions_pst::decompress_rtf(&stored, MAX_RTF).and_then(|raw| mailsolutions_pst::rtf_text(&raw, most)) {
             Ok((t, cut)) => {
                 named.rtf_room.set(room.saturating_sub(t.len() as u64));
                 out = t;
@@ -594,7 +597,7 @@ pub(super) fn plain_body<R: Read + Seek>(
     if out.trim().is_empty()
         && let Some(PropValue::Binary(b)) = body_value(pst, m, 0x1013, &mut item, "HTML")?
     {
-        out = mailcraft_html::text_and_hidden(&mailcraft_charset::guess(&b)).0;
+        out = mailsolutions_html::text_and_hidden(&mailsolutions_charset::guess(&b)).0;
     }
     let kept = cut_at(&out, max);
     if kept.len() < out.len() {
@@ -615,7 +618,7 @@ fn rich_text(stored: Vec<u8>, item: &mut Item, out: &mut Message) -> Option<Stri
         keep_stored(stored, "this import has opened as much rich text as one import may", item, out);
         return None;
     }
-    let mut raw = match mailcraft_pst::decompress_rtf(&stored, MAX_RTF.min(usize::try_from(item.left).unwrap_or(usize::MAX))) {
+    let mut raw = match mailsolutions_pst::decompress_rtf(&stored, MAX_RTF.min(usize::try_from(item.left).unwrap_or(usize::MAX))) {
         Ok(raw) => raw,
         Err(e) => {
             keep_stored(stored, &e.to_string(), item, out);
@@ -629,24 +632,24 @@ fn rich_text(stored: Vec<u8>, item: &mut Item, out: &mut Message) -> Option<Stri
     let most = MAX_BODY.min(item.left).min(room);
     // HTML kept in rich text comes in as the HTML it was, read when shown as any other's. (Cut,
     // it wouldn't be the HTML it was: its text and the rich text are kept, as for any other.)
-    if let Ok(Some((html, false))) = mailcraft_pst::rtf_html(&raw, usize::try_from(most).unwrap_or(usize::MAX))
+    if let Ok(Some((html, false))) = mailsolutions_pst::rtf_html(&raw, usize::try_from(most).unwrap_or(usize::MAX))
         && !html.trim().is_empty()
     {
         // Its text and what it hides are the HTML's, as for any other's: the rich text's own
         // text holds what the HTML hides and what only the rich text shows.
-        let (whole, hidden) = mailcraft_html::text_and_hidden(&html);
+        let (whole, hidden) = mailsolutions_html::text_and_hidden(&html);
         let text = cut_at(&whole, usize::try_from(most.saturating_sub(html.len() as u64)).unwrap_or(usize::MAX)).to_string();
         if text.len() < whole.len() {
             item.note("its rich text was longer than a body can be and its text is cut".to_string());
         }
-        out.hidden_text = cut_at(&hidden, mailcraft_model::MAX_HIDDEN_TEXT).to_string();
+        out.hidden_text = cut_at(&hidden, mailsolutions_model::MAX_HIDDEN_TEXT).to_string();
         let size = (html.len() as u64).saturating_add(text.len() as u64).saturating_add(out.hidden_text.len() as u64);
         item.left = item.left.saturating_add(raw.len() as u64).saturating_sub(size);
         item.named.rtf_room.set(room.saturating_sub(size));
         out.body.text = text;
         return Some(html);
     }
-    let read = mailcraft_pst::rtf_text(&raw, usize::try_from(most).unwrap_or(usize::MAX));
+    let read = mailsolutions_pst::rtf_text(&raw, usize::try_from(most).unwrap_or(usize::MAX));
     match read {
         Ok((text, cut)) => {
             if text.trim().is_empty() && !cut && !raw.windows(5).any(|w| w == b"\\pict") && !raw.windows(7).any(|w| w == b"\\object") {
@@ -689,11 +692,11 @@ fn file_name(raw: &str) -> String {
 
 fn attachment<R: Read + Seek>(
     pst: &mut Pst<R>,
-    a: &mailcraft_pst::Attachment,
+    a: &mailsolutions_pst::Attachment,
     text: &Text,
     item: &mut Item,
     depth: usize,
-    cids: &mailcraft_model::shown::ShownIds,
+    cids: &mailsolutions_model::shown::ShownIds,
     out: &mut Message,
 ) -> Result<(), PstError> {
     let p = &a.properties;
@@ -717,7 +720,7 @@ fn attachment<R: Read + Seek>(
             let left = item.left;
             let attached = message_of(pst, &read, item, depth.saturating_add(1))?;
             item.left = left;
-            let bytes = mailcraft_mime_model::write(&attached, &mailcraft_mime_model::WriteOptions { include_bcc: false, offset_minutes: 0 });
+            let bytes = mailsolutions_mime_model::write(&attached, &mailsolutions_mime_model::WriteOptions { include_bcc: false, offset_minutes: 0 });
             if !item.take(bytes.len() as u64) {
                 item.note(format!("{shown}, an attached message, is larger than what one item may bring and is left out"));
                 return Ok(());
@@ -730,7 +733,7 @@ fn attachment<R: Read + Seek>(
         (AttachmentContent::Data { size } | AttachmentContent::Object { size }, _) => {
             let object = matches!(a.content, AttachmentContent::Object { .. }) || a.method == Some(6);
             if !item.take(*size) {
-                item.note(format!("{shown} ({}) is larger than what one item may bring and is left out", mailcraft_model::size_label(*size)));
+                item.note(format!("{shown} ({}) is larger than what one item may bring and is left out", mailsolutions_model::size_label(*size)));
                 return Ok(());
             }
             let data = match pst.attachment_bytes(&a.id) {
@@ -752,7 +755,7 @@ fn attachment<R: Read + Seek>(
             if !content_id.is_empty() {
                 // Shown in place only as a picture an `<img>` asks for (or the file hides), by its
                 // bytes: a file of any other kind is listed, whatever the body or the file says.
-                file.inline = mailcraft_model::shown::is_picture(&file.data) && (hidden || cids.shows(&content_id));
+                file.inline = mailsolutions_model::shown::is_picture(&file.data) && (hidden || cids.shows(&content_id));
                 file.content_id = content_id;
             }
             out.attachments.push(file);
@@ -771,8 +774,8 @@ fn attachment<R: Read + Seek>(
 }
 
 /// A part of an item the reader left out, for its note.
-pub(super) fn part_name(part: &mailcraft_pst::Part) -> String {
-    use mailcraft_pst::Part;
+pub(super) fn part_name(part: &mailsolutions_pst::Part) -> String {
+    use mailsolutions_pst::Part;
     match part {
         Part::Recipients { count } => format!("{count} recipients past the limit"),
         Part::Recipient { row } => format!("recipient {row}"),
@@ -788,5 +791,5 @@ pub(super) fn part_name(part: &mailcraft_pst::Part) -> String {
 
 /// The ref of an item in a folder.
 pub fn item_ref(nid: u32) -> MessageRef {
-    MessageRef::item(mailcraft_pst::Nid(nid))
+    MessageRef::item(mailsolutions_pst::Nid(nid))
 }

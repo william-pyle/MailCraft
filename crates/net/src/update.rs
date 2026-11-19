@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Whether a new version of MailCraft is out: one question to GitHub's API about the newest
+//! Whether a new version of MailSolutions is out: one question to GitHub's API about the newest
 //! release of the repository the build names (`CARGO_PKG_REPOSITORY`), and nothing else.
 //!
-//! The request is a GET over HTTPS with the crate's fixed `User-Agent` (`MailCraft`, no version)
+//! The request is a GET over HTTPS with the crate's fixed `User-Agent` (`MailSolutions`, no version)
 //! and an `Accept` header: no account, address, mailbox detail, identifier or version of this
 //! program goes with it. Nothing is downloaded here: the release's list of files is read
 //! (names, sizes, and addresses that must be that release's own on `github.com`), and a copy
@@ -18,13 +18,13 @@
 
 use std::time::Duration;
 
-use mailcraft_model::update::{Asset, Release, Version, is_file_name};
+use mailsolutions_model::update::{Asset, Release, Version, is_file_name};
 use serde_json::Value;
 
 use crate::NetError;
 use crate::http::{self, Request, Url};
 
-/// The public keys of MailCraft's release signature, in base64 (32 bytes each): the key the
+/// The public keys of MailSolutions's release signature, in base64 (32 bytes each): the key the
 /// release workflow signs `SHA256SUMS.txt` with, and a spare whose private half is kept offline
 /// until the first is lost or stolen. A release signed by either is one of the project's; a copy
 /// that updates itself takes nothing that isn't (`update_download`). An empty one is no key:
@@ -64,7 +64,7 @@ pub fn latest_at(api: &str, repository: &str, pre_releases: bool) -> Result<Rele
         .map_err(|e| without_address(&e))?;
     match reply.status {
         200 => release(&reply.body, owner, repo, pre_releases),
-        404 => Err(said("GitHub has no release of MailCraft")),
+        404 => Err(said("GitHub has no release of MailSolutions")),
         403 | 429 => Err(said("GitHub asked to be asked later")),
         status => Err(said(&format!("GitHub answered {status}"))),
     }
@@ -194,7 +194,7 @@ mod tests {
     use super::*;
     use crate::fake::{FakeHttp, json_answer};
 
-    const REPO: &str = "https://github.com/william-pyle/MailCraft";
+    const REPO: &str = "https://github.com/william-pyle/MailSolutions";
 
     fn answer(release: &Value) -> Vec<u8> {
         json_answer("200 OK", &release.to_string())
@@ -207,12 +207,12 @@ mod tests {
     fn release_of(tag: &str) -> Value {
         serde_json::json!({
             "tag_name": tag,
-            "name": format!("MailCraft {tag}"),
+            "name": format!("MailSolutions {tag}"),
             "prerelease": false,
             "draft": false,
-            "html_url": format!("https://github.com/william-pyle/MailCraft/releases/tag/{tag}"),
+            "html_url": format!("https://github.com/william-pyle/MailSolutions/releases/tag/{tag}"),
             "body": "What's new: faster search.",
-            "assets": [{"name": "mailcraft.dmg", "browser_download_url": "https://github.com/x"}],
+            "assets": [{"name": "mailsolutions.dmg", "browser_download_url": "https://github.com/x"}],
         })
     }
 
@@ -229,7 +229,7 @@ mod tests {
             let server = FakeHttp::answering(answer(&release_of(tag)));
             let got = ask(&server, false).unwrap();
             assert_eq!(got.version, Version::parse(tag).unwrap(), "{tag}");
-            assert_eq!(got.page, format!("https://github.com/william-pyle/MailCraft/releases/tag/{tag}"));
+            assert_eq!(got.page, format!("https://github.com/william-pyle/MailSolutions/releases/tag/{tag}"));
             assert!(!got.security);
         }
     }
@@ -241,11 +241,11 @@ mod tests {
         assert_eq!(server.asked(), 1);
         let sent = server.request(0);
         let mut lines = sent.split("\r\n");
-        assert_eq!(lines.next(), Some("GET /repos/william-pyle/MailCraft/releases/latest HTTP/1.1"));
+        assert_eq!(lines.next(), Some("GET /repos/william-pyle/MailSolutions/releases/latest HTTP/1.1"));
         // Exactly these headers, and no body.
         let headers: Vec<&str> = lines.take_while(|l| !l.is_empty()).collect();
         let host = format!("Host: 127.0.0.1:{}", server.port);
-        assert_eq!(headers, [host.as_str(), "User-Agent: MailCraft", "Accept: application/vnd.github+json", "Connection: close"]);
+        assert_eq!(headers, [host.as_str(), "User-Agent: MailSolutions", "Accept: application/vnd.github+json", "Connection: close"]);
         assert!(sent.ends_with("\r\n\r\n"), "{sent:?}");
         // No version of this program, no query, nothing of an account.
         let version = env!("CARGO_PKG_VERSION");
@@ -290,7 +290,7 @@ mod tests {
         }
         // What isn't a 200 is no release either, and a redirect is not followed.
         for (status, why) in [
-            ("404 Not Found", "GitHub has no release of MailCraft"),
+            ("404 Not Found", "GitHub has no release of MailSolutions"),
             ("403 Forbidden", "GitHub asked to be asked later"),
             ("500 Oops", "GitHub answered 500"),
         ] {
@@ -346,15 +346,15 @@ mod tests {
 
     #[test]
     fn a_wrong_link_is_replaced_by_the_one_made_from_the_tag() {
-        let made = "https://github.com/william-pyle/MailCraft/releases/tag/v0.9.0";
+        let made = "https://github.com/william-pyle/MailSolutions/releases/tag/v0.9.0";
         for wrong in [
-            "https://evil.example/william-pyle/MailCraft/releases/tag/v0.9.0",
-            "http://github.com/william-pyle/MailCraft/releases/tag/v0.9.0",
-            "https://github.com/someone-else/mailcraft/releases/tag/v0.9.0",
-            "https://github.com/william-pyle/MailCraft/releases/tag/v0.9.1",
-            "https://github.com/william-pyle/MailCraft/releases/tag/V0.9.0",
-            "https://github.com/william-pyle/MailCraft/releases/tag/v0.9.0?download=1",
-            "https://github.com/william-pyle/MailCraft/releases/download/v0.9.0/setup.exe",
+            "https://evil.example/william-pyle/MailSolutions/releases/tag/v0.9.0",
+            "http://github.com/william-pyle/MailSolutions/releases/tag/v0.9.0",
+            "https://github.com/someone-else/mailsolutions/releases/tag/v0.9.0",
+            "https://github.com/william-pyle/MailSolutions/releases/tag/v0.9.1",
+            "https://github.com/william-pyle/MailSolutions/releases/tag/V0.9.0",
+            "https://github.com/william-pyle/MailSolutions/releases/tag/v0.9.0?download=1",
+            "https://github.com/william-pyle/MailSolutions/releases/download/v0.9.0/setup.exe",
             "javascript:alert(1)",
             "",
         ] {
@@ -369,9 +369,9 @@ mod tests {
         assert_eq!(ask(&server, false).unwrap().page, made);
         // The repository's name in another case is the same page.
         let mut release = release_of("v0.9.0");
-        release["html_url"] = Value::String("https://github.com/william-pyle/mailcraft/releases/tag/v0.9.0".into());
+        release["html_url"] = Value::String("https://github.com/william-pyle/mailsolutions/releases/tag/v0.9.0".into());
         let server = FakeHttp::answering(answer(&release));
-        assert_eq!(ask(&server, false).unwrap().page, "https://github.com/william-pyle/mailcraft/releases/tag/v0.9.0");
+        assert_eq!(ask(&server, false).unwrap().page, "https://github.com/william-pyle/mailsolutions/releases/tag/v0.9.0");
     }
 
     #[test]
@@ -406,22 +406,22 @@ mod tests {
 
     #[test]
     fn the_files_of_the_release_are_read_and_checked() {
-        let download = |name: &str| format!("https://github.com/william-pyle/MailCraft/releases/download/v0.9.0/{name}");
+        let download = |name: &str| format!("https://github.com/william-pyle/MailSolutions/releases/download/v0.9.0/{name}");
         let mut release = release_of("v0.9.0");
         release["assets"] = serde_json::json!([
             {"name": "SHA256SUMS.txt", "size": 2000, "browser_download_url": download("SHA256SUMS.txt")},
             {"name": "SHA256SUMS.txt.sig", "size": 89, "browser_download_url": download("SHA256SUMS.txt.sig")},
-            {"name": "mailcraft-0.9.0-linux-x86_64.AppImage", "size": 40_000_000u64, "browser_download_url": download("mailcraft-0.9.0-linux-x86_64.AppImage")},
+            {"name": "mailsolutions-0.9.0-linux-x86_64.AppImage", "size": 40_000_000u64, "browser_download_url": download("mailsolutions-0.9.0-linux-x86_64.AppImage")},
             // Another case of the repository's name is the same repository.
-            {"name": "mailcraft-0.9.0-windows-x64.msi", "size": 9, "browser_download_url": "https://github.com/william-pyle/mailcraft/releases/download/v0.9.0/mailcraft-0.9.0-windows-x64.msi"},
+            {"name": "mailsolutions-0.9.0-windows-x64.msi", "size": 9, "browser_download_url": "https://github.com/william-pyle/mailsolutions/releases/download/v0.9.0/mailsolutions-0.9.0-windows-x64.msi"},
             // Left out: another host, another repository, another tag, another name, no size, a bad name.
-            {"name": "evil.msi", "size": 9, "browser_download_url": "https://evil.example/william-pyle/MailCraft/releases/download/v0.9.0/evil.msi"},
-            {"name": "other.msi", "size": 9, "browser_download_url": "https://github.com/someone/mailcraft/releases/download/v0.9.0/other.msi"},
-            {"name": "old.msi", "size": 9, "browser_download_url": "https://github.com/william-pyle/MailCraft/releases/download/v0.1.0/old.msi"},
+            {"name": "evil.msi", "size": 9, "browser_download_url": "https://evil.example/william-pyle/MailSolutions/releases/download/v0.9.0/evil.msi"},
+            {"name": "other.msi", "size": 9, "browser_download_url": "https://github.com/someone/mailsolutions/releases/download/v0.9.0/other.msi"},
+            {"name": "old.msi", "size": 9, "browser_download_url": "https://github.com/william-pyle/MailSolutions/releases/download/v0.1.0/old.msi"},
             {"name": "named.msi", "size": 9, "browser_download_url": download("renamed.msi")},
             {"name": "sizeless.msi", "browser_download_url": download("sizeless.msi")},
             {"name": "../up.msi", "size": 9, "browser_download_url": download("../up.msi")},
-            {"name": "http.msi", "size": 9, "browser_download_url": "http://github.com/william-pyle/MailCraft/releases/download/v0.9.0/http.msi"},
+            {"name": "http.msi", "size": 9, "browser_download_url": "http://github.com/william-pyle/MailSolutions/releases/download/v0.9.0/http.msi"},
             {"name": "query.msi", "size": 9, "browser_download_url": format!("{}?x=1", download("query.msi"))},
             // A name that comes twice is neither.
             {"name": "twice.dmg", "size": 9, "browser_download_url": download("twice.dmg")},
@@ -431,9 +431,12 @@ mod tests {
         let server = FakeHttp::answering(answer(&release));
         let got = ask(&server, false).unwrap();
         let names: Vec<&str> = got.assets.iter().map(|a| a.name.as_str()).collect();
-        assert_eq!(names, ["SHA256SUMS.txt", "SHA256SUMS.txt.sig", "mailcraft-0.9.0-linux-x86_64.AppImage", "mailcraft-0.9.0-windows-x64.msi"]);
+        assert_eq!(
+            names,
+            ["SHA256SUMS.txt", "SHA256SUMS.txt.sig", "mailsolutions-0.9.0-linux-x86_64.AppImage", "mailsolutions-0.9.0-windows-x64.msi"]
+        );
         assert_eq!(got.assets[2].size, 40_000_000);
-        assert_eq!(got.assets[2].url, download("mailcraft-0.9.0-linux-x86_64.AppImage"));
+        assert_eq!(got.assets[2].url, download("mailsolutions-0.9.0-linux-x86_64.AppImage"));
         // Not a list at all: no files.
         let mut release = release_of("v0.9.0");
         release["assets"] = serde_json::json!({"name": "x"});
@@ -452,13 +455,13 @@ mod tests {
     #[test]
     fn the_shipped_release_keys_are_keys() {
         for key in RELEASE_KEYS {
-            assert!(mailcraft_charset::base64::STANDARD.decode(key).is_ok_and(|k| k.len() == 32), "{key}");
+            assert!(mailsolutions_charset::base64::STANDARD.decode(key).is_ok_and(|k| k.len() == 32), "{key}");
         }
     }
 
     #[test]
     fn only_a_repository_on_github_is_asked_about() {
-        assert_eq!(owner_and_repo(REPO), Some(("william-pyle", "MailCraft")));
+        assert_eq!(owner_and_repo(REPO), Some(("william-pyle", "MailSolutions")));
         assert_eq!(owner_and_repo("https://github.com/a/b.git"), Some(("a", "b")));
         assert_eq!(owner_and_repo("https://github.com/a/b/"), Some(("a", "b")));
         for bad in [

@@ -8,10 +8,10 @@
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::graph_mail::apply_graph_mail;
-use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessagePage, ServerMessage, SyncPhase, Timings, Tokens};
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::graph_mail::apply_graph_mail;
+use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessagePage, ServerMessage, SyncPhase, Timings, Tokens};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use crate::{GraphRequest, GraphResult, MailApp, Services};
@@ -44,7 +44,7 @@ struct Host {
 type Shared = Arc<Mutex<Host>>;
 
 fn tokens() -> Tokens {
-    Tokens { access: "own-access".into(), refresh: "ref-1".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: "own-access".into(), refresh: "ref-1".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 fn message(id: &str) -> GraphMessage {
@@ -114,7 +114,7 @@ fn window(links: (bool, bool)) -> (MailApp, Id, Id, Shared) {
         rx
     }));
     // The desktop host can open mail connections; nothing here is kept in step by them.
-    app.services.sync = Some(Box::new(|_req: mailcraft_model::sync::SyncRequest| mpsc::channel().1));
+    app.services.sync = Some(Box::new(|_req: mailsolutions_model::sync::SyncRequest| mpsc::channel().1));
     (app, owner, shared, host)
 }
 
@@ -183,7 +183,7 @@ fn an_account_with_no_stored_inbox_link_has_a_pass_from_the_start_of_its_inbox()
     let owner_inbox = app.session.mailbox.folder_of_kind(owner, FolderKind::Inbox).unwrap();
     let server = app.session.mailbox.folder_mut(owner_inbox).unwrap().server.as_mut().unwrap();
     (server.delta, server.caught_up) = (FIRST_LINK.into(), false);
-    assert!(mailcraft_engine::cmd::graph_mail::graph_inbox_request(&app.session, owner).is_none(), "not caught up");
+    assert!(mailsolutions_engine::cmd::graph_mail::graph_inbox_request(&app.session, owner).is_none(), "not caught up");
 }
 
 #[test]
@@ -417,7 +417,7 @@ fn no_check_for_an_account_without_graph_or_when_send_receive_by_itself_is_off()
     app.passwords.insert(imap, "invented".into());
     let asked = Arc::new(Mutex::new(0));
     let count = asked.clone();
-    app.services.sync = Some(Box::new(move |_req: mailcraft_model::sync::SyncRequest| {
+    app.services.sync = Some(Box::new(move |_req: mailsolutions_model::sync::SyncRequest| {
         *count.lock().unwrap() += 1;
         mpsc::channel().1
     }));
@@ -457,7 +457,7 @@ fn no_check_for_an_account_with_no_inbox_link_or_no_sign_in() {
 
 /// What a check renewed with Microsoft: a new access token and a new refresh token.
 fn renewed(refresh: &str) -> Tokens {
-    Tokens { access: "renewed-access".into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: "renewed-access".into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 /// The credential store of the system, as a map.
@@ -468,7 +468,7 @@ impl crate::SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.0.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().insert(key.into(), secret.into());
         Ok(())
     }

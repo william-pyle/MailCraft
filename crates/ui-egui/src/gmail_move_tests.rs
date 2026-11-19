@@ -6,8 +6,8 @@
 
 use egui::accesskit::Role;
 use egui_kittest::kittest::{NodeT as _, Queryable};
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{FolderKind, GmailCategory, Id, Message, OAuth, OAuthProvider};
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{FolderKind, GmailCategory, Id, Message, OAuth, OAuthProvider};
 use serde_json::json;
 
 use crate::MailApp;
@@ -102,7 +102,7 @@ fn the_message_menu_moves_to_one_of_the_five() {
     let moved = message(&harness, account, 2);
     assert_eq!((moved.gmail_category, moved.gmail_synced), (Some(GmailCategory::Forums), Some(GmailCategory::Social)));
     // Waiting for the next Send/Receive, by Gmail's id.
-    let request = mailcraft_engine::cmd::account::sync_request(&harness.state().session, account).unwrap();
+    let request = mailsolutions_engine::cmd::account::sync_request(&harness.state().session, account).unwrap();
     assert_eq!(request.gmail_moves.iter().map(|m| (m.id, m.category)).collect::<Vec<_>>(), [(7_002, GmailCategory::Forums)]);
 }
 
@@ -131,7 +131,7 @@ fn switched_off_the_menu_has_no_such_item_and_nothing_takes_a_drop() {
     drag(&mut harness, from, to);
     let after = message(&harness, account, 2);
     assert_eq!((after.gmail_category, after.gmail_synced.is_some_and(|s| Some(s) != after.gmail_category)), (Some(GmailCategory::Social), false));
-    assert!(mailcraft_engine::cmd::account::sync_request(&harness.state().session, account).unwrap().gmail_moves.is_empty());
+    assert!(mailsolutions_engine::cmd::account::sync_request(&harness.state().session, account).unwrap().gmail_moves.is_empty());
 }
 
 #[test]

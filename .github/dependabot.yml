@@ -27,7 +27,7 @@ updates:
       crates:
         patterns: ["*"]
     # The OpenPGP crypto crates move together, by hand: a new `sha2`, `sha1`, `sha3` or `rand`
-    # needs a `digest` and `rand_core` that `mailcraft-openpgp`'s `rsa` 0.9 doesn't take, so a
+    # needs a `digest` and `rand_core` that `mailsolutions-openpgp`'s `rsa` 0.9 doesn't take, so a
     # bump on its own doesn't build (#955). Lift this once #988 has moved them.
     ignore:
       - dependency-name: "sha1"

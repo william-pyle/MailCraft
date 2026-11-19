@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! The mailbox file as it was before a newer MailCraft first wrote it in a newer format, kept
+//! The mailbox file as it was before a newer MailSolutions first wrote it in a newer format, kept
 //! beside it so that going back to the version before finds a file it can open.
 //!
 //! Before [`crate::store`] first writes a mailbox file in a newer format than the one on disk
 //! (from this one, format 3, on: the JSON file of the forms before is kept as `.format1` or
-//! `.format2` by the store itself, and every MailCraft that updates itself reads format 3), the
+//! `.format2` by the store itself, and every MailSolutions that updates itself reads format 3), the
 //! file is kept beside it as `<file>.before-<version>` (`mailbox.mailcraft.before-0.6.0`, the
 //! version of the program that changed the format): a second name for the same bytes where the
 //! system has them, a copy otherwise. One is kept: an earlier one goes when a later one is made.
@@ -143,13 +143,13 @@ pub fn put_back(path: &Path, version: &str) -> io::Result<bool> {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::Mailbox;
+    use mailsolutions_model::Mailbox;
 
     use super::*;
     use crate::store::{self, INDEX_VERSION};
 
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("mailcraft-before-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-before-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir

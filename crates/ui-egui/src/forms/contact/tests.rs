@@ -8,7 +8,7 @@ use super::*;
 const NOW: i64 = 1_791_993_600;
 
 fn session() -> Session {
-    Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0)
+    Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0)
 }
 
 fn contact_id(s: &Session, name: &str) -> Id {

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Descriptions of one HTTP exchange, without performing it (the shape of `mailcraft-ews`).
+//! Descriptions of one HTTP exchange, without performing it (the shape of `mailsolutions-ews`).
 //!
 //! This crate builds an [`HttpRequest`]; the host performs it and describes what came back in an
 //! [`HttpResponse`]. The host must send the method, address, fields and body exactly as given,

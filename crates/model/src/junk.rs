@@ -176,7 +176,7 @@ impl JunkLists {
 }
 
 /// What an entry or a sender's address is compared by: lower case, and its domain in the ASCII
-/// form it is looked up by (IDNA's `xn--` labels, through `mailcraft-link`'s Punycode), so that
+/// form it is looked up by (IDNA's `xn--` labels, through `mailsolutions-link`'s Punycode), so that
 /// `@bücher.example` and `@xn--bcher-kva.example` are the same domain, and without the one
 /// trailing dot of a fully qualified name. A label that can't be written so is compared as it
 /// is. No Unicode normalisation (NFC): the workspace has no normaliser, so a domain typed in
@@ -194,7 +194,7 @@ pub fn junk_key(text: &str) -> String {
                 label.to_string()
             } else {
                 let chars: Vec<char> = label.chars().collect();
-                mailcraft_link::punycode::encode(&chars).map(|p| format!("xn--{p}")).unwrap_or_else(|| label.to_string())
+                mailsolutions_link::punycode::encode(&chars).map(|p| format!("xn--{p}")).unwrap_or_else(|| label.to_string())
             }
         })
         .collect();

@@ -8,8 +8,8 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::{Account, Calendar, Id, Rgb};
-use mailcraft_time::Weekday;
+use mailsolutions_model::{Account, Calendar, Id, Rgb};
+use mailsolutions_time::Weekday;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
@@ -34,7 +34,7 @@ const MAX_ZONE: usize = 64;
 const DAY_MINUTES: i64 = 24 * 60;
 
 /// The colours a calendar can be given here, by the names they go by. Our own colours: the same
-/// ones `mailcraft-net` shows a Microsoft 365 calendar's named colour in, so a colour chosen here
+/// ones `mailsolutions-net` shows a Microsoft 365 calendar's named colour in, so a colour chosen here
 /// and the same one chosen on the server look alike.
 pub const CALENDAR_COLORS: [(&str, Rgb); 9] = [
     ("Blue", Rgb(0x4A, 0x90, 0xD9)),
@@ -71,7 +71,7 @@ pub fn specs() -> Vec<CommandSpec> {
             .params(r#"{"own"?: bool} — "own": true uses the working hours of the local options even when the account's mailbox has its own, false the mailbox's when it has (default: as it is). Answers the hours in effect: {"days": ["Mon", …], "start": "HH:MM", "end": "HH:MM", "from": "mailbox" | "options", "own": bool}"#),
         CommandSpec::new("sync.applyMailboxSettings", "Apply Downloaded Mailbox Settings", "Send / Receive", apply_settings_command)
             .pure()
-            .params(r#"{"account": number, "email"?: string, "workingHours": {"days": ["monday", …], "start": "HH:MM", "end": "HH:MM", "zone"?: string (what the mailbox calls the time zone they are in), "offset"?: minutes east of UTC of that zone now (without it the times are taken as this computer's)} | null (none: the local options are used)} — the working hours an account's mailbox has, as a host brought them from its server (`mailcraft-net`'s `graph::mailbox_settings`)"#),
+            .params(r#"{"account": number, "email"?: string, "workingHours": {"days": ["monday", …], "start": "HH:MM", "end": "HH:MM", "zone"?: string (what the mailbox calls the time zone they are in), "offset"?: minutes east of UTC of that zone now (without it the times are taken as this computer's)} | null (none: the local options are used)} — the working hours an account's mailbox has, as a host brought them from its server (`mailsolutions-net`'s `graph::mailbox_settings`)"#),
     ]
 }
 
@@ -250,7 +250,7 @@ fn list(s: &mut Session, _: &Value) -> CmdResult {
 
 /// What is known of a subscribed calendar, for a list: where it is read from (the host only),
 /// how often, when it last answered, why not when it didn't, and whether events were left out.
-fn subscription_json(sub: &mailcraft_model::subscription::Subscription) -> Value {
+fn subscription_json(sub: &mailsolutions_model::subscription::Subscription) -> Value {
     json!({
         "host": sub.host, "intervalMinutes": sub.interval(), "checked": sub.checked, "events": sub.events, "capped": sub.capped,
         "failure": sub.failed().map(|failure| failure.message()),
@@ -423,7 +423,7 @@ fn mailbox_hours(s: &Session) -> Option<WorkHours> {
     // when only one of the two zones changes its clocks); else the offset a host gave; else
     // the times are taken as they are.
     let now = s.now();
-    let theirs = mailcraft_time::Zone::named(&hours.zone).map(|zone| zone.offset_at(now)).or(hours.offset);
+    let theirs = mailsolutions_time::Zone::named(&hours.zone).map(|zone| zone.offset_at(now)).or(hours.offset);
     let shift = theirs.map_or(0, |offset| i64::from(s.offset_at(now)).saturating_sub(i64::from(offset)));
     let start = start.saturating_add(shift).rem_euclid(DAY_MINUTES);
     Some(WorkHours { days: hours.days, start, end: (start + length).min(DAY_MINUTES), from_mailbox: true })
@@ -556,7 +556,7 @@ mod shared_tests;
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::{Mailbox, Origin};
+    use mailsolutions_model::{Mailbox, Origin};
 
     use super::*;
 
@@ -580,7 +580,7 @@ mod tests {
                 name: name.into(),
                 visible: true,
                 origin,
-                rights: if read_only { mailcraft_model::Rights::Read } else { mailcraft_model::Rights::Edit },
+                rights: if read_only { mailsolutions_model::Rights::Read } else { mailsolutions_model::Rights::Edit },
                 group: group.into(),
                 ..Default::default()
             });

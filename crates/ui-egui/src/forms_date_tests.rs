@@ -5,7 +5,7 @@
 
 use egui::Key;
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_time::Date;
+use mailsolutions_time::Date;
 use serde_json::json;
 
 use crate::people_view::testing::{self, Window};

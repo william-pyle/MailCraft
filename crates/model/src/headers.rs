@@ -12,7 +12,7 @@
 //! when the message is written out (the engine's store); in memory it is then only named
 //! ([`HeaderBlock::kept`]).
 //!
-//! What is read by name is [`WORKING`] (and MailCraft's own `X-MailCraft-…` notes, and the hop at
+//! What is read by name is [`WORKING`] (and MailSolutions's own `X-MailCraft-…` notes, and the hop at
 //! which Exchange Online took the mail in, which a sender check places its verdict by): a name
 //! read anywhere that isn't in it would never be found, which a test holds to.
 
@@ -55,12 +55,12 @@ pub const WORKING: &[&str] = &[
     "X-Sharing-Local-Type",
 ];
 
-/// The start of the name of every note MailCraft keeps on a message itself (the file it was
+/// The start of the name of every note MailSolutions keeps on a message itself (the file it was
 /// opened from, its place in a .pst file, an answer to an invitation, a message too large to
 /// download, the copy put on a server): all read by name, all on the message.
 pub const OWN_PREFIX: &str = "X-MailCraft-";
 
-/// Most lines of a header block (as many as `mailcraft-mime` keeps of a message's header). Lines
+/// Most lines of a header block (as many as `mailsolutions-mime` keeps of a message's header). Lines
 /// past it stay on the message ([`split`]): none is ever left out.
 pub const MAX_BLOCK_LINES: usize = 2000;
 
@@ -74,7 +74,7 @@ pub const MAX_HEADER_BLOCK: usize = 256 * 1024;
 const REMOVED: &str = "";
 
 /// Whether a header line with this name (and value) stays on the message: a name in [`WORKING`],
-/// one of MailCraft's own notes, or a `Received` hop at Exchange Online's edge, above which its
+/// one of MailSolutions's own notes, or a `Received` hop at Exchange Online's edge, above which its
 /// own `Authentication-Results` is read (`auth_results`).
 pub fn is_working(name: &str, value: &str) -> bool {
     is_working_name(name) || (name.eq_ignore_ascii_case("Received") && crate::auth_results::is_exchange_online_edge(value))
@@ -286,7 +286,7 @@ pub fn merge(working: &[(String, String)], block: &[HeaderLine]) -> Vec<(String,
 
 impl Message {
     /// The value of the first header line named `name` that stays on the message (the name is one
-    /// of [`WORKING`], or MailCraft's own), at most `auth_results::MAX_HEADERS_READ` looked at.
+    /// of [`WORKING`], or MailSolutions's own), at most `auth_results::MAX_HEADERS_READ` looked at.
     pub fn header(&self, name: &str) -> Option<&str> {
         self.headers
             .iter()
@@ -352,7 +352,7 @@ impl Message {
     }
 
     /// [`Message::all_headers`] put back on the message, with no block: as a file written for a
-    /// MailCraft from before the two were kept apart has it.
+    /// MailSolutions from before the two were kept apart has it.
     pub fn join_headers(&mut self) {
         if self.header_block.data.is_empty() {
             self.headers.retain(|(name, _)| name != REMOVED);

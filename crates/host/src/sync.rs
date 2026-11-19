@@ -3,7 +3,7 @@
 //! Send/Receive for a host with no window: ask the engine what is due, run it, take the answer
 //! in. Two calls, which a binding wraps:
 //!
-//! * [`SendReceive::what_to_run`] looks at the round ([`mailcraft_engine::sync_driver::RoundDriver`]),
+//! * [`SendReceive::what_to_run`] looks at the round ([`mailsolutions_engine::sync_driver::RoundDriver`]),
 //!   starts the next account's run on a thread of the host's and says what it did ([`Step`]);
 //! * [`SendReceive::take_result`] takes in what the run brought, as far as it has come
 //!   ([`Taken`]), and ends the run when its answer is in.
@@ -31,10 +31,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, TryRecvError, sync_channel};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::sync_driver::{ClientIds, MailRefusal, MailStart, Next, Waiting, plan_graph_mail};
-use mailcraft_model::sync::{GraphMailResult, SyncPhase, Tokens};
-use mailcraft_model::{AccountKind, Id, OAuth};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::sync_driver::{ClientIds, MailRefusal, MailStart, Next, Waiting, plan_graph_mail};
+use mailsolutions_model::sync::{GraphMailResult, SyncPhase, Tokens};
+use mailsolutions_model::{AccountKind, Id, OAuth};
 
 use crate::graph::{GraphRequest, GraphResult};
 use crate::secrets::{SecretStore, secret_key};
@@ -60,7 +60,7 @@ pub struct Context<'a> {
     /// The mailbox came from a file whose accounts nobody has confirmed (C1): nothing reaches a
     /// server, no remembered secret is read, and a manual round is refused.
     pub unconfirmed: bool,
-    /// The owner removed all MailCraft's data: no secret is kept again.
+    /// The owner removed all MailSolutions's data: no secret is kept again.
     pub data_removed: bool,
     /// Whether another job of the front end (the calendar's) is at work for an account: its run
     /// waits in line until that has ended. `None`: no other job.
@@ -221,7 +221,7 @@ impl SendReceive {
 
     /// The accounts with a server that a round may include.
     fn round_accounts(&self, session: &Session) -> Vec<Id> {
-        mailcraft_engine::sync_driver::server_accounts(session).into_iter().filter(|a| self.eligible(session, *a)).collect()
+        mailsolutions_engine::sync_driver::server_accounts(session).into_iter().filter(|a| self.eligible(session, *a)).collect()
     }
 
     /// Whether a run is under way.
@@ -293,14 +293,14 @@ impl SendReceive {
         if ctx.held() {
             return Adopted::Refused;
         }
-        if mailcraft_engine::sync_driver::signed_in_as_other(a, &tokens) {
+        if mailsolutions_engine::sync_driver::signed_in_as_other(a, &tokens) {
             return Adopted::WrongPerson;
         }
         // The newest refresh token is the account's, for mail and Graph alike.
         if !tokens.refresh.is_empty() {
             self.remember(session, ctx, account, &tokens.refresh);
         }
-        self.tokens.insert(account, mailcraft_engine::sync_driver::kept_for_session(tokens, ctx.now_s));
+        self.tokens.insert(account, mailsolutions_engine::sync_driver::kept_for_session(tokens, ctx.now_s));
         if covers_mail {
             self.mail_covered.insert(account);
         } else {
@@ -352,7 +352,7 @@ impl SendReceive {
                 let waiting: Vec<Waiting> = self
                     .round_accounts(session)
                     .into_iter()
-                    .map(|account| Waiting { account, count: mailcraft_engine::sync_driver::waiting_to_go(session, account) })
+                    .map(|account| Waiting { account, count: mailsolutions_engine::sync_driver::waiting_to_go(session, account) })
                     .collect();
                 let due: Vec<Id> =
                     session.driver.round.pushes_due(&waiting, ctx.now_ms).into_iter().filter(|a| self.can_start_quietly(session, ctx, *a)).collect();
@@ -400,7 +400,7 @@ impl SendReceive {
             let (store, a) = (ctx.secrets?, session.mailbox.account(account)?);
             if ctx.remember { store.get(&secret_key("refresh", a)) } else { None }
         };
-        let found = mailcraft_engine::sync_driver::refresh_token(kept, None);
+        let found = mailsolutions_engine::sync_driver::refresh_token(kept, None);
         if found.is_empty() { stored().filter(|r| !r.is_empty()) } else { Some(found) }
     }
 
@@ -423,7 +423,7 @@ impl SendReceive {
         }
         let oauth = a.oauth.clone()?;
         let refresh = self.refresh_for(session, ctx, account)?;
-        Some(crate::fetch::Access::Renew { oauth: mailcraft_engine::sync_driver::effective_oauth(oauth, &ctx.ids), refresh })
+        Some(crate::fetch::Access::Renew { oauth: mailsolutions_engine::sync_driver::effective_oauth(oauth, &ctx.ids), refresh })
     }
 
     fn start(&mut self, host: &Host, session: &mut Session, ctx: &Context, account: Id, quiet: bool) -> Step {
@@ -448,7 +448,7 @@ impl SendReceive {
             }
             Ok(MailStart::SignIn { oauth, address }) => {
                 session.sync_progress.leave_out(account);
-                return Step::SignIn { account, oauth: Box::new(mailcraft_engine::sync_driver::effective_oauth(oauth, &ctx.ids)), address };
+                return Step::SignIn { account, oauth: Box::new(mailsolutions_engine::sync_driver::effective_oauth(oauth, &ctx.ids)), address };
             }
             Err(MailRefusal::AccountGone) => {
                 session.sync_progress.leave_out(account);
@@ -476,7 +476,7 @@ impl SendReceive {
         session.driver.fetch.resume();
         let request = GraphRequest {
             account: plan.owner,
-            oauth: mailcraft_engine::sync_driver::effective_oauth(plan.oauth, &ctx.ids),
+            oauth: mailsolutions_engine::sync_driver::effective_oauth(plan.oauth, &ctx.ids),
             refresh: plan.refresh,
             // (Renewed for the job: a token kept from another job may not cover the mail.)
             access: String::new(),
@@ -530,7 +530,7 @@ impl SendReceive {
                     if !piece.pages.is_empty() {
                         session.driver.fetch.wake();
                     }
-                    match mailcraft_engine::cmd::graph_mail::apply_graph_mail(session, piece) {
+                    match mailsolutions_engine::cmd::graph_mail::apply_graph_mail(session, piece) {
                         Ok(said) => running.errors.extend(
                             said["errors"]
                                 .as_array()
@@ -553,7 +553,7 @@ impl SendReceive {
         // Its first piece made the changes made here and sent the Outbox; what waits beyond what
         // waits now was done here since.
         if piece_taken && running.baseline.is_none() {
-            running.baseline = Some(mailcraft_engine::sync_driver::waiting_to_go(session, account));
+            running.baseline = Some(mailsolutions_engine::sync_driver::waiting_to_go(session, account));
         }
         // Something the owner did waits while a long run is still bringing mail down: the run is
         // called off, which loses nothing, and the next one tells the server first.
@@ -563,7 +563,7 @@ impl SendReceive {
             && let Some(baseline) = running.baseline
             && session.driver.auto_sync()
             && session.driver.round.run_look_due(true, ctx.now_ms)
-            && mailcraft_engine::sync_driver::waiting_to_go(session, account) > baseline
+            && mailsolutions_engine::sync_driver::waiting_to_go(session, account) > baseline
         {
             self.cancel.store(true, Ordering::Relaxed);
             running.called_off = true;
@@ -602,7 +602,7 @@ impl SendReceive {
         // What was handed over and whose answer was lost may have gone: held for the owner, never
         // sent again by itself (AU3-26).
         let mut said = Vec::new();
-        if mailcraft_engine::cmd::graph_send::hold_lost(
+        if mailsolutions_engine::cmd::graph_send::hold_lost(
             &mut session.mailbox,
             account,
             &result.unsure,
@@ -635,14 +635,14 @@ impl SendReceive {
             session.driver.calendar.consent_needed.remove(&account);
         }
         if !result.sent.is_empty() {
-            let sent = mailcraft_model::sync::SyncResult { account, sent: result.sent.clone(), filed: result.sent.clone(), ..Default::default() };
-            if let Err(e) = mailcraft_engine::cmd::account::apply_sync(session, sent) {
+            let sent = mailsolutions_model::sync::SyncResult { account, sent: result.sent.clone(), filed: result.sent.clone(), ..Default::default() };
+            if let Err(e) = mailsolutions_engine::cmd::account::apply_sync(session, sent) {
                 errors.push(e.to_string());
             }
         }
         session.sync_progress.end(account, false);
         // What still waits after this run doesn't start another every few seconds.
-        let waiting = mailcraft_engine::sync_driver::waiting_to_go(session, account);
+        let waiting = mailsolutions_engine::sync_driver::waiting_to_go(session, account);
         session.driver.round.note_pushed(account, waiting, ctx.now_ms);
         if wrong_person {
             return Taken::WrongPerson { account };
@@ -652,7 +652,7 @@ impl SendReceive {
             return Taken::SignInAgain { account, consent: result.consent_needed };
         }
         if let Some(mail) = result.mail.take() {
-            match mailcraft_engine::cmd::graph_mail::apply_graph_mail(session, mail) {
+            match mailsolutions_engine::cmd::graph_mail::apply_graph_mail(session, mail) {
                 Ok(taken) => errors.extend(
                     taken["errors"]
                         .as_array()

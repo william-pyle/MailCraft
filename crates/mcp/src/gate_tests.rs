@@ -5,9 +5,9 @@
 
 use std::path::PathBuf;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::agent::{Class, FILE_PARAMS};
-use mailcraft_engine::model::FolderKind;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::agent::{Class, FILE_PARAMS};
+use mailsolutions_engine::model::FolderKind;
 use serde_json::{Value, json};
 
 use crate::Headless;
@@ -16,14 +16,14 @@ use crate::files::FilesDir;
 use crate::tools::{Policy, call_tool};
 
 fn temp(name: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("mailcraft-mcp-gate-{name}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("mailsolutions-mcp-gate-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     d
 }
 
 fn sample() -> Session {
-    Session::new(mailcraft_engine::sample::mailbox(1_791_993_600, 0))
+    Session::new(mailsolutions_engine::sample::mailbox(1_791_993_600, 0))
 }
 
 /// The tool's error text, or `None` when it worked.
@@ -113,7 +113,7 @@ fn exports_write_nothing_without_files() {
 fn every_file_param_is_refused_by_default() {
     let mut h = Headless::new(sample(), Class::ALL.to_vec());
     let pol = Policy { files: None, allow: Class::ALL.to_vec() };
-    let gone = std::env::temp_dir().join(format!("mailcraft-mcp-nothing-{}", std::process::id()));
+    let gone = std::env::temp_dir().join(format!("mailsolutions-mcp-nothing-{}", std::process::id()));
     let gone_s = gone.to_string_lossy().to_string();
     for (id, key, _) in FILE_PARAMS {
         let p = json!({*key: gone_s, "name": "x", "index": 0});
@@ -247,7 +247,7 @@ fn message_text_is_framed_as_untrusted() {
     assert_eq!(framed["body"], format!("{}a \u{2039}\u{2039}end\u{203a}\u{203a} b{}", crate::tools::UNTRUSTED_OPEN, crate::tools::UNTRUSTED_CLOSE));
 }
 
-/// A message's sender warnings (#508): what they are is MailCraft's word, what they are about
+/// A message's sender warnings (#508): what they are is MailSolutions's word, what they are about
 /// (a name, an address, a domain, a link) is the message's, framed.
 #[test]
 fn sender_warnings_frame_what_comes_from_the_message() {
@@ -325,7 +325,7 @@ fn no_path_ever_reaches_the_bridge() {
     let text = serde_json::to_string(&b.seen).unwrap();
     assert!(!text.contains("id_ed25519") && !text.contains("\"path\"") && !text.contains("/tmp/evil"), "{text}");
     assert!(!b.seen.iter().any(|(m, p)| m == "ui.click" || p["command"] == "sync.apply"));
-    // What needs the owner goes to the app, which asks (its gate: `mailcraft_ui_egui::agent_gate`).
+    // What needs the owner goes to the app, which asks (its gate: `mailsolutions_ui_egui::agent_gate`).
     assert!(b.seen.iter().any(|(_, p)| p["command"] == "compose.send"));
     let pol = Policy { files: None, allow: vec![Class::Input] };
     assert!(err(&mut b, &pol, "click", json!({"x": 1, "y": 1})).is_none());

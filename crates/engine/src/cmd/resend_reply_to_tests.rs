@@ -3,8 +3,8 @@
 //! Resend Message (a sent message opened again as a new one) and Direct Replies To (the
 //! `Reply-To` line of the message being written).
 
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};

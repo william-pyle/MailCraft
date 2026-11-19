@@ -9,8 +9,8 @@
 //! people invited came from outside: cut to size, shown as text.
 
 use egui::{Ui, vec2};
-use mailcraft_model::Id;
-use mailcraft_time::Date;
+use mailsolutions_model::Id;
+use mailsolutions_time::Date;
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -48,7 +48,7 @@ impl ShareCalendar {
 
     fn command(&self) -> Option<Value> {
         let (from, to) = (Date::parse_iso(self.from.trim())?, Date::parse_iso(self.to.trim())?);
-        if to < from || from.days_until(to) >= mailcraft_engine::cmd::calendar::share::MAX_DAYS {
+        if to < from || from.days_until(to) >= mailsolutions_engine::cmd::calendar::share::MAX_DAYS {
             return None;
         }
         let mut params = json!({"from": from.iso(), "to": to.iso(), "detail": self.detail});

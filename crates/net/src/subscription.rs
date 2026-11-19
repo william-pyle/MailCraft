@@ -24,7 +24,7 @@
 
 use std::time::{Duration, Instant};
 
-use mailcraft_model::subscription::{Failure, MAX_TEXT, SubscriptionOutcome, clean_validator};
+use mailsolutions_model::subscription::{Failure, MAX_TEXT, SubscriptionOutcome, clean_validator};
 
 use crate::pictures::{self, Limits, MAX_RETRY_WAIT, PictureError, Reach, Sent};
 
@@ -57,7 +57,7 @@ impl std::fmt::Debug for Fetched {
     }
 }
 
-/// Look at the calendar at `address` (an address that `mailcraft_model::subscription::check_address`
+/// Look at the calendar at `address` (an address that `mailsolutions_model::subscription::check_address`
 /// let through), asking whether it changed since the copy that `etag` and `last_modified` mark
 /// (empty for none). Blocks, for [`PATIENCE`] at most, so a host calls it on a background thread.
 pub fn fetch(address: &str, etag: &str, last_modified: &str) -> Result<Fetched, Failure> {
@@ -130,7 +130,7 @@ pub(crate) fn fetch_with(address: &str, etag: &str, last_modified: &str, reach: 
                 // The input was capped on its way in (`left`); the text is read in the set the server
                 // names, else as UTF-8 or, where that isn't, Windows-1252, never the lossy way that
                 // grows a byte into three.
-                let text = mailcraft_charset::decode(&body, answer.said.charset.as_deref().unwrap_or(""));
+                let text = mailsolutions_charset::decode(&body, answer.said.charset.as_deref().unwrap_or(""));
                 let said = &answer.said;
                 // The marks are kept for the server that gave them: after a redirect to another
                 // host (or port) they are not kept, and so are never sent to the first.

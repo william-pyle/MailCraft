@@ -28,10 +28,10 @@ use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     FolderListing, GraphFetchResult, GraphFolder, GraphMessage, JmapKnown, JmapMailResult, MAX_JMAP_WINDOW, MAX_LISTED_FOLDERS, MessagePage,
 };
-use mailcraft_model::{Address, FlagStatus, FolderKind, Id, Importance, Mailbox, Message};
+use mailsolutions_model::{Address, FlagStatus, FolderKind, Id, Importance, Mailbox, Message};
 
 use super::graph_down::{self, Down, ServerIndex};
 
@@ -60,9 +60,9 @@ pub(crate) const MAX_BATCH: usize = 64 << 20;
 pub(crate) const BACKGROUND_NEWEST: usize = 40;
 
 /// Whether `id` may be a JMAP id: 1 to 255 octets of `A-Z a-z 0-9 - _` (RFC 8620 §1.2), as the
-/// mailbox itself tests it ([`mailcraft_model::is_jmap_id`]).
+/// mailbox itself tests it ([`mailsolutions_model::is_jmap_id`]).
 pub(crate) fn is_id(id: &str) -> bool {
-    mailcraft_model::is_jmap_id(id)
+    mailsolutions_model::is_jmap_id(id)
 }
 
 /// What `account` has of each mailbox: the server ids of the messages the server last said lie in
@@ -171,7 +171,7 @@ fn bounded_message(m: &mut GraphMessage, folder: &str) -> bool {
     server.change_key.clear();
     server.gone = false;
     // (Its thread, as an opaque id or none, #795; it is never asked for by itself.)
-    server.thread = mailcraft_model::sync::thread_id(&server.thread);
+    server.thread = mailsolutions_model::sync::thread_id(&server.thread);
     (server.thread_asked, server.thread_tries) = (false, 0);
     m.message_id = line(&m.message_id, MAX_TEXT);
     m.subject = line(&m.subject, MAX_TEXT);
@@ -326,7 +326,7 @@ pub(crate) fn take_window(mb: &mut Mailbox, index: &mut ServerIndex, account: Id
         .queued
         .iter()
         .filter_map(|q| match q {
-            mailcraft_model::Queued::DeleteMessage { account: a, id, .. } if *a == account => Some(id.clone()),
+            mailsolutions_model::Queued::DeleteMessage { account: a, id, .. } if *a == account => Some(id.clone()),
             _ => None,
         })
         .collect();

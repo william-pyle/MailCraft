@@ -4,7 +4,7 @@
 //! how a found face becomes a family.
 
 use egui::FontFamily;
-use mailcraft_model::rich::Font;
+use mailsolutions_model::rich::Font;
 
 use super::{SystemFont, document_family, document_font, face_files, first_face, font_definitions_with};
 
@@ -42,7 +42,7 @@ fn a_font_is_drawn_in_its_family_only_when_one_was_registered() {
 
 #[test]
 fn an_installed_face_is_registered_with_the_windows_font_behind_it() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-doc-fonts-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-doc-fonts-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("Georgia.ttf"), A_FONT).unwrap();
@@ -76,7 +76,7 @@ fn courier_new_is_looked_for_as_the_vendors_face_then_the_open_ones() {
 
 #[test]
 fn an_installed_fixed_width_face_has_the_bundled_fixed_width_font_behind_it() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-doc-fonts-mono-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-doc-fonts-mono-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("cour.ttf"), A_FONT).unwrap();

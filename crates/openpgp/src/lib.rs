@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft OpenPGP: checking a message's Digital signature and reading the Public keys it
+//! MailSolutions OpenPGP: checking a message's Digital signature and reading the Public keys it
 //! carries (#30). No I/O, no clock and no keys of its own: the caller hands in the message's
 //! original bytes (what `Message::original` keeps), the Public keys it keeps
 //! ([`KeyRing`]), the time, and whether the owner has Verified a key; so it builds for the
@@ -9,7 +9,7 @@
 //! - [`verify`] checks a PGP/MIME message (`multipart/signed;
 //!   protocol="application/pgp-signature"`, RFC 3156 §5) over the signed part's canonical
 //!   bytes, or a cleartext-signed ("inline") text (RFC 9580 §7), and says which of the four
-//!   results it is ([`Outcome`]). OpenPGP has no certificate authorities and MailCraft no web of
+//!   results it is ([`Outcome`]). OpenPGP has no certificate authorities and MailSolutions no web of
 //!   trust (R6): a key is Verified only when the owner marked it after comparing its fingerprint
 //!   or their GnuPG keyring trusts it fully, both of which the caller knows and this doesn't.
 //! - [`keys_in_message`] reads the keys a message carries: attached `application/pgp-keys`

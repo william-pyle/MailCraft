@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A password is remembered as soon as the server has let the Send/Receive in, not only when the
-//! whole run ends with no problem (#802): a run with a problem in one folder, or one that MailCraft
+//! whole run ends with no problem (#802): a run with a problem in one folder, or one that MailSolutions
 //! is closed during, keeps it all the same. A sign-in refused in the run still forgets it.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{EwsFolderDeltas, EwsMailResult, EwsMessagePage, SyncRequest, SyncResult, SyncStage, SyncStep};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{EwsFolderDeltas, EwsMailResult, EwsMessagePage, SyncRequest, SyncResult, SyncStage, SyncStep};
 use serde_json::json;
 
 use crate::{MailApp, SecretStore, Services};
@@ -28,7 +28,7 @@ impl SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.kept.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         *self.writes.lock().unwrap() += 1;
         self.kept.lock().unwrap().insert(key.to_string(), secret.to_string());
         Ok(())
@@ -48,7 +48,7 @@ impl Store {
 type Pipe<T> = Arc<Mutex<Option<mpsc::Sender<T>>>>;
 
 fn app(store: &Store) -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.services.secrets = Some(Arc::new(store.clone()));
     a
@@ -115,7 +115,7 @@ fn an_imap_password_is_kept_once_the_server_lets_the_run_in_whatever_comes_after
         assert_eq!((kept(&a, &store, id).as_deref(), store.writes()), (Some(typed), writes));
     }
 
-    // MailCraft closed during the first download: the next start finds the password.
+    // MailSolutions closed during the first download: the next start finds the password.
     let store = Store::default();
     let (mut a, id, pipe) = imap_run(&store);
     send(&mut a, &pipe, piece(id, SyncStage::Listed, &[]));

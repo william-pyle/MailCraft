@@ -3,8 +3,8 @@
 //! The view: which module is in front, how the message list is sorted and filtered, the search,
 //! the calendar's range, the panes.
 
-use mailcraft_model::search::Suggestion;
-use mailcraft_model::{AccountChoice, Address};
+use mailsolutions_model::search::Suggestion;
+use mailsolutions_model::{AccountChoice, Address};
 use serde_json::{Value, json};
 
 use super::people;
@@ -180,7 +180,7 @@ pub fn search_suggestions(s: &Session, query: &str, cursor: usize) -> Vec<Sugges
         let recent = s.prefs.recent_searches();
         return recent.map(|q| Suggestion { label: q.to_string(), range: 0..query.len(), text: q.to_string(), color: None, address: None }).collect();
     }
-    mailcraft_model::search::suggestions_with(query, cursor, &s.mailbox.every_category(), |typed| {
+    mailsolutions_model::search::suggestions_with(query, cursor, &s.mailbox.every_category(), |typed| {
         let mut people: Vec<Address> = super::compose::suggest(s, typed, 20).into_iter().map(|who| Address::new(who.name, who.email)).collect();
         if let Some(typed) = super::compose::Typed::new(typed) {
             let own = s.mailbox.accounts.iter().filter(|a| typed.fits(&a.display_name, &a.email));
@@ -259,7 +259,7 @@ fn month(s: &mut Session, _: &Value) -> CmdResult {
 }
 
 /// The days the calendar shows for the view and date in effect (inclusive).
-pub fn calendar_range(s: &Session) -> (mailcraft_time::Date, mailcraft_time::Date) {
+pub fn calendar_range(s: &Session) -> (mailsolutions_time::Date, mailsolutions_time::Date) {
     let d = s.view.date;
     match s.view.calendar {
         // One day, or as many from it on as `view.days` asked for.
@@ -376,10 +376,10 @@ fn inspect(s: &mut Session, _: &Value) -> CmdResult {
 /// A reminder whose time has come.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Reminder {
-    pub event: mailcraft_model::Id,
+    pub event: mailsolutions_model::Id,
     /// The occurrence it is for.
-    pub start: mailcraft_time::DateTime,
-    pub end: mailcraft_time::DateTime,
+    pub start: mailsolutions_time::DateTime,
+    pub end: mailsolutions_time::DateTime,
     pub all_day: bool,
     pub title: String,
     pub location: String,
@@ -390,17 +390,17 @@ pub struct Reminder {
 /// The reminders that are due at `now` (local time): occurrences that are inside their reminder
 /// time, and those that ended less than a day ago (a reminder stays until someone dismisses it,
 /// which the window that shows them remembers). Soonest first, a hundred at most.
-pub fn due_reminders(s: &Session, now: mailcraft_time::DateTime) -> Vec<Reminder> {
+pub fn due_reminders(s: &Session, now: mailsolutions_time::DateTime) -> Vec<Reminder> {
     // A reminder is at most four weeks ahead of its event.
     let (from, to) = (now.date.add_days(-1), now.date.add_days(29));
     let mut due: Vec<Reminder> = Vec::new();
     // How long until it starts is so many minutes that pass, not so many on the clock: the two
     // differ on a night the clocks change. (A whole-day event is by the clock: it has no instant.)
     let here = super::remote::offset_of(s);
-    let instant = |wall: mailcraft_time::DateTime| mailcraft_model::zoned::instant_at(wall, &here);
+    let instant = |wall: mailsolutions_time::DateTime| mailsolutions_model::zoned::instant_at(wall, &here);
     let at = instant(now);
     // Only the owner's own calendars remind (#70): not a shared mailbox's, not one somebody shares.
-    let not_theirs: std::collections::HashSet<mailcraft_model::Id> =
+    let not_theirs: std::collections::HashSet<mailsolutions_model::Id> =
         s.mailbox.calendars.iter().filter(|c| !super::remote::is_own_calendar(&s.mailbox, c)).map(|c| c.id).collect();
     for e in s.mailbox.events.values() {
         let Some(ahead) = e.reminder_minutes else { continue };

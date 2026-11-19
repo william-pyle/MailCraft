@@ -2,6 +2,10 @@
 # same list, with the same reasons, as `[advisories] ignore` in deny.toml: keep the two together.
 
 [[IgnoredVulns]]
+id = "RUSTSEC-2026-0543"
+reason = "Informational chrono unmaintained notice via pinned contactsolutions-store 1.3.0; no patched release; reviewed 2026-11-19, re-review with the next ContactSolutions store release"
+
+[[IgnoredVulns]]
 id = "RUSTSEC-2026-0370"
 reason = "Unmaintained notice, not a vulnerability: zvariant was merged into zbus 6; zbus 5 waits on accesskit/atspi and secret-service"
 
@@ -15,8 +19,8 @@ reason = "Unmaintained notice, not a vulnerability: zvariant_derive was merged i
 
 [[IgnoredVulns]]
 id = "RUSTSEC-2023-0071"
-reason = "rsa Marvin attack: a timing leak of a private key while it decrypts or signs; mailcraft-openpgp (rPGP 0.21) only verifies with public keys. This ignore must be removed or justified again before MailCraft signs or decrypts with a key it holds (#30 parts 5 and 6)"
+reason = "rsa Marvin attack: a timing leak of a private key while it decrypts or signs; mailsolutions-openpgp (rPGP 0.21) only verifies with public keys. This ignore must be removed or justified again before MailSolutions signs or decrypts with a key it holds (#30 parts 5 and 6)"
 
 [[IgnoredVulns]]
 id = "RUSTSEC-2026-0387"
-reason = "crypto-bigint 0.5 timing on secret integers; mailcraft-openpgp (rPGP 0.21) only verifies with public keys. This ignore must be removed or justified again before MailCraft signs or decrypts with a key it holds (#30 parts 5 and 6)"
+reason = "crypto-bigint 0.5 timing on secret integers; mailsolutions-openpgp (rPGP 0.21) only verifies with public keys. This ignore must be removed or justified again before MailSolutions signs or decrypts with a key it holds (#30 parts 5 and 6)"

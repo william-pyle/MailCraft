@@ -3,7 +3,7 @@
 //! #1017: an account has a name of the owner's own in the folder pane. `account.edit` gives it
 //! one, an empty one is the address again, and a name that is the address follows it.
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -52,7 +52,7 @@ fn an_empty_name_is_the_address_again() {
         s.run("account.edit", &json!({"id": id, "name": empty})).unwrap();
         assert_eq!(name(&s, id), "noor@example.org");
     }
-    let nameless = mailcraft_model::Account { name: "Mailbox".into(), ..Default::default() };
+    let nameless = mailsolutions_model::Account { name: "Mailbox".into(), ..Default::default() };
     assert_eq!(nameless.name_by_default(), "Mailbox");
     assert!(nameless.named_by_address());
 }

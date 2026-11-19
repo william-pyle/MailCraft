@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft mail protocols without sockets.
+//! MailSolutions mail protocols without sockets.
 //!
 //! [`smtp::Smtp`] and [`imap::Imap`] speak SMTP (RFC 5321, 3207, 4954) and IMAP4rev1 (RFC 3501,
-//! 4315, 4959, 6154, 6851) over any `Read + Write` stream: a TLS socket on the desktop (`mailcraft-net`), a scripted
+//! 4315, 4959, 6154, 6851) over any `Read + Write` stream: a TLS socket on the desktop (`mailsolutions-net`), a scripted
 //! transcript in the tests. Everything a server sends is treated as hostile: lines, literals and
 //! response counts are capped, and nothing here panics on junk.
 //!
@@ -13,7 +13,7 @@
 
 use std::fmt;
 
-use mailcraft_i18n::{Arg, Text, said};
+use mailsolutions_i18n::{Arg, Text, said};
 
 pub mod imap;
 mod line;
@@ -29,7 +29,7 @@ pub const MAX_LITERAL: usize = 64 * 1024 * 1024;
 /// Longest user name and access token, together, that one sign-in may carry.
 const MAX_XOAUTH2: usize = 32 * 1024;
 
-/// What went wrong. Each holds the reason as a [`Text`]: MailCraft's own words are a template
+/// What went wrong. Each holds the reason as a [`Text`]: MailSolutions's own words are a template
 /// the window says in its language ([`said!`]), and what a server or the system said is kept as
 /// it said it ([`Text::verbatim`]). The English ([`Display`](fmt::Display)) is what the CLI, MCP
 /// and the log read, and it is the same either way (#872).
@@ -82,7 +82,7 @@ pub(crate) fn xoauth2(user: &str, token: &str) -> Result<String, ProtoError> {
     if user.len().saturating_add(token.len()) > MAX_XOAUTH2 {
         return Err(ProtoError::Auth(said!("the user name or access token is too long to be sent")));
     }
-    Ok(mailcraft_charset::base64::STANDARD.encode(format!("user={user}\x01auth=Bearer {token}\x01\x01")))
+    Ok(mailsolutions_charset::base64::STANDARD.encode(format!("user={user}\x01auth=Bearer {token}\x01\x01")))
 }
 
 /// What must never be shown: the password or access token and every form it was sent in.
@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn the_xoauth2_response_is_user_and_bearer_token_between_control_a() {
-        let decoded = |payload: String| mailcraft_charset::base64::STANDARD.decode(payload).unwrap();
+        let decoded = |payload: String| mailsolutions_charset::base64::STANDARD.decode(payload).unwrap();
         assert_eq!(decoded(xoauth2("ada@example.org", "tok.en-123").unwrap()), b"user=ada@example.org\x01auth=Bearer tok.en-123\x01\x01");
         // The example of the mechanism's description.
         assert_eq!(

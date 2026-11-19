@@ -5,9 +5,9 @@
 //! that one bit, and a due date or a "complete" kept here neither holds the server's word off nor
 //! is sent back against it. (The changes as they go up: `jmap_up_tests.rs`.)
 
-use mailcraft_model::FlagStatus;
-use mailcraft_model::sync::{JmapChange, JmapOutcome};
-use mailcraft_model::time::Timestamp;
+use mailsolutions_model::FlagStatus;
+use mailsolutions_model::sync::{JmapChange, JmapOutcome};
+use mailsolutions_model::time::Timestamp;
 use serde_json::json;
 
 use super::tests::{marks, run, window};

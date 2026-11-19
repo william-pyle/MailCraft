@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Follow-up reminders come due (#948): `mail.settleReminders` runs once when the window starts
-//! (so that one that fell due while MailCraft was closed is raised at once, and once) and then at
+//! (so that one that fell due while MailSolutions was closed is raised at once, and once) and then at
 //! most every half minute while it runs: it raises what is due, cancels "if nobody replies"
 //! reminders that somebody replied to, and ends those whose flag was cleared elsewhere. What it
 //! raised is shown by the Reminders window ([`crate::reminders`]).

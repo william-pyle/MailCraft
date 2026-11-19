@@ -13,10 +13,10 @@
 //!
 //! Plain data, like [`crate::remote`]: the engine checks an address as text ([`check_address`])
 //! and says what a look at the web should ask ([`SubscriptionAsk`]); a host with sockets
-//! (`mailcraft-net`) does the asking and brings back a [`SubscriptionOutcome`], which the engine
+//! (`mailsolutions-net`) does the asking and brings back a [`SubscriptionOutcome`], which the engine
 //! takes in (`sync.applySubscription`). All of it is hostile: it is somebody else's file.
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use crate::Id;
@@ -254,7 +254,7 @@ impl AddressProblem {
             AddressProblem::TooLong => "That address is too long to be a calendar's.",
             AddressProblem::NotWeb => "A calendar's address starts with https:// or webcal://.",
             AddressProblem::Plain => {
-                "MailCraft reads calendars over an encrypted connection only: an address starting with http:// is refused. Try the same address with https://."
+                "MailSolutions reads calendars over an encrypted connection only: an address starting with http:// is refused. Try the same address with https://."
             }
             AddressProblem::UserInfo => "An address with a user name in it isn't taken: a calendar that needs a sign-in can't be subscribed to here.",
             AddressProblem::Malformed => "That doesn't look like a web address.",

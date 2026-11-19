@@ -29,9 +29,9 @@
 
 use std::sync::Arc;
 
-use mailcraft_model::Importance;
-use mailcraft_model::search::{Query, ServerField, ServerTerm};
-use mailcraft_model::sync::{GraphSearchRequest, GraphSearchResult};
+use mailsolutions_model::Importance;
+use mailsolutions_model::search::{Query, ServerField, ServerTerm};
+use mailsolutions_model::sync::{GraphSearchRequest, GraphSearchResult};
 use serde_json::Value;
 
 use super::super::pace::{Gate, Kind, Priority, Retry};

@@ -4,7 +4,7 @@
 //! message being read, and the searches run lately. Each entry runs a command.
 
 use egui::{Ui, vec2};
-use mailcraft_engine::cmd::view::display::ListView;
+use mailsolutions_engine::cmd::view::display::ListView;
 use serde_json::json;
 
 use super::Menu;

@@ -5,7 +5,7 @@
 //! are longer than any server's, is dropped rather than taken in. A change that has no answer here
 //! is worked out again for the next run, as one that never got one is.
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     ChangeOutcome, DraftDone, EwsMailResult, GraphFolder, MessageChange, MessageChangeDone, MessageOutcome, SendDone, SendOutcome,
 };
 

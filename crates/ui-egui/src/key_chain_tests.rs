@@ -979,7 +979,7 @@ fn untouched(h: &Window, body: &str, how: &str) {
     let compose = h.state().session.compose.as_ref().map(|c| (c.subject.clone(), c.body.plain()));
     assert_eq!(compose, Some(("Mine".to_string(), body.to_string())), "{how}");
     let mb = &h.state().session.mailbox;
-    let drafts = mb.folder_of_kind(mb.default_account().unwrap().id, mailcraft_model::FolderKind::Drafts).unwrap();
+    let drafts = mb.folder_of_kind(mb.default_account().unwrap().id, mailsolutions_model::FolderKind::Drafts).unwrap();
     assert!(!mb.messages.values().any(|m| m.folder == drafts && m.subject == "Mine"), "{how}: nothing went to Drafts");
 }
 

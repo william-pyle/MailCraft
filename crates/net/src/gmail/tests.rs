@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Moving messages between Gmail's categories through Gmail's API (#911), against the stand-in.
 
-use mailcraft_model::GmailCategory;
+use mailsolutions_model::GmailCategory;
 use serde_json::{Value, json};
 
 use super::standin::{StandIn, TOKEN};
@@ -152,8 +152,8 @@ fn a_google_token_goes_to_gmails_api_and_nowhere_else() {
 
 #[test]
 fn the_imap_and_smtp_check_is_not_widened_for_the_api() {
-    let account = mailcraft_model::Account {
-        oauth: Some(mailcraft_model::OAuth { provider: mailcraft_model::OAuthProvider::Google, ..Default::default() }),
+    let account = mailsolutions_model::Account {
+        oauth: Some(mailsolutions_model::OAuth { provider: mailsolutions_model::OAuthProvider::Google, ..Default::default() }),
         ..Default::default()
     };
     assert!(crate::google_destination(&account, "gmail.googleapis.com", "imap.gmail.com").is_err());

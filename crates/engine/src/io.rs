@@ -4,7 +4,7 @@
 //! calendars and contacts travel in (`.eml`, `.mbox`, `.ics`, `.vcf`). How a mailbox is kept on
 //! disk while it is worked on is `crate::store`.
 
-use mailcraft_model::{AccountKind, FolderKind, Id, Mailbox};
+use mailsolutions_model::{AccountKind, FolderKind, Id, Mailbox};
 use serde_json::{Value, json};
 
 use crate::cmd::{bad, fail};
@@ -32,19 +32,19 @@ pub const MAILBOX_EXT: &str = "mailcraft";
 pub const INDEX_MAGIC: &[u8; 16] = b"MailCraft index\n";
 
 /// How every mailbox file that isn't JSON begins, whatever its form: format 3's
-/// [`INDEX_MAGIC`], and whatever a newer MailCraft writes. A file that begins so but isn't a form
+/// [`INDEX_MAGIC`], and whatever a newer MailSolutions writes. A file that begins so but isn't a form
 /// this program reads was written by a newer one, and is said to be.
 pub const FAMILY: &[u8] = b"MailCraft ";
 
-/// What the owner is told about a mailbox file of a form a newer MailCraft writes.
-pub const NEWER: &str = "this mailbox was written by a newer MailCraft";
+/// What the owner is told about a mailbox file of a form a newer MailSolutions writes.
+pub const NEWER: &str = "this mailbox was written by a newer MailSolutions";
 
 /// The message for a mailbox file that keeps its content in a folder beside it, read without it.
 const KEPT_BESIDE: &str = "this mailbox file keeps its messages' content in a folder beside it; open it where it is kept, or save it as one file first (File › Open & Export › Save Mailbox As)";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Format {
-    /// A MailCraft mailbox (`.mailcraft`: one JSON file, or a log of records with a content folder
+    /// A MailSolutions mailbox (`.mailcraft`: one JSON file, or a log of records with a content folder
     /// beside it, `crate::store`).
     Mailbox,
     /// One Internet message.
@@ -60,7 +60,7 @@ pub enum Format {
 impl Format {
     pub fn from_extension(name: &str) -> Option<Format> {
         match name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).as_deref() {
-            Some("mailcraft" | "json") => Some(Format::Mailbox),
+            Some("mailcraft" | "mailsolutions" | "json") => Some(Format::Mailbox),
             Some("eml" | "msg822") => Some(Format::Eml),
             Some("mbox" | "mbx") => Some(Format::Mbox),
             Some("ics" | "ical" | "ifb" | "vcs") => Some(Format::Ics),
@@ -118,12 +118,12 @@ pub fn read_mailbox(bytes: &[u8]) -> Result<Mailbox, String> {
     // (Within the budget a mailbox file is opened with: what parsing builds is charged while it is
     // built, and a file that would cost more memory than it may is refused before it does.)
     let budget = mailbox_budget();
-    let mut mb: Mailbox = mailcraft_model::load_limit::read_json(bytes, &budget)
-        .map_err(|e| if let Some(why) = budget.spent() { why.to_string() } else { format!("this isn't a MailCraft mailbox ({e})") })?;
+    let mut mb: Mailbox = mailsolutions_model::load_limit::read_json(bytes, &budget)
+        .map_err(|e| if let Some(why) = budget.spent() { why.to_string() } else { format!("this isn't a MailSolutions mailbox ({e})") })?;
     match mb.version {
         0 | 1 => {}
         2 => return Err(KEPT_BESIDE.into()),
-        newer => return Err(format!("this mailbox was written by a newer MailCraft (format {newer})")),
+        newer => return Err(format!("this mailbox was written by a newer MailSolutions (format {newer})")),
     }
     for line in mb.repair() {
         log::warn!("mailbox repaired: {line}");
@@ -134,14 +134,14 @@ pub fn read_mailbox(bytes: &[u8]) -> Result<Mailbox, String> {
 /// The budget [`read_mailbox`] reads within: a desktop program's, the one any mailbox file opens
 /// with (`store::open_budget`); in the browser, which can't measure its memory and keeps the
 /// mailbox in its own storage, [`WEB_ITEMS`] items and [`WEB_BYTES`] of parsed values.
-fn mailbox_budget() -> std::sync::Arc<mailcraft_model::load_limit::Budget> {
+fn mailbox_budget() -> std::sync::Arc<mailsolutions_model::load_limit::Budget> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         crate::store::open_budget()
     }
     #[cfg(target_arch = "wasm32")]
     {
-        mailcraft_model::load_limit::Budget::new(WEB_ITEMS, WEB_BYTES)
+        mailsolutions_model::load_limit::Budget::new(WEB_ITEMS, WEB_BYTES)
     }
 }
 
@@ -287,7 +287,7 @@ pub trait ContentSource: Send + Sync {
     }
 }
 
-pub use mailcraft_model::ContentRef;
+pub use mailsolutions_model::ContentRef;
 
 /// How writing one state of a mailbox went ([`BackgroundSave::reports`]).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -358,7 +358,7 @@ pub fn read_regular_file(path: &std::path::Path) -> Result<Vec<u8>, ReadError> {
 
 /// The header a message opened from a file (#505) keeps the SHA-256 of that file in, so that the
 /// same file opened again finds it. One that came in the file itself is dropped.
-pub const OPENED_FROM: &str = mailcraft_mime::OPENED_FILE_HEADER;
+pub const OPENED_FROM: &str = mailsolutions_mime::OPENED_FILE_HEADER;
 
 /// The SHA-256 of a file, in hex (none in the browser, which opens no files from the system).
 fn file_sha256(bytes: &[u8]) -> Option<String> {
@@ -374,7 +374,7 @@ fn file_sha256(bytes: &[u8]) -> Option<String> {
     }
 }
 
-/// A message file the system asked MailCraft to open (a double click, a later start; #505):
+/// A message file the system asked MailSolutions to open (a double click, a later start; #505):
 /// brought into the local folder Imported (never a server's folder, Drafts, the Outbox, Sent,
 /// Junk or Deleted Items), as a received message that is read, never a draft. Opened again, the
 /// same message (by its Message-ID in that folder, else by the file's SHA-256) is the one there,
@@ -384,13 +384,13 @@ pub fn import_opened(s: &mut Session, name: &str, bytes: &[u8]) -> Result<Value,
         return Err(failed!("{name}: not a message file", name));
     }
     let folder = s.mailbox.imported_folder(false)?;
-    let mut m = mailcraft_mime_model::parse_fetched(bytes);
+    let mut m = mailsolutions_mime_model::parse_fetched(bytes);
     m.remove_header(OPENED_FROM);
     let hash = file_sha256(bytes);
     // The same Message-ID (none for both, too), and, when the copy there keeps the SHA-256 of the
     // file it came from, the same file; a copy without one (imported before) by its Message-ID
     // alone, when there is one.
-    let same = |x: &mailcraft_model::Message| {
+    let same = |x: &mailsolutions_model::Message| {
         let stored = x.header(OPENED_FROM);
         x.message_id == m.message_id
             && match stored {
@@ -420,11 +420,11 @@ pub fn import_opened(s: &mut Session, name: &str, bytes: &[u8]) -> Result<Value,
 /// file it (a received, read message, never a draft, with no number, folder or server of its own,
 /// and no hash of its own claimed), and nothing is added to the mailbox. Parsed as every message
 /// is; the caller caps the size of `bytes`.
-pub fn parse_unfiled(name: &str, bytes: &[u8]) -> Result<mailcraft_model::Message, CmdError> {
+pub fn parse_unfiled(name: &str, bytes: &[u8]) -> Result<mailsolutions_model::Message, CmdError> {
     if Format::detect(name, bytes) != Some(Format::Eml) {
         return Err(failed!("{name}: not a message file", name));
     }
-    let mut m = mailcraft_mime_model::parse_fetched(bytes);
+    let mut m = mailsolutions_mime_model::parse_fetched(bytes);
     m.remove_header(OPENED_FROM);
     (m.id, m.uid, m.folder, m.draft, m.read) = (0, 0, 0, false, true);
     (m.server, m.synced) = (None, None);
@@ -448,7 +448,7 @@ fn show_opened(s: &mut Session, id: Id) {
 pub fn count_messages(name: &str, bytes: &[u8]) -> Option<usize> {
     match Format::detect(name, bytes)? {
         Format::Eml => Some(1),
-        Format::Mbox => Some(mailcraft_mime_model::count_mbox(bytes).min(MAX_IMPORT_MESSAGES)),
+        Format::Mbox => Some(mailsolutions_mime_model::count_mbox(bytes).min(MAX_IMPORT_MESSAGES)),
         _ => None,
     }
 }
@@ -461,7 +461,7 @@ fn kind_name(kind: AccountKind) -> &'static str {
         AccountKind::Microsoft => "a Microsoft account",
         AccountKind::Jmap => "a JMAP account",
         AccountKind::Exchange => "an Exchange server account",
-        AccountKind::Unknown => "an account of a newer MailCraft",
+        AccountKind::Unknown => "an account of a newer MailSolutions",
     }
 }
 
@@ -482,7 +482,7 @@ fn kind_word(kind: AccountKind) -> &'static str {
 /// outright is refused. `mail`: the file holds mail (for a calendar or contacts file only the
 /// folder is checked). Mail meant for a folder of an account a server keeps then lands on this
 /// computer ([`lands_in`]).
-pub fn mail_aimed_at(mb: &mailcraft_model::Mailbox, view_folder: Id, folder: Option<Id>, mail: bool) -> Result<Id, CmdError> {
+pub fn mail_aimed_at(mb: &mailsolutions_model::Mailbox, view_folder: Id, folder: Option<Id>, mail: bool) -> Result<Id, CmdError> {
     let explicit = folder.is_some();
     let folder = match folder {
         Some(f) => mb.folder(f).map(|f| f.id).ok_or_else(|| failed!("no folder with id {id}", id = f))?,
@@ -517,7 +517,7 @@ pub enum Lands {
 /// Where mail meant for `aimed` ([`mail_aimed_at`]) lands (#1401): there, for a folder of this
 /// computer's; for a folder of an account a server keeps, this computer's Drafts when it was
 /// meant for Drafts and there is one, else the Imported folder.
-pub fn lands_in(mb: &mailcraft_model::Mailbox, aimed: Id) -> Lands {
+pub fn lands_in(mb: &mailsolutions_model::Mailbox, aimed: Id) -> Lands {
     let Some(f) = mb.folder(aimed) else { return Lands::Folder(aimed) };
     if mb.account(f.account).is_none_or(|a| a.kind == AccountKind::Local) {
         return Lands::Folder(aimed);
@@ -532,7 +532,7 @@ pub fn lands_in(mb: &mailcraft_model::Mailbox, aimed: Id) -> Lands {
 /// Bring a file's contents into the mailbox: messages go to `folder` (default: the folder in
 /// view, or the Inbox), events to a calendar on this computer (#1050), contacts and to-dos to their lists.
 pub fn import(s: &mut Session, name: &str, bytes: &[u8], folder: Option<Id>) -> Result<Value, CmdError> {
-    let format = Format::detect(name, bytes).ok_or_else(|| failed!("{name}: not a message, calendar or contact file MailCraft reads", name))?;
+    let format = Format::detect(name, bytes).ok_or_else(|| failed!("{name}: not a message, calendar or contact file MailSolutions reads", name))?;
     let folder = mail_aimed_at(&s.mailbox, s.view.folder, folder, matches!(format, Format::Eml | Format::Mbox))?;
     let now = s.now();
     match format {
@@ -541,9 +541,9 @@ pub fn import(s: &mut Session, name: &str, bytes: &[u8], folder: Option<Id>) -> 
             // At most MAX_IMPORT_MESSAGES are taken from a file; the one after them tells whether
             // the file went on ("stopped after N").
             let mut messages: Vec<_> = if format == Format::Eml {
-                vec![mailcraft_mime_model::parse_fetched(bytes)]
+                vec![mailsolutions_mime_model::parse_fetched(bytes)]
             } else {
-                mailcraft_mime_model::mbox_messages(bytes).take(MAX_IMPORT_MESSAGES + 1).collect()
+                mailsolutions_mime_model::mbox_messages(bytes).take(MAX_IMPORT_MESSAGES + 1).collect()
             };
             let stopped = messages.len() > MAX_IMPORT_MESSAGES;
             messages.truncate(MAX_IMPORT_MESSAGES);
@@ -622,14 +622,15 @@ pub fn import(s: &mut Session, name: &str, bytes: &[u8], folder: Option<Id>) -> 
         Format::Ics => {
             let text = String::from_utf8_lossy(bytes);
             // (Times in a zone become the times of the zone the calendar is shown in.)
-            let file = mailcraft_ical::parse(&text, &crate::cmd::remote::offset_of(s));
+            let file = mailsolutions_ical::parse(&text, &crate::cmd::remote::offset_of(s));
             if file.events.is_empty() && file.tasks.is_empty() {
                 return Err(failed!("{name} has no events or tasks", name));
             }
             let notes = file.notes;
             let (mut events, mut tasks, mut updated) = (Vec::new(), Vec::new(), 0);
             // The events of this computer's own, by UID: looked up once, not once for every event.
-            let mut own_uids: std::collections::HashMap<String, (mailcraft_model::Id, mailcraft_model::Id)> = std::collections::HashMap::new();
+            let mut own_uids: std::collections::HashMap<String, (mailsolutions_model::Id, mailsolutions_model::Id)> =
+                std::collections::HashMap::new();
             for x in s.mailbox.events.values() {
                 // (Not a copy of a calendar on the web: the next refresh would take the import away.)
                 if !x.uid.is_empty() && x.origin.is_local() && s.mailbox.calendar(x.calendar).is_none_or(|c| !c.is_subscribed()) {
@@ -683,7 +684,7 @@ pub fn import(s: &mut Session, name: &str, bytes: &[u8], folder: Option<Id>) -> 
             Ok(json!({"format": "ics", "events": events.len(), "tasks": tasks.len(), "updated": updated, "method": file.method, "notes": notes}))
         }
         Format::Vcf => {
-            let contacts = mailcraft_vcard::parse_bytes(bytes);
+            let contacts = mailsolutions_vcard::parse_bytes(bytes);
             if contacts.is_empty() {
                 return Err(failed!("{name} has no contacts", name));
             }

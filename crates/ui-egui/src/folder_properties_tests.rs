@@ -8,8 +8,8 @@ use std::collections::HashMap;
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use super::{FolderProperties, Sort, Tab};
@@ -22,7 +22,7 @@ const NOW: i64 = 1_791_993_600;
 /// The sample mailbox, with a folder of the owner's own under the first account's Inbox; the
 /// account, its Inbox and that folder.
 fn app() -> (MailApp, Id, Id, Id) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let account = app.session.mailbox.accounts[0].id;
     let inbox = app.session.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
@@ -303,7 +303,7 @@ fn a_folder_removed_meanwhile_leaves_folder_size_open() {
     assert!(h.state().refused.is_none());
 }
 
-/// In the smallest window MailCraft opens (760 × 480), Folder Size with a column of the server's
+/// In the smallest window MailSolutions opens (760 × 480), Folder Size with a column of the server's
 /// counts keeps its title and Close in sight: the folder's name gives up room, the columns scroll
 /// sideways, and fewer rows show.
 #[test]
@@ -357,12 +357,12 @@ fn what_folder_properties_adds_has_names() {
 
 /// Each tab of a folder's Properties, Folder Size over them, and an account's General, in light
 /// and dark, as PNG files to look at:
-/// `MAILCRAFT_SHOTS_DIR=<dir> cargo test -p mailcraft-ui-egui shots_of_folder_properties -- --ignored`
+/// `MAILSOLUTIONS_SHOTS_DIR=<dir> cargo test -p mailsolutions-ui-egui shots_of_folder_properties -- --ignored`
 #[test]
 #[ignore = "writes screenshots, for looking at them"]
 fn shots_of_folder_properties() {
-    let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") else {
-        eprintln!("set MAILCRAFT_SHOTS_DIR to the directory to write to");
+    let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") else {
+        eprintln!("set MAILSOLUTIONS_SHOTS_DIR to the directory to write to");
         return;
     };
     let shots: Vec<(String, Option<Tab>, bool)> = Tab::ALL

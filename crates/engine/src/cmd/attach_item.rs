@@ -3,7 +3,7 @@
 //! Attach Item and Contact Card: a message from the mailbox, or a contact, attached to the
 //! message being written.
 
-use mailcraft_model::Attachment;
+use mailsolutions_model::Attachment;
 use serde_json::{Value, json};
 
 use super::{MAX_ATTACHMENT, MAX_ATTACHMENTS, compose_mut, eml_attachment, numbered};
@@ -11,7 +11,7 @@ use crate::cmd::{bad, fail};
 use crate::{CmdError, CmdResult, Session, p};
 
 /// The `id` a command takes, which it must have (never the selection).
-fn named(v: &Value) -> Result<mailcraft_model::Id, CmdError> {
+fn named(v: &Value) -> Result<mailsolutions_model::Id, CmdError> {
     p::only(v, &["id"])?;
     p::id_strict(v, "id")?.ok_or_else(|| bad("`id` (number) is required"))
 }
@@ -32,7 +32,7 @@ pub(super) fn business_card(s: &mut Session, v: &Value) -> CmdResult {
     let id = named(v)?;
     let contact = s.mailbox.contact(id).ok_or_else(|| failed!("no contact with id {id}", id))?;
     let name = crate::opening::export_name_or(&contact.name(), "vcf", "contact");
-    let bytes = mailcraft_vcard::write(&[contact]).into_bytes();
+    let bytes = mailsolutions_vcard::write(&[contact]).into_bytes();
     add(s, Attachment::new(name, "text/vcard", bytes))
 }
 

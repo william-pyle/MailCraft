@@ -11,7 +11,7 @@
 //! after a change here) the window hands the host a [`TasksJob`] with what is to be told to the
 //! server (`sync.taskChanges`); the host tells it, then reads the lists and tasks whole, and the
 //! window takes in what the server made of the changes (`sync.applyTaskChanges`) and then what it
-//! has (`sync.applyTasks`). The merge is the engine's ([`mailcraft_engine::cmd::tasks_remote`]).
+//! has (`sync.applyTasks`). The merge is the engine's ([`mailsolutions_engine::cmd::tasks_remote`]).
 //!
 //! **The permission.** Reading and changing the lists takes `Tasks.ReadWrite`. No sign-in page
 //! asks for it (a mail sign-in must never wait on it, a tenant may need an administrator for it): the
@@ -23,22 +23,22 @@
 
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::cmd::tasks_remote;
-use mailcraft_engine::sync_driver::{TasksCame, TasksFacts, TasksQuestion};
-use mailcraft_model::{Id, LocalTasks};
+use mailsolutions_engine::cmd::tasks_remote;
+use mailsolutions_engine::sync_driver::{TasksCame, TasksFacts, TasksQuestion};
+use mailsolutions_model::{Id, LocalTasks};
 use serde_json::{Value, json};
 
 use crate::dialogs::{Dialog, Question};
 use crate::{MailApp, Tokens, now_ms};
 
-pub(crate) use mailcraft_engine::sync_driver::{Permission, fingerprint};
-pub use mailcraft_host::tasks::{TasksJob, TasksResult};
+pub(crate) use mailsolutions_engine::sync_driver::{Permission, fingerprint};
+pub use mailsolutions_host::tasks::{TasksJob, TasksResult};
 
-/// What a to-do job was started for: the mailbox opening ([`mailcraft_engine::Session::openings`])
+/// What a to-do job was started for: the mailbox opening ([`mailsolutions_engine::Session::openings`])
 /// and the account as it was, whose address the answer is taken in for (AU3-08).
 struct Begun {
     opening: u64,
-    account: mailcraft_model::Account,
+    account: mailsolutions_model::Account,
 }
 
 /// The state of the to-do jobs, in the window.
@@ -61,7 +61,7 @@ impl TaskSync {
 impl MailApp {
     /// Look whether any account's to-dos are due, and start a job when they are. Called every
     /// frame. (Public for a host's tests, which have no window.) What is due is the engine's to
-    /// say ([`mailcraft_engine::Session::tasks_due`]); this starts the job on the host.
+    /// say ([`mailsolutions_engine::Session::tasks_due`]); this starts the job on the host.
     pub fn tasks_tick_at(&mut self, now: f64) -> bool {
         self.tasks_ask_tick();
         let facts = TasksFacts { reachable: self.services.graph_tasks.is_some(), running: self.tasks.rx.is_some(), busy: self.job_busy() };
@@ -278,7 +278,7 @@ impl MailApp {
         let Some(address) = self.session.mailbox.account(account).map(|a| a.email.trim().to_string()) else { return false };
         let text = crate::i18n::fmt(
             tl!(
-                "To keep the tasks of {address} in step with Microsoft To Do, MailCraft needs your permission to read and change your To Do lists and tasks. Microsoft's page opens in your browser to ask you, once.\n\nUntil you allow it, tasks stay on this computer and nothing of them is sent to Microsoft."
+                "To keep the tasks of {address} in step with Microsoft To Do, MailSolutions needs your permission to read and change your To Do lists and tasks. Microsoft's page opens in your browser to ask you, once.\n\nUntil you allow it, tasks stay on this computer and nothing of them is sent to Microsoft."
             ),
             &[("address", &address)],
         );
@@ -318,7 +318,7 @@ impl MailApp {
         }
         self.session.driver.tasks.asking(account);
         self.session.sync_status =
-            tl!("Allow MailCraft to keep your tasks in step with Microsoft To Do on the page that opened in your browser…").to_string();
+            tl!("Allow MailSolutions to keep your tasks in step with Microsoft To Do on the page that opened in your browser…").to_string();
         Ok(json!({"pending": "signIn", "account": owner.id}))
     }
 
@@ -351,7 +351,7 @@ impl MailApp {
                 let _ = self.run("ui.approvalHelp", json!({"account": account}));
             }
             Err(e) if e == REFUSED_BY_ORGANISATION || e == REFUSED_FOR_ACCOUNT => {
-                let said = tl!("Your organisation doesn't allow MailCraft to keep tasks in step with Microsoft To Do");
+                let said = tl!("Your organisation doesn't allow MailSolutions to keep tasks in step with Microsoft To Do");
                 self.session.driver.tasks.refused(account, said.to_string());
                 self.status(said);
             }

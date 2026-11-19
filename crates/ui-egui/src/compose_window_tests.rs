@@ -8,9 +8,9 @@
 
 use egui::Key;
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
-use mailcraft_engine::agent::Class;
-use mailcraft_model::Id;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::agent::Class;
+use mailsolutions_model::Id;
 use serde_json::{Value, json};
 
 use crate::control::{ControlRequest, Outcome};
@@ -23,7 +23,7 @@ const NOW: i64 = 1_791_993_600;
 type Harness = egui_kittest::Harness<'static, MailApp>;
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     app
@@ -257,8 +257,8 @@ fn the_ribbon_of_a_window_acts_on_its_own_message() {
     let w = window_of(&h, popped);
     let importance = |h: &Harness, c: u64| h.state().session.composing_by_id(c).map(|c| c.importance);
     ribbon(&mut h, w, "ribbon", "compose.highImportance");
-    assert_eq!(importance(&h, popped), Some(mailcraft_model::Importance::High));
-    assert_eq!(importance(&h, inline), Some(mailcraft_model::Importance::Normal));
+    assert_eq!(importance(&h, popped), Some(mailsolutions_model::Importance::High));
+    assert_eq!(importance(&h, inline), Some(mailsolutions_model::Importance::Normal));
     // The main window's, on the reading pane's (the window moved down, off the main ribbon).
     let layer = crate::windows::embedded_layer(w);
     let mut state = egui::AreaState::load(&h.ctx, layer.id).unwrap();
@@ -269,8 +269,8 @@ fn the_ribbon_of_a_window_acts_on_its_own_message() {
     h.run_steps(3);
 
     ribbon(&mut h, 0, "ribbon", "compose.lowImportance");
-    assert_eq!(importance(&h, inline), Some(mailcraft_model::Importance::Low));
-    assert_eq!(importance(&h, popped), Some(mailcraft_model::Importance::High));
+    assert_eq!(importance(&h, inline), Some(mailsolutions_model::Importance::Low));
+    assert_eq!(importance(&h, popped), Some(mailsolutions_model::Importance::High));
     // Its keys too: Ctrl+S saves its message, not the reading pane's.
     script(&mut h, "compose.set", json!({"compose": popped, "subject": "Keyed"}));
     script(&mut h, "compose.set", json!({"compose": inline, "subject": "Untouched"}));
@@ -395,7 +395,7 @@ fn at_the_bound_new_email_and_a_reply_stay_in_the_reading_pane() {
     }
     assert_eq!(h.state().windows.len(), MAX_WINDOWS);
     // Twelve windows and the reading pane are the most the engine holds.
-    assert_eq!(MAX_WINDOWS + 1, mailcraft_engine::composing::MAX_COMPOSING);
+    assert_eq!(MAX_WINDOWS + 1, mailsolutions_engine::composing::MAX_COMPOSING);
     // New Email, even with the switch to open it in a window, goes to the reading pane.
     h.state_mut().ui.replies_in_window = true;
     let new = owner(&mut h, "mail.new", json!({}))["compose"].as_u64().unwrap();
@@ -535,7 +535,7 @@ fn from_the_main_window_without_a_message_in_the_reading_pane_nothing_acts_on_a_
 
 #[test]
 fn a_picked_file_is_attached_to_the_message_that_asked_for_it() {
-    let path = std::env::temp_dir().join(format!("mailcraft-286-attach-{}.txt", std::process::id()));
+    let path = std::env::temp_dir().join(format!("mailsolutions-286-attach-{}.txt", std::process::id()));
     std::fs::write(&path, b"notes").unwrap();
     let senders: std::sync::Arc<std::sync::Mutex<Vec<std::sync::mpsc::Sender<Option<Vec<String>>>>>> = std::sync::Arc::default();
     let mut a = app();
@@ -639,7 +639,7 @@ fn at_the_bound_the_owners_double_click_on_a_draft_not_open_is_refused() {
 fn a_message_a_script_starts_stays_current_for_its_next_call_while_the_owner_is_elsewhere() {
     let mut h = window(app());
     // The owner wrote in a window of their own, then went to another program: the window keeps
-    // the keyboard as far as MailCraft knows.
+    // the keyboard as far as MailSolutions knows.
     let mine = new_window(&mut h);
     script(&mut h, "compose.set", json!({"compose": mine, "subject": "Half written"}));
     // A script starts a message, and goes on with it without naming it.

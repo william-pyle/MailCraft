@@ -4,9 +4,9 @@
 //! that in is quick.
 use std::time::{Duration, Instant};
 
-use mailcraft_model::sync::{ListedFolder, MAX_LISTED_FOLDERS, SyncResult};
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::sync::{ListedFolder, MAX_LISTED_FOLDERS, SyncResult};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::json;
 
 use crate::*;
@@ -71,7 +71,7 @@ fn ten_thousand_listed_folders_are_all_here_in_their_tree() {
 /// together: the whole account is read once for each batch, not once for each piece (#991).
 #[test]
 fn ten_thousand_pieces_of_one_run_are_taken_in_quickly() {
-    use mailcraft_model::sync::FolderDelta;
+    use mailsolutions_model::sync::FolderDelta;
 
     let mut s = Session::at(sample::mailbox(now(), 0), now(), 0);
     let added = s.run("account.add", &json!({"email": "avery@mail.example", "incoming": {"host": "imap.mail.example"}})).unwrap();
@@ -107,8 +107,8 @@ fn ten_thousand_pieces_of_one_run_are_taken_in_quickly() {
 /// the other, and what was read again is taken in (#991).
 #[test]
 fn pieces_taken_in_together_are_pieces_taken_in_one_by_one() {
-    use mailcraft_model::sync::FolderDelta;
-    use mailcraft_model::{Address, Message};
+    use mailsolutions_model::sync::FolderDelta;
+    use mailsolutions_model::{Address, Message};
 
     let mut s = Session::at(sample::mailbox(now(), 0), now(), 0);
     let added = s.run("account.add", &json!({"email": "avery@mail.example", "incoming": {"host": "imap.mail.example"}})).unwrap();

@@ -3,14 +3,14 @@
 //! What the window says and logs about the owner's mail and choices (security batch 6).
 
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 use crate::{MailApp, Services};
 
 const NOW: i64 = 1_791_990_000;
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     app
@@ -22,7 +22,7 @@ fn app() -> MailApp {
 /// whether or not the quotes round it pair up.
 #[test]
 fn send_receive_problems_are_kept_for_the_owner_and_logged_without_their_values() {
-    use mailcraft_i18n::{Arg, Text};
+    use mailsolutions_i18n::{Arg, Text};
     let logged = crate::graph_switch::tests::logged();
     let mut app = app();
     let account = app.session.mailbox.accounts[0].id;
@@ -105,7 +105,7 @@ fn the_update_question_names_the_download_choice() {
 }
 
 /// Uses up the allowance of `account`'s mail, as a run of many problems does.
-fn use_up_allowance(app: &mut MailApp, account: mailcraft_model::Id) {
+fn use_up_allowance(app: &mut MailApp, account: mailsolutions_model::Id) {
     let lines: Vec<String> = (0..crate::problem_log::MAX_LOGGED).map(|i| format!("problem {}", "x".repeat(i + 1))).collect();
     assert_eq!(app.logged_problems.fresh(account, "mail", &lines).0.len(), lines.len());
 }

@@ -48,7 +48,7 @@ fn the_account_name_field_is_on_the_settings_page() {
         h.run_steps(2);
         assert!(says(&h, "Account name"));
         assert!(says(&h, "Shown in the folder pane, such as Work or Home. Leave it empty to show the address."));
-        if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+        if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
             h.render().unwrap().save(std::path::Path::new(&dir).join(format!("account-name-{theme}.png"))).unwrap();
         }
     }
@@ -103,7 +103,7 @@ fn the_shared_mailbox_page_has_the_name_and_nothing_of_a_sign_in() {
         assert!(!says(&h, "Your name") && !says(&h, "Application (client) ID") && !says(&h, "Mail to keep offline"));
         assert!(!says(&h, "User name") && !says(&h, "Ask before deleting a conversation"));
         assert!(h.query_by_role(Role::PasswordInput).is_none());
-        if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+        if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
             h.render().unwrap().save(std::path::Path::new(&dir).join(format!("shared-mailbox-name-{theme}.png"))).unwrap();
         }
         wizard_mut(&mut h).account_name = "Support".into();

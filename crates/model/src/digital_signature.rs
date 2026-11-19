@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! What checking a message's Digital signature found (#30), whichever format it is in: S/MIME
-//! (`mailcraft-smime`) or OpenPGP. One of four results ([`Verdict`]), why when it isn't the
+//! (`mailsolutions-smime`) or OpenPGP. One of four results ([`Verdict`]), why when it isn't the
 //! first ([`Why`]), and what is known of who signed it ([`Signer`]). Worked out from the bytes the
 //! message came as, in memory, and never written to the mailbox file: it is checked again when
 //! the message is next looked at, against the trust and the clock of that moment.
@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::Id;
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 
 /// The format of a Digital signature.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -103,7 +103,7 @@ pub enum Why {
     // Can't be checked.
     /// It uses an algorithm that's no longer safe (MD5, SHA-1, a short RSA key).
     WeakAlgorithm,
-    /// It uses an algorithm MailCraft doesn't know.
+    /// It uses an algorithm MailSolutions doesn't know.
     UnknownAlgorithm,
     /// The signer's Public key (certificate) isn't in the message or kept here.
     NoPublicKey,
@@ -169,7 +169,7 @@ impl Why {
             Why::PartlySigned => "only part of the message was signed; the rest could say anything",
             Why::Altered => "the message was changed after it was signed",
             Why::WeakAlgorithm => "it uses an algorithm that's no longer safe",
-            Why::UnknownAlgorithm => "it uses an algorithm MailCraft doesn't know",
+            Why::UnknownAlgorithm => "it uses an algorithm MailSolutions doesn't know",
             Why::NoPublicKey => "the signer's Public key (certificate) isn't in the message or kept on this computer",
             Why::KeyRevoked => "the signer's key was revoked by its owner",
             Why::KeyExpired => "the signer's key had expired when the message was signed",
@@ -293,9 +293,9 @@ impl DigitalSignature {
 }
 
 /// `text` (a name or address from a certificate) as a name coming in is kept
-/// ([`mailcraft_names::incoming`]): one line, without control or format characters (no
+/// ([`mailsolutions_names::incoming`]): one line, without control or format characters (no
 /// reordering by a bidirectional override, nothing hidden by a zero-width one), at most
 /// [`MAX_SIGNER_TEXT`] characters.
 pub fn signer_text(text: &str) -> String {
-    mailcraft_names::incoming(text, MAX_SIGNER_TEXT).unwrap_or_default()
+    mailsolutions_names::incoming(text, MAX_SIGNER_TEXT).unwrap_or_default()
 }

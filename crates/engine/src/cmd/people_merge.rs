@@ -32,8 +32,8 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use mailcraft_model::{Contact, Id, Labeled, Mailbox, PostalAddress};
-use mailcraft_time::Date;
+use mailsolutions_model::{Contact, Id, Labeled, Mailbox, PostalAddress};
+use mailsolutions_time::Date;
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -108,7 +108,7 @@ pub struct Group {
     /// The addresses and numbers they share, as the first of them writes them.
     pub shares: Vec<String>,
     /// Those that can't be merged, and why.
-    pub locked: Vec<(Id, mailcraft_i18n::Text)>,
+    pub locked: Vec<(Id, mailsolutions_i18n::Text)>,
     /// Contacts of the group past [`MAX_MERGE`], not listed.
     pub more: usize,
 }
@@ -126,7 +126,7 @@ impl Group {
 }
 
 /// Why `c` can't be merged, when an account's server keeps it.
-pub fn locked(mailbox: &Mailbox, c: &Contact) -> Option<mailcraft_i18n::Text> {
+pub fn locked(mailbox: &Mailbox, c: &Contact) -> Option<mailsolutions_i18n::Text> {
     let account = super::remote::keeper(mailbox, &c.origin)?;
     let who = super::remote::who(account);
     Some(said!("It is kept by the server of {who}, and changes made here are not sent back yet, so it can't be merged here.", who))
@@ -174,7 +174,7 @@ fn join(parent: &mut [usize], a: usize, b: usize) {
 
 /// The group made of `contacts` themselves (a selection), whatever they share.
 fn group_of(mailbox: &Mailbox, contacts: &[&Contact], more: usize, shares: Vec<String>) -> Group {
-    let locked: Vec<(Id, mailcraft_i18n::Text)> = contacts.iter().filter_map(|c| locked(mailbox, c).map(|why| (c.id, why))).collect();
+    let locked: Vec<(Id, mailsolutions_i18n::Text)> = contacts.iter().filter_map(|c| locked(mailbox, c).map(|why| (c.id, why))).collect();
     let free = |c: &&&Contact| !locked.iter().any(|(l, _)| *l == c.id);
     // Of those that can change, the one with the most filled in; the first when it is a tie.
     let keep = contacts.iter().filter(free).max_by(|a, b| filled(a).cmp(&filled(b)).then(b.id.cmp(&a.id))).or(contacts.first()).map_or(0, |c| c.id);
@@ -504,7 +504,7 @@ pub fn merged(mailbox: &Mailbox, keep: Id, others: &[Id], picks: &BTreeMap<Strin
         if now > before && now > cap(field) {
             return Err(failed!(
                 "The merged contact's {field} would be too large ({now}, at most {max}), so the contacts aren't merged. Choose one contact's {field} for it, or shorten them first.",
-                field = mailcraft_i18n::Arg::words(field_label(field)),
+                field = mailsolutions_i18n::Arg::words(field_label(field)),
                 now,
                 max = cap(field)
             ));

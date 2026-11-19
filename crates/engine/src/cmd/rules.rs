@@ -5,22 +5,22 @@
 //! A rule is for one account's mail (#566); one from before rules had accounts is for every
 //! account's, on this computer. A rule of a Microsoft account is kept on its server when the
 //! server can do all of it ([`server_cannot`]): it is then sent there (`rules_remote`) and runs
-//! there, whether MailCraft is open or not. The rules of an account are in two lists, as they
+//! there, whether MailSolutions is open or not. The rules of an account are in two lists, as they
 //! run: those of its server first, then those of this computer; Move Up and Move Down move a rule
 //! within its list.
 
-use mailcraft_model::{Action, Condition, Id, Importance, Keep, Mailbox, Rule, RuleGone, clean_name};
+use mailsolutions_model::{Action, Condition, Id, Importance, Keep, Mailbox, Rule, RuleGone, clean_name};
 use serde_json::{Value, json};
 
 use super::{bad, fail, needs_message};
 use crate::{CmdError, CmdResult, CommandSpec, Session, p};
 
-use mailcraft_model::MAX_RULES;
+use mailsolutions_model::MAX_RULES;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         CommandSpec::new("rules.add", "Create Rule", "Home › Move", add).params(
-            r#"{"name": string, "conditions": [{"type": "fromContains"|"toContains"|"subjectContains"|"bodyContains", "value": string} | {"type": "hasAttachment"} | {"type": "importance", "value": "high"|"normal"|"low"}], "actions": [{"type": "moveTo", "value": folder id} | {"type": "categorize", "value": string} | {"type": "flag"} | {"type": "markRead"} | {"type": "setImportance", "value": string} | {"type": "delete"}], "stop"?: bool, "account"?: number (whose arriving mail it is for; without it, every account's, and kept on this computer), "server"?: bool (false keeps it on this computer; true refuses a rule the server can't keep; default: on the server when it can)} — on a Microsoft account the rule is kept on its server when the server can do all of it (it then runs there, whether MailCraft is open or not; the sender's and recipients' words are looked for in their addresses alone, as the server does); answers {"id", "keep": "server"|"here"}"#,
+            r#"{"name": string, "conditions": [{"type": "fromContains"|"toContains"|"subjectContains"|"bodyContains", "value": string} | {"type": "hasAttachment"} | {"type": "importance", "value": "high"|"normal"|"low"}], "actions": [{"type": "moveTo", "value": folder id} | {"type": "categorize", "value": string} | {"type": "flag"} | {"type": "markRead"} | {"type": "setImportance", "value": string} | {"type": "delete"}], "stop"?: bool, "account"?: number (whose arriving mail it is for; without it, every account's, and kept on this computer), "server"?: bool (false keeps it on this computer; true refuses a rule the server can't keep; default: on the server when it can)} — on a Microsoft account the rule is kept on its server when the server can do all of it (it then runs there, whether MailSolutions is open or not; the sender's and recipients' words are looked for in their addresses alone, as the server does); answers {"id", "keep": "server"|"here"}"#,
         ),
         CommandSpec::new("rules.remove", "Delete Rule", "Home › Move", remove).params(r#"{"id": number} — a rule its server has is deleted there too"#),
         CommandSpec::new("rules.enable", "Enable Rule", "Home › Move", enable).params(r#"{"id": number, "value"?: bool (default: toggle)}"#),
@@ -43,10 +43,10 @@ pub fn specs() -> Vec<CommandSpec> {
 
 /// Why a rule can't be kept on an account's server (#566). Graph's rules know no flag; move mail
 /// only to a folder of the same mailbox, and to one at most; and take several texts of one kind
-/// as "any of them", where MailCraft's conditions all have to hold.
+/// as "any of them", where MailSolutions's conditions all have to hold.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NotOnServer {
-    /// MailCraft keeps no rules on the account's server (an account of this computer, IMAP).
+    /// MailSolutions keeps no rules on the account's server (an account of this computer, IMAP).
     NoServer,
     Flag,
     /// The folder the rule moves mail to is on this computer.
@@ -70,7 +70,7 @@ impl NotOnServer {
     /// Why, in words.
     pub fn said(self) -> &'static str {
         match self {
-            NotOnServer::NoServer => "MailCraft can't keep this account's rules on its server",
+            NotOnServer::NoServer => "MailSolutions can't keep this account's rules on its server",
             NotOnServer::Flag => "the server can't flag mail",
             NotOnServer::FolderHere => "the folder it moves mail to is on this computer",
             NotOnServer::FolderElsewhere => "the folder it moves mail to is in another account",
@@ -79,7 +79,7 @@ impl NotOnServer {
             NotOnServer::TwoOfAKind => "it has two conditions of one kind, and the server would take either of them rather than both",
             NotOnServer::TwoImportances => "it sets more than one importance",
             NotOnServer::Names => "it looks for a name, and the server looks at addresses only",
-            NotOnServer::NotInStep => "MailCraft reaches this account's rules on the server once it switches to Microsoft Graph",
+            NotOnServer::NotInStep => "MailSolutions reaches this account's rules on the server once it switches to Microsoft Graph",
         }
     }
 }
@@ -298,7 +298,7 @@ fn remove(s: &mut Session, v: &Value) -> CmdResult {
     let rule = s.mailbox.rules.remove(i);
     // The server is told at the next look; until then, a download that still has it doesn't bring
     // it back. One the server was making, with no answer, is looked for by what it is.
-    if s.mailbox.rule_gone.len() < mailcraft_model::MAX_RULE_GONE {
+    if s.mailbox.rule_gone.len() < mailsolutions_model::MAX_RULE_GONE {
         match rule.server.as_ref().filter(|s| !s.id.is_empty()) {
             Some(server) => s.mailbox.rule_gone.push(RuleGone { account: rule.account, id: server.id.clone(), made: None }),
             None if rule.unanswered => s.mailbox.rule_gone.push(RuleGone { account: rule.account, id: String::new(), made: Some(Box::new(rule)) }),
@@ -408,7 +408,7 @@ pub(crate) fn rule_from_message(s: &Session, v: &Value) -> Result<(Rule, Id), Cm
     }
     let name = format!("{} to {target}", m.from.display());
     let mut rule = Rule {
-        name: name.chars().take(mailcraft_model::MAX_NAME).collect(),
+        name: name.chars().take(mailsolutions_model::MAX_NAME).collect(),
         enabled: true,
         conditions: vec![Condition::FromContains(m.from.email.clone())],
         actions: vec![Action::MoveTo(folder)],

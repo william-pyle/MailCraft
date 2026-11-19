@@ -7,9 +7,9 @@
 use std::collections::{HashMap, HashSet};
 
 use egui::{Align2, Color32, CornerRadius, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::Module;
-use mailcraft_engine::cmd::folder::sort_as_listed;
-use mailcraft_model::{Folder, FolderKind, GmailCategory, Id, Mailbox};
+use mailsolutions_engine::Module;
+use mailsolutions_engine::cmd::folder::sort_as_listed;
+use mailsolutions_model::{Folder, FolderKind, GmailCategory, Id, Mailbox};
 use serde_json::json;
 
 use crate::favorites_sync::Note;
@@ -118,7 +118,7 @@ fn module_buttons() -> [(Module, &'static str, &'static str); 4] {
 /// pane can be hidden, and what is left of Mail's is a strip too narrow for four modules; People
 /// and Tasks always have theirs. Without a pane the bar down the window's edge stays, so the
 /// switch is never out of reach.
-pub fn foot_in_use(s: &mailcraft_engine::Session) -> bool {
+pub fn foot_in_use(s: &mailsolutions_engine::Session) -> bool {
     s.view.nav_foot && (s.view.folder_pane || matches!(s.view.module, Module::People | Module::Tasks))
 }
 
@@ -194,7 +194,7 @@ pub fn module_foot(app: &mut MailApp, ui: &mut Ui) {
 /// holds folders (#991: an IMAP account alone may have 10,000), so that none is left out; only
 /// the rows in sight are drawn.
 const MAX_DEPTH: usize = 32;
-const MAX_ROWS: usize = mailcraft_model::MAX_FOLDERS;
+const MAX_ROWS: usize = mailsolutions_model::MAX_FOLDERS;
 
 /// The folders of `account` as the pane lists them, depth first, skipping what is under a folded
 /// one: each with its depth and whether it has subfolders.
@@ -567,7 +567,7 @@ fn folder_row(app: &mut MailApp, ui: &mut Ui, f: &Folder, depth: usize, has_chil
     let (id, custom, favorite, kind) = (f.id, f.kind == FolderKind::Custom && !f.server_owned(), f.favorite, f.kind);
     let takes_folders = !(f.kind == FolderKind::Custom && f.server_owned());
     // An account whose Favorites are Outlook's has them changed in Outlook: nothing to do here.
-    let from_outlook = mailcraft_engine::cmd::folder::favorites_from_server(&app.session, f.account);
+    let from_outlook = mailsolutions_engine::cmd::folder::favorites_from_server(&app.session, f.account);
     resp.context_menu(|ui| {
         ui.set_min_width(190.0);
         let item = |ui: &mut Ui, app: &mut MailApp, label: &str, cmd: &str, params: serde_json::Value, enabled: bool| {
@@ -718,7 +718,7 @@ fn favorites_note(app: &mut MailApp, ui: &mut Ui, account: Id, note: &Note) {
         let r = quiet_lines(ui, tl!(note.text()));
         app.hit.add("favoritesNote", account, r);
         let about = tl!(
-            "Your organisation keeps this permission for its administrators to give. Once one of them has approved it, choose it again here. Until then the Favorites kept in MailCraft are shown."
+            "Your organisation keeps this permission for its administrators to give. Once one of them has approved it, choose it again here. Until then the Favorites kept in MailSolutions are shown."
         );
         ui.interact(r, ui.scope_id().with(("favorites_note", account)), Sense::hover()).on_hover_text(about);
         for step in app.favorites_steps(note) {
@@ -742,7 +742,7 @@ fn favorites_note(app: &mut MailApp, ui: &mut Ui, account: Id, note: &Note) {
             paint_clipped(ui.painter(), pos2(left, y), width, tl!("Show Outlook's Favorites"), font, t.accent_text);
             // Signing in with Microsoft once more, for that alone.
             let about = tl!(
-                "Sign in with Microsoft once more to let MailCraft read the folders you keep under Favorites in Outlook. They are only read, never changed, and everything else stays as it is."
+                "Sign in with Microsoft once more to let MailSolutions read the folders you keep under Favorites in Outlook. They are only read, never changed, and everything else stays as it is."
             );
             if resp.on_hover_text(about).clicked()
                 && let Err(e) = app.run("ui.connectFavorites", json!({"account": account}))
@@ -757,7 +757,7 @@ fn favorites_note(app: &mut MailApp, ui: &mut Ui, account: Id, note: &Note) {
             app.hit.add("favoritesNote", account, r);
             paint_clipped(ui.painter(), pos2(left, y), width, tl!(why), font, t.text_dim);
             resp.on_hover_text(tl!(
-                "Outlook's Favorites can't be shown for this account, so the ones kept in MailCraft are. File › Options can ask again."
+                "Outlook's Favorites can't be shown for this account, so the ones kept in MailSolutions are. File › Options can ask again."
             ));
         }
         // Why, in a few words, and the way to ask again right after it.
@@ -867,8 +867,10 @@ pub fn folder_pane(app: &mut MailApp, ui: &mut Ui) {
             let folded = app.ui.collapsed_folders.clone();
             // The favourites as the engine lists them: Outlook's own, in Outlook's order, for an
             // account whose server has them; else the ones that are marked here.
-            let favorites: Vec<Folder> =
-                mailcraft_engine::cmd::folder::favorites(&app.session).into_iter().filter_map(|id| app.session.mailbox.folder(id).cloned()).collect();
+            let favorites: Vec<Folder> = mailsolutions_engine::cmd::folder::favorites(&app.session)
+                .into_iter()
+                .filter_map(|id| app.session.mailbox.folder(id).cloned())
+                .collect();
             // And what there is to say of Outlook's, in one quiet line under the heading.
             let note = app.favorites_note();
             // (A shared mailbox right after the account it is opened through, #70.)
@@ -889,7 +891,7 @@ pub fn folder_pane(app: &mut MailApp, ui: &mut Ui) {
             // Gmail's categories of it (#911), that category's row is, and the Inbox's isn't; when
             // they are tabs above the list instead (`view.gmailCategories`), the Inbox's is.
             let gmail_tabs = app.session.view.gmail_tabs;
-            let gmail_now = mailcraft_engine::gmail::in_view(&app.session);
+            let gmail_now = mailsolutions_engine::gmail::in_view(&app.session);
             let current = if gmail_now.is_some() && !gmail_tabs { 0 } else { app.session.view.folder };
             let gmail_current = app.session.view.folder;
             let among_favorites = !folded.contains(&FAVORITES) && favorites.iter().any(|f| f.id == current);
@@ -933,7 +935,7 @@ pub fn folder_pane(app: &mut MailApp, ui: &mut Ui) {
                 for (f, depth, has_children) in rows {
                     // A Gmail account's Inbox has Gmail's categories under it, folded with it,
                     // unless they are tabs above its list.
-                    let gmail = !gmail_tabs && f.kind == FolderKind::Inbox && mailcraft_engine::gmail::listed_under(&mut app.session, f.id);
+                    let gmail = !gmail_tabs && f.kind == FolderKind::Inbox && mailsolutions_engine::gmail::listed_under(&mut app.session, f.id);
                     // A row out of sight takes its place and is not drawn (#991: thousands of
                     // folders), but is still known where it is.
                     let top = ui.cursor().min.y;
@@ -981,7 +983,7 @@ pub(crate) fn folder_name(f: &Folder) -> &str {
 /// What gives a folder its name in another interface language than English ([`folder_name`]).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Named {
-    /// The local folder imported mail goes to ([`mailcraft_model::IMPORTED`]).
+    /// The local folder imported mail goes to ([`mailsolutions_model::IMPORTED`]).
     Imported,
     /// Its kind.
     Kind(FolderKind),
@@ -991,7 +993,7 @@ enum Named {
 fn named_by(f: &Folder) -> Option<Named> {
     let on_server = !f.remote.is_empty() || f.server.is_some();
     match f.kind {
-        FolderKind::Custom => (!on_server && f.name == mailcraft_model::IMPORTED).then_some(Named::Imported),
+        FolderKind::Custom => (!on_server && f.name == mailsolutions_model::IMPORTED).then_some(Named::Imported),
         kind => (on_server || f.name == kind.default_name()).then_some(Named::Kind(kind)),
     }
 }
@@ -1040,7 +1042,7 @@ pub(crate) fn result_folder_label(mb: &Mailbox, f: &Folder) -> String {
 
 /// What an account's heading in the folder pane says: its name, and for a shared mailbox
 /// Microsoft won't open for the owner, No access (#70; the mail already here stays readable).
-pub(crate) fn heading_name(app: &MailApp, a: &mailcraft_model::Account) -> String {
+pub(crate) fn heading_name(app: &MailApp, a: &mailsolutions_model::Account) -> String {
     if app.shared_refused.contains_key(&a.id) { crate::i18n::fmt(tl!("{account} · No access"), &[("account", &a.name)]) } else { a.name.clone() }
 }
 

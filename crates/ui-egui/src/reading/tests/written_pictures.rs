@@ -62,7 +62,7 @@ fn data_png(w: u32, h: u32) -> String {
 
 #[test]
 fn two_pictures_written_into_a_message_are_shown() {
-    let m = mailcraft_mime_model::parse(&raw_message(&[data_png(64, 40), data_png(32, 32)]));
+    let m = mailsolutions_mime_model::parse(&raw_message(&[data_png(64, 40), data_png(32, 32)]));
     assert!(m.attachments.is_empty(), "nothing is attached");
     assert!(m.body.html.as_deref().is_some_and(|h| h.contains("data:image/png;base64,iVBOR")));
     for dark in [false, true] {
@@ -87,7 +87,7 @@ fn what_is_written_in_but_is_no_picture_of_ours_is_a_stand_in() {
     let mut damaged = png(16, 16);
     damaged.truncate(20);
     let damaged = format!("data:image/png;base64,{}", b64(&damaged));
-    let m = mailcraft_mime_model::parse(&raw_message(&[svg, html_page, not_png, broken, damaged, data_png(24, 24)]));
+    let m = mailsolutions_mime_model::parse(&raw_message(&[svg, html_page, not_png, broken, damaged, data_png(24, 24)]));
     in_frame(false, |ctx| {
         let laid = lay_out(ctx, &m, 820.0);
         // Five stand-ins, none of them for a picture on the web; the good one is shown.
@@ -102,7 +102,7 @@ fn what_is_written_in_but_is_no_picture_of_ours_is_a_stand_in() {
 /// kept once, and nothing of it is held once no message read holds it.
 #[test]
 fn a_message_read_again_keeps_its_pictures_once() {
-    let m = mailcraft_mime_model::parse(&raw_message(&[data_png(64, 40), data_png(32, 32)]));
+    let m = mailsolutions_mime_model::parse(&raw_message(&[data_png(64, 40), data_png(32, 32)]));
     in_frame(false, |ctx| {
         let store = Pictures::of(ctx);
         for _ in 0..6 {
@@ -121,9 +121,9 @@ fn a_message_read_again_keeps_its_pictures_once() {
 #[test]
 fn a_message_of_pictures_alone_shows_them_rather_than_its_text() {
     let html = format!("<html><body><img src=\"{}\"><img src=\"{}\"></body></html>", data_png(64, 40), data_png(32, 32));
-    let m = mailcraft_model::Message {
-        body: mailcraft_model::Body { text: "See the pictures in the HTML version.".into(), html: Some(html) },
-        ..mailcraft_model::Message::default()
+    let m = mailsolutions_model::Message {
+        body: mailsolutions_model::Body { text: "See the pictures in the HTML version.".into(), html: Some(html) },
+        ..mailsolutions_model::Message::default()
     };
     in_frame(false, |ctx| {
         let laid = lay_out(ctx, &m, 820.0);
@@ -139,13 +139,13 @@ fn a_message_of_pictures_alone_shows_them_rather_than_its_text() {
 fn the_original_under_a_reply_or_forward_still_shows_its_written_pictures() {
     use super::{MailApp, NOW, Place, Services, window};
     for command in ["mail.reply", "mail.replyAll", "mail.forward"] {
-        let mut app = MailApp::new(mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.autosave = false;
         let (account, inbox) = (app.session.mailbox.accounts[0].id, app.session.mailbox.inbox().unwrap());
-        let logo = mailcraft_model::Attachment {
+        let logo = mailsolutions_model::Attachment {
             content_id: "logo@example.org".into(),
             inline: true,
-            ..mailcraft_model::Attachment::new("logo.png", "image/png", png(20, 20))
+            ..mailsolutions_model::Attachment::new("logo.png", "image/png", png(20, 20))
         };
         let html = format!(
             "<html><body><p>The figures:</p><img src=\"{}\" alt=\"Chart\"><img src=\"{}\" alt=\"Map\">\
@@ -153,13 +153,13 @@ fn the_original_under_a_reply_or_forward_still_shows_its_written_pictures() {
             data_png(64, 40),
             data_png(32, 32)
         );
-        let m = mailcraft_model::Message {
+        let m = mailsolutions_model::Message {
             account,
             folder: inbox,
             message_id: "q3@example.org".into(),
-            from: mailcraft_model::Address::new("Rowan Ash", "rowan@example.org"),
+            from: mailsolutions_model::Address::new("Rowan Ash", "rowan@example.org"),
             subject: "Quarter figures".into(),
-            body: mailcraft_model::Body { text: "The figures.".into(), html: Some(html) },
+            body: mailsolutions_model::Body { text: "The figures.".into(), html: Some(html) },
             attachments: vec![logo],
             ..Default::default()
         };
@@ -177,31 +177,31 @@ fn the_original_under_a_reply_or_forward_still_shows_its_written_pictures() {
 
 /// A forward saved as a draft and opened again carries the picture written into the original in
 /// its quote, and the original's own picture its HTML calls by a Content-ID written otherwise
-/// (`cid:logo%40…`) too: that is shown in place (AU3-15, [`mailcraft_model::shown`]), so it is the
+/// (`cid:logo%40…`) too: that is shown in place (AU3-15, [`mailsolutions_model::shown`]), so it is the
 /// quote's, as any picture the quote shows. The original quoted under it shows both.
 #[test]
 fn a_reopened_forward_still_shows_both_kinds_of_picture_in_its_original() {
     use super::{MailApp, NOW, Place, Services, window};
-    let mut app = MailApp::new(mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let (account, inbox) = (app.session.mailbox.accounts[0].id, app.session.mailbox.inbox().unwrap());
-    let logo = mailcraft_model::Attachment {
+    let logo = mailsolutions_model::Attachment {
         content_id: "logo@rowan.example".into(),
         inline: true,
-        ..mailcraft_model::Attachment::new("logo.png", "image/png", png(20, 20))
+        ..mailsolutions_model::Attachment::new("logo.png", "image/png", png(20, 20))
     };
     let html = format!(
         "<html><body><p>The figures:</p><img src=\"{}\" alt=\"Chart\">\
          <img src=\"cid:logo%40rowan.example\"><p>Regards, Rowan</p></body></html>",
         data_png(64, 40)
     );
-    let m = mailcraft_model::Message {
+    let m = mailsolutions_model::Message {
         account,
         folder: inbox,
         message_id: "q4@rowan.example".into(),
-        from: mailcraft_model::Address::new("Rowan Ash", "rowan@rowan.example"),
+        from: mailsolutions_model::Address::new("Rowan Ash", "rowan@rowan.example"),
         subject: "Quarter figures".into(),
-        body: mailcraft_model::Body { text: "The figures.".into(), html: Some(html) },
+        body: mailsolutions_model::Body { text: "The figures.".into(), html: Some(html) },
         attachments: vec![logo],
         ..Default::default()
     };
@@ -213,7 +213,7 @@ fn a_reopened_forward_still_shows_both_kinds_of_picture_in_its_original() {
     app.execute("compose.close", serde_json::json!({})).unwrap();
     app.execute("mail.editDraft", serde_json::json!({"id": draft})).unwrap();
     let c = app.session.compose.as_ref().unwrap();
-    assert_eq!(c.mode, mailcraft_engine::ComposeMode::Draft);
+    assert_eq!(c.mode, mailsolutions_engine::ComposeMode::Draft);
     let quoted = c.quote.as_ref().map_or(Vec::new(), |q| q.pictures.iter().map(|a| a.content_id.clone()).collect());
     assert_eq!(quoted.len(), 2, "the written picture and the logo the quote shows are the quote's");
     assert!(quoted.iter().any(|cid| cid == "logo@rowan.example"), "the logo, shown in place, goes with the quote");
@@ -233,21 +233,21 @@ fn a_reopened_forward_still_shows_both_kinds_of_picture_in_its_original() {
 #[test]
 fn each_message_being_written_has_its_own_quoted_original() {
     use super::{MailApp, NOW, Services};
-    let mut app = MailApp::new(mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let (account, inbox) = (app.session.mailbox.accounts[0].id, app.session.mailbox.inbox().unwrap());
-    let picture = |name: &str, side: u32| mailcraft_model::Attachment {
+    let picture = |name: &str, side: u32| mailsolutions_model::Attachment {
         content_id: "chart@example.org".into(),
         inline: true,
-        ..mailcraft_model::Attachment::new(name, "image/png", png(side, side))
+        ..mailsolutions_model::Attachment::new(name, "image/png", png(side, side))
     };
-    let m = mailcraft_model::Message {
+    let m = mailsolutions_model::Message {
         account,
         folder: inbox,
         message_id: "chart@example.org".into(),
-        from: mailcraft_model::Address::new("Rowan Ash", "rowan@example.org"),
+        from: mailsolutions_model::Address::new("Rowan Ash", "rowan@example.org"),
         subject: "The chart".into(),
-        body: mailcraft_model::Body { text: "The chart.".into(), html: Some("<p>The chart:</p><img src=\"cid:chart@example.org\">".into()) },
+        body: mailsolutions_model::Body { text: "The chart.".into(), html: Some("<p>The chart:</p><img src=\"cid:chart@example.org\">".into()) },
         attachments: vec![picture("chart.png", 20)],
         ..Default::default()
     };
@@ -265,7 +265,7 @@ fn each_message_being_written_has_its_own_quoted_original() {
     let second = carried(&app);
     switch(&mut app);
     let first = carried(&app);
-    let bytes = |m: &mailcraft_model::Message| m.attachments.iter().map(|a| a.data.clone()).collect::<Vec<_>>();
+    let bytes = |m: &mailsolutions_model::Message| m.attachments.iter().map(|a| a.data.clone()).collect::<Vec<_>>();
     assert_eq!(bytes(&first), vec![std::sync::Arc::new(png(20, 20))]);
     assert_eq!(bytes(&second), vec![std::sync::Arc::new(png(30, 30))]);
     // Each is kept for its own message while it stays the same.
@@ -282,20 +282,20 @@ fn each_message_being_written_has_its_own_quoted_original() {
 #[test]
 fn a_closed_message_lets_go_of_its_quoted_original() {
     use super::{MailApp, NOW, Services};
-    let mut app = MailApp::new(mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let (account, inbox) = (app.session.mailbox.accounts[0].id, app.session.mailbox.inbox().unwrap());
-    let m = mailcraft_model::Message {
+    let m = mailsolutions_model::Message {
         account,
         folder: inbox,
         message_id: "plan@example.org".into(),
-        from: mailcraft_model::Address::new("Rowan Ash", "rowan@example.org"),
+        from: mailsolutions_model::Address::new("Rowan Ash", "rowan@example.org"),
         subject: "The plan".into(),
-        body: mailcraft_model::Body { text: "The plan.".into(), html: Some("<p>The plan:</p><img src=\"cid:plan@example.org\">".into()) },
-        attachments: vec![mailcraft_model::Attachment {
+        body: mailsolutions_model::Body { text: "The plan.".into(), html: Some("<p>The plan:</p><img src=\"cid:plan@example.org\">".into()) },
+        attachments: vec![mailsolutions_model::Attachment {
             content_id: "plan@example.org".into(),
             inline: true,
-            ..mailcraft_model::Attachment::new("plan.png", "image/png", png(20, 20))
+            ..mailsolutions_model::Attachment::new("plan.png", "image/png", png(20, 20))
         }],
         ..Default::default()
     };

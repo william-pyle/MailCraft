@@ -10,8 +10,8 @@ use std::sync::{Arc, Mutex};
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
-use mailcraft_engine::import_tree::{Parsed, Progress, load_entries};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::import_tree::{Parsed, Progress, load_entries};
 use serde_json::{Value, json};
 
 use crate::import_tree::TreeJob;
@@ -62,7 +62,7 @@ fn window() -> (Harness<'static, MailApp>, Jobs) {
         })),
         ..Default::default()
     };
-    let app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), services);
+    let app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), services);
     let mut h = Harness::builder().with_accessibility_check(false).allow_missing_glyphs().with_size(egui::vec2(1280.0, 900.0)).build_ui_state(
         |ui, app: &mut MailApp| {
             let ctx = ui.ctx().clone();
@@ -170,7 +170,7 @@ fn an_answer_after_the_mailbox_was_swapped_is_dropped() {
     jobs.lock().unwrap()[0].2.send(Ok(parsed(true))).unwrap();
     h.run_steps(4);
     click(&mut h, "Import");
-    let other = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0).mailbox;
+    let other = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0).mailbox;
     h.state_mut().session.replace_mailbox(other);
     let after_swap = fingerprint(&h);
     jobs.lock().unwrap()[1].2.send(Ok(parsed(false))).unwrap();

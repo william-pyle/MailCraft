@@ -16,9 +16,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::remote::{CalendarAsk, EventsUpload, OPENED_PREFIX};
-use mailcraft_model::{Account, Calendar, Id};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::remote::{CalendarAsk, EventsUpload, OPENED_PREFIX};
+use mailsolutions_model::{Account, Calendar, Id};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 
 use super::{CALENDAR_DIRECTORY_MS, CALENDAR_SETTINGS_MS, JobBook, Pacing, calendar_every_ms};
 use crate::Session;
@@ -270,7 +270,7 @@ impl Session {
             midnight.to_timestamp(self.offset_at(midnight.to_timestamp(0)))
         };
         let (from, to) = (instant(from), instant(to));
-        (from, to.max(from.saturating_add(mailcraft_time::DAY)))
+        (from, to.max(from.saturating_add(mailsolutions_time::DAY)))
     }
 
     /// What of the calendar waits to go to `account`'s server now; `None` when nothing does.
@@ -285,7 +285,7 @@ impl Session {
 
     /// The accounts whose calendar a Microsoft server keeps.
     pub fn microsoft_calendar_accounts(&self) -> Vec<Id> {
-        let microsoft = |a: &&Account| a.oauth.as_ref().is_some_and(|o| o.provider == mailcraft_model::OAuthProvider::Microsoft);
+        let microsoft = |a: &&Account| a.oauth.as_ref().is_some_and(|o| o.provider == mailsolutions_model::OAuthProvider::Microsoft);
         self.mailbox.accounts.iter().filter(microsoft).map(|a| a.id).collect()
     }
 

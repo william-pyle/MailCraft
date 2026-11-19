@@ -15,7 +15,7 @@ use crate::pkcs12::{Error, KeyKind, MAX_P12_LEN, looks_like, open};
 const PASS: &str = "example-pass";
 
 fn bytes(b64: &str) -> Vec<u8> {
-    mailcraft_charset::base64::STANDARD.decode(b64).unwrap()
+    mailsolutions_charset::base64::STANDARD.decode(b64).unwrap()
 }
 
 fn der(pem: &str) -> Vec<u8> {

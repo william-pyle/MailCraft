@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-use mailcraft_engine::Session;
-use mailcraft_engine::io::OpenProgress;
-use mailcraft_engine::store::{self, INLINE_MAX};
-use mailcraft_model::{FolderKind, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::io::OpenProgress;
+use mailsolutions_engine::store::{self, INLINE_MAX};
+use mailsolutions_model::{FolderKind, Mailbox, Message};
 
 use crate::Core;
 use crate::fake_tests::{FakePlatform, block_on};
@@ -11,7 +11,7 @@ use crate::fake_tests::{FakePlatform, block_on};
 /// A mailbox file whose Sent Items message has a body too long to be kept in the file itself, so a
 /// window's opening leaves it on disk.
 fn on_disk(name: &str) -> (std::path::PathBuf, u64, u64) {
-    let dir = std::env::temp_dir().join(format!("mailcraft-mobile-preview-{}-{name}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-mobile-preview-{}-{name}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("mailbox.mailcraft");
@@ -62,7 +62,7 @@ fn a_body_that_cannot_be_read_leaves_the_row_with_an_empty_preview() {
 fn a_body_over_the_preview_cap_is_not_read_and_one_under_it_is() {
     use crate::queries::MAX_PREVIEW_READ;
     for (name, size, read) in [("under", MAX_PREVIEW_READ as usize - 1024, true), ("over", MAX_PREVIEW_READ as usize + 1, false)] {
-        let dir = std::env::temp_dir().join(format!("mailcraft-mobile-preview-{}-cap-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-mobile-preview-{}-cap-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("mailbox.mailcraft");

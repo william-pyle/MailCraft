@@ -1,36 +1,36 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's messages ([`mailcraft_model::Message`]) as Internet messages: the reader and the
-//! writer of `mailcraft-mime`, which work on that crate's own types and are reusable outside the
+//! MailSolutions's messages ([`mailsolutions_model::Message`]) as Internet messages: the reader and the
+//! writer of `mailsolutions-mime`, which work on that crate's own types and are reusable outside the
 //! client (#1235), with the conversion to and from the mailbox's model, and [`rich`] text to HTML
 //! and back. Nothing here does I/O.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod rich;
 
-use mailcraft_mime as mime;
-use mailcraft_model::{Address, Attachment, Body, FlagStatus, Importance, Message, Original};
+use mailsolutions_mime as mime;
+use mailsolutions_model::{Address, Attachment, Body, FlagStatus, Importance, Message, Original};
 
-pub use mailcraft_mime::WriteOptions;
+pub use mailsolutions_mime::WriteOptions;
 
 /// Read an Internet message (an `.eml` file, or what a server hands over) as a message of the
-/// mailbox: [`mailcraft_mime::parse`], with `received` the `Date` as well. Never fails.
+/// mailbox: [`mailsolutions_mime::parse`], with `received` the `Date` as well. Never fails.
 pub fn parse(bytes: &[u8]) -> Message {
     to_model(mime::parse(bytes))
 }
 
 /// [`parse`] for a message as its server or a file gave it: a Digitally signed or Encrypted one
-/// keeps the bytes it came as ([`mailcraft_mime::parse_fetched`]).
+/// keeps the bytes it came as ([`mailsolutions_mime::parse_fetched`]).
 pub fn parse_fetched(bytes: &[u8]) -> Message {
     to_model(mime::parse_fetched(bytes))
 }
 
-/// The messages of an mbox file ([`mailcraft_mime::mbox_messages`]).
+/// The messages of an mbox file ([`mailsolutions_mime::mbox_messages`]).
 pub fn parse_mbox(bytes: &[u8]) -> Vec<Message> {
     mbox_messages(bytes).collect()
 }
 
-/// How many messages an mbox file holds, without reading them ([`mailcraft_mime::count_mbox`]).
+/// How many messages an mbox file holds, without reading them ([`mailsolutions_mime::count_mbox`]).
 pub fn count_mbox(bytes: &[u8]) -> usize {
     mime::count_mbox(bytes)
 }
@@ -40,13 +40,13 @@ pub fn mbox_messages(bytes: &[u8]) -> impl Iterator<Item = Message> + '_ {
     mime::mbox_messages(bytes).map(to_model)
 }
 
-/// Write a message as RFC 5322 + MIME bytes ([`mailcraft_mime::write`]).
+/// Write a message as RFC 5322 + MIME bytes ([`mailsolutions_mime::write`]).
 pub fn write(message: &Message, opts: &WriteOptions) -> Vec<u8> {
     mime::write(&from_model(message), opts)
 }
 
 /// `message` as [`write()`] writes it, for a copy put on a mail server
-/// ([`mailcraft_mime::write_placed`]).
+/// ([`mailsolutions_mime::write_placed`]).
 pub fn write_placed(message: &Message, opts: &WriteOptions, marker: &str) -> Vec<u8> {
     mime::write_placed(&from_model(message), opts, marker)
 }
@@ -56,13 +56,13 @@ pub fn writes_original(message: &Message) -> bool {
     mime::writes_original(&from_model(message))
 }
 
-/// Write messages as an mbox file ([`mailcraft_mime::write_mbox`]).
+/// Write messages as an mbox file ([`mailsolutions_mime::write_mbox`]).
 pub fn write_mbox(messages: &[&Message], opts: &WriteOptions) -> Vec<u8> {
     let converted: Vec<mime::Message> = messages.iter().map(|m| from_model(m)).collect();
     mime::write_mbox(&converted.iter().collect::<Vec<_>>(), opts)
 }
 
-/// A message read by `mailcraft-mime` as one of the mailbox, which is new: no id, account or
+/// A message read by `mailsolutions-mime` as one of the mailbox, which is new: no id, account or
 /// folder, and nothing of a server's. `received` is the `Date`.
 pub fn to_model(m: mime::Message) -> Message {
     // Every field named, so a field added to mime's Message fails to compile here until it is carried.
@@ -92,7 +92,7 @@ pub fn to_model(m: mime::Message) -> Message {
         original,
     } = m;
     // What is read by name stays on the message; every other line goes to its block, in place.
-    let (headers, header_block) = mailcraft_model::headers::split(headers);
+    let (headers, header_block) = mailsolutions_model::headers::split(headers);
     Message {
         message_id,
         in_reply_to,
@@ -134,7 +134,7 @@ pub fn to_model(m: mime::Message) -> Message {
     }
 }
 
-/// What of a message of the mailbox an Internet message carries, for `mailcraft-mime` to write.
+/// What of a message of the mailbox an Internet message carries, for `mailsolutions-mime` to write.
 /// A file or an original kept outside memory is written as what is in memory (nothing): whoever
 /// writes such a message brings its bytes in first.
 pub fn from_model(m: &Message) -> mime::Message {

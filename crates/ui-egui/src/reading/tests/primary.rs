@@ -89,7 +89,7 @@ fn reading() -> (Window, u64) {
 /// agent does through the MCP bridge, allowed to drive the window's input.
 fn request(harness: &mut Window, method: &str, params: serde_json::Value, agent: bool) {
     let (req, _rx) = ControlRequest::new(method, params);
-    let req = if agent { req.from_agent(vec![mailcraft_engine::agent::Class::Input]) } else { req };
+    let req = if agent { req.from_agent(vec![mailsolutions_engine::agent::Class::Input]) } else { req };
     let ctx = harness.ctx.clone();
     match handle(harness.state_mut(), &ctx, &req) {
         crate::control::Outcome::Done(answer) => assert_eq!(answer["ok"], true, "{answer}"),

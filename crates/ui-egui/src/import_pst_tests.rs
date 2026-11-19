@@ -11,10 +11,10 @@ use std::sync::mpsc::{Sender, channel};
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
-use mailcraft_engine::import_pst::Event;
-use mailcraft_pst::test_writer::{self as w, FileSpec, FolderSpec, Layout, MessageSpec};
-use mailcraft_pst::{Encryption, Format};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::import_pst::Event;
+use mailsolutions_pst::test_writer::{self as w, FileSpec, FolderSpec, Layout, MessageSpec};
+use mailsolutions_pst::{Encryption, Format};
 use serde_json::json;
 
 use crate::dialogs::Dialog;
@@ -28,7 +28,7 @@ struct Scratch(PathBuf);
 
 impl Scratch {
     fn new(name: &str) -> Scratch {
-        let dir = std::env::temp_dir().join(format!("mailcraft-ui-import-pst-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-ui-import-pst-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Scratch(dir)
@@ -74,7 +74,7 @@ fn pst(dir: &Scratch, n: usize, password: Option<&str>) -> String {
 }
 
 fn window(services: Services, dir: &Scratch) -> Harness<'static, MailApp> {
-    let mut session = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0);
+    let mut session = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0);
     // The report is written beside the mailbox: in the scratch folder.
     session.path = Some(dir.0.join("mail.mailcraft"));
     let app = MailApp::new(session, services);
@@ -179,7 +179,7 @@ fn batches_come_in_as_they_arrive_and_cancel_keeps_them() {
     let (job, tx) = jobs_rx.try_recv().unwrap();
     // The file is read here; the outcome is held back until Cancel has been pressed.
     let mut events = Vec::new();
-    mailcraft_engine::import_pst::read_path(&job.path, &job.job, &job.progress, &mut |e| {
+    mailsolutions_engine::import_pst::read_path(&job.path, &job.job, &job.progress, &mut |e| {
         events.push(e);
         true
     });
@@ -231,7 +231,7 @@ fn an_import_whose_window_goes_is_one_step_to_undo() {
     click(&mut h, "Import");
     let (job, tx) = jobs_rx.try_recv().unwrap();
     let mut events = Vec::new();
-    mailcraft_engine::import_pst::read_path(&job.path, &job.job, &job.progress, &mut |e| {
+    mailsolutions_engine::import_pst::read_path(&job.path, &job.job, &job.progress, &mut |e| {
         events.push(e);
         true
     });
@@ -268,7 +268,7 @@ fn batches_go_in_while_no_frame_is_painted() {
     click(&mut h, "Import");
     let (job, tx) = jobs_rx.try_recv().unwrap();
     let mut events = Vec::new();
-    mailcraft_engine::import_pst::read_path(&job.path, &job.job, &job.progress, &mut |e| {
+    mailsolutions_engine::import_pst::read_path(&job.path, &job.job, &job.progress, &mut |e| {
         events.push(e);
         true
     });

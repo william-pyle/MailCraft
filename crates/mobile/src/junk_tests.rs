@@ -54,7 +54,7 @@ fn not_internal<T: std::fmt::Debug>(what: &str, r: &Result<T, CoreError>) {
 #[test]
 fn every_command_with_junk_answers_and_never_panics() {
     let core = sample_core();
-    let ids: Vec<&'static str> = mailcraft_engine::cmd::registry().all().iter().map(|c| c.id).collect();
+    let ids: Vec<&'static str> = mailsolutions_engine::cmd::registry().all().iter().map(|c| c.id).collect();
     assert!(ids.len() > 100);
     for round in 0..2 {
         for id in &ids {

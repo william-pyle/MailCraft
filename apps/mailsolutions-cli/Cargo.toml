@@ -1,0 +1,33 @@
+[package]
+name = "mailsolutions-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "MailSolutions command line: inspect, import, export, convert, run commands, Send/Receive, MCP server"
+
+[[bin]]
+name = "mailsolutions-cli"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+mailsolutions-time = { workspace = true }
+mailsolutions-model = { workspace = true }
+mailsolutions-engine = { workspace = true }
+mailsolutions-mcp = { workspace = true }
+mailsolutions-net = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+# Synthetic .pst files for `tests/import_pst.rs` (the reader's test writer, a dev-only feature).
+mailsolutions-pst = { workspace = true, features = ["test-writer"] }
+# The fake mail servers of `crates/net` (included by path in `tests/two_way.rs`) speak base64 (`mailsolutions-charset`).
+mailsolutions-charset = { workspace = true }
+# The Graph stand-in, for `tests/graph_folders.rs`: in a test's build only.
+mailsolutions-net = { workspace = true, features = ["stand-in"] }
+# The JMAP client and its server in the process, for `tests/jmap_mail.rs` and `tests/jmap_loopback.rs`:
+# in a test's build only.
+mailsolutions-jmap = { workspace = true, features = ["stand-in"] }

@@ -9,14 +9,14 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::time::{Duration, Instant};
 
-use mailcraft_engine::Session;
-use mailcraft_host::fetch::{Access, Renewal};
-use mailcraft_host::secrets::secret_key;
-use mailcraft_model::sync::{
+use mailsolutions_engine::Session;
+use mailsolutions_host::fetch::{Access, Renewal};
+use mailsolutions_host::secrets::secret_key;
+use mailsolutions_model::sync::{
     FolderListing, GraphFetchRequest, GraphFetchResult, GraphFetched, GraphFolder, GraphMailResult, GraphMessage, GraphSearchResult, MessagePage,
     ServerMessage, Tokens,
 };
-use mailcraft_model::{Address, FolderKind, Mailbox};
+use mailsolutions_model::{Address, FolderKind, Mailbox};
 use serde_json::json;
 
 use crate::fake_tests::{FakePlatform, block_on, now};
@@ -66,7 +66,7 @@ pub(crate) fn session() -> Session {
         whole: true,
         ..Default::default()
     };
-    mailcraft_engine::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
+    mailsolutions_engine::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
     s
 }
 
@@ -449,7 +449,7 @@ fn the_background_rests_while_the_phone_holds_all_it_may() {
     let folder = s.mailbox.folders.iter().find(|f| f.kind == FolderKind::Inbox && f.server.is_some()).unwrap().id;
     let account = s.mailbox.folder(folder).unwrap().account;
     for i in 0..2_001 {
-        let m = mailcraft_model::Message { account, folder, subject: format!("Filler {i}"), ..Default::default() };
+        let m = mailsolutions_model::Message { account, folder, subject: format!("Filler {i}"), ..Default::default() };
         s.mailbox.add_message(m).unwrap();
     }
     assert!(!room_for_more(&s), "past the cap of messages");

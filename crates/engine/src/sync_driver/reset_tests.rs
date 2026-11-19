@@ -6,7 +6,7 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::{Id, Mailbox};
+use mailsolutions_model::{Id, Mailbox};
 use serde_json::json;
 
 use super::auto_replies::Trouble;
@@ -43,7 +43,7 @@ fn busy_for(driver: &mut Driver, account: Id) {
     driver.favorites.missing.insert(account, 1.0);
     driver.favorites.notes.insert(account, Note::Offer);
     driver.favorites.connected.insert(account);
-    driver.favorites.directories.insert(account, mailcraft_model::Directory::Personal);
+    driver.favorites.directories.insert(account, mailsolutions_model::Directory::Personal);
     driver.favorites.tenants.insert(account, "t".into());
     driver.fetch.stuck.insert(account, (2, 9.0));
     driver.tasks.perm.insert(account, super::Permission::Needed);
@@ -60,7 +60,7 @@ fn busy_for(driver: &mut Driver, account: Id) {
     driver.auto_replies.trouble.insert(account, Trouble::SignInToRead);
     driver.auto_replies.started(account, 5.0);
     driver.free_busy.note(
-        Key { account, day: mailcraft_time::Date::new(2026, 10, 14).unwrap(), people: vec!["a@b.example".into()] },
+        Key { account, day: mailsolutions_time::Date::new(2026, 10, 14).unwrap(), people: vec!["a@b.example".into()] },
         1.0,
         None,
         "x".into(),

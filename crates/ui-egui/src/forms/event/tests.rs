@@ -8,7 +8,7 @@ use super::*;
 const NOW: i64 = 1_791_993_600;
 
 fn session() -> Session {
-    Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0)
+    Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0)
 }
 
 fn day(y: i32, m: u8, d: u8) -> Date {
@@ -173,12 +173,12 @@ fn importance_response_options_and_teams_are_in_the_bar_and_in_what_is_saved() {
     f.online = true;
     assert!(key(&f, "teams").is_some_and(|item| item.checked));
     // One that its server has made a Teams meeting stays one: the button says so.
-    let event = mailcraft_model::Event {
+    let event = mailsolutions_model::Event {
         title: "Made".into(),
-        attendees: vec![mailcraft_model::Attendee { address: Address::new("Maya", "maya@lumen.example"), ..Default::default() }],
-        online: Some(mailcraft_model::OnlineMeeting { join_url: "https://teams.example.org/l/meetup-join/1".into(), ..Default::default() }),
+        attendees: vec![mailsolutions_model::Attendee { address: Address::new("Maya", "maya@lumen.example"), ..Default::default() }],
+        online: Some(mailsolutions_model::OnlineMeeting { join_url: "https://teams.example.org/l/meetup-join/1".into(), ..Default::default() }),
         response_options: ResponseOptions { request_responses: false, allow_proposals: true },
-        proposals: vec![mailcraft_model::Proposal::default(); 2],
+        proposals: vec![mailsolutions_model::Proposal::default(); 2],
         ..Default::default()
     };
     let made = s.mailbox.add_event(event).unwrap();
@@ -249,7 +249,7 @@ fn the_commands_run_and_their_errors_come_back() {
 fn time_zones_keep_the_clock_time_and_go_with_the_times_they_are_for() {
     let zone = |name: &str| Zone::named(name).unwrap();
     // The calendar is shown in Chicago's time.
-    let mut s = Session::in_zone(mailcraft_model::Mailbox::with_local_account("", ""), NOW, zone("America/Chicago"));
+    let mut s = Session::in_zone(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, zone("America/Chicago"));
     let mut f = EventForm::new(&s, &json!({"title": "Call", "start": "2026-10-13T15:00", "end": "2026-10-13T16:00"}), false);
     // Without Time Zones nothing is said of zones, as ever.
     assert!(!f.zones && f.command().1.get("startZone").is_none());
@@ -336,7 +336,7 @@ fn time_zones_keep_the_clock_time_and_go_with_the_times_they_are_for() {
 fn an_open_form_follows_the_calendar_to_another_zone() {
     let zone = |name: &str| Zone::named(name).unwrap();
     let (chicago, london) = (zone("America/Chicago"), zone("Europe/London"));
-    let mut s = Session::in_zone(mailcraft_model::Mailbox::with_local_account("", ""), NOW, chicago);
+    let mut s = Session::in_zone(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, chicago);
     let id =
         s.run("calendar.new", &json!({"title": "Lunch", "start": "2026-10-13T12:00", "end": "2026-10-13T13:00"})).unwrap()["id"].as_u64().unwrap();
     let abroad =

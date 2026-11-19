@@ -4,7 +4,7 @@
 //! until the focus moves; Down goes on to the one below it, and a range made with Shift stays.
 
 use egui::{Key, PointerButton};
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 use serde_json::json;
 
 use crate::people_view::testing;

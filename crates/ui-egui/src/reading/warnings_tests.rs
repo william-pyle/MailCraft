@@ -6,9 +6,9 @@
 //! The people, hosts and addresses are invented.
 
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{Address, Body, FolderKind, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{Address, Body, FolderKind, Message};
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -33,7 +33,7 @@ fn mail(name: &str, email: &str, subject: &str, results: Option<&str>, html: Opt
 /// Avery's window on an IMAP account at Lumen, with Maya at Lumen and Lin at Harbor Works as
 /// contacts, and the Inbox holding a message for each warning.
 fn window() -> Window {
-    let mut s = Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0);
+    let mut s = Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0);
     let a = s
         .run("account.add", &json!({"email": "avery@lumen.example", "displayName": "Avery Quinn", "incoming": {"host": "imap.lumen.example"}}))
         .unwrap()["id"]

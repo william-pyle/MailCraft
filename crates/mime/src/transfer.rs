@@ -47,7 +47,7 @@ pub(crate) fn base64_decode(input: &[u8]) -> Vec<u8> {
 
 /// Base64 on one line.
 pub(crate) fn base64(data: &[u8]) -> String {
-    mailcraft_charset::base64::STANDARD.encode(data)
+    mailsolutions_charset::base64::STANDARD.encode(data)
 }
 
 /// Base64 in lines of 76 characters, CRLF between them (none after the last).

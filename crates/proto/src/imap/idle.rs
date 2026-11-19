@@ -14,7 +14,7 @@ use std::io::{Read, Write};
 use super::Imap;
 use super::parse;
 use crate::{ProtoError, for_trace};
-use mailcraft_i18n::{Arg, said};
+use mailsolutions_i18n::{Arg, said};
 
 /// Most lines [`Imap::idle_end`] reads on the way to the command's end.
 const MAX_ENDING: usize = 256;

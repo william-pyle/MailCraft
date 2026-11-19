@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! #276: the counts kept with each folder's delta link, and when a Graph run is a full sweep.
 
-use mailcraft_model::sync::{GraphFolder, GraphMailResult, GraphProgress, MessagePage, ServerMessage};
-use mailcraft_model::{FolderCounts, FolderKind, Message};
+use mailsolutions_model::sync::{GraphFolder, GraphMailResult, GraphProgress, MessagePage, ServerMessage};
+use mailsolutions_model::{FolderCounts, FolderKind, Message};
 use serde_json::json;
 
 use super::*;

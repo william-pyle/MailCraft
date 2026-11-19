@@ -29,9 +29,9 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use std::time::Duration;
 
 use egui::{Rect, Ui, pos2, vec2};
-use mailcraft_engine::io::OpenProgress;
-use mailcraft_engine::{BodyRead, Missing};
-use mailcraft_model::Mailbox;
+use mailsolutions_engine::io::OpenProgress;
+use mailsolutions_engine::{BodyRead, Missing};
+use mailsolutions_model::Mailbox;
 use serde_json::{Value, json};
 
 use crate::theme::{Tokens, regular, semibold};
@@ -40,9 +40,9 @@ use crate::{MailApp, i18n};
 /// What every command and control request is answered while the mailbox opens.
 pub const STILL_OPENING: &str = "the mailbox is still opening";
 
-/// What opening (or saving to) a mailbox file that another MailCraft window has open is refused
+/// What opening (or saving to) a mailbox file that another MailSolutions window has open is refused
 /// with (#517).
-pub const OPEN_ELSEWHERE: &str = "that mailbox is open in another MailCraft window; close it there first";
+pub const OPEN_ELSEWHERE: &str = "that mailbox is open in another MailSolutions window; close it there first";
 
 /// How long opening may take before the opening screen shows (a quick open never shows it).
 pub const SHOW_AFTER_MS: f64 = 300.0;
@@ -73,7 +73,7 @@ pub struct Arrival {
     /// Bodies and attachments that couldn't be read back from the content folder.
     pub unavailable: usize,
     /// The content folder's files left on disk are still to be looked for: those missing aren't
-    /// in `unavailable` yet (`mailcraft_engine::store::check_parts`, which the host runs once the
+    /// in `unavailable` yet (`mailsolutions_engine::store::check_parts`, which the host runs once the
     /// window shows, [`MailApp::check_parts_later`]).
     pub unchecked: bool,
     /// Part of the mailbox file itself was damaged and left out.
@@ -136,7 +136,7 @@ impl MailApp {
     /// settings (`prefs`: the theme, the language and the size of the interface are there from
     /// the first frame) and the system's language (`system_locale`).
     pub fn opening(opening: Opening, prefs: Option<crate::UiState>, system_locale: Option<String>) -> MailApp {
-        let mut app = MailApp::new(mailcraft_engine::Session::new(Mailbox::with_local_account("", "")), crate::Services::default());
+        let mut app = MailApp::new(mailsolutions_engine::Session::new(Mailbox::with_local_account("", "")), crate::Services::default());
         app.services.system_locale = system_locale;
         if let Some(prefs) = prefs {
             app.apply_prefs(prefs);
@@ -185,7 +185,7 @@ pub(crate) fn logic(app: &mut MailApp, ctx: &egui::Context) {
 #[derive(Default)]
 pub(crate) struct Later {
     /// The content files to come that are missing, the bodies and attachments already known to
-    /// be, and which opening of the session it is about ([`mailcraft_engine::Session::openings`]).
+    /// be, and which opening of the session it is about ([`mailsolutions_engine::Session::openings`]).
     parts: Option<(Receiver<Missing>, Said, u64)>,
     /// The bodies the opening left for later, read in batches, and which opening they are of.
     bodies: Option<(Receiver<Vec<BodyRead>>, u64)>,
@@ -207,20 +207,20 @@ impl MailApp {
     /// Say how many bodies and attachments are missing from the mailbox's content folder once
     /// the host's look for them (`rx`) is over, `known` of them having been found while opening
     /// (only when `say`); the bodies among them read as unavailable from then on
-    /// ([`mailcraft_engine::Session::mark_unavailable`]). About the mailbox open now: one that
+    /// ([`mailsolutions_engine::Session::mark_unavailable`]). About the mailbox open now: one that
     /// takes its place before then hears nothing of it.
     pub fn check_parts_later(&mut self, rx: Receiver<Missing>, known: usize, say: bool) {
         self.later.parts = Some((rx, (known, say), self.session.openings()));
     }
 
     /// Take in the bodies the opening left on disk as the host reads them (`rx`, in batches),
-    /// a few batches a frame ([`mailcraft_engine::Session::take_bodies`]). About the mailbox open
+    /// a few batches a frame ([`mailsolutions_engine::Session::take_bodies`]). About the mailbox open
     /// now, as [`MailApp::check_parts_later`].
     pub fn take_bodies_later(&mut self, rx: Receiver<Vec<BodyRead>>) {
         self.later.bodies = Some((rx, self.session.openings()));
     }
 
-    /// Start the word index of the mailbox's file ([`mailcraft_engine::Session::index_words`])
+    /// Start the word index of the mailbox's file ([`mailsolutions_engine::Session::index_words`])
     /// once the window has drawn its first frames with the mailbox.
     pub fn index_words_later(&mut self) {
         self.session.index_words = false;
@@ -297,7 +297,7 @@ pub(crate) fn after(app: &mut MailApp, ctx: &egui::Context) {
         }
         // Every body an opening left for later is in: mail of IMAP accounts kept with U+FFFD in
         // its text alone is looked at now (#650).
-        if done && mailcraft_engine::cmd::imap_again::mark_unreadable(&mut app.session.mailbox) > 0 {
+        if done && mailsolutions_engine::cmd::imap_again::mark_unreadable(&mut app.session.mailbox) > 0 {
             app.session.mailbox_changed();
         }
     }
@@ -431,12 +431,12 @@ fn problem(ui: &mut Ui, t: &Tokens, trouble: Option<&Trouble>) -> bool {
         Some(Trouble::Unreadable(why)) => (
             tl!("Your mailbox couldn't be opened"),
             tl!(why).to_string(),
-            tl!("MailCraft starts with an empty mailbox and leaves the file as it is."),
+            tl!("MailSolutions starts with an empty mailbox and leaves the file as it is."),
         ),
         Some(Trouble::Stopped) | None => (
             tl!("Your mailbox couldn't be opened"),
-            tl!("MailCraft stopped reading it before it was done.").to_string(),
-            tl!("MailCraft starts with an empty mailbox and leaves the file as it is."),
+            tl!("MailSolutions stopped reading it before it was done.").to_string(),
+            tl!("MailSolutions starts with an empty mailbox and leaves the file as it is."),
         ),
         Some(Trouble::Damaged) => {
             (tl!("Part of your mailbox is damaged"), crate::damaged_mailbox_notice(), tl!("Everything else in it opens as usual."))
@@ -456,18 +456,18 @@ fn problem(ui: &mut Ui, t: &Tokens, trouble: Option<&Trouble>) -> bool {
     crate::widgets::primary_button(ui, tl!("Continue"), true).clicked()
 }
 
-/// MailCraft's logo, the app icon itself, as a texture made once and kept in the context.
+/// MailSolutions's logo, the app icon itself, as a texture made once and kept in the context.
 /// `None` when the picture can't be read (the screen then shows no mark).
 pub(crate) fn logo(ctx: &egui::Context) -> Option<egui::TextureHandle> {
     /// The 256 px icon every build ships (`assets/app-icon`, attributed in `ATTRIBUTION.md`).
-    const PNG: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/io.github.billsecond.mailcraft.png");
-    let id = egui::Id::unique("mailcraft-opening-logo");
+    const PNG: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/io.github.billsecond.mailsolutions.png");
+    let id = egui::Id::unique("mailsolutions-opening-logo");
     if let Some(texture) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(id)) {
         return Some(texture);
     }
     let rgba = image::load_from_memory_with_format(PNG, image::ImageFormat::Png).ok()?.into_rgba8();
     let size = [usize::try_from(rgba.width()).ok()?, usize::try_from(rgba.height()).ok()?];
-    let texture = ctx.load_texture("mailcraft-logo", egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()), egui::TextureOptions::LINEAR);
+    let texture = ctx.load_texture("mailsolutions-logo", egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()), egui::TextureOptions::LINEAR);
     ctx.data_mut(|d| d.insert_temp(id, texture.clone()));
     Some(texture)
 }
@@ -496,7 +496,7 @@ pub(crate) fn reads_ahead(app: &MailApp, params: &Value) -> bool {
 }
 
 /// The mailbox file `id` with `params` would open or write, when it isn't the one open, has its
-/// lock taken for this window first (#517): `Some(why)` when another MailCraft has it open. The
+/// lock taken for this window first (#517): `Some(why)` when another MailSolutions has it open. The
 /// lock of the one open is let go of by the host once the window no longer has it.
 pub(crate) fn claim_refused(app: &MailApp, id: &str, params: &Value) -> Option<String> {
     let claim = app.services.claim_mailbox.as_ref()?;
@@ -535,7 +535,7 @@ pub(crate) fn cancel_ahead(app: &mut MailApp) -> bool {
     let Some(ahead) = app.reading_ahead.take() else { return false };
     ahead.progress.cancel();
     #[cfg(not(target_arch = "wasm32"))]
-    mailcraft_engine::store::forget_ahead(&ahead.path);
+    mailsolutions_engine::store::forget_ahead(&ahead.path);
     true
 }
 
@@ -546,7 +546,7 @@ pub(crate) fn forget_unopened(id: &str, params: &Value) {
     if id == "file.open"
         && let Some(path) = params.get("path").and_then(Value::as_str)
     {
-        mailcraft_engine::store::forget_ahead(std::path::Path::new(path));
+        mailsolutions_engine::store::forget_ahead(std::path::Path::new(path));
     }
     #[cfg(target_arch = "wasm32")]
     let _ = (id, params);
@@ -562,7 +562,7 @@ pub(crate) fn poll_ahead(app: &mut MailApp, ctx: &egui::Context) {
             return;
         }
         Ok(read) => read,
-        Err(TryRecvError::Disconnected) => Err(tl!("MailCraft stopped reading it before it was done.").to_string()),
+        Err(TryRecvError::Disconnected) => Err(tl!("MailSolutions stopped reading it before it was done.").to_string()),
     };
     let Some(ahead) = app.reading_ahead.take() else { return };
     match read {
@@ -573,7 +573,7 @@ pub(crate) fn poll_ahead(app: &mut MailApp, ctx: &egui::Context) {
             // Not opened: what was read of it isn't kept for later.
             if r.is_err() {
                 #[cfg(not(target_arch = "wasm32"))]
-                mailcraft_engine::store::forget_ahead(&ahead.path);
+                mailsolutions_engine::store::forget_ahead(&ahead.path);
             }
         }
         Err(e) => {

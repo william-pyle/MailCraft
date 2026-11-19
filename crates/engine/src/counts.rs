@@ -12,7 +12,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use mailcraft_model::{GmailCategory, Id, Mailbox, Message};
+use mailsolutions_model::{GmailCategory, Id, Mailbox, Message};
 
 use crate::Session;
 

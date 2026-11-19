@@ -4,9 +4,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::zoned::{instant_at, own_zones, wall_at};
-use mailcraft_model::{Address, Attendee, Event, Importance, OnlineMeeting, OnlineProvider, Response, ResponseOptions, ShowAs, Task};
-use mailcraft_time::{Date, DateTime, Timestamp, Zone};
+use mailsolutions_model::zoned::{instant_at, own_zones, wall_at};
+use mailsolutions_model::{Address, Attendee, Event, Importance, OnlineMeeting, OnlineProvider, Response, ResponseOptions, ShowAs, Task};
+use mailsolutions_time::{Date, DateTime, Timestamp, Zone};
 
 use crate::IcsFile;
 use crate::lines::{ContentLine, Lines, prefix};
@@ -759,8 +759,8 @@ impl TodoBuilder {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::{Freq, Recurrence};
-    use mailcraft_time::Weekday;
+    use mailsolutions_model::{Freq, Recurrence};
+    use mailsolutions_time::Weekday;
 
     use super::*;
 

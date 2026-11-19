@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use mailcraft_jmap_types as wire;
+use mailsolutions_jmap_types as wire;
 use serde_json::{Map, Value};
 
 use crate::error::BuildError;

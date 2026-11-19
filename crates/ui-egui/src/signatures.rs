@@ -11,7 +11,7 @@
 //! left.
 
 use egui::{Ui, vec2};
-use mailcraft_model::signature::{HEAVY_BYTES, Layout, MAX_HTML, MAX_PICTURE_BYTES, MAX_PICTURES_BYTES, MAX_WIDTH};
+use mailsolutions_model::signature::{HEAVY_BYTES, Layout, MAX_HTML, MAX_PICTURE_BYTES, MAX_PICTURES_BYTES, MAX_WIDTH};
 use serde_json::json;
 
 use crate::MailApp;
@@ -178,7 +178,7 @@ fn list(app: &mut MailApp, ui: &mut Ui, t: &Tokens, names: &[String], open: Opti
             }
         }
     });
-    let renaming_id = egui::Id::unique("mailcraft-signature-rename");
+    let renaming_id = egui::Id::unique("mailsolutions-signature-rename");
     let mut renaming: Option<String> = ui.data(|d| d.get_temp(renaming_id));
     let field = renaming_id.with("field");
     if let (Some(text), Some(from)) = (renaming.as_mut(), open) {
@@ -235,7 +235,7 @@ fn editing(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
                 app.signature_note = None;
                 // HTML starts from what the signature is now.
                 let source = match (&html, app.session.signature_edit.as_ref()) {
-                    (None, Some(e)) => json!(mailcraft_engine::mime::rich::to_html(e.body.text())),
+                    (None, Some(e)) => json!(mailsolutions_engine::mime::rich::to_html(e.body.text())),
                     _ => serde_json::Value::Null,
                 };
                 if let Err(why) = app.run("signature.html", json!({"html": source})) {
@@ -363,7 +363,7 @@ struct Form {
     seen: Option<[String; 8]>,
 }
 
-fn fields_of(d: mailcraft_model::signature::Details) -> [String; 8] {
+fn fields_of(d: mailsolutions_model::signature::Details) -> [String; 8] {
     [d.name, d.title, d.organisation, d.phone, d.mobile, d.email, d.website, d.address]
 }
 
@@ -384,15 +384,15 @@ fn details_form(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     let Some(e) = app.session.signature_edit.as_ref() else { return };
     let name = e.signature.name.clone();
     let kept = e.signature.details.clone();
-    let hand_edited = kept.as_ref().is_some_and(|d| d.made != 0 && d.made != mailcraft_model::signature::text_hash(e.body.text()));
-    let key = egui::Id::unique("mailcraft-signature-details");
+    let hand_edited = kept.as_ref().is_some_and(|d| d.made != 0 && d.made != mailsolutions_model::signature::text_hash(e.body.text()));
+    let key = egui::Id::unique("mailsolutions-signature-details");
     let seen = kept.clone().map(fields_of);
     let mut form: Form =
         ui.data(|d| d.get_temp(key)).filter(|f: &Form| f.signature == name && (seen.is_none() || f.seen == seen)).unwrap_or_else(|| {
             // The details kept, or what the default account knows of the owner to start from.
             let d = kept.clone().unwrap_or_else(|| {
                 let a = app.session.mailbox.default_account();
-                mailcraft_model::signature::Details {
+                mailsolutions_model::signature::Details {
                     name: a.map(|a| a.display_name.clone()).unwrap_or_default(),
                     email: a.map(|a| a.email.clone()).unwrap_or_default(),
                     ..Default::default()
@@ -407,7 +407,7 @@ fn details_form(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
                 ui.label(tl!(label));
                 if let Some(text) = form.fields.get_mut(i) {
                     let field = if i == 7 { egui::TextEdit::multiline(text).desired_rows(2) } else { egui::TextEdit::singleline(text) };
-                    let field = crate::text_menu::field(ui.add(field.desired_width(320.0).char_limit(mailcraft_model::signature::MAX_DETAIL)));
+                    let field = crate::text_menu::field(ui.add(field.desired_width(320.0).char_limit(mailsolutions_model::signature::MAX_DETAIL)));
                     changed |= field.changed();
                 }
                 ui.end_row();
@@ -441,21 +441,21 @@ fn details_form(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
 /// `cid` names: what the reading pane draws for a signature that is not in a message yet.
 pub(crate) fn message_of(
     html: String,
-    pictures: &[mailcraft_model::signature::Picture],
-    cid: impl Fn(&mailcraft_model::signature::Picture) -> String,
-) -> mailcraft_model::Message {
-    mailcraft_model::Message {
-        body: mailcraft_model::Body { text: String::new(), html: Some(html) },
+    pictures: &[mailsolutions_model::signature::Picture],
+    cid: impl Fn(&mailsolutions_model::signature::Picture) -> String,
+) -> mailsolutions_model::Message {
+    mailsolutions_model::Message {
+        body: mailsolutions_model::Body { text: String::new(), html: Some(html) },
         attachments: pictures
             .iter()
-            .map(|p| mailcraft_model::Attachment {
+            .map(|p| mailsolutions_model::Attachment {
                 content_id: cid(p),
                 inline: true,
                 data: p.data.clone(),
-                ..mailcraft_model::Attachment::new(p.name.clone(), p.mime.clone(), Vec::new())
+                ..mailsolutions_model::Attachment::new(p.name.clone(), p.mime.clone(), Vec::new())
             })
             .collect(),
-        ..mailcraft_model::Message::default()
+        ..mailsolutions_model::Message::default()
     }
 }
 
@@ -466,14 +466,14 @@ fn preview(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
         return;
     }
     let ctx = ui.ctx().clone();
-    let key = egui::Id::unique("mailcraft-signature-preview");
+    let key = egui::Id::unique("mailsolutions-signature-preview");
     let stamp = (
-        mailcraft_model::signature::text_hash(sig.body()),
+        mailsolutions_model::signature::text_hash(sig.body()),
         format!("{:?}", sig.layout),
         sig.pictures().iter().map(|p| (p.id, p.width, p.alt.clone())).collect::<Vec<_>>(),
         sig.html().map(str::to_string),
     );
-    let kept: Option<(u64, std::sync::Arc<mailcraft_model::Message>)> = ctx.data(|d| d.get_temp(key));
+    let kept: Option<(u64, std::sync::Arc<mailsolutions_model::Message>)> = ctx.data(|d| d.get_temp(key));
     let hash = {
         use std::hash::{Hash, Hasher};
         let mut h = std::collections::hash_map::DefaultHasher::new();
@@ -483,9 +483,10 @@ fn preview(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     let message = match kept.filter(|(k, _)| *k == hash) {
         Some((_, m)) => m,
         None => {
-            let cid = |p: &mailcraft_model::signature::Picture| format!("sig-{}@preview.invalid", p.id);
+            let cid = |p: &mailsolutions_model::signature::Picture| format!("sig-{}@preview.invalid", p.id);
             // An HTML signature as it is sent: cleaned.
-            let signature = sig.html().map_or_else(|| mailcraft_engine::mime::rich::signature_html(&sig, &cid), mailcraft_engine::html::quotable);
+            let signature =
+                sig.html().map_or_else(|| mailsolutions_engine::mime::rich::signature_html(&sig, &cid), mailsolutions_engine::html::quotable);
             let html = format!("<p>{}</p>\r\n{signature}", tl!("Thanks, Thursday at ten works for me. I'll bring the drawings."));
             let m = std::sync::Arc::new(message_of(html, sig.pictures(), cid));
             ctx.data_mut(|d| d.insert_temp(key, (hash, m.clone())));
@@ -552,7 +553,7 @@ fn picture(app: &mut MailApp, ui: &mut Ui) {
 
 /// Each account's signature for new messages, and for replies and forwards: a shared mailbox's
 /// under its owner's account, as the folder pane lists them (#70), each with its own (none until
-/// one is chosen for it); not of an account a newer MailCraft added, which keeps its own as that
+/// one is chosen for it); not of an account a newer MailSolutions added, which keeps its own as that
 /// version wrote them.
 fn defaults(app: &mut MailApp, ui: &mut Ui, names: &[String]) {
     let accounts: Vec<(u64, String, String, String)> = app
@@ -560,7 +561,7 @@ fn defaults(app: &mut MailApp, ui: &mut Ui, names: &[String]) {
         .mailbox
         .accounts_in_order()
         .into_iter()
-        .filter(|a| a.kind != mailcraft_model::AccountKind::Unknown)
+        .filter(|a| a.kind != mailsolutions_model::AccountKind::Unknown)
         .map(|a| {
             let shown = if a.is_shared() {
                 format!("    {}", crate::i18n::fmt(tl!("{address} (shared mailbox)"), &[("address", &a.email)]))

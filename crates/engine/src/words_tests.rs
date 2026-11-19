@@ -6,7 +6,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use mailcraft_model::{Address, Attachment, Body, Message, words};
+use mailsolutions_model::{Address, Attachment, Body, Message, words};
 
 use super::*;
 
@@ -17,7 +17,7 @@ impl Temp {
     pub(crate) fn new(name: &str) -> Temp {
         static N: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let dir = std::env::temp_dir().join(format!("mailcraft-words-{}-{n}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-words-{}-{n}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -105,7 +105,7 @@ fn a_message_put_in_again_replaces_what_it_held_and_one_taken_out_goes() {
     assert_eq!(index.len(), 2);
     // A flag or a folder isn't read: the same fingerprint.
     let before = fingerprint(&m);
-    (m.read, m.folder, m.flag) = (true, 9, mailcraft_model::FlagStatus::Flagged);
+    (m.read, m.folder, m.flag) = (true, 9, mailsolutions_model::FlagStatus::Flagged);
     assert_eq!(fingerprint(&m), before);
     m.to.push(Address::new("Kit", "kit@example.org"));
     assert_ne!(fingerprint(&m), before);
@@ -114,10 +114,10 @@ fn a_message_put_in_again_replaces_what_it_held_and_one_taken_out_goes() {
 #[test]
 fn a_body_kept_on_disk_has_the_fingerprint_it_has_in_memory() {
     let m = message(4, "Long", "Ada", "A long text that lives in the content folder.");
-    let r = mailcraft_model::ContentRef { sha256: sha256(m.body.text.as_bytes()), len: m.body.text.len() as u64 };
+    let r = mailsolutions_model::ContentRef { sha256: sha256(m.body.text.as_bytes()), len: m.body.text.len() as u64 };
     let mut lean = m.clone();
     lean.body.text.clear();
-    lean.kept = Some(Box::new(mailcraft_model::KeptBody { text: Some(r), ..Default::default() }));
+    lean.kept = Some(Box::new(mailsolutions_model::KeptBody { text: Some(r), ..Default::default() }));
     assert_eq!(fingerprint(&lean), fingerprint(&m));
     assert!(body_in_memory(&lean).is_none() && body_in_memory(&m).is_some());
     // Its reading failed and its text says so: still the file it is kept in.
@@ -333,7 +333,7 @@ proptest::proptest! {
 // ---- kept in step with a session's mailbox ----
 
 mod in_step {
-    use mailcraft_model::{Account, FolderKind, Mailbox};
+    use mailsolutions_model::{Account, FolderKind, Mailbox};
     use serde_json::json;
 
     use super::*;
@@ -424,7 +424,7 @@ mod in_step {
         let mut mb = Mailbox::with_local_account("Avery", "avery@mail.example");
         let account = mb.accounts[0].id;
         let folder = mb.folders.iter().find(|f| f.account == account && f.kind == FolderKind::Inbox).unwrap().id;
-        let noon = |d: u8| mailcraft_time::DateTime::new(mailcraft_time::Date::new(2026, 10, d).unwrap(), 12, 0, 0).unwrap().civil_seconds();
+        let noon = |d: u8| mailsolutions_time::DateTime::new(mailsolutions_time::Date::new(2026, 10, d).unwrap(), 12, 0, 0).unwrap().civil_seconds();
         for (subject, d) in [("Old", 22), ("Yesterday", 25), ("Today", 26)] {
             mb.add_message(Message { folder, account, date: noon(d), received: noon(d), ..message(0, subject, "Ada", "About the zymurgy.") })
                 .unwrap();
@@ -531,7 +531,7 @@ mod in_step {
         assert_eq!(finds(&mut s, "zymurgy").len(), 1);
     }
 
-    /// #325: an account removed where no word index is kept (`mailcraft-cli`, an agent without
+    /// #325: an account removed where no word index is kept (`mailsolutions-cli`, an agent without
     /// the window) has its mail's words taken off the disk the first time the index is brought in
     /// step after it is opened again, not only once enough has been taken out.
     #[test]
@@ -562,7 +562,7 @@ mod in_step {
 // ---- built in the background ----
 
 mod background {
-    use mailcraft_model::Mailbox;
+    use mailsolutions_model::Mailbox;
 
     use super::in_step::session;
     use super::*;
@@ -636,7 +636,7 @@ mod background {
 mod answered {
     use std::time::Duration;
 
-    use mailcraft_model::{FolderKind, Mailbox};
+    use mailsolutions_model::{FolderKind, Mailbox};
     use serde_json::json;
 
     use super::in_step::{id_of, session};

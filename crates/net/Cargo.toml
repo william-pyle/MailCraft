@@ -1,21 +1,21 @@
 [package]
-name = "mailcraft-net"
+name = "mailsolutions-net"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "MailCraft network transport for the desktop app and CLI: TLS sockets, sending through SMTP, synchronising with IMAP, OAuth sign-in, MX lookup (empty on wasm: a browser can't open sockets)"
+description = "MailSolutions network transport for the desktop app and CLI: TLS sockets, sending through SMTP, synchronising with IMAP, OAuth sign-in, MX lookup (empty on wasm: a browser can't open sockets)"
 
 [lints]
 workspace = true
 
 [dependencies]
-mailcraft-time = { workspace = true }
-mailcraft-model = { workspace = true }
-mailcraft-mime = { workspace = true }
-mailcraft-mime-model = { workspace = true }
-mailcraft-proto = { workspace = true }
-mailcraft-i18n = { workspace = true }
+mailsolutions-time = { workspace = true }
+mailsolutions-model = { workspace = true }
+mailsolutions-mime = { workspace = true }
+mailsolutions-mime-model = { workspace = true }
+mailsolutions-proto = { workspace = true }
+mailsolutions-i18n = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
 
@@ -26,9 +26,9 @@ rustls-platform-verifier = { workspace = true }
 # is unpacked: in Rust all the way down, and already in the tree (the PNG decoder runs on it).
 flate2 = { workspace = true }
 # The OAuth sign-in: the token endpoint answers in JSON, and PKCE takes random bytes, SHA-256
-# (ring, which rustls runs on) and base64 (`mailcraft-charset`).
+# (ring, which rustls runs on) and base64 (`mailsolutions-charset`).
 serde_json = { workspace = true }
-mailcraft-charset = { workspace = true }
+mailsolutions-charset = { workspace = true }
 ring = { workspace = true }
 # The Favorites of Outlook come inside an XML document (`graph::favorites`): read by a reader
 # that takes no DTD and expands no entity.

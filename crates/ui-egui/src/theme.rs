@@ -5,14 +5,14 @@
 use std::sync::Arc;
 
 use egui::{Align2, Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Rect, Stroke, Visuals};
-use mailcraft_model::rich::Font;
+use mailsolutions_model::rich::Font;
 
 mod accent;
 mod blue;
 pub use accent::{Accent, AccentInk, lenient_bool};
 pub use blue::DarkStyle;
 
-/// MailCraft's own colour, the teal of its icon (and its darker ink for text on light
+/// MailSolutions's own colour, the teal of its icon (and its darker ink for text on light
 /// backgrounds). The interface itself is neutral greys with a blue accent: see [`Tokens`].
 pub const APP_COLOR: Color32 = Color32::from_rgb(0x0B, 0x7F, 0xAB);
 pub const APP_INK: Color32 = Color32::from_rgb(0x08, 0x62, 0x88);
@@ -514,7 +514,7 @@ pub struct Palette {
 }
 
 impl Palette {
-    /// MailCraft's own look.
+    /// MailSolutions's own look.
     pub fn builtin() -> Palette {
         Palette { light: Tokens::light(), dark: Tokens::dark() }
     }
@@ -525,7 +525,7 @@ impl Palette {
     }
 
     fn slot() -> egui::Id {
-        egui::Id::unique("mailcraft-theme-palette")
+        egui::Id::unique("mailsolutions-theme-palette")
     }
 
     pub fn tokens(&self, dark: bool) -> Tokens {
@@ -1089,7 +1089,7 @@ pub fn install_fonts(ctx: &egui::Context) {
 }
 
 /// [`install_fonts`] with a system font of the caller's choosing ([`SystemFont::none`] draws the
-/// interface in MailCraft's own fonts).
+/// interface in MailSolutions's own fonts).
 pub fn install_fonts_with(ctx: &egui::Context, system: &SystemFont) {
     ctx.set_fonts(font_definitions_with(system));
 }
@@ -1389,12 +1389,12 @@ fn visuals(t: &Tokens) -> Visuals {
     v
 }
 
-pub fn c32(c: mailcraft_model::Rgb) -> Color32 {
+pub fn c32(c: mailsolutions_model::Rgb) -> Color32 {
     Color32::from_rgb(c.0, c.1, c.2)
 }
 
 /// The colours a category can take: our own twelve, mid-tones that read in both themes.
-pub const CATEGORY_PALETTE: [mailcraft_model::Rgb; 12] = mailcraft_model::PALETTE;
+pub const CATEGORY_PALETTE: [mailsolutions_model::Rgb; 12] = mailsolutions_model::PALETTE;
 
 /// A stable colour for a person's avatar, from their address.
 pub fn avatar_color(key: &str, t: &Tokens) -> Color32 {
@@ -1445,7 +1445,7 @@ mod tests {
 
     impl FontsDir {
         fn new(name: &str) -> Self {
-            let dir = std::env::temp_dir().join(format!("mailcraft-fonts-{}-{name}", std::process::id()));
+            let dir = std::env::temp_dir().join(format!("mailsolutions-fonts-{}-{name}", std::process::id()));
             let _ = std::fs::remove_dir_all(&dir);
             std::fs::create_dir_all(&dir).unwrap();
             FontsDir(dir)

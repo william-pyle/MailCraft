@@ -20,10 +20,10 @@ fn the_choice_round_trips_and_old_settings_keep_closing_normally() {
 
 #[cfg(not(target_arch = "wasm32"))]
 #[test]
-fn the_first_close_explains_where_to_find_mailcraft_and_can_be_cancelled() {
+fn the_first_close_explains_where_to_find_mailsolutions_and_can_be_cancelled() {
     use egui_kittest::kittest::Queryable as _;
     for theme in ["light", "dark"] {
-        let mut app = MailApp::new(mailcraft_engine::Session::new(mailcraft_model::Mailbox::default()), Services::default());
+        let mut app = MailApp::new(mailsolutions_engine::Session::new(mailsolutions_model::Mailbox::default()), Services::default());
         app.session.driver.set_auto_sync(false);
         app.autosave = false;
         app.execute("ui.theme", json!({"value": theme})).unwrap();
@@ -42,8 +42,8 @@ fn the_first_close_explains_where_to_find_mailcraft_and_can_be_cancelled() {
         let ctx = harness.ctx.clone();
         assert!(!crate::close_to_tray::confirm_hide(&ctx, harness.state()));
         harness.run_steps(4);
-        harness.get_by_label("MailCraft will keep running");
-        if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+        harness.get_by_label("MailSolutions will keep running");
+        if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
             harness.render().unwrap().save(std::path::Path::new(&dir).join(format!("tray-first-close-{theme}.png"))).unwrap();
         }
         harness.get_by_label("Cancel").click();
@@ -62,7 +62,7 @@ fn the_first_close_explains_where_to_find_mailcraft_and_can_be_cancelled() {
 
 #[test]
 fn the_command_sets_and_toggles_but_refuses_invalid_values() {
-    let mut app = MailApp::new(mailcraft_engine::Session::new(mailcraft_model::Mailbox::default()), Services::default());
+    let mut app = MailApp::new(mailsolutions_engine::Session::new(mailsolutions_model::Mailbox::default()), Services::default());
     assert!(!app.ui.close_to_tray);
     assert_eq!(app.execute("ui.closeToTray", json!({"value": true})).unwrap()["value"], true);
     for junk in [json!(null), json!(1), json!("false"), json!([]), json!({})] {
@@ -78,7 +78,7 @@ fn the_command_sets_and_toggles_but_refuses_invalid_values() {
 fn the_checkbox_works_in_general_in_light_and_dark() {
     use egui_kittest::kittest::Queryable as _;
     for theme in ["light", "dark"] {
-        let mut app = MailApp::new(mailcraft_engine::Session::new(mailcraft_model::Mailbox::default()), Services::default());
+        let mut app = MailApp::new(mailsolutions_engine::Session::new(mailsolutions_model::Mailbox::default()), Services::default());
         app.session.driver.set_auto_sync(false);
         app.autosave = false;
         app.execute("ui.theme", json!({"value": theme})).unwrap();
@@ -100,7 +100,7 @@ fn the_checkbox_works_in_general_in_light_and_dark() {
         harness.get_by_label("Close to system tray").click();
         harness.run_steps(4);
         assert!(harness.state().ui.close_to_tray);
-        if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+        if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
             harness.render().unwrap().save(std::path::Path::new(&dir).join(format!("tray-options-{theme}.png"))).unwrap();
         }
         harness.get_by_label("Close to system tray").click();

@@ -5,8 +5,8 @@
 
 use std::sync::Arc;
 
-use mailcraft_engine::Session;
-use mailcraft_host::Platform as _;
+use mailsolutions_engine::Session;
+use mailsolutions_host::Platform as _;
 
 use crate::fake_tests::{block_on, now};
 use crate::platform::Native;
@@ -86,25 +86,25 @@ impl Platform for Throws {
 fn a_platform_that_throws_gets_stand_ins_and_no_panic() {
     let native = Native { inner: Arc::new(Throws) };
     assert!(native.secrets().is_none());
-    assert_eq!(native.redirect(), mailcraft_host::Redirect::Loopback);
+    assert_eq!(native.redirect(), mailsolutions_host::Redirect::Loopback);
     assert!(native.open_sign_in_page("https://example.org/").is_err());
     assert!(native.now() > 0);
     assert_eq!(native.utc_offset_minutes(0), 0);
     assert_eq!(native.memory_budget(), None);
-    assert_eq!(native.network(), mailcraft_host::NetworkState::Unknown);
+    assert_eq!(native.network(), mailsolutions_host::NetworkState::Unknown);
     let store = crate::platform::NativeSecrets::new(Arc::new(Throws));
-    assert!(mailcraft_host::SecretStore::get(&store, "password:a@example.org").is_none());
-    assert!(mailcraft_host::SecretStore::set(&store, "password:a@example.org", "x").is_err());
-    mailcraft_host::SecretStore::delete(&store, "password:a@example.org");
+    assert!(mailsolutions_host::SecretStore::get(&store, "password:a@example.org").is_none());
+    assert!(mailsolutions_host::SecretStore::set(&store, "password:a@example.org", "x").is_err());
+    mailsolutions_host::SecretStore::delete(&store, "password:a@example.org");
     // The fallible ones say the store failed, rather than "nothing there" or "removed".
-    assert!(mailcraft_host::SecretStore::read(&store, "password:a@example.org").is_err());
-    assert!(mailcraft_host::SecretStore::remove(&store, "password:a@example.org").is_err());
-    assert_eq!(mailcraft_host::SecretStore::take_trouble(&store), Some(mailcraft_host::StoreTrouble::Unavailable));
+    assert!(mailsolutions_host::SecretStore::read(&store, "password:a@example.org").is_err());
+    assert!(mailsolutions_host::SecretStore::remove(&store, "password:a@example.org").is_err());
+    assert_eq!(mailsolutions_host::SecretStore::take_trouble(&store), Some(mailsolutions_host::StoreTrouble::Unavailable));
 }
 
 #[test]
 fn a_core_over_a_platform_that_throws_still_starts_and_answers() {
-    let core = Core::start(Arc::new(Throws), || Session::at(mailcraft_model::Mailbox::default(), now(), 0));
+    let core = Core::start(Arc::new(Throws), || Session::at(mailsolutions_model::Mailbox::default(), now(), 0));
     // No memory budget given is not a refusal (the host rejects only a budget of 0): it starts.
     assert!(core.is_ok());
     if let Ok(core) = core {

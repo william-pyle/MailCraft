@@ -6,10 +6,10 @@
 //! Message-ID, in whichever pieces of a download or runs they come, the change is dropped and
 //! the owner told, never made on another message. Every message here is invented.
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::account::{apply_sync, sync_request};
-use mailcraft_model::sync::{FolderDelta, RemoteOp, SyncResult};
-use mailcraft_model::{Address, Body, FolderKind, Id, Importance, Message, Pending};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::account::{apply_sync, sync_request};
+use mailsolutions_model::sync::{FolderDelta, RemoteOp, SyncResult};
+use mailsolutions_model::{Address, Body, FolderKind, Id, Importance, Message, Pending};
 use serde_json::{Value, json};
 
 #[derive(Clone, Copy, Debug)]

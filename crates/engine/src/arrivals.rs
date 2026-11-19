@@ -13,7 +13,7 @@
 //!   stopped partway through a later round does not make it one again, #609);
 //! - mail a rule moved out of the Inbox as it arrived, and mail in Junk E-mail or any other
 //!   folder;
-//! - the mail of a shared mailbox, of a local account, and of an account a newer MailCraft
+//! - the mail of a shared mailbox, of a local account, and of an account a newer MailSolutions
 //!   added, which no run here keeps in step (nothing arrives in either by itself);
 //! - an Inbox the server numbered anew during the run (UIDVALIDITY changed), whose mail all comes
 //!   down again;
@@ -24,7 +24,7 @@
 //! Nothing here shows anything: it only says which messages, and who they are from. The text is
 //! the message's own, hostile, and the window cleans it before it goes anywhere.
 
-use mailcraft_model::{FolderKind, Id, Mailbox};
+use mailsolutions_model::{FolderKind, Id, Mailbox};
 
 /// The mailbox as a run found it ([`mark`]).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -67,7 +67,7 @@ pub fn mark(mailbox: &Mailbox) -> InboxMark {
 
 /// An account of the owner's own that a server keeps mail for, and a run here keeps in step:
 /// there, not a shared mailbox, not one that lives in this mailbox only, and not one a newer
-/// MailCraft added.
+/// MailSolutions added.
 fn own(mailbox: &Mailbox, account: Id) -> bool {
     mailbox.account(account).is_some_and(|a| !a.is_shared() && a.kind.has_server())
 }
@@ -93,9 +93,9 @@ pub fn arrivals(mailbox: &Mailbox, before: &InboxMark) -> Vec<Arrival> {
 /// Whether `m` is mail its account alerts for: any, but for a Gmail account that alerts for
 /// Primary alone (#911), mail Gmail put in another category. One whose category isn't known yet
 /// is alerted for: better told once too often than not at all.
-fn alerted(mailbox: &Mailbox, m: &mailcraft_model::Message) -> bool {
+fn alerted(mailbox: &Mailbox, m: &mailsolutions_model::Message) -> bool {
     let primary_only = mailbox.account(m.account).is_some_and(|a| a.is_gmail() && a.alert_primary_only);
-    !primary_only || m.gmail_category.is_none_or(|c| c == mailcraft_model::GmailCategory::Primary)
+    !primary_only || m.gmail_category.is_none_or(|c| c == mailsolutions_model::GmailCategory::Primary)
 }
 
 #[cfg(test)]

@@ -5,7 +5,7 @@
 //! the flag; Snooze and Dismiss; undo; the composer's plan; what an agent may do; hostile
 //! parameters.
 
-use mailcraft_model::{FlagStatus, FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::{FlagStatus, FolderKind, Id, Mailbox, Message};
 use serde_json::{Value, json};
 
 use crate::agent::{Class, Verdict, check};
@@ -42,7 +42,7 @@ fn world() -> World {
             folder: inbox,
             subject: "Kickoff".into(),
             message_id: "got@example.org".into(),
-            from: mailcraft_model::Address::new("Dan", "dan@example.org"),
+            from: mailsolutions_model::Address::new("Dan", "dan@example.org"),
             read: true,
             ..Default::default()
         })
@@ -54,9 +54,9 @@ fn world() -> World {
             folder: sent,
             subject: "Budget".into(),
             message_id: "mine@example.org".into(),
-            from: mailcraft_model::Address::new("Ann", "ann@example.org"),
-            to: vec![mailcraft_model::Address::new("Bob", "bob@example.org")],
-            cc: vec![mailcraft_model::Address::new("Carol", "Carol@Example.org")],
+            from: mailsolutions_model::Address::new("Ann", "ann@example.org"),
+            to: vec![mailsolutions_model::Address::new("Bob", "bob@example.org")],
+            cc: vec![mailsolutions_model::Address::new("Carol", "Carol@Example.org")],
             read: true,
             ..Default::default()
         })
@@ -81,7 +81,7 @@ impl World {
                 message_id: format!("reply{n}@example.org"),
                 in_reply_to: "mine@example.org".into(),
                 references: vec!["mine@example.org".into()],
-                from: mailcraft_model::Address::new("", who),
+                from: mailsolutions_model::Address::new("", who),
                 ..Default::default()
             })
             .unwrap()
@@ -99,7 +99,7 @@ impl World {
                 subject: "Re".into(),
                 message_id: format!("rt{n}@example.org"),
                 in_reply_to: mid,
-                from: mailcraft_model::Address::new("", who),
+                from: mailsolutions_model::Address::new("", who),
                 ..Default::default()
             })
             .unwrap()
@@ -114,7 +114,7 @@ impl World {
 /// The mailbox written to its file and read back, as a restart does.
 fn reopen(w: &mut World) {
     let bytes = serde_json::to_vec(&w.s.mailbox).unwrap();
-    w.s.mailbox = mailcraft_model::from_json(&bytes, 1_000_000).unwrap();
+    w.s.mailbox = mailsolutions_model::from_json(&bytes, 1_000_000).unwrap();
 }
 
 #[test]
@@ -253,7 +253,7 @@ fn mail_of_another_conversation_does_not_cancel_it() {
             folder: w.inbox,
             subject: "Lunch?".into(),
             message_id: "lunch@example.org".into(),
-            from: mailcraft_model::Address::new("", "bob@example.org"),
+            from: mailsolutions_model::Address::new("", "bob@example.org"),
             ..Default::default()
         })
         .unwrap();
@@ -330,7 +330,7 @@ fn a_copy_has_no_reminder_and_a_draft_does_not_fire() {
     let copy = w.s.mailbox.copy_message_marked(w.got, w.sent, 0).unwrap();
     assert!(w.m(copy).follow_up.is_none());
     let draft = w.s.mailbox.add_message(Message { account: w.account, folder: w.sent, draft: true, ..Default::default() }).unwrap();
-    w.s.mailbox.message_mut(draft).unwrap().follow_up = Some(mailcraft_model::FollowUp::new(NOON + 1, true, 0));
+    w.s.mailbox.message_mut(draft).unwrap().follow_up = Some(mailsolutions_model::FollowUp::new(NOON + 1, true, 0));
     assert_eq!(w.settle(NOON + DAY)["raised"], json!([w.got]));
 }
 
@@ -358,7 +358,7 @@ fn the_composer_asks_for_a_reminder_that_the_sent_message_carries() {
             subject: "Re: Plan".into(),
             message_id: format!("r{n}@example.org"),
             in_reply_to: w.m(id).message_id.clone(),
-            from: mailcraft_model::Address::new("", "bob@example.org"),
+            from: mailsolutions_model::Address::new("", "bob@example.org"),
             ..Default::default()
         })
         .unwrap();
@@ -428,7 +428,7 @@ fn hostile_parameters_are_refused_and_change_nothing() {
     assert_eq!(w.s.mailbox.messages, before.messages);
     // A time far ahead is brought to five years.
     let r = w.s.run("mail.reminder", &json!({"ids": [w.got], "at": i64::MAX})).unwrap();
-    assert_eq!(r["at"], NOON + mailcraft_model::MAX_FOLLOW_UP_AHEAD);
+    assert_eq!(r["at"], NOON + mailsolutions_model::MAX_FOLLOW_UP_AHEAD);
     for p in [json!({"ids": [w.got], "minutes": 0}), json!({"ids": [w.got], "minutes": 10_081}), json!({"ids": [w.got], "minutes": 1e300})] {
         assert!(w.s.run("mail.postponeReminder", &p).is_err(), "{p}");
     }
@@ -499,7 +499,7 @@ fn a_big_mailbox_is_looked_through_once_at_the_time_and_a_reply_is_found() {
                 folder: w.inbox,
                 subject: format!("Noise {i}"),
                 message_id: format!("n{i}@example.org"),
-                from: mailcraft_model::Address::new("", "noise@example.org"),
+                from: mailsolutions_model::Address::new("", "noise@example.org"),
                 ..Default::default()
             })
             .unwrap();
@@ -539,7 +539,7 @@ fn a_reply_to_a_reply_cancels_it_through_the_chain() {
 fn a_reply_in_another_of_the_owners_accounts_cancels_it() {
     let mut w = world();
     w.s.run("mail.reminder", &json!({"ids": [w.mine], "days": 1, "ifNoReply": true})).unwrap();
-    let other = w.s.mailbox.add_account(mailcraft_model::Account { name: "ann2".into(), email: "ann2@example.org".into(), ..Default::default() });
+    let other = w.s.mailbox.add_account(mailsolutions_model::Account { name: "ann2".into(), email: "ann2@example.org".into(), ..Default::default() });
     let inbox = w.s.mailbox.folder_of_kind(other, FolderKind::Inbox).unwrap();
     w.s.mailbox
         .add_message(Message {
@@ -548,7 +548,7 @@ fn a_reply_in_another_of_the_owners_accounts_cancels_it() {
             subject: "Re: Budget".into(),
             message_id: "elsewhere@example.org".into(),
             in_reply_to: "mine@example.org".into(),
-            from: mailcraft_model::Address::new("", "bob@example.org"),
+            from: mailsolutions_model::Address::new("", "bob@example.org"),
             ..Default::default()
         })
         .unwrap();
@@ -597,7 +597,7 @@ fn an_at_time_reminder_is_refused_on_a_draft_and_an_if_nobody_replies_plan_is_ke
 
 /// The reminder of a message sent from the composer goes with the message when the server files
 /// its copy under another id: kept by Message-ID, counted from the moment it was sent.
-fn sent_through_outbox(kind: mailcraft_model::AccountKind) -> (World, Id) {
+fn sent_through_outbox(kind: mailsolutions_model::AccountKind) -> (World, Id) {
     let mut w = world();
     w.s.mailbox.account_mut(w.account).unwrap().kind = kind;
     write_to_bob(&mut w);
@@ -608,8 +608,8 @@ fn sent_through_outbox(kind: mailcraft_model::AccountKind) -> (World, Id) {
 
 #[test]
 fn a_reminder_follows_a_sent_message_whose_copy_the_server_files_itself() {
-    use mailcraft_model::AccountKind::{Exchange as Ews, Jmap, Microsoft};
-    use mailcraft_model::sync::{SendDone, SendOutcome};
+    use mailsolutions_model::AccountKind::{Exchange as Ews, Jmap, Microsoft};
+    use mailsolutions_model::sync::{SendDone, SendOutcome};
     for kind in [Microsoft, Ews, Jmap] {
         let (mut w, id) = sent_through_outbox(kind);
         let m = w.m(id).clone();
@@ -618,7 +618,7 @@ fn a_reminder_follows_a_sent_message_whose_copy_the_server_files_itself() {
         // Sent a day later: counted from then, not from the click.
         let sent_at = NOON + DAY;
         let done = SendDone { message: id, outcome: SendOutcome::Sent, draft: None, draft_left: String::new() };
-        super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailcraft_i18n::Lang::default(), &mut Vec::new(), Some(sent_at));
+        super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailsolutions_i18n::Lang::default(), &mut Vec::new(), Some(sent_at));
         assert!(w.s.mailbox.message(id).is_none(), "{kind:?}: forgotten, the server's copy comes down");
         // The copy comes down under an id of its own.
         let down = Message { id: 0, folder: w.sent, follow_up: None, ..m };
@@ -634,24 +634,24 @@ fn a_reminder_follows_a_sent_message_whose_copy_the_server_files_itself() {
 
 #[test]
 fn a_reminder_of_an_imap_message_counts_from_when_the_server_took_it() {
-    let (mut w, id) = sent_through_outbox(mailcraft_model::AccountKind::Imap);
+    let (mut w, id) = sent_through_outbox(mailsolutions_model::AccountKind::Imap);
     assert_eq!(w.m(id).follow_up.unwrap().at, NOON + 4 * DAY, "from the click while it waits");
-    let result = mailcraft_model::sync::SyncResult { sent: vec![id], ..Default::default() };
+    let result = mailsolutions_model::sync::SyncResult { sent: vec![id], ..Default::default() };
     super::account::file_sent(&mut w.s.mailbox, w.account, &result, NOON + 2 * DAY);
     assert_eq!(w.m(id).folder, w.sent);
     assert_eq!(w.m(id).follow_up.unwrap().at, NOON + 6 * DAY);
     // A message that waits in the Outbox never fires, however late.
-    let (mut w, id) = sent_through_outbox(mailcraft_model::AccountKind::Imap);
+    let (mut w, id) = sent_through_outbox(mailsolutions_model::AccountKind::Imap);
     assert_eq!(w.settle(NOON + 30 * DAY)["raised"], json!([]));
     assert!(w.m(id).follow_up.is_some());
 }
 
 #[test]
 fn a_reminder_pending_for_a_copy_is_kept_in_the_file_and_let_go_of_with_time() {
-    let (mut w, id) = sent_through_outbox(mailcraft_model::AccountKind::Microsoft);
+    let (mut w, id) = sent_through_outbox(mailsolutions_model::AccountKind::Microsoft);
     let m = w.m(id).clone();
-    let done = mailcraft_model::sync::SendDone { message: id, outcome: mailcraft_model::sync::SendOutcome::Sent, ..Default::default() };
-    super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailcraft_i18n::Lang::default(), &mut Vec::new(), Some(NOON));
+    let done = mailsolutions_model::sync::SendDone { message: id, outcome: mailsolutions_model::sync::SendOutcome::Sent, ..Default::default() };
+    super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailsolutions_i18n::Lang::default(), &mut Vec::new(), Some(NOON));
     assert_eq!(w.s.mailbox.follow_ups_pending.len(), 1);
     reopen(&mut w);
     assert_eq!(w.s.mailbox.follow_ups_pending.len(), 1);
@@ -669,11 +669,11 @@ fn a_reminder_pending_for_a_copy_is_kept_in_the_file_and_let_go_of_with_time() {
 
 #[test]
 fn only_the_owners_own_copy_in_sent_items_takes_a_kept_reminder() {
-    let (mut w, id) = sent_through_outbox(mailcraft_model::AccountKind::Microsoft);
+    let (mut w, id) = sent_through_outbox(mailsolutions_model::AccountKind::Microsoft);
     let m = w.m(id).clone();
-    let done = mailcraft_model::sync::SendDone { message: id, outcome: mailcraft_model::sync::SendOutcome::Sent, ..Default::default() };
-    super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailcraft_i18n::Lang::default(), &mut Vec::new(), Some(NOON));
-    let down = |folder, from: &str| Message { id: 0, folder, follow_up: None, from: mailcraft_model::Address::new("X", from), ..m.clone() };
+    let done = mailsolutions_model::sync::SendDone { message: id, outcome: mailsolutions_model::sync::SendOutcome::Sent, ..Default::default() };
+    super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailsolutions_i18n::Lang::default(), &mut Vec::new(), Some(NOON));
+    let down = |folder, from: &str| Message { id: 0, folder, follow_up: None, from: mailsolutions_model::Address::new("X", from), ..m.clone() };
     // A self-Bcc or a list's echo in the Inbox, a forged copy from someone else in Sent Items:
     // none takes it.
     for (folder, from) in [(w.inbox, "ann@example.org"), (w.sent, "mallory@example.org")] {
@@ -687,18 +687,18 @@ fn only_the_owners_own_copy_in_sent_items_takes_a_kept_reminder() {
 
 #[test]
 fn undo_leaves_the_reminders_kept_for_a_sent_copy_as_they_are() {
-    let (mut w, id) = sent_through_outbox(mailcraft_model::AccountKind::Microsoft);
+    let (mut w, id) = sent_through_outbox(mailsolutions_model::AccountKind::Microsoft);
     let before = w.s.mailbox.clone();
-    let done = mailcraft_model::sync::SendDone { message: id, outcome: mailcraft_model::sync::SendOutcome::Sent, ..Default::default() };
-    super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailcraft_i18n::Lang::default(), &mut Vec::new(), Some(NOON));
+    let done = mailsolutions_model::sync::SendDone { message: id, outcome: mailsolutions_model::sync::SendOutcome::Sent, ..Default::default() };
+    super::graph_send::send_done_at(&mut w.s.mailbox, w.account, &done, mailsolutions_i18n::Lang::default(), &mut Vec::new(), Some(NOON));
     assert_eq!(w.s.mailbox.follow_ups_pending.len(), 1);
     let touched = crate::undo::touched(&before, &w.s.mailbox);
-    let (out, _) = crate::undo::keep_in_step(before.clone(), &touched, &w.s.mailbox, mailcraft_i18n::Lang::default());
+    let (out, _) = crate::undo::keep_in_step(before.clone(), &touched, &w.s.mailbox, mailsolutions_i18n::Lang::default());
     assert_eq!(out.follow_ups_pending, w.s.mailbox.follow_ups_pending, "the entry stays");
     // And one taken meanwhile is not brought back.
     let mut now = w.s.mailbox.clone();
     now.follow_ups_pending.clear();
-    let (out, _) = crate::undo::keep_in_step(w.s.mailbox.clone(), &touched, &now, mailcraft_i18n::Lang::default());
+    let (out, _) = crate::undo::keep_in_step(w.s.mailbox.clone(), &touched, &now, mailsolutions_i18n::Lang::default());
     assert!(out.follow_ups_pending.is_empty());
 }
 
@@ -728,10 +728,10 @@ fn undo_of_an_unrelated_step_does_not_bring_back_a_reminder_that_ended() {
 fn a_file_with_too_many_or_odd_pending_reminders_is_cut_down_when_repaired() {
     let mut mb = Mailbox::with_local_account("Ann", "ann@example.org");
     let account = mb.accounts[0].id;
-    let entry = |i: usize, id: String| mailcraft_model::PendingFollowUp {
+    let entry = |i: usize, id: String| mailsolutions_model::PendingFollowUp {
         account,
         message_id: id,
-        follow_up: mailcraft_model::FollowUp::default(),
+        follow_up: mailsolutions_model::FollowUp::default(),
         since: i as i64,
     };
     mb.follow_ups_pending = (0..5_000).map(|i| entry(i, format!("m{i}@example.org"))).collect();
@@ -746,8 +746,8 @@ fn a_file_with_too_many_or_odd_pending_reminders_is_cut_down_when_repaired() {
 
 /// A Microsoft account with one message its server has, as `graph_down_flag_tests` makes one.
 fn microsoft() -> (Session, Id) {
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{AccountKind, ServerFolder};
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{AccountKind, ServerFolder};
     let mut mb = Mailbox::with_local_account("Avery", "avery@mail.example");
     let account = mb.accounts[0].id;
     mb.accounts[0].kind = AccountKind::Microsoft;
@@ -820,7 +820,7 @@ fn a_follow_up_on_a_delayed_message_counts_from_when_it_goes_and_a_cancelled_one
     assert_eq!(s.mailbox.message(id).unwrap().flag, FlagStatus::None);
     // It goes at its time (a run later, here): the two days count from that moment.
     let went = NOON + 3 * DAY + 120;
-    let result = mailcraft_model::sync::SyncResult { sent: vec![id], ..Default::default() };
+    let result = mailsolutions_model::sync::SyncResult { sent: vec![id], ..Default::default() };
     assert_eq!(super::account::file_sent(&mut s.mailbox, a, &result, went), 1);
     assert_eq!(s.mailbox.message(id).unwrap().follow_up.unwrap().at, went + 2 * DAY);
     at(&mut s, went + 2 * DAY - 1);

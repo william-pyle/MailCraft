@@ -3,7 +3,7 @@
 //! The automatic replies read from and written to a fake Graph: what is asked, what is sent,
 //! and what a hostile answer comes to.
 
-use mailcraft_model::auto_replies::{AutoReplies, AutoReplyStatus, ExternalAudience, MAX_REPLY_HTML, ZonedTime};
+use mailsolutions_model::auto_replies::{AutoReplies, AutoReplyStatus, ExternalAudience, MAX_REPLY_HTML, ZonedTime};
 use proptest::prelude::*;
 use serde_json::{Value, json};
 

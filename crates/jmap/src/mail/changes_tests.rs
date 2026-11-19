@@ -8,7 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::sync::{JmapChange, JmapChangeDone, JmapOutcome, SendDone};
+use mailsolutions_model::sync::{JmapChange, JmapChangeDone, JmapOutcome, SendDone};
 use proptest::prelude::*;
 use serde_json::json;
 

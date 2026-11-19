@@ -11,13 +11,13 @@
 //! - [`classify`] adds what only the params and the mailbox can tell (`"send": true`, a move into
 //!   the Outbox, a delete in Deleted Items).
 //! - No file on disk is named by an agent: [`file_param`] finds the params that name one, and
-//!   [`check`] refuses them. (`mailcraft-cli mcp --files DIR` reads and writes inside DIR itself
+//!   [`check`] refuses them. (`mailsolutions-cli mcp --files DIR` reads and writes inside DIR itself
 //!   and hands the command `data`.)
 //! - [`Session::run`](crate::Session::run) checks what a command did while [`Session::agent`] is
 //!   set: mail put in an Outbox (which sends it, or, an IMAP account's, holds it for Send Again)
 //!   or gone for good without the grant is undone.
 
-use mailcraft_model::{FolderKind, Id, Mailbox, Task};
+use mailsolutions_model::{FolderKind, Id, Mailbox, Task};
 use serde_json::{Value, json};
 
 pub mod bind;
@@ -645,7 +645,7 @@ const NEVER: &[&str] = &[
     // The owner's own answer to sending the tasks that exist only here to an account's To Do
     // (#632): an agent never gives it, asked or not.
     "tasks.sendLocal",
-    // Everything MailCraft keeps on this computer, gone (#177): only the owner's own click.
+    // Everything MailSolutions keeps on this computer, gone (#177): only the owner's own click.
     "ui.removeAllData",
     // Another program (the file manager) started on the owner's screen, as for an attachment
     // (#460): only ever the owner's own click.
@@ -739,7 +739,7 @@ pub fn file_named(id: &str, params: &Value) -> Option<&'static str> {
 /// The refusal for a file param from an agent.
 pub fn no_paths(id: &str, key: &str) -> String {
     format!(
-        "`{id}` was given `{key}`: agents don't name files on this computer. Pass the content as base64 `data` (and leave out `{key}` to get it back as `data`), or ask the owner to start the server with `mailcraft-cli mcp --files DIR`"
+        "`{id}` was given `{key}`: agents don't name files on this computer. Pass the content as base64 `data` (and leave out `{key}` to get it back as `data`), or ask the owner to start the server with `mailsolutions-cli mcp --files DIR`"
     )
 }
 
@@ -778,10 +778,10 @@ pub fn classify(s: &Session, id: &str, params: &Value) -> Access {
     if server_rule_deletes(s, id, params) {
         return Access::Owner(Class::Delete);
     }
-    // A rule its server has is deleted there, where undo doesn't reach and MailCraft may not be
+    // A rule its server has is deleted there, where undo doesn't reach and MailSolutions may not be
     // able to make it again (#566), as `tasks.delete`; so is one that went to be made there and
     // had no answer, which the server may have.
-    let there = |x: &mailcraft_model::Rule| x.on_server() || x.unanswered;
+    let there = |x: &mailsolutions_model::Rule| x.on_server() || x.unanswered;
     if id == "rules.remove" && p::id(params, "id").is_some_and(|r| s.mailbox.rules.iter().any(|x| x.id == r && there(x))) {
         return Access::Owner(Class::Delete);
     }
@@ -897,7 +897,7 @@ fn new_task_onto(s: &Session, id: &str, params: &Value) -> Option<Id> {
 /// The to-do that `id` would change, when it is in a list shared with other people. The to-do is
 /// found as the command finds it (`id`, else the selected one); one that isn't there is left to
 /// the command, which changes nothing and says so.
-fn shared_task<'a>(s: &'a Session, id: &str, params: &Value) -> Option<&'a mailcraft_model::Task> {
+fn shared_task<'a>(s: &'a Session, id: &str, params: &Value) -> Option<&'a mailsolutions_model::Task> {
     if !matches!(id, "tasks.edit" | "tasks.complete" | "tasks.categorize" | "tasks.delete") {
         return None;
     }
@@ -979,30 +979,30 @@ fn folder_onto_server(s: &Session, folder: Id, from: Option<Id>) -> Option<Id> {
 }
 
 /// [`folder_onto_server`] of a rule's moves.
-fn rule_onto_server(s: &Session, r: &mailcraft_model::Rule, from: Option<Id>) -> Option<Id> {
+fn rule_onto_server(s: &Session, r: &mailsolutions_model::Rule, from: Option<Id>) -> Option<Id> {
     r.actions.iter().find_map(|a| match a {
-        mailcraft_model::Action::MoveTo(f) => folder_onto_server(s, *f, from),
+        mailsolutions_model::Action::MoveTo(f) => folder_onto_server(s, *f, from),
         _ => None,
     })
 }
 
 /// Whether this command puts a rule that deletes mail on its server, or switches one on there:
-/// it runs there whether MailCraft is open or not, undo doesn't reach it, and the agent couldn't
+/// it runs there whether MailSolutions is open or not, undo doesn't reach it, and the agent couldn't
 /// delete it again itself (#566). What a rule with parts not known here does isn't known: it may
 /// delete mail, or send it away.
 fn server_rule_deletes(s: &Session, id: &str, params: &Value) -> bool {
     let named = || p::id(params, "id").and_then(|r| s.mailbox.rules.iter().find(|x| x.id == r));
     // Moving mail into Deleted Items, or a folder under it, is deleting it.
     let binned = |id: &Id| s.mailbox.folders.iter().filter(|f| f.kind == FolderKind::Deleted).any(|f| s.mailbox.subtree(f.id).contains(id));
-    let deletes = |r: &mailcraft_model::Rule| {
+    let deletes = |r: &mailsolutions_model::Rule| {
         !r.known()
             || r.actions.iter().any(|a| match a {
-                mailcraft_model::Action::Delete => true,
-                mailcraft_model::Action::MoveTo(f) => binned(f),
+                mailsolutions_model::Action::Delete => true,
+                mailsolutions_model::Action::MoveTo(f) => binned(f),
                 _ => false,
             })
     };
-    let there = |r: &mailcraft_model::Rule| r.keep == mailcraft_model::Keep::Server;
+    let there = |r: &mailsolutions_model::Rule| r.keep == mailsolutions_model::Keep::Server;
     match id {
         "rules.add" => crate::cmd::rules::rule_from_params(s, params).is_ok_and(|r| there(&r) && deletes(&r)),
         "rules.fromMessage" => crate::cmd::rules::rule_from_message(s, params).is_ok_and(|(r, _)| there(&r) && deletes(&r)),
@@ -1018,7 +1018,7 @@ fn server_rule_deletes(s: &Session, id: &str, params: &Value) -> bool {
 }
 
 /// The account whose mail a rule files, or `None` for a rule for every account's.
-fn one_account(r: &mailcraft_model::Rule) -> Option<Id> {
+fn one_account(r: &mailsolutions_model::Rule) -> Option<Id> {
     (r.account != 0).then_some(r.account)
 }
 
@@ -1162,7 +1162,7 @@ fn verdict(s: &Session, id: &str, params: &Value, allow: &[Class], yes: Option<C
         return Verdict::Refuse(format!("`{id}`: {e}"));
     }
     // The owner is asked about the list the command would change, or about nothing (#504).
-    if matches!(id, "junk.add" | "junk.remove") && p::str(params, "list").and_then(mailcraft_model::JunkList::parse).is_none() {
+    if matches!(id, "junk.add" | "junk.remove") && p::str(params, "list").and_then(mailsolutions_model::JunkList::parse).is_none() {
         return Verdict::Refuse(format!("`{id}` needs `list`: \"safe\" or \"blocked\""));
     }
     if matches!(id, "junk.add" | "junk.remove" | "junk.list")
@@ -1225,7 +1225,7 @@ pub fn needs_owner_for(id: &str, classes: &[Class], asked: bool, what: &str) -> 
     }
     let names = classes.iter().map(|c| c.as_str()).collect::<Vec<_>>().join(",");
     format!(
-        "`{id}` needs the owner ({why}): it would {what}. Only the owner can let an agent do this, by starting the server with `mailcraft-cli mcp --allow {names}`"
+        "`{id}` needs the owner ({why}): it would {what}. Only the owner can let an agent do this, by starting the server with `mailsolutions-cli mcp --allow {names}`"
     )
 }
 
@@ -1244,7 +1244,7 @@ fn quoted(s: &str) -> String {
 // ponytail: always English for now; the session's `interface_language` comes in with the engine's text (slice 4).
 fn plural(n: usize, one: &str, many: &str) -> String {
     let n = u64::try_from(n).unwrap_or(u64::MAX);
-    mailcraft_i18n::fmt(mailcraft_i18n::Lang::English.tn(n, one, many), &[("n", &n.to_string())])
+    mailsolutions_i18n::fmt(mailsolutions_i18n::Lang::English.tn(n, one, many), &[("n", &n.to_string())])
 }
 
 fn messages_text(s: &Session, ids: &[Id]) -> String {
@@ -1295,7 +1295,7 @@ fn event_title(s: &Session, id: &str, params: &Value) -> String {
 
 /// The event a call names, or else the selected one, as the command finds it ([`p::id_strict`],
 /// #553): one named wrongly is none, never the selected one.
-fn named_event<'a>(s: &'a Session, params: &Value) -> Option<&'a mailcraft_model::Event> {
+fn named_event<'a>(s: &'a Session, params: &Value) -> Option<&'a mailsolutions_model::Event> {
     p::id_strict(params, "id").ok()?.or(s.sel.event).and_then(|e| s.mailbox.event(e))
 }
 
@@ -1605,17 +1605,20 @@ fn what_it_does(s: &Session, id: &str, params: &Value) -> String {
         "rules.add" => rule_text(s, params),
         "rules.fromMessage" => match crate::cmd::rules::rule_from_message(s, params) {
             Ok((r, _)) => {
-                let folder = r.actions.iter().find_map(|a| if let mailcraft_model::Action::MoveTo(f) = a { Some(*f) } else { None });
+                let folder = r.actions.iter().find_map(|a| if let mailsolutions_model::Action::MoveTo(f) = a { Some(*f) } else { None });
                 let to = folder.map(|f| quoted(&s.mailbox.folder_path(f))).unwrap_or_else(|| "a folder".to_string());
-                let from = r.conditions.iter().find_map(|c| if let mailcraft_model::Condition::FromContains(t) = c { Some(plain(t)) } else { None });
+                let from =
+                    r.conditions.iter().find_map(|c| if let mailsolutions_model::Condition::FromContains(t) = c { Some(plain(t)) } else { None });
                 let from = quoted(&from.unwrap_or_default());
                 let onto = rule_onto_server(s, &r, one_account(&r)).and_then(|a| s.mailbox.account(a));
                 let made = match onto {
                     Some(a) => format!("make a rule that always moves mail from {from} onto the server of {}, into {to}", clip(&a.email, 80)),
                     None => format!("make a rule that always moves mail from {from} to {to}"),
                 };
-                match s.mailbox.account(r.account).filter(|_| r.keep == mailcraft_model::Keep::Server) {
-                    Some(a) => format!("{made}, kept on the server of {} where it runs whether MailCraft is open or not", quoted(&plain(&a.email))),
+                match s.mailbox.account(r.account).filter(|_| r.keep == mailsolutions_model::Keep::Server) {
+                    Some(a) => {
+                        format!("{made}, kept on the server of {} where it runs whether MailSolutions is open or not", quoted(&plain(&a.email)))
+                    }
                     None => made,
                 }
             }
@@ -1650,7 +1653,7 @@ fn what_it_does(s: &Session, id: &str, params: &Value) -> String {
             let to = account.map(|a| quoted(&plain(&a.email))).unwrap_or_else(|| "a Microsoft account".to_string());
             match r {
                 Some(r) => format!(
-                    "keep the rule {} on the server of {to}, where it runs whether MailCraft is open or not: {}",
+                    "keep the rule {} on the server of {to}, where it runs whether MailSolutions is open or not: {}",
                     quoted(&r.name),
                     rule_words(s, r)
                 ),
@@ -1687,7 +1690,7 @@ fn what_it_does(s: &Session, id: &str, params: &Value) -> String {
             for m in ids.iter().filter_map(|m| s.mailbox.message(*m)) {
                 let address = m.from.email.trim();
                 let entry = if domain { address.rsplit_once('@').map(|(_, d)| format!("@{d}")) } else { Some(address.to_string()) };
-                if let Some(e) = entry.as_deref().and_then(mailcraft_model::junk_entry)
+                if let Some(e) = entry.as_deref().and_then(mailsolutions_model::junk_entry)
                     && !who.contains(&e)
                 {
                     who.push(e);
@@ -1702,12 +1705,12 @@ fn what_it_does(s: &Session, id: &str, params: &Value) -> String {
         }
         "junk.add" | "junk.remove" => {
             // The list as the command reads it; [`check`] refuses a call that names neither.
-            let list = match p::str(params, "list").and_then(mailcraft_model::JunkList::parse) {
-                Some(mailcraft_model::JunkList::Blocked) => "Blocked Senders",
-                Some(mailcraft_model::JunkList::Safe) => "Safe Senders",
+            let list = match p::str(params, "list").and_then(mailsolutions_model::JunkList::parse) {
+                Some(mailsolutions_model::JunkList::Blocked) => "Blocked Senders",
+                Some(mailsolutions_model::JunkList::Safe) => "Safe Senders",
                 None => return format!("run \u{201c}{label}\u{201d} ({id}) on a list that is neither Safe Senders nor Blocked Senders"),
             };
-            let entry = mailcraft_model::junk_entry(st("entry")).unwrap_or_else(|| clip(st("entry"), 80));
+            let entry = mailsolutions_model::junk_entry(st("entry")).unwrap_or_else(|| clip(st("entry"), 80));
             let of = crate::cmd::junk::list_account(s, params)
                 .ok()
                 .and_then(|a| s.mailbox.account(a))
@@ -1743,7 +1746,7 @@ fn what_it_does(s: &Session, id: &str, params: &Value) -> String {
         }
         "calendar.subscribe" => {
             // (The host alone: the rest of an address may hold a secret.)
-            let host = mailcraft_model::subscription::check_address(st("address")).map(|a| a.host).unwrap_or_default();
+            let host = mailsolutions_model::subscription::check_address(st("address")).map(|a| a.host).unwrap_or_default();
             format!(
                 "subscribe to the calendar on the web at the host {} (its file is fetched from then on, every hour and on Send/Receive, and kept read-only under Other Calendars); the address is kept like a password",
                 clip(&host, 80)
@@ -1765,7 +1768,7 @@ fn what_it_does(s: &Session, id: &str, params: &Value) -> String {
                 .ok()
                 .flatten()
                 .and_then(|c| s.mailbox.calendar(c))
-                .and_then(|c| mailcraft_model::remote::opened_address(&c.origin.id))
+                .and_then(|c| mailsolutions_model::remote::opened_address(&c.origin.id))
                 .unwrap_or_else(|| st("address").to_string());
             format!("remove the calendar of {} opened by address, and its events from this computer", clip(&named, 80))
         }
@@ -1938,35 +1941,35 @@ const SHARED_CATEGORY: &str = ", which to-dos in a To Do list shared with other 
 const SHARED_TASK: &str = ", which is in a To Do list shared with other people: they see the change";
 
 /// A rule as it would be made, in words, naming the folders by their paths.
-fn rule_words(s: &Session, r: &mailcraft_model::Rule) -> String {
+fn rule_words(s: &Session, r: &mailsolutions_model::Rule) -> String {
     let addresses = s.mailbox.rule_reads_addresses(r);
     let when = r.conditions.iter().map(|c| plain(&c.describe_as(addresses))).collect::<Vec<_>>().join(" and ");
     let mut then: Vec<String> = r
         .actions
         .iter()
         .map(|a| match a {
-            mailcraft_model::Action::MoveTo(f) if s.mailbox.folder(*f).is_some() => {
+            mailsolutions_model::Action::MoveTo(f) if s.mailbox.folder(*f).is_some() => {
                 match folder_onto_server(s, *f, None).and_then(|a| s.mailbox.account(a)) {
                     Some(a) => format!("move it onto the server of {}, into {}", clip(&a.email, 80), plain(&s.mailbox.folder_path(*f))),
                     None => format!("move it to {}", plain(&s.mailbox.folder_path(*f))),
                 }
             }
-            mailcraft_model::Action::MoveTo(_) => "move it to a folder that is gone".to_string(),
+            mailsolutions_model::Action::MoveTo(_) => "move it to a folder that is gone".to_string(),
             other => plain(&other.describe()),
         })
         .collect();
     if let Some(server) = r.server.as_ref().filter(|s| !s.unknown.is_empty()) {
-        then.push(format!("and more that MailCraft can't show ({})", some(&server.unknown, 6)));
+        then.push(format!("and more that MailSolutions can't show ({})", some(&server.unknown, 6)));
     }
     format!("when {when}: {}", then.join(", "))
 }
 
 fn rule_text(s: &Session, params: &Value) -> String {
     match crate::cmd::rules::rule_from_params(s, params) {
-        Ok(r) if r.keep == mailcraft_model::Keep::Server => {
+        Ok(r) if r.keep == mailsolutions_model::Keep::Server => {
             let on = s.mailbox.account(r.account).map(|a| quoted(&plain(&a.email))).unwrap_or_default();
             format!(
-                "create the rule {}, kept on the server of {on} where it runs whether MailCraft is open or not: {}",
+                "create the rule {}, kept on the server of {on} where it runs whether MailSolutions is open or not: {}",
                 quoted(&r.name),
                 rule_words(s, &r)
             )

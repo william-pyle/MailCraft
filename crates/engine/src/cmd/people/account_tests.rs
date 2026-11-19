@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Each account's contacts apart (#631).
 
-use mailcraft_model::remote::{ContactsDownload, RemoteContact};
-use mailcraft_model::{Account, AccountChoice, AccountKind, Id, Labeled};
+use mailsolutions_model::remote::{ContactsDownload, RemoteContact};
+use mailsolutions_model::{Account, AccountChoice, AccountKind, Id, Labeled};
 use serde_json::{Value, json};
 
 use super::{contact_accounts, shown_account, sorted, sorted_of};
@@ -158,8 +158,8 @@ fn add_to_contacts_shows_the_contact_wherever_it_is() {
 
     // A sender who is a contact of an account already: the list moves to that account.
     let mut known = (**s.mailbox.messages.values().next().unwrap()).clone();
-    known.from = mailcraft_model::Address::new("Wren Work", "w1@example.org");
-    *s.mailbox.message_mut(unknown).unwrap() = mailcraft_model::Message { id: unknown, ..known };
+    known.from = mailsolutions_model::Address::new("Wren Work", "w1@example.org");
+    *s.mailbox.message_mut(unknown).unwrap() = mailsolutions_model::Message { id: unknown, ..known };
     run(&mut s, "view.peopleAccount", json!({"value": home}));
     assert_eq!(run(&mut s, "people.fromMessage", json!({"id": unknown}))["existing"], true);
     assert_eq!((shown_account(&s), s.sel.contact), (AccountChoice::Account(work), Some(at_work)));

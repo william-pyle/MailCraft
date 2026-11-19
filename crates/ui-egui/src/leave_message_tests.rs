@@ -6,8 +6,8 @@
 //! Draft open another message beside it and ask nothing (#286).
 
 use egui::Key;
-use mailcraft_engine::Session;
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::{Value, json};
 
 use super::*;
@@ -18,7 +18,7 @@ use crate::people_view::testing;
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a
 }
@@ -297,7 +297,7 @@ fn the_question_opened_by_name_runs_nothing_after_it() {
 #[test]
 fn another_mailbox_asks_first() {
     let file = std::env::temp_dir().join(format!("mc-470-{}.mailcraft", std::process::id()));
-    mailcraft_engine::store::save(&file, &mailcraft_model::Mailbox::with_local_account("", "")).unwrap();
+    mailsolutions_engine::store::save(&file, &mailsolutions_model::Mailbox::with_local_account("", "")).unwrap();
     let open = json!({"path": file.to_string_lossy()});
     for (id, params) in [("file.new", json!({})), ("file.open", open)] {
         for answer in ["cancel", "save", "discard"] {

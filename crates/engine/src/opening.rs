@@ -268,9 +268,10 @@ pub const BLOCKED: &[&str] = &[
     "its",
     "cdr",
     "smi",
-    // MailCraft's own mailbox: its accounts name servers, so one sent in mail is saved, never
+    // MailSolutions's own mailbox: its accounts name servers, so one sent in mail is saved, never
     // opened from the message.
     "mailcraft",
+    "mailsolutions",
 ];
 
 /// Office files that can carry macros.
@@ -343,7 +344,7 @@ pub fn verdict(name: &str) -> Verdict {
 pub fn blocked_message(name: &str) -> String {
     let shown: String = file_name(name).chars().take(60).collect();
     format!(
-        "MailCraft doesn't open {shown}: a program, a script or a file of no known kind sent in mail can harm the computer. If you trust it, save it with Save As."
+        "MailSolutions doesn't open {shown}: a program, a script or a file of no known kind sent in mail can harm the computer. If you trust it, save it with Save As."
     )
 }
 
@@ -559,7 +560,7 @@ mod tests {
             "help.hpj",
             "group.grp",
             "backup.mailcraft",
-            "Backup.MAILCRAFT",
+            "Backup.MAILSOLUTIONS",
             "look.deskthemepack",
             "x.AFPLOC",
             "x.ftploc",

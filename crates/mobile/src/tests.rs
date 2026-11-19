@@ -4,8 +4,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::task::{Context, Poll, Waker};
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Attachment, FolderKind, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Attachment, FolderKind, Message};
 use serde_json::{Value, json};
 
 use crate::blocks::{BlockKindView, BlockView};
@@ -256,7 +256,7 @@ fn pictures_core() -> (Arc<Core>, u64) {
         encode(PNG)
     );
     let core = Core::start(FakePlatform::new(), move || {
-        let mut mb = mailcraft_model::Mailbox::with_local_account("Avery", "avery@example.org");
+        let mut mb = mailsolutions_model::Mailbox::with_local_account("Avery", "avery@example.org");
         let account = mb.accounts[0].id;
         let folder = mb.folder_of_kind(account, FolderKind::Inbox).unwrap();
         let mut m = Message { account, folder, subject: "Pictures".into(), ..Message::default() };
@@ -333,7 +333,7 @@ fn records_stay_bounded_for_a_deep_and_wide_message() {
     let html = format!("{}x{}", "<table><tr><td>".repeat(40), "</td></tr></table>".repeat(40));
     let wide = format!("<table><tr>{}</tr></table>", "<td>c</td>".repeat(500));
     let core = Core::start(FakePlatform::new(), move || {
-        let mut mb = mailcraft_model::Mailbox::with_local_account("Avery", "avery@example.org");
+        let mut mb = mailsolutions_model::Mailbox::with_local_account("Avery", "avery@example.org");
         let account = mb.accounts[0].id;
         let folder = mb.folder_of_kind(account, FolderKind::Inbox).unwrap();
         for (subject, html) in [("deep", html.clone()), ("wide", wide.clone())] {
@@ -369,7 +369,7 @@ fn a_message_window_leaves_the_selection_and_the_list_cache_of_the_view_alone() 
 #[test]
 fn a_message_with_a_big_attachment_reads_without_the_attachment() {
     let core = Core::start(FakePlatform::new(), || {
-        let mut mb = mailcraft_model::Mailbox::with_local_account("Avery", "avery@example.org");
+        let mut mb = mailsolutions_model::Mailbox::with_local_account("Avery", "avery@example.org");
         let account = mb.accounts[0].id;
         let folder = mb.folder_of_kind(account, FolderKind::Inbox).unwrap();
         let mut m = Message { account, folder, subject: "Big".into(), ..Message::default() };

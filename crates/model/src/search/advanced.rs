@@ -12,7 +12,7 @@
 
 use std::ops::{Bound, Range};
 
-use mailcraft_time::Date;
+use mailsolutions_time::Date;
 
 use super::{Kind, Query, is_keyword, keyword_value, opening, scan, starts_with_keyword_at, tokens};
 use crate::Importance;

@@ -7,7 +7,7 @@
 //! ([`Font`]), links to `http`,
 //! `https`, `mailto` and `tel` addresses, and paragraphs that are plain, bulleted or numbered.
 //! Nothing else can be expressed, so nothing else can be sent: pasted formatting is reduced to
-//! this set before it gets here (`mailcraft_mime_model::rich`), and the HTML that goes out is written
+//! this set before it gets here (`mailsolutions_mime_model::rich`), and the HTML that goes out is written
 //! from it.
 //!
 //! A picture is a run of its own holding one [`OBJECT`] character and the picture's id
@@ -55,7 +55,7 @@ pub const MAX_LEVEL: u8 = 7;
 pub const OBJECT: char = '\u{fffc}';
 
 /// A font the composer offers: widely installed families, written as their names with fallbacks.
-/// No font is shipped with MailCraft.
+/// No font is shipped with MailSolutions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Font {
@@ -203,7 +203,7 @@ const UNSAFE_SCHEMES: [&str; 5] = ["javascript", "vbscript", "data", "file", "ci
 /// (an attachment reference, not an address), the scheme in any letter case; at most
 /// [`MAX_LINK`] bytes, nothing invisible or blank inside. `http` and `https` need a host. Spaces
 /// around it are dropped; anything else is `None`. This is only for what the owner writes: the
-/// links of received mail are followed by a narrower rule (`mailcraft_link`).
+/// links of received mail are followed by a narrower rule (`mailsolutions_link`).
 pub fn safe_link(url: &str) -> Option<String> {
     let url = url.trim_matches(' ');
     if url.is_empty() || url.len() > MAX_LINK || url.chars().any(|c| c.is_control() || c.is_whitespace()) {
@@ -219,7 +219,7 @@ pub fn safe_link(url: &str) -> Option<String> {
     }
     let web = ["http", "https"].iter().any(|s| scheme.eq_ignore_ascii_case(s));
     let ok = if web {
-        rest.strip_prefix("//").is_some_and(|host| !host.is_empty() && !host.starts_with('/')) && mailcraft_link::WebLink::parse(url).is_some()
+        rest.strip_prefix("//").is_some_and(|host| !host.is_empty() && !host.starts_with('/')) && mailsolutions_link::WebLink::parse(url).is_some()
     } else {
         !rest.is_empty()
     };

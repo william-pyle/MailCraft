@@ -15,12 +15,12 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::remote_tasks::{
+use mailsolutions_model::remote_tasks::{
     MAX_TASK_LISTS, MAX_TASK_OPS, MAX_TASKS, MAX_TASKS_PER_LIST, RemoteTask, RemoteTaskList, TaskOpKind, TaskOutcome, TaskResult, TasksDownload,
     TasksUpload, TasksUploaded,
 };
-use mailcraft_model::{Importance, TaskPatch};
-use mailcraft_time::{DateTime, Timestamp, Zone};
+use mailsolutions_model::{Importance, TaskPatch};
+use mailsolutions_time::{DateTime, Timestamp, Zone};
 use serde_json::{Value, json};
 
 use super::{Doing, Graph, MAX_DATE, MAX_WRITTEN, PAGE_SIZE, WRITE_TIMEOUT, graph_zone, instant, nonsense, text, when};
@@ -91,7 +91,7 @@ pub(super) fn tasks_at(base: &str, token: &str, zone: Zone) -> Result<TasksDownl
         match read {
             Ok(whole) => download.lists.push(RemoteTaskList { id: list.clone(), complete: whole && unread == 0, shared }),
             // A list that went while it was being read is not there any more: the next run knows.
-            Err(NetError::Proto(mailcraft_proto::ProtoError::Rejected(_))) => {
+            Err(NetError::Proto(mailsolutions_proto::ProtoError::Rejected(_))) => {
                 download.lists.push(RemoteTaskList { id: list.clone(), complete: false, shared });
             }
             Err(e) => return Err(e),
@@ -121,11 +121,11 @@ pub(super) fn valid_id(id: &str) -> bool {
 /// - a time in a zone that can't be placed is the day written, as it always was.
 ///
 /// Instants (reminder, done) are read with their own zone by `when`.
-fn day_of(value: Option<&Value>, owner: Zone) -> Option<mailcraft_time::Date> {
+fn day_of(value: Option<&Value>, owner: Zone) -> Option<mailsolutions_time::Date> {
     let value = value?;
     let written = text(value, "dateTime");
-    let day = mailcraft_time::Date::parse_iso(written.get(..10)?)?;
-    let Some((wall, offset)) = Some(written).filter(|text| text.len() <= MAX_DATE).and_then(mailcraft_time::parse_iso) else {
+    let day = mailsolutions_time::Date::parse_iso(written.get(..10)?)?;
+    let Some((wall, offset)) = Some(written).filter(|text| text.len() <= MAX_DATE).and_then(mailsolutions_time::parse_iso) else {
         return Some(day);
     };
     if offset.is_none() && wall.seconds_of_day() == 0 {
@@ -171,7 +171,7 @@ pub(super) fn task_of(entry: &Value, list: &str, zone: Zone) -> Option<RemoteTas
         if body.map(|b| text(b, "contentType")).is_some_and(|kind| kind.eq_ignore_ascii_case("html")) { plain(content) } else { content.to_string() };
     let completed = if text(entry, "status") == "completed" {
         // (A completed task that doesn't say when is completed when it was last changed.)
-        Some(when(entry.get("completedDateTime")).or_else(|| instant(text(entry, "lastModifiedDateTime"))).unwrap_or_else(mailcraft_time::now))
+        Some(when(entry.get("completedDateTime")).or_else(|| instant(text(entry, "lastModifiedDateTime"))).unwrap_or_else(mailsolutions_time::now))
     } else {
         None
     };
@@ -199,7 +199,7 @@ pub(super) fn task_of(entry: &Value, list: &str, zone: Zone) -> Option<RemoteTas
 /// knows it, so that Microsoft To Do shows the same day whichever zone it shows it in (#809); for a
 /// zone Graph has no name for (an offset, the system's when it has no name), and for a day whose
 /// midnight the clocks skip there (a wall time that never is), that midnight in UTC.
-fn date_time(day: mailcraft_time::Date, owner: Zone) -> Value {
+fn date_time(day: mailsolutions_time::Date, owner: Zone) -> Value {
     let midnight = DateTime::at_midnight(day);
     let at = owner.instant(midnight);
     match graph_zone(&owner.id()) {
@@ -355,8 +355,8 @@ pub(super) fn push_tasks_at(base: &str, token: &str, upload: &TasksUpload, zone:
             }
             status => {
                 done.result = TaskResult::Refused;
-                done.error = match super::refusal(Doing::Tasks, &reply, &[token, sent], mailcraft_time::now()) {
-                    NetError::Proto(mailcraft_proto::ProtoError::Rejected(why)) => why.to_string(),
+                done.error = match super::refusal(Doing::Tasks, &reply, &[token, sent], mailsolutions_time::now()) {
+                    NetError::Proto(mailsolutions_proto::ProtoError::Rejected(why)) => why.to_string(),
                     e => e.to_string(),
                 };
                 if done.error.is_empty() {

@@ -3,7 +3,7 @@
 //! A message's colours with high contrast on: 7:1 against the paper, and kept rather than stripped.
 
 use egui::Color32;
-use mailcraft_html::Rgb;
+use mailsolutions_html::Rgb;
 
 use super::colors::{HIGH_CONTRAST, Paper, c32, contrast, readable_strong};
 use crate::theme::{Accent, Tokens};

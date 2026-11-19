@@ -5,7 +5,7 @@
 
 use std::fs;
 
-use mailcraft_model::{Address, Body, Mailbox, Message, NOT_DOWNLOADED};
+use mailsolutions_model::{Address, Body, Mailbox, Message, NOT_DOWNLOADED};
 use serde_json::Value;
 
 use super::*;
@@ -14,7 +14,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-store-size-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-store-size-{}-{name}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         Temp(dir)

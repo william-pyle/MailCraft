@@ -4,13 +4,13 @@
 //! and let go over a category's row in the folder pane or its tab above the Inbox, and the
 //! message menu's Move to Category with the five. Each runs `mail.setGmailCategory`.
 //!
-//! While moves are switched off (`mailcraft_engine::gmail::GMAIL_CATEGORY_MOVES`) none of it is
+//! While moves are switched off (`mailsolutions_engine::gmail::GMAIL_CATEGORY_MOVES`) none of it is
 //! there: a row or a tab takes nothing, and the menu has no such item. Mail of an account that
 //! signs in with an app password has the item greyed, with a note that it needs Google sign-in.
 
 use egui::{Rect, Stroke, Ui, vec2};
-use mailcraft_engine::gmail::{NEEDS_GOOGLE_SIGN_IN, why_not_movable};
-use mailcraft_model::{GmailCategory, Id};
+use mailsolutions_engine::gmail::{NEEDS_GOOGLE_SIGN_IN, why_not_movable};
+use mailsolutions_model::{GmailCategory, Id};
 use serde_json::json;
 
 use crate::MailApp;

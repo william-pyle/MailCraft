@@ -32,7 +32,7 @@ use std::sync::Arc;
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 use egui::{Rect, Ui, vec2};
-use mailcraft_model::{Address, Message};
+use mailsolutions_model::{Address, Message};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -54,7 +54,7 @@ const SIDE: u32 = 128;
 /// Longest side of a picture taken, in pixels: it is decoded whole on the window's thread.
 const MAX_SIDE: u32 = 1024;
 /// How long the host is waited on for one address, in milliseconds: it may try three places,
-/// each for up to 30 s (`mailcraft_net::pictures::PATIENCE`).
+/// each for up to 30 s (`mailsolutions_net::pictures::PATIENCE`).
 const PATIENCE_MS: f64 = 100_000.0;
 
 /// What is known of one address's picture.
@@ -202,7 +202,7 @@ pub fn picture(app: &mut MailApp, ctx: &egui::Context, m: &Message, who: &Addres
         }
         state.decoded = Some(frame);
         *look = match images::decode_icon(bytes, SIDE) {
-            Some(image) => Look::Ready(ctx.load_texture("mailcraft-sender-image", image, egui::TextureOptions::LINEAR)),
+            Some(image) => Look::Ready(ctx.load_texture("mailsolutions-sender-image", image, egui::TextureOptions::LINEAR)),
             None => Look::Missing,
         };
     }

@@ -4,7 +4,7 @@
 //! smaller, in the reading pane, and Ctrl with the wheel over it steps it.
 
 use egui::vec2;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::kept;
@@ -16,7 +16,7 @@ const NOW: i64 = 1_791_993_600;
 type Window = egui_kittest::Harness<'static, MailApp>;
 
 fn window() -> Window {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     let mut harness = egui_kittest::Harness::builder()

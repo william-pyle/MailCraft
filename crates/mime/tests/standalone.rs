@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The reader on its own types, reusable outside the client (#1235): bytes in, the crate's own
-//! [`mailcraft_mime::Message`] out, written back by the same crate.
+//! [`mailsolutions_mime::Message`] out, written back by the same crate.
 
-use mailcraft_mime::{Address, FlagStatus, Importance, Message, WriteOptions, parse, write};
+use mailsolutions_mime::{Address, FlagStatus, Importance, Message, WriteOptions, parse, write};
 
 #[test]
 fn a_message_reads_into_the_crates_own_types() {
@@ -25,7 +25,7 @@ fn what_is_written_reads_back() {
     let m = Message {
         from: Address { name: "Ada".into(), email: "ada@example.org".into() },
         subject: "Grüße".into(),
-        body: mailcraft_mime::Body { text: "Hello\n".into(), html: None },
+        body: mailsolutions_mime::Body { text: "Hello\n".into(), html: None },
         ..Message::default()
     };
     let back = parse(&write(&m, &WriteOptions::default()));
@@ -36,5 +36,5 @@ fn what_is_written_reads_back() {
 #[test]
 fn the_crate_does_not_depend_on_the_clients_model() {
     let manifest = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml")).unwrap();
-    assert!(!manifest.contains("mailcraft-model"), "{manifest}");
+    assert!(!manifest.contains("mailsolutions-model"), "{manifest}");
 }

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's own notes in a message's kept headers stay in the mailbox (#505): what was
+//! MailSolutions's own notes in a message's kept headers stay in the mailbox (#505): what was
 //! answered to a meeting and the file a message was opened from are never written into a file,
 //! an mbox, a server's copy or what is sent, and a message can't bring the second in. What tells
 //! another program a message is only its header (`X-MailCraft-Not-Downloaded`) still goes, and the
@@ -27,7 +27,7 @@ fn message() -> Message {
 }
 
 #[test]
-fn mailcrafts_own_notes_are_never_written_out() {
+fn mailsolutionss_own_notes_are_never_written_out() {
     let m = message();
     for out in [
         String::from_utf8(write(&m, &WriteOptions::default())).unwrap(),
@@ -69,17 +69,17 @@ fn a_message_cant_bring_in_the_pst_note_and_it_is_never_written() {
 fn a_copys_marker_is_written_into_that_copy_alone() {
     let mut m = message();
     // One a copy carried on the server it came down from.
-    m.headers.push((PLACE_HEADER.into(), "mailcraft-place-1-2-0000000000000003".into()));
+    m.headers.push((PLACE_HEADER.into(), "mailsolutions-place-1-2-0000000000000003".into()));
     for out in
         [String::from_utf8(write(&m, &WriteOptions::default())).unwrap(), String::from_utf8(write_mbox(&[&m], &WriteOptions::default())).unwrap()]
     {
         assert!(!out.to_ascii_lowercase().contains("x-mailcraft-place"), "{out}");
     }
-    let placed = String::from_utf8(write_placed(&m, &WriteOptions::default(), "mailcraft-place-4-5-0000000000000006")).unwrap();
-    assert!(placed.starts_with("X-MailCraft-Place: mailcraft-place-4-5-0000000000000006\r\n"), "{placed}");
+    let placed = String::from_utf8(write_placed(&m, &WriteOptions::default(), "mailsolutions-place-4-5-0000000000000006")).unwrap();
+    assert!(placed.starts_with("X-MailCraft-Place: mailsolutions-place-4-5-0000000000000006\r\n"), "{placed}");
     assert_eq!(placed.matches("X-MailCraft-Place").count(), 1, "{placed}");
     assert!(!placed.contains("0000000000000003"), "{placed}");
-    assert!(carries_place(placed.as_bytes(), "mailcraft-place-4-5-0000000000000006"));
+    assert!(carries_place(placed.as_bytes(), "mailsolutions-place-4-5-0000000000000006"));
 }
 
 #[test]

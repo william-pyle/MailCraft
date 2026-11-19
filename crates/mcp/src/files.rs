@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! `mailcraft-cli mcp --files DIR`: the one folder an agent may name files in.
+//! `mailsolutions-cli mcp --files DIR`: the one folder an agent may name files in.
 //!
-//! Without it, a param that names a file is refused (`mailcraft_engine::agent::file_param`). With
+//! Without it, a param that names a file is refused (`mailsolutions_engine::agent::file_param`). With
 //! it, the server itself reads and writes inside DIR and hands the command `data`, so no command
 //! ever opens a path an agent chose:
 //! - a path is taken relative to DIR (an absolute one must lie in it); `..` is refused outright;
@@ -15,7 +15,7 @@
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
-use mailcraft_engine::opening::is_risky;
+use mailsolutions_engine::opening::is_risky;
 
 /// Largest file read for an agent.
 pub const MAX_READ: u64 = 64 << 20;
@@ -42,7 +42,7 @@ fn bad_name(name: &str) -> bool {
 fn extension(name: &str) -> Option<String> {
     // The engine's one reader (ASCII fold, trailing dots and spaces dropped) so that the list
     // and the fold are the opener's own.
-    Some(mailcraft_engine::opening::extension(name)).filter(|e| !e.is_empty())
+    Some(mailsolutions_engine::opening::extension(name)).filter(|e| !e.is_empty())
 }
 
 impl FilesDir {
@@ -129,7 +129,7 @@ impl FilesDir {
     /// Write a new file (never over one that is there, never through a link). What an agent
     /// saves came from mail: it is marked as from the Internet, as the owner's saves are (AU3-V6).
     pub fn write(&self, t: &Target, bytes: &[u8]) -> Result<(), String> {
-        mailcraft_engine::mark::write_new_from_mail(&t.path, bytes).map_err(|e| {
+        mailsolutions_engine::mark::write_new_from_mail(&t.path, bytes).map_err(|e| {
             if e.kind() == std::io::ErrorKind::AlreadyExists {
                 format!("{} already exists; nothing is overwritten for an agent", t.given)
             } else {
@@ -144,7 +144,7 @@ mod tests {
     use super::*;
 
     fn dir(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("mailcraft-mcp-files-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("mailsolutions-mcp-files-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d

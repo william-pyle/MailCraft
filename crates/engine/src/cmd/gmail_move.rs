@@ -11,7 +11,7 @@
 
 use std::collections::{BTreeSet, HashSet};
 
-use mailcraft_model::{GmailCategory, Id, Message};
+use mailsolutions_model::{GmailCategory, Id, Message};
 use serde_json::{Value, json};
 
 use super::{bad, fail, select_after_removal, targets_whole};

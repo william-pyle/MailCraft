@@ -10,7 +10,7 @@
 //!   inherit`, `azure/login`, a keychain import, or the `release` environment) also runs cargo,
 //!   rustup, rustc, trunk or cross, sets up a Rust toolchain, restores a cache, uses a local action
 //!   (this check can't see into one; a reusable workflow under `.github/workflows/` is checked
-//!   itself), runs a program built here (`target/…`, xtask, the MailCraft programs), calls a
+//!   itself), runs a program built here (`target/…`, xtask, the MailSolutions programs), calls a
 //!   packaging script without the flags that keep it from building and from running what was
 //!   built, or runs a script from inside `packaging/` that isn't one of the signing scripts;
 //! - a workflow or job asks for `permissions: read-all` or `write-all`;
@@ -22,7 +22,14 @@ use std::path::Path;
 
 /// Secrets that aren't signing material: the token every job has, and the Google desktop client,
 /// which is compiled into the programs anyway (`.github/workflows/package.yml`).
-const NOT_SIGNING: &[&str] = &["GITHUB_TOKEN", "MAILCRAFT_GOOGLE_CLIENT_ID", "MAILCRAFT_GOOGLE_CLIENT_SECRET"];
+const NOT_SIGNING: &[&str] = &[
+    "GITHUB_TOKEN",
+    "MAILSOLUTIONS_GOOGLE_CLIENT_ID",
+    "MAILSOLUTIONS_GOOGLE_CLIENT_SECRET",
+    // Existing repository bindings passed to the renamed reusable workflow.
+    "MAILCRAFT_GOOGLE_CLIENT_ID",
+    "MAILCRAFT_GOOGLE_CLIENT_SECRET",
+];
 
 /// What gives a job signing material, besides a secret and the `release` environment.
 const KEYED: &[(&str, &str)] = &[
@@ -45,10 +52,10 @@ const BUILT: &[&str] = &[
     "target/",
     "target\\",
     "xtask",
-    "mailcraft-cli",
-    "mailcraft.exe",
-    "/release/mailcraft",
-    "MacOS/MailCraft",
+    "mailsolutions-cli",
+    "mailsolutions.exe",
+    "/release/mailsolutions",
+    "MacOS/MailSolutions",
     "xvfb-run",
     "actions/cache",
 ];

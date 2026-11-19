@@ -16,26 +16,26 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use mailcraft_mime_model::WriteOptions;
-use mailcraft_model::gmail::tidy_labels;
-use mailcraft_model::sync::{
+use mailsolutions_mime_model::WriteOptions;
+use mailsolutions_model::gmail::tidy_labels;
+use mailsolutions_model::sync::{
     FolderDelta, FolderState, GmailLabels, GmailSorted, MAX_GMAIL_MOVES, RemoteFlags, RemoteOp, SyncPhase, SyncRequest, SyncResult, SyncStage,
     SyncStep,
 };
-use mailcraft_model::{Account, Body, FlagStatus, FolderKind, GmailCategory, Id, Message, OAuthProvider, Security, Server};
-use mailcraft_proto::ProtoError;
-use mailcraft_proto::imap::{Fetched, FolderStatus, Imap, Mailbox, uid_sets};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::{Account, Body, FlagStatus, FolderKind, GmailCategory, Id, Message, OAuthProvider, Security, Server};
+use mailsolutions_proto::ProtoError;
+use mailsolutions_proto::imap::{Fetched, FolderStatus, Imap, Mailbox, uid_sets};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 
 use crate::push::push;
 use crate::send::{Envelope, dated, deliver, open_smtp_with};
 use crate::transport::{self, Patience, Service, Stream};
 use crate::{NetError, kinds, not_signed_in, scrub};
-use mailcraft_i18n::{Arg, Text, said};
+use mailsolutions_i18n::{Arg, Text, said};
 
 /// Most mailboxes read in one run (#991): as many as a listing of a Microsoft account's folders
 /// holds.
-const MAX_FOLDERS: usize = mailcraft_model::sync::MAX_LISTED_FOLDERS;
+const MAX_FOLDERS: usize = mailsolutions_model::sync::MAX_LISTED_FOLDERS;
 /// Most message bytes downloaded in one run whose answer is kept whole ([`sync`]); the rest
 /// comes with the next one.
 const MAX_RUN_BYTES: usize = 256 * 1024 * 1024;
@@ -48,7 +48,7 @@ const MAX_MESSAGE: u64 = 25 * 1024 * 1024;
 /// (#911); older ones keep what they had.
 const MAX_GMAIL_SORTED: usize = 200_000;
 /// Most messages of a Gmail account's Inbox looked through by one of Gmail's searches.
-const MAX_GMAIL_FOUND: usize = mailcraft_proto::imap::MAX_GMAIL_FOUND;
+const MAX_GMAIL_FOUND: usize = mailsolutions_proto::imap::MAX_GMAIL_FOUND;
 /// Most messages of one mailbox downloaded again in one run (#650).
 const MAX_AGAIN: usize = 100;
 /// Most new messages handed over in one piece, and most bytes of them...
@@ -58,8 +58,8 @@ const BATCH_BYTES: usize = 4 * 1024 * 1024;
 const BATCH_WAIT: Duration = Duration::from_secs(1);
 /// The header a message kept without its text has, for a program to know it by: its size on
 /// the server, in bytes.
-const NOT_DOWNLOADED: &str = mailcraft_model::NOT_DOWNLOADED;
-const NOT_DOWNLOADED_NOTE: &str = mailcraft_model::NOT_DOWNLOADED_NOTE;
+const NOT_DOWNLOADED: &str = mailsolutions_model::NOT_DOWNLOADED;
+const NOT_DOWNLOADED_NOTE: &str = mailsolutions_model::NOT_DOWNLOADED_NOTE;
 
 /// How far one run goes, and how its answer is cut into pieces.
 #[derive(Clone, Debug)]
@@ -399,7 +399,7 @@ impl Host {
         let Some(server) = &account.incoming else { return Host::default() };
         let host = server.host.trim().trim_end_matches('.').to_ascii_lowercase();
         let microsoft = is_microsoft_host(&host);
-        let gmail = mailcraft_model::is_gmail_host(&host);
+        let gmail = mailsolutions_model::is_gmail_host(&host);
         Host { files_sent: microsoft || gmail, microsoft, gmail }
     }
 }
@@ -454,8 +454,8 @@ fn file_sent(imap: &mut Imap<Stream<'_>>, plan: &[(&Mailbox, FolderKind)], sent:
     };
     for (at, message) in sent.iter().enumerate() {
         // The sender's own copy says who got a blind copy.
-        let options = WriteOptions { include_bcc: true, offset_minutes: mailcraft_time::local_offset_minutes(message.date) };
-        if let Err(e) = imap.append(&mailbox.raw, &["\\Seen"], &mailcraft_mime_model::write(message, &options)) {
+        let options = WriteOptions { include_bcc: true, offset_minutes: mailsolutions_time::local_offset_minutes(message.date) };
+        if let Err(e) = imap.append(&mailbox.raw, &["\\Seen"], &mailsolutions_mime_model::write(message, &options)) {
             let e = NetError::from(e);
             result.problem(said!(
                 "Couldn't keep a copy of \"{subject}\" on the server: {error}",
@@ -599,7 +599,7 @@ fn planned<'a>(mailboxes: &'a [Mailbox], tied: &[(&str, FolderKind)], microsoft:
 /// Each folder's parent is found by its name in an index made in one pass over the folders read
 /// (#991), the first of a name being the one: searching them all for each folder would be a
 /// hundred million comparisons at 10,000 folders.
-fn listed(plan: &[(&Mailbox, FolderKind)]) -> Vec<mailcraft_model::sync::ListedFolder> {
+fn listed(plan: &[(&Mailbox, FolderKind)]) -> Vec<mailsolutions_model::sync::ListedFolder> {
     let read = plan.get(..plan.len().min(MAX_FOLDERS)).unwrap_or_default();
     // Where each name first comes, and where the first Inbox under any spelling does.
     let mut by_name: HashMap<&str, usize> = HashMap::with_capacity(read.len());
@@ -630,7 +630,7 @@ fn listed(plan: &[(&Mailbox, FolderKind)]) -> Vec<mailcraft_model::sync::ListedF
         };
         let parent = at.and_then(|at| read.get(at)).map(|(other, _)| kinds::remote_name(other)).unwrap_or_default();
         let name = if leaf.is_empty() || (parent.is_empty() && !above.is_empty()) { name } else { leaf };
-        out.push(mailcraft_model::sync::ListedFolder { remote, kind: *kind, parent, name: name.to_string() });
+        out.push(mailsolutions_model::sync::ListedFolder { remote, kind: *kind, parent, name: name.to_string() });
     }
     out
 }
@@ -864,7 +864,7 @@ fn unchanged(state: &FolderState, now: FolderStatus, limit: u32) -> bool {
 /// had its turn, so that one stale id costs a few requests and the rest still go this run, all of
 /// it at most `MAX_GMAIL_REQUESTS`. A message refused on its own goes back as refused
 /// ([`SyncResult::gmail_refused`]): the engine asks again at the next run, and after
-/// [`mailcraft_model::gmail::MAX_GMAIL_REFUSALS`] refusals gives the move up. Moves left
+/// [`mailsolutions_model::gmail::MAX_GMAIL_REFUSALS`] refusals gives the move up. Moves left
 /// when the requests run out go back as unsent ([`SyncResult::gmail_unsent`]) and wait for the
 /// next run. A token or a permission Gmail doesn't take, Gmail busy or out of reach stop the
 /// moves for this run, and that is said once.
@@ -929,7 +929,7 @@ fn gmail_moves(run: &mut Run, host: Host) {
 /// Where to split a batch sorted by Gmail's id in two: the middle, moved to the nearest place
 /// where the id changes, so that the moves of one message stay together. A batch with two ids
 /// or more always has one.
-fn split_point(batch: &[&mailcraft_model::sync::GmailMove]) -> usize {
+fn split_point(batch: &[&mailsolutions_model::sync::GmailMove]) -> usize {
     let changes = |at: usize| at > 0 && at < batch.len() && batch.get(at - 1).map(|m| m.id) != batch.get(at).map(|m| m.id);
     let mid = batch.len() / 2;
     (0..batch.len()).flat_map(|d| [mid.saturating_add(d), mid.saturating_sub(d)]).find(|at| changes(*at)).unwrap_or(mid)
@@ -1029,7 +1029,7 @@ pub(crate) fn remote_flags(message: &Fetched) -> RemoteFlags {
 /// The message a server handed over, with what the server knows about it.
 fn message_from(fetched: Fetched) -> Message {
     let flags = remote_flags(&fetched);
-    let mut message = mailcraft_mime_model::parse_fetched(fetched.body.as_deref().unwrap_or_default());
+    let mut message = mailsolutions_mime_model::parse_fetched(fetched.body.as_deref().unwrap_or_default());
     message.uid = fetched.uid;
     message.read = flags.read;
     message.flag = if flags.flagged { FlagStatus::Flagged } else { FlagStatus::None };
@@ -1053,7 +1053,7 @@ fn too_large(header: Fetched, size: u64, largest: u64) -> Message {
     message.original = None;
     message.body = Body {
         text: format!(
-            "{NOT_DOWNLOADED_NOTE} it is {} on the server, and MailCraft takes messages of up to {}.\n\n\
+            "{NOT_DOWNLOADED_NOTE} it is {} on the server, and MailSolutions takes messages of up to {}.\n\n\
              What is here comes from its header alone: who sent it, when, and what it is about. The message itself, \
              with anything attached to it, is still on the server. Read it there with another mail program or on the web.\n",
             megabytes(size),
@@ -1291,14 +1291,15 @@ impl FolderSync<'_> {
         delta.complete = alive && missed.is_none();
         // What the server said of it is kept with a reading that came to the end, if the folder
         // was the one that was asked about.
-        delta.status =
-            self.status.filter(|status| delta.complete && status.uid_validity == selected.uid_validity).map(|status| mailcraft_model::ImapStatus {
+        delta.status = self.status.filter(|status| delta.complete && status.uid_validity == selected.uid_validity).map(|status| {
+            mailsolutions_model::ImapStatus {
                 messages: status.messages,
                 uid_next: status.uid_next,
                 unseen: status.unseen,
                 limit: u32::try_from(self.max_new).unwrap_or(u32::MAX),
                 at: 0,
-            });
+            }
+        });
         if let Some(sorted) = sorted {
             delta.gmail = sorted
                 .into_iter()
@@ -1467,7 +1468,7 @@ pub(crate) fn imap_date_time(ts: Timestamp) -> Option<String> {
         return None;
     }
     let t = DateTime::from_timestamp(ts, 0);
-    let month = mailcraft_time::month_name(t.date.month).get(..3)?;
+    let month = mailsolutions_time::month_name(t.date.month).get(..3)?;
     (1..=9999)
         .contains(&t.date.year)
         .then(|| format!("{:02}-{month}-{:04} {:02}:{:02}:{:02} +0000", t.date.day, t.date.year, t.hour, t.minute, t.second))
@@ -1481,7 +1482,7 @@ pub(crate) fn internal_date(text: &str) -> Option<Timestamp> {
         return None;
     }
     let mut date = date.split('-');
-    let (day, month, year) = (date.next()?.parse::<u8>().ok()?, mailcraft_time::parse_month(date.next()?)?, date.next()?.parse::<i32>().ok()?);
+    let (day, month, year) = (date.next()?.parse::<u8>().ok()?, mailsolutions_time::parse_month(date.next()?)?, date.next()?.parse::<i32>().ok()?);
     let mut time = time.split(':');
     let (hour, minute, second) = (time.next()?.parse::<u8>().ok()?, time.next()?.parse::<u8>().ok()?, time.next()?.parse::<u8>().ok()?);
     if date.next().is_some() || time.next().is_some() {
@@ -1535,7 +1536,10 @@ mod tests {
         assert_eq!(internal_date(" 1-Jan-1970 00:00:00 +0000"), Some(0));
         assert_eq!(internal_date("01-jan-1970 05:30:00 +0530"), Some(0));
         assert_eq!(internal_date("31-Dec-2016 23:59:60 +0000"), internal_date("31-Dec-2016 23:59:59 +0000"));
-        assert_eq!(internal_date("11-Oct-2026 09:30:00 +0200"), mailcraft_time::parse_rfc5322("Sun, 11 Oct 2026 09:30:00 +0200").map(|(ts, _)| ts));
+        assert_eq!(
+            internal_date("11-Oct-2026 09:30:00 +0200"),
+            mailsolutions_time::parse_rfc5322("Sun, 11 Oct 2026 09:30:00 +0200").map(|(ts, _)| ts)
+        );
     }
 
     #[test]
@@ -1567,7 +1571,7 @@ mod tests {
     #[test]
     fn what_a_servers_name_says_of_it() {
         let named = |host: &str| {
-            let incoming = Some(mailcraft_model::Server { host: host.into(), port: 993, security: Security::Tls });
+            let incoming = Some(mailsolutions_model::Server { host: host.into(), port: 993, security: Security::Tls });
             Host::of(&Account { incoming, ..Default::default() })
         };
         // Microsoft's and Google's keep what is sent through them; Microsoft's are Exchange.
@@ -1739,7 +1743,9 @@ mod tests {
         );
         assert_eq!((m.read, m.flag, m.date, m.received), (true, FlagStatus::Flagged, 1_057_049_557, 1_057_053_157));
         assert!(
-            m.body.text.starts_with("This message is too large to download: it is 61 MB on the server, and MailCraft takes messages of up to 25 MB.")
+            m.body
+                .text
+                .starts_with("This message is too large to download: it is 61 MB on the server, and MailSolutions takes messages of up to 25 MB.")
         );
         assert!(m.body.html.is_none() && m.attachments.is_empty());
         // Its mark says how large it is, once: a sender can't plant another.
@@ -1793,7 +1799,7 @@ mod tests {
             let text = format!(
                 "{:02}-{}-{:04} {:02}:{:02}:{:02} {}{:02}{:02}",
                 t.date.day,
-                mailcraft_time::month_short(t.date.month),
+                mailsolutions_time::month_short(t.date.month),
                 t.date.year,
                 t.hour,
                 t.minute,

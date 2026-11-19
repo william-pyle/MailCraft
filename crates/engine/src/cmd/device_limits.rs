@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! **Device limits** (MB3.16): what a device that can't hold a whole mailbox (a phone) keeps of
-//! it ([`mailcraft_model::DeviceLimits`]). A computer has none and nothing here changes it.
+//! it ([`mailsolutions_model::DeviceLimits`]). A computer has none and nothing here changes it.
 //!
 //! - `account.deviceLimits` reads them, sets them (a device that had none starts with a phone's
 //!   defaults), or takes them away.
@@ -16,9 +16,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::device_limits::{MAX_MESSAGES, MAX_STORAGE, MIN_MESSAGES, MIN_STORAGE};
-use mailcraft_model::sync::MessageChange;
-use mailcraft_model::{AccountKind, Id, Message, OfflineWindow, Queued};
+use mailsolutions_model::device_limits::{MAX_MESSAGES, MAX_STORAGE, MIN_MESSAGES, MIN_STORAGE};
+use mailsolutions_model::sync::MessageChange;
+use mailsolutions_model::{AccountKind, Id, Message, OfflineWindow, Queued};
 use serde_json::{Value, json};
 
 use super::bad;
@@ -81,7 +81,7 @@ fn device_limits(s: &mut Session, v: &Value) -> CmdResult {
     let before = s.mailbox.device_limits;
     // (A device with no limits yet starts from the phone's: a zero record would be moved to them
     // again at the next open, undoing what is set here.)
-    let mut l = before.unwrap_or_else(|| mailcraft_model::DeviceLimits::phone(None));
+    let mut l = before.unwrap_or_else(|| mailsolutions_model::DeviceLimits::phone(None));
     if let Some(n) = storage {
         l.storage = n;
     }
@@ -242,7 +242,7 @@ fn leave_device(s: &mut Session, ids: &HashSet<Id>) -> usize {
         return 0;
     }
     #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
-    let mut refs: Vec<mailcraft_model::ContentRef> = Vec::new();
+    let mut refs: Vec<mailsolutions_model::ContentRef> = Vec::new();
     #[cfg(not(target_arch = "wasm32"))]
     if s.path.is_some() {
         for id in ids {

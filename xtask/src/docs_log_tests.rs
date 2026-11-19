@@ -129,7 +129,7 @@ fn dates_are_checked() {
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("mailcraft-xtask-docs-log-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-xtask-docs-log-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("docs")).unwrap();
     std::fs::write(dir.join("ROADMAP.md"), ROADMAP).unwrap();

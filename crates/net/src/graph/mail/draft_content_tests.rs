@@ -9,10 +9,10 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     AttachmentUp, AttachmentsUp, DraftBody, DraftKind, DraftOf, DraftUp, GraphMailRequest, GraphMailResult, SendOutcome, SendUp, SyncedAttachment,
 };
-use mailcraft_model::{Address, Importance};
+use mailsolutions_model::{Address, Importance};
 
 use super::whole_run;
 use crate::graph::pace::{Gate, Retry};
@@ -59,7 +59,7 @@ fn forwarded(server: &StandIn, source: &str, here: Vec<AttachmentUp>) -> (GraphM
     let up = AttachmentsUp { here, synced: Vec::new() };
     let draft = DraftUp {
         message: 5,
-        marker: "mailcraft-draft-5".into(),
+        marker: "mailsolutions-draft-5".into(),
         of: Some(DraftOf { id: source.into(), kind: DraftKind::Forward }),
         attachments: Some(up),
         ..Default::default()
@@ -110,7 +110,7 @@ fn whole_draft(id: &str, subject: &str, body: &str, bcc: &[&str], here: Vec<Atta
     DraftUp {
         message: 5,
         id: id.into(),
-        marker: "mailcraft-draft-5".into(),
+        marker: "mailsolutions-draft-5".into(),
         subject: Some(subject.into()),
         body: Some(DraftBody { html: false, content: body.into(), hash: 7 }),
         to: Some(vec![Address::new("", "kit@example.net")]),

@@ -41,9 +41,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::TryRecvError;
 
-use mailcraft_engine::cmd::jmap_mail::apply_jmap_mail;
-use mailcraft_model::Id;
-use mailcraft_model::sync::{JmapFetchRequest, JmapMailRequest, SyncPhase};
+use mailsolutions_engine::cmd::jmap_mail::apply_jmap_mail;
+use mailsolutions_model::Id;
+use mailsolutions_model::sync::{JmapFetchRequest, JmapMailRequest, SyncPhase};
 use serde_json::{Value, json};
 
 use crate::{MailApp, MailRun, dialogs};
@@ -118,7 +118,7 @@ impl MailApp {
     pub(crate) fn jmap_send_pressed(&mut self, sent: Id) {
         let mb = &self.session.mailbox;
         let Some(account) = mb.message(sent).map(|m| m.account) else { return };
-        let jmap = mb.account(account).is_some_and(|a| a.kind == mailcraft_model::AccountKind::Jmap);
+        let jmap = mb.account(account).is_some_and(|a| a.kind == mailsolutions_model::AccountKind::Jmap);
         if jmap && self.services.jmap.is_some() && !self.can_send_jmap_quietly(account) {
             self.jmap_send_asks.insert(account);
         }
@@ -137,7 +137,7 @@ impl MailApp {
     pub(crate) fn ask_for_jmap_send(&mut self) -> bool {
         let Some(account) = self.jmap_send_asks.iter().next().copied() else { return false };
         self.jmap_send_asks.remove(&account);
-        let waits = mailcraft_engine::cmd::graph_send::waiting(&self.session, account) > 0;
+        let waits = mailsolutions_engine::cmd::graph_send::waiting(&self.session, account) > 0;
         waits && !self.can_send_jmap_quietly(account) && self.start_sync(&json!({"account": account})).is_ok()
     }
 

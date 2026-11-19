@@ -60,10 +60,10 @@ use std::net::{Ipv4Addr, Ipv6Addr, Shutdown, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use mailcraft_charset::base64::URL_SAFE_NO_PAD;
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{OAuth, OAuthProvider};
-use mailcraft_proto::ProtoError;
+use mailsolutions_charset::base64::URL_SAFE_NO_PAD;
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{OAuth, OAuthProvider};
+use mailsolutions_proto::ProtoError;
 use ring::rand::SecureRandom as _;
 use serde_json::Value;
 
@@ -103,7 +103,7 @@ const MICROSOFT_LOGIN: &str = "https://login.microsoftonline.com";
 const GOOGLE_AUTHORIZE: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN: &str = "https://oauth2.googleapis.com/token";
 const GOOGLE_SCOPE: &str = "https://mail.google.com/ openid email";
-const GOOGLE_DESKTOP_SECRET: &str = match option_env!("MAILCRAFT_GOOGLE_CLIENT_SECRET") {
+const GOOGLE_DESKTOP_SECRET: &str = match option_env!("MAILSOLUTIONS_GOOGLE_CLIENT_SECRET") {
     Some(secret) => secret,
     None => "",
 };
@@ -526,7 +526,7 @@ fn apart(scope: &str) -> Vec<String> {
 fn admin_consent_page(oauth: &OAuth, tenant: &str) -> Result<String, NetError> {
     let named = OAuth { tenant: tenant.trim().to_string(), ..oauth.clone() };
     let tenant = match self::tenant(&named)? {
-        tenant if mailcraft_model::Directory::of_tenant(tenant) == mailcraft_model::Directory::Organisation => tenant,
+        tenant if mailsolutions_model::Directory::of_tenant(tenant) == mailsolutions_model::Directory::Organisation => tenant,
         _ => "organizations",
     };
     Ok(format!("{MICROSOFT_LOGIN}/{tenant}/{MICROSOFT_ADMIN_CONSENT}"))
@@ -1417,7 +1417,7 @@ fn refusal(error: &str, description: &str) -> NetError {
 /// the parts of the form that must not come back in an error.
 fn trade(endpoint: &Url, fields: &[(&str, &str)], earlier_refresh: &str, secrets: &[&str]) -> Result<Tokens, Refused> {
     let answer = http::post_form(endpoint, fields, TOKEN_TIMEOUT).map_err(|e| secrets.iter().fold(e, |e, secret| e.without(secret)))?;
-    tokens_from(&answer, earlier_refresh, mailcraft_time::now(), secrets)
+    tokens_from(&answer, earlier_refresh, mailsolutions_time::now(), secrets)
 }
 
 /// The tokens in a token endpoint's answer (RFC 6749 §5.1), or why there are none (§5.2), with
@@ -1516,28 +1516,28 @@ struct Page {
     text: &'static str,
 }
 
-const DONE: Page = Page { status: "200 OK", title: "Back to MailCraft", text: "You can close this tab and return to MailCraft." };
+const DONE: Page = Page { status: "200 OK", title: "Back to MailSolutions", text: "You can close this tab and return to MailSolutions." };
 const FAILED: Page = Page {
     status: "200 OK",
     title: "The sign-in didn't go through",
-    text: "You can close this tab and return to MailCraft, which says what went wrong.",
+    text: "You can close this tab and return to MailSolutions, which says what went wrong.",
 };
 const NOT_OURS: Page = Page {
     status: "400 Bad Request",
-    title: "Not the sign-in MailCraft is waiting for",
-    text: "Close this tab and start the sign-in again from MailCraft.",
+    title: "Not the sign-in MailSolutions is waiting for",
+    text: "Close this tab and start the sign-in again from MailSolutions.",
 };
-const NOT_FOUND: Page = Page { status: "404 Not Found", title: "Nothing here", text: "This address only brings a sign-in back to MailCraft." };
+const NOT_FOUND: Page = Page { status: "404 Not Found", title: "Nothing here", text: "This address only brings a sign-in back to MailSolutions." };
 const NOT_ALLOWED: Page =
-    Page { status: "405 Method Not Allowed", title: "Nothing here", text: "This address only brings a sign-in back to MailCraft." };
+    Page { status: "405 Method Not Allowed", title: "Nothing here", text: "This address only brings a sign-in back to MailSolutions." };
 const TOO_LARGE: Page =
-    Page { status: "431 Request Header Fields Too Large", title: "Too much", text: "This address only brings a sign-in back to MailCraft." };
+    Page { status: "431 Request Header Fields Too Large", title: "Too much", text: "This address only brings a sign-in back to MailSolutions." };
 const APPROVED: Page =
-    Page { status: "200 OK", title: "MailCraft is approved for your organisation", text: "You can close this tab and return to MailCraft." };
+    Page { status: "200 OK", title: "MailSolutions is approved for your organisation", text: "You can close this tab and return to MailSolutions." };
 const NOT_APPROVED: Page = Page {
     status: "200 OK",
     title: "The approval didn't go through",
-    text: "You can close this tab and return to MailCraft, which says what went wrong.",
+    text: "You can close this tab and return to MailSolutions, which says what went wrong.",
 };
 
 impl Page {
@@ -1546,7 +1546,7 @@ impl Page {
         let body = format!(
             "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n\
              <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light dark\">\n\
-             <title>MailCraft</title>\n\
+             <title>MailSolutions</title>\n\
              <style>body{{font:1rem system-ui,sans-serif;max-width:30em;margin:20vh auto;padding:0 1.5em;text-align:center}}</style>\n\
              </head>\n<body>\n<h1>{}</h1>\n<p>{}</p>\n</body>\n</html>\n",
             self.title, self.text

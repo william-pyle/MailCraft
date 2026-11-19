@@ -8,11 +8,11 @@
 
 use std::sync::atomic::Ordering;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     FolderListing, GraphFolder, GraphMessage, JmapChange, JmapChangeDone, JmapMailResult, JmapOutcome, MessagePage, SendDone, SendOutcome,
     ServerMessage,
 };
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use super::tests::{last, taken, window};
@@ -222,7 +222,7 @@ fn a_run_that_sent_as_many_as_a_run_sends_is_followed_at_once_by_one_for_the_res
     let ada = accounts[0];
     with_mail(&mut app, ada, &jobs);
     // One more than a run sends.
-    let most = mailcraft_model::sync::MAX_SENDS;
+    let most = mailsolutions_model::sync::MAX_SENDS;
     let all: Vec<Id> = (0..=most).map(|n| written(&mut app, ada, &format!("Note {n}"))).collect();
     app.session.driver.set_auto_sync(true);
     app.session.prefs.sync_minutes = 0;
@@ -253,7 +253,7 @@ fn emptying_a_folder_says_the_server_is_told_only_when_the_server_has_some_of_it
     let trash = app.session.mailbox.folder_of_kind(ada, FolderKind::Deleted).unwrap();
     let asks = |app: &MailApp| crate::dialogs::confirmation(app, "folder.empty", &json!({"id": trash})).expect("asks first").text;
     // Only what this computer has: nothing is removed anywhere else.
-    app.session.mailbox.add_message(mailcraft_model::Message { folder: trash, subject: "Mine".into(), ..Default::default() }).unwrap();
+    app.session.mailbox.add_message(mailsolutions_model::Message { folder: trash, subject: "Mine".into(), ..Default::default() }).unwrap();
     assert!(!asks(&app).contains("mail server"), "{}", asks(&app));
     // With one the server has among it, the server is told too.
     app.execute("mail.delete", json!({"ids": [one]})).unwrap();

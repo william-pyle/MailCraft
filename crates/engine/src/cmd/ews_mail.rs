@@ -5,7 +5,7 @@
 //!
 //! As for IMAP, Microsoft Graph and JMAP, the engine never talks to a server: [`ews_mail_request`]
 //! (`sync.ewsRequest`) says what a run should read, a host that can reach the server does it
-//! (`mailcraft_ews::sync_mail`, on a background thread), and [`apply_ews_mail`]
+//! (`mailsolutions_ews::sync_mail`, on a background thread), and [`apply_ews_mail`]
 //! (`sync.applyEws`) takes in what it brought back, piece by piece. The same goes for messages
 //! fetched whole: [`ews_fetch_request`] (`sync.ewsFetchRequest`) and [`apply_ews_fetch`]
 //! (`sync.applyEwsFetch`). All four are the host's side of a synchronisation, never an agent's.
@@ -19,7 +19,7 @@
 //! account's is. Undo is a reverse change, which the next run sends.
 //!
 //! **What comes back is hostile** (a host may hand over anything): the model holds a piece to
-//! sizes ([`mailcraft_model::sync::EwsMailResult::check`]), then [`super::ews_down::bounded`] cuts
+//! sizes ([`mailsolutions_model::sync::EwsMailResult::check`]), then [`super::ews_down::bounded`] cuts
 //! its text to what is shown and passes over what has an id that is no id. A piece that had to be
 //! cut removes nothing, as a run that went wrong removes nothing.
 //!
@@ -31,11 +31,11 @@
 //! with a message while it is where it is. A mark the server changed comes down, but for one
 //! changed here since the server last said. No server id and no sync state is logged.
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     ChangeOutcome, EwsFetchRequest, EwsFolderState, EwsMailRequest, EwsMailResult, EwsScope, FolderChange, FolderChangeDone, GraphFetchResult,
     MAX_DRAFTS, MAX_EWS_STATE_BYTES, MAX_EWS_STATES, MAX_FOLDER_CHANGES, MAX_MESSAGE_CHANGES, MessageOutcome, SendOutcome, SyncPhase,
 };
-use mailcraft_model::{Account, AccountKind, EwsServer, FolderKind, Id, Mailbox};
+use mailsolutions_model::{Account, AccountKind, EwsServer, FolderKind, Id, Mailbox};
 use serde_json::{Value, json};
 
 use super::graph_down::{self, Down};
@@ -266,7 +266,7 @@ fn receiving(mb: &Mailbox, account: Id, email: &str, url: &str) -> Result<String
 /// run that went well, the messages that a fresh read left out are removed. Not an undo step: the
 /// server is the source of truth, but for what was changed here since it last said.
 ///
-/// The piece is held to sizes first ([`mailcraft_model::sync::EwsMailResult::check`], then
+/// The piece is held to sizes first ([`mailsolutions_model::sync::EwsMailResult::check`], then
 /// [`ews_down::bounded`]); a piece that had to be cut, a run that went wrong, was stopped, or was
 /// not a read of every folder removes nothing.
 ///
@@ -292,7 +292,7 @@ fn apply_ews_news(s: &mut Session, result: EwsMailResult) -> CmdResult {
 }
 
 fn take_in(s: &mut Session, result: EwsMailResult) -> CmdResult {
-    result.check().map_err(|why| failed!("the result {why}", why = mailcraft_i18n::Arg::words(why)))?;
+    result.check().map_err(|why| failed!("the result {why}", why = mailsolutions_i18n::Arg::words(why)))?;
     let account = result.account;
     let name = receiving(&s.mailbox, account, &result.email, &result.url)?;
     let (result, cut) = ews_down::bounded(result);
@@ -413,10 +413,10 @@ fn take_in(s: &mut Session, result: EwsMailResult) -> CmdResult {
     }
     let lang = s.interface_language;
     if result.auth_refused {
-        errors.insert(0, mailcraft_i18n::fmt(lang.t("The server turned down the sign-in for {name}: sign in again"), &[("name", &name)]));
+        errors.insert(0, mailsolutions_i18n::fmt(lang.t("The server turned down the sign-in for {name}: sign in again"), &[("name", &name)]));
     }
     if !result.untrusted.is_empty() {
-        errors.insert(0, mailcraft_i18n::fmt(lang.t("The certificate of the server of {name} needs your say"), &[("name", &name)]));
+        errors.insert(0, mailsolutions_i18n::fmt(lang.t("The certificate of the server of {name} needs your say"), &[("name", &name)]));
     }
     // The folders that hold a change that can't be taken in stay where they were, and are named as
     // the owner knows them (no id, no state): one line each, up to a few.
@@ -427,7 +427,7 @@ fn take_in(s: &mut Session, result: EwsMailResult) -> CmdResult {
         .take(MAX_BLOCKED_SHOWN)
         .collect();
     for folder in &blocked {
-        errors.push(mailcraft_i18n::fmt(lang.t("{folder} couldn't be read from the server"), &[("folder", folder)]));
+        errors.push(mailsolutions_i18n::fmt(lang.t("{folder} couldn't be read from the server"), &[("folder", folder)]));
     }
     // Send/Receive Progress: where the run is, what it brought, what went wrong.
     let step = match (&result.progress, &result.folders) {

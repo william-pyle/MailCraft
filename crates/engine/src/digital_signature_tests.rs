@@ -4,8 +4,8 @@
 //! hands in, kept for the session, given to an agent read only, and the signer's certificate
 //! kept for the sender's address. RFC 9216's example certificates, signed by OpenSSL.
 
-use mailcraft_model::digital_signature::{Verdict, Why};
-use mailcraft_model::{Mailbox, Message};
+use mailsolutions_model::digital_signature::{Verdict, Why};
+use mailsolutions_model::{Mailbox, Message};
 use serde_json::json;
 
 use crate::Session;
@@ -24,7 +24,7 @@ fn session_with(messages: &[&[u8]]) -> (Session, Vec<u64>) {
     let inbox = mb.inbox().unwrap();
     let mut ids = Vec::new();
     for bytes in messages {
-        let mut m = mailcraft_mime_model::parse_fetched(bytes);
+        let mut m = mailsolutions_mime_model::parse_fetched(bytes);
         m.folder = inbox;
         ids.push(mb.add_message(m).unwrap());
     }
@@ -67,7 +67,7 @@ fn a_message_that_isnt_signed_has_no_result() {
 fn one_read_before_its_bytes_were_kept_says_check_again() {
     let mut mb = Mailbox::with_local_account("Bob", "bob@smime.example");
     let inbox = mb.inbox().unwrap();
-    let mut m = mailcraft_mime_model::parse(DETACHED);
+    let mut m = mailsolutions_mime_model::parse(DETACHED);
     m.folder = inbox;
     let id = mb.add_message(m).unwrap();
     let mut s = Session::new(mb);
@@ -146,9 +146,9 @@ fn a_partly_signed_message_or_one_from_several_people_is_never_verified() {
 
 const ALICE: &[u8] = include_bytes!("../../smime/testdata/alice.sign.der");
 
-fn key_of(der: &[u8]) -> mailcraft_model::public_keys::PublicKey {
-    mailcraft_model::public_keys::PublicKey {
-        format: mailcraft_model::digital_signature::SignatureFormat::Smime,
+fn key_of(der: &[u8]) -> mailsolutions_model::public_keys::PublicKey {
+    mailsolutions_model::public_keys::PublicKey {
+        format: mailsolutions_model::digital_signature::SignatureFormat::Smime,
         data: std::sync::Arc::new(der.to_vec()),
         fingerprint: format!("{:02x?}", &der[der.len() - 8..]),
         not_after: 0,
@@ -182,7 +182,7 @@ fn an_undo_leaves_the_kept_certificates() {
     s.run("mail.flag", &json!({"id": ids[0]})).unwrap();
     assert_eq!(s.mailbox.public_keys.of("alice@smime.example").len(), 1, "kept at that command");
     s.run("edit.undo", &json!({})).unwrap();
-    assert_eq!(s.mailbox.messages.get(&ids[0]).unwrap().flag, mailcraft_model::FlagStatus::None, "the flag was undone");
+    assert_eq!(s.mailbox.messages.get(&ids[0]).unwrap().flag, mailsolutions_model::FlagStatus::None, "the flag was undone");
     assert_eq!(s.mailbox.public_keys.of("alice@smime.example").len(), 1, "the certificate stays");
 }
 
@@ -321,21 +321,21 @@ fn the_keys_are_hashed_once_for_each_change() {
 
 /// A session on an opaque signed message as a build before #30's read it: the file it came as,
 /// and nothing else.
-fn old_opaque() -> (Session, mailcraft_model::Id) {
+fn old_opaque() -> (Session, mailsolutions_model::Id) {
     let (s, ids) = old_opaques(1);
     (s, ids[0])
 }
 
 /// The message an older build kept of an opaque signed message.
 fn read_bare() -> Message {
-    let mut m = mailcraft_mime_model::parse_fetched(OPAQUE_FILES);
+    let mut m = mailsolutions_mime_model::parse_fetched(OPAQUE_FILES);
     m.body = Default::default();
     m.attachments.truncate(1);
     m
 }
 
 /// [`old_opaque`] with `n` of them.
-fn old_opaques(n: usize) -> (Session, Vec<mailcraft_model::Id>) {
+fn old_opaques(n: usize) -> (Session, Vec<mailsolutions_model::Id>) {
     let mut mb = Mailbox::with_local_account("Bob", "bob@smime.example");
     let inbox = mb.inbox().unwrap();
     let ids = (0..n).map(|_| mb.add_message(Message { folder: inbox, ..read_bare() }).unwrap()).collect();
@@ -345,7 +345,7 @@ fn old_opaques(n: usize) -> (Session, Vec<mailcraft_model::Id>) {
     (s, ids)
 }
 
-fn is_bare(s: &Session, id: mailcraft_model::Id) -> bool {
+fn is_bare(s: &Session, id: mailsolutions_model::Id) -> bool {
     s.mailbox.message(id).unwrap().body.text.trim().is_empty()
 }
 
@@ -405,7 +405,7 @@ fn a_command_inside_another_reads_nothing_again() {
 fn messages_a_command_changes_ask_nothing_of_the_queue_unless_bare() {
     let (mut s, _) = old_opaques(1);
     let inbox = s.mailbox.inbox().unwrap();
-    let plain = mailcraft_mime_model::parse(b"From: ada@example.org\r\nSubject: Plain\r\n\r\nHello.\r\n");
+    let plain = mailsolutions_mime_model::parse(b"From: ada@example.org\r\nSubject: Plain\r\n\r\nHello.\r\n");
     let ids: Vec<_> = (0..50).map(|_| s.mailbox.add_message(Message { folder: inbox, ..plain.clone() }).unwrap()).collect();
     let asked = s.signatures.to_read_again.asked;
     s.run("mail.flag", &json!({"ids": ids})).unwrap();
@@ -416,8 +416,8 @@ fn messages_a_command_changes_ask_nothing_of_the_queue_unless_bare() {
 /// `sync.apply`, and is read again at the next command (#30 review 5).
 #[test]
 fn an_old_opaque_message_whose_bytes_arrive_is_read_again() {
-    use mailcraft_model::FolderKind;
-    use mailcraft_model::sync::{FolderDelta, SyncResult};
+    use mailsolutions_model::FolderKind;
+    use mailsolutions_model::sync::{FolderDelta, SyncResult};
     let mut s = Session::empty();
     s.clock.now = Some(NOW);
     s.set_trust_anchors([CA]);
@@ -430,7 +430,7 @@ fn an_old_opaque_message_whose_bytes_arrive_is_read_again() {
     let id = s.mailbox.messages.values().find(|m| m.account == account).unwrap().id;
     assert!(is_bare(&s, id) && !s.mailbox.message(id).unwrap().has_original());
     s.run("mail.checkAgain", &json!({"id": id})).unwrap();
-    let read = Message { uid: 1, ..mailcraft_mime_model::parse_fetched(OPAQUE_FILES) };
+    let read = Message { uid: 1, ..mailsolutions_mime_model::parse_fetched(OPAQUE_FILES) };
     let again = SyncResult { account, folders: vec![delta(FolderDelta { refetched: vec![read], ..Default::default() })], ..Default::default() };
     s.run("sync.apply", &json!({"result": again})).unwrap();
     assert!(s.mailbox.message(id).unwrap().has_original() && is_bare(&s, id));

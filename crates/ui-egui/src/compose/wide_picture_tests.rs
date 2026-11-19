@@ -7,8 +7,8 @@
 use std::sync::Arc;
 
 use egui::Event;
-use mailcraft_model::rich::{Paragraph, Run};
-use mailcraft_model::signature::Picture;
+use mailsolutions_model::rich::{Paragraph, Run};
+use mailsolutions_model::signature::Picture;
 use serde_json::json;
 
 use super::*;

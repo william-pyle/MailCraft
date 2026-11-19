@@ -6,7 +6,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::{Value, json};
 
 use crate::motion::{Motion, Tracker};
@@ -19,7 +19,7 @@ fn app(system: Option<bool>) -> MailApp {
     if let Some(on) = system {
         services.animations_enabled = Some(Box::new(move || on));
     }
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), services);
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), services);
     a.autosave = false;
     a
 }
@@ -154,7 +154,7 @@ fn the_choice_is_in_options() {
         let _ = harness.state_mut().execute("ui.dismissReminder", json!({"all": true}));
         harness.state_mut().execute("ui.backstage", json!({"value": true, "page": "options"})).unwrap();
         harness.run_steps(4);
-        if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+        if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
             harness.render().unwrap().save(std::path::Path::new(&dir).join(format!("animations-{theme}.png"))).unwrap();
         }
         // Chosen there, it is the window's at once.
@@ -213,11 +213,11 @@ fn the_window_that_takes_over_from_the_opening_one_can_play_them_again() {
         app.ui = kept;
         app
     });
-    let progress = std::sync::Arc::new(mailcraft_engine::io::OpenProgress::default());
+    let progress = std::sync::Arc::new(mailsolutions_engine::io::OpenProgress::default());
     let mut a = MailApp::opening(Opening::new(rx, progress, build), Some(off), None);
     let ctx = egui::Context::default();
     assert!(!animates(&mut a, &ctx), "off while the mailbox is read");
-    tx.send(Arrival::opened(mailcraft_engine::sample::mailbox(NOW, 0), None)).unwrap();
+    tx.send(Arrival::opened(mailsolutions_engine::sample::mailbox(NOW, 0), None)).unwrap();
     a.logic(&ctx);
     assert!(a.opening.is_none(), "the mailbox is open");
     assert!(!animates(&mut a, &ctx), "still off once it is open");

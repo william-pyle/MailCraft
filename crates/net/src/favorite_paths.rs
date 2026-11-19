@@ -7,8 +7,8 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::FolderKind;
-use mailcraft_model::remote::{MAX_FAVORITE_DEPTH, RemoteFavorite};
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::remote::{MAX_FAVORITE_DEPTH, RemoteFavorite};
 
 /// The favourite that the folder `id` is, called `name` and lying in the folder `parent`.
 /// `known` says of every folder above it that could be asked about what it is called and where

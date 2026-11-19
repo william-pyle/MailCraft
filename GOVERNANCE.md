@@ -1,8 +1,8 @@
 # Governance
 
-> **Last reviewed:** 2026-10-20 · **Last updated:** 2026-11-04 · **Change:** minor
+> **Last reviewed:** 2026-10-20 · **Last updated:** 2026-11-19 · **Change:** minor
 
-How MailCraft is run: who decides what, who does what, and how the project carries on if someone
+How MailSolutions is run: who decides what, who does what, and how the project carries on if someone
 can't.
 
 ## Roles
@@ -58,6 +58,7 @@ lost.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-19 | minor | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-04 | minor | A pull request's revision rows are fragments, `docs/log.d/`, joined in at release |
 | 2026-10-23 | minor | A bug fix comes with its report, no claim |
 | 2026-10-20 | minor | How changes are reviewed |

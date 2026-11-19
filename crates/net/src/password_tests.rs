@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Password negotiation through the shared fake, including a real STARTTLS handshake.
 use crate::fake::{Fake, ImapWorld};
-use mailcraft_model::{Account, Security, Server};
+use mailsolutions_model::{Account, Security, Server};
 fn account(port: u16, security: Security) -> Account {
     Account { email: "user@example.org".into(), incoming: Some(Server { host: "127.0.0.1".into(), port, security }), ..Default::default() }
 }
@@ -10,7 +10,7 @@ fn account(port: u16, security: Security) -> Account {
 fn sync_downloads_through_plain_with_and_without_an_initial_response() {
     for sasl_ir in [false, true] {
         let peer = Fake::imap(ImapWorld { user: "user@example.org".into(), password: "invented".into(), plain: true, sasl_ir, ..Default::default() });
-        let result = crate::sync(&mailcraft_model::sync::SyncRequest {
+        let result = crate::sync(&mailsolutions_model::sync::SyncRequest {
             account: account(peer.port, Security::None),
             password: "invented".into(),
             ..Default::default()
@@ -19,7 +19,7 @@ fn sync_downloads_through_plain_with_and_without_an_initial_response() {
         let log = &peer.world().log;
         assert!(log.iter().any(|s| s.contains(" AUTHENTICATE PLAIN")));
         assert!(!log.iter().any(|s| s.contains(" CAPABILITY") || s.contains(" LOGIN ")));
-        let payload = mailcraft_charset::base64::STANDARD.encode(b"\0user@example.org\0invented");
+        let payload = mailsolutions_charset::base64::STANDARD.encode(b"\0user@example.org\0invented");
         assert!(log.iter().any(|s| if sasl_ir { s.ends_with(&format!("PLAIN {payload}")) } else { s == &payload }));
     }
 }
@@ -39,7 +39,7 @@ fn starttls_discards_the_greeting_capabilities_and_authenticates_inside_tls() {
                 })),
                 ..Default::default()
             });
-            let result = crate::sync(&mailcraft_model::sync::SyncRequest {
+            let result = crate::sync(&mailsolutions_model::sync::SyncRequest {
                 account: account(peer.port, Security::StartTls),
                 password: "invented".into(),
                 ..Default::default()

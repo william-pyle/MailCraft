@@ -3,8 +3,8 @@
 //! `KEY`: certificates and OpenPGP public keys read in every version's form, known by their bytes,
 //! secret key material never kept, written back as 3.0, capped, and never a panic.
 
-use mailcraft_charset::base64::STANDARD;
-use mailcraft_model::{Contact, ContactKey, KeyKind};
+use mailsolutions_charset::base64::STANDARD;
+use mailsolutions_model::{Contact, ContactKey, KeyKind};
 use proptest::prelude::*;
 
 use crate::{parse, write};

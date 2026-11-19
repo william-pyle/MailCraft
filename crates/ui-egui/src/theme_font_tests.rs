@@ -19,7 +19,7 @@ struct FontsDir(PathBuf);
 
 impl FontsDir {
     fn new(name: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("mailcraft-fallback-fonts-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-fallback-fonts-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         FontsDir(dir)

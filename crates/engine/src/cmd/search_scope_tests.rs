@@ -3,7 +3,7 @@
 //! #493: where a search looks: the folder in view, it and its subfolders, the mailbox in view
 //! (its account), or every mailbox.
 
-use mailcraft_model::{FolderKind, Id, Message};
+use mailsolutions_model::{FolderKind, Id, Message};
 use serde_json::{Value, json};
 
 use crate::Session;

@@ -8,9 +8,9 @@
 use std::sync::Arc;
 
 use egui::{Align2, Color32, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::list::Row;
-use mailcraft_engine::{Drawn, Filter, Pane, SortBy};
-use mailcraft_model::{FlagStatus, FolderKind, Id, Importance, Message};
+use mailsolutions_engine::list::Row;
+use mailsolutions_engine::{Drawn, Filter, Pane, SortBy};
+use mailsolutions_model::{FlagStatus, FolderKind, Id, Importance, Message};
 use serde_json::json;
 
 use crate::theme::{Tokens, paint_clipped, regular, semibold};
@@ -209,7 +209,7 @@ fn group_name(group: &str, category: bool) -> &str {
         group
     } else if group == "Pinned" {
         tl!("Pinned")
-    } else if group == mailcraft_engine::list::NO_CATEGORY {
+    } else if group == mailsolutions_engine::list::NO_CATEGORY {
         tl!("No category")
     } else {
         tl!(group)
@@ -445,18 +445,18 @@ fn search_bar(app: &mut MailApp, ui: &mut Ui, found: usize) {
     let mb = &app.session.mailbox;
     let folder = mb.folder(app.session.view.folder);
     let scope = match app.session.view.scope {
-        mailcraft_engine::Scope::Everywhere => tl!("All Mailboxes").to_string(),
+        mailsolutions_engine::Scope::Everywhere => tl!("All Mailboxes").to_string(),
         // The account in view, by the name the folder pane gives it (#493).
-        mailcraft_engine::Scope::Mailbox => folder
+        mailsolutions_engine::Scope::Mailbox => folder
             .and_then(|f| mb.account(f.account))
             .map(|a| if a.name.trim().is_empty() { a.email.trim().to_string() } else { a.name.trim().to_string() })
             .filter(|n| !n.is_empty())
             .unwrap_or_else(|| tl!("Current Mailbox").to_string()),
-        mailcraft_engine::Scope::Subfolders => {
+        mailsolutions_engine::Scope::Subfolders => {
             folder.map(|f| crate::i18n::fmt(tl!("{folder} and its subfolders"), &[("folder", &crate::nav::folder_label(mb, f))])).unwrap_or_default()
         }
         // (A shared mailbox's folder with the mailbox it is in, #70.)
-        mailcraft_engine::Scope::Folder => folder.map(|f| crate::nav::folder_label(mb, f)).unwrap_or_default(),
+        mailsolutions_engine::Scope::Folder => folder.map(|f| crate::nav::folder_label(mb, f)).unwrap_or_default(),
     };
     let said = match found {
         0 => crate::i18n::fmt(tl!("No results in {scope}"), &[("scope", &scope)]),
@@ -492,7 +492,7 @@ fn list(app: &mut MailApp, ui: &mut Ui) {
     // Gmail's categories, when they are tabs above a Gmail Inbox's list (#911).
     crate::gmail_tabs::row(app, ui);
     let rows = app.session.rows();
-    search_bar(app, ui, mailcraft_engine::list::listed(&rows));
+    search_bar(app, ui, mailsolutions_engine::list::listed(&rows));
     // A search covers what is here: of a message not fetched yet, its headers and preview (R3.2).
     if !app.session.view.search.trim().is_empty() {
         // (Counted as the list was built, not at every frame.)
@@ -509,7 +509,7 @@ fn list(app: &mut MailApp, ui: &mut Ui) {
         }
     }
     // While the word index is being built, what it hasn't got yet is searched more slowly (R6.2).
-    if !app.session.view.search.trim().is_empty() && matches!(app.session.word_index(), mailcraft_engine::WordIndex::Building { .. }) {
+    if !app.session.view.search.trim().is_empty() && matches!(app.session.word_index(), mailsolutions_engine::WordIndex::Building { .. }) {
         let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 22.0), Sense::hover());
         ui.painter().rect_filled(r, 0.0, t.panel);
         let text = tl!("Still indexing: some older mail is searched more slowly");
@@ -674,7 +674,7 @@ const PREVIEW_KEPT: f32 = 60.0;
 
 /// The Gmail labels a row shows (#1153): the first [`LIST_LABELS`] of those shown, and how many
 /// more there are.
-fn list_labels<'a>(s: &'a mailcraft_engine::Session, m: &'a Message) -> (Vec<&'a str>, usize) {
+fn list_labels<'a>(s: &'a mailsolutions_engine::Session, m: &'a Message) -> (Vec<&'a str>, usize) {
     let folder = s.mailbox.folder(m.folder).map(|f| f.remote.as_str()).unwrap_or_default();
     let labels: Vec<&str> = m.shown_gmail_labels(folder).take(LIST_LABELS).collect();
     let more = if labels.is_empty() { 0 } else { m.shown_gmail_labels(folder).count().saturating_sub(labels.len()) };
@@ -697,7 +697,7 @@ fn plan_tags(p: &egui::Painter, labels: &[&str], more: usize, room: f32) -> TagP
         return TagPlan::default();
     }
     let mut tags: Vec<std::sync::Arc<egui::Galley>> =
-        labels.iter().map(|label| crate::widgets::label_tag_text(p, mailcraft_model::gmail::label_leaf(label), 10.0, LIST_LABEL_MAX)).collect();
+        labels.iter().map(|label| crate::widgets::label_tag_text(p, mailsolutions_model::gmail::label_leaf(label), 10.0, LIST_LABEL_MAX)).collect();
     let plus = |n: usize| if n == 0 { 0.0 } else { p.layout_no_wrap(format!("+{n}"), regular(10.0), egui::Color32::WHITE).size().x + 4.0 };
     loop {
         let more_now = more.saturating_add(labels.len().saturating_sub(tags.len()));
@@ -735,30 +735,30 @@ fn paint_result_folder(p: &egui::Painter, end: egui::Pos2, label: &str, t: &Toke
 /// What a row says of its message's size (#273): only while the list is arranged by size, and
 /// only when the size is known ([`Message::list_size`]); never "900 bytes", but KB at the least,
 /// as the size of a picture is said.
-fn size_label(s: &mailcraft_engine::Session, m: &Message) -> Option<String> {
+fn size_label(s: &mailsolutions_engine::Session, m: &Message) -> Option<String> {
     let bytes = (s.view.sort == SortBy::Size).then(|| m.list_size()).flatten()?;
-    Some(mailcraft_model::size_label_in(crate::i18n::current(), bytes.max(1024)))
+    Some(mailsolutions_model::size_label_in(crate::i18n::current(), bytes.max(1024)))
 }
 
 /// Whether a row names the folder its message is in, under the time: in a search of more than
 /// one folder (its subfolders, its mailbox or every mailbox), as Outlook's rows do (#195, #493);
 /// in one folder the owner knows which it is.
-fn shows_folder(s: &mailcraft_engine::Session) -> bool {
-    s.view.scope != mailcraft_engine::Scope::Folder && !mailcraft_model::search::Query::parse(&s.view.search).is_empty()
+fn shows_folder(s: &mailsolutions_engine::Session) -> bool {
+    s.view.scope != mailsolutions_engine::Scope::Folder && !mailsolutions_model::search::Query::parse(&s.view.search).is_empty()
 }
 
 /// Whether the list may hold mail of more than one account: a search of every mailbox, with more
 /// than one account to search. Its rows then wear their accounts' colours (#893); elsewhere the
 /// owner knows whose mail it is, and the rows stay as they were.
-fn mixes_accounts(s: &mailcraft_engine::Session) -> bool {
-    s.view.scope == mailcraft_engine::Scope::Everywhere
+fn mixes_accounts(s: &mailsolutions_engine::Session) -> bool {
+    s.view.scope == mailsolutions_engine::Scope::Everywhere
         && s.mailbox.accounts.len() > 1
-        && !mailcraft_model::search::Query::parse(&s.view.search).is_empty()
+        && !mailsolutions_model::search::Query::parse(&s.view.search).is_empty()
 }
 
 /// The colour of the stripe on `m`'s row (#893): its account's, in a list of more than one
 /// account's mail ([`mixes_accounts`]); `None` elsewhere, and for an account without one.
-fn account_stripe(s: &mailcraft_engine::Session, m: &Message) -> Option<mailcraft_model::Rgb> {
+fn account_stripe(s: &mailsolutions_engine::Session, m: &Message) -> Option<mailsolutions_model::Rgb> {
     mixes_accounts(s).then(|| s.mailbox.account(m.account).and_then(|a| a.color)).flatten()
 }
 
@@ -779,7 +779,7 @@ type PreviewOf = (std::sync::Weak<Message>, usize);
 /// Most previews kept: a few screens of rows.
 const MAX_PREVIEWS: usize = 512;
 
-/// The first words of `m` for its row: [`mailcraft_engine::list::preview`], remembered.
+/// The first words of `m` for its row: [`mailsolutions_engine::list::preview`], remembered.
 fn preview(ui: &Ui, m: &Arc<Message>, max_chars: usize) -> Arc<str> {
     ui.data_mut(|data| {
         let kept = data.get_temp_mut_or_default::<Previews>(egui::Id::unique("message_list_previews"));
@@ -792,7 +792,7 @@ fn preview(ui: &Ui, m: &Arc<Message>, max_chars: usize) -> Arc<str> {
         match kept.lines.get(&m.id) {
             Some(((made_of, chars), line)) if std::ptr::eq(made_of.as_ptr(), Arc::as_ptr(m)) && *chars == max_chars => line.clone(),
             _ => {
-                let line: Arc<str> = mailcraft_engine::list::preview(m, max_chars).into();
+                let line: Arc<str> = mailsolutions_engine::list::preview(m, max_chars).into();
                 kept.lines.insert(m.id, ((Arc::downgrade(m), max_chars), line.clone()));
                 line
             }
@@ -812,7 +812,7 @@ pub(crate) enum FollowUp {
 }
 
 impl FollowUp {
-    pub(crate) fn of(m: &mailcraft_model::Message, session: &mailcraft_engine::Session) -> FollowUp {
+    pub(crate) fn of(m: &mailsolutions_model::Message, session: &mailsolutions_engine::Session) -> FollowUp {
         match (m.flag, m.flag_due) {
             (FlagStatus::Flagged, Some(due)) if session.local(due).date < session.today() => FollowUp::Overdue,
             (FlagStatus::Flagged, _) => FollowUp::Flagged,
@@ -834,7 +834,7 @@ pub(crate) fn row_fill(t: &Tokens, follow_up: FollowUp, selected: bool, focus: b
 /// One message in the list: the sender in the larger size, the subject with the time at the end
 /// of its line, then the preview in the dimmer colour; marks at the right of the sender's line,
 /// category marks and the size of a conversation at the right of the preview's.
-/// What the list's `rows` draw selected ([`mailcraft_engine::Session::drawn`]), kept while they
+/// What the list's `rows` draw selected ([`mailsolutions_engine::Session::drawn`]), kept while they
 /// and the selection stay as they are: in a large list, working it out goes through every row,
 /// which a frame can't afford (#503). The rows are held weakly: held, the session would copy
 /// all of them to put one row's unread count right after a read mark.
@@ -1005,8 +1005,12 @@ fn message_row(app: &mut MailApp, ui: &mut Ui, row: &Row, rect: Rect, drawn: &Dr
     let flag_mark = Rect::from_center_size(flag_target.center(), vec2(12.0, 12.0));
     let sender_line_end = if m.flag == FlagStatus::None { time_end } else { time_end.min(flag_mark.min.x - 2.0) };
     let mut x = sender_line_end;
-    let date =
-        crate::dates::list_label(mailcraft_engine::list::when(&m), app.session.now(), app.session.offset_at(m.date), app.session.prefs.twelve_hour);
+    let date = crate::dates::list_label(
+        mailsolutions_engine::list::when(&m),
+        app.session.now(),
+        app.session.offset_at(m.date),
+        app.session.prefs.twelve_hour,
+    );
     let (date_font, date_color) = match (unread, overdue) {
         (true, false) => (semibold(LIST_TEXT), t.text),
         (true, true) => (semibold(LIST_TEXT), t.overdue),
@@ -1245,7 +1249,7 @@ fn clicks(app: &mut MailApp, ui: &Ui, resp: &egui::Response, row: &Row, m: &Mess
         let _ = app.execute("mail.select", json!({"id": id, "copy": copy}));
     }
     let (read, flagged, pinned) = (m.read, m.flag == FlagStatus::Flagged, m.pinned);
-    let sent = app.session.mailbox.folder(m.folder).is_some_and(|f| f.kind == mailcraft_model::FolderKind::Sent);
+    let sent = app.session.mailbox.folder(m.folder).is_some_and(|f| f.kind == mailsolutions_model::FolderKind::Sent);
     resp.context_menu(|ui| {
         ui.set_min_width(200.0);
         use crate::widgets::mi;
@@ -1332,8 +1336,8 @@ mod overlay_scroll_tests;
 #[cfg(test)]
 mod tests {
     use egui_kittest::kittest::Queryable as _;
-    use mailcraft_engine::Session;
-    use mailcraft_model::Body;
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::Body;
 
     use super::*;
     use crate::Services;
@@ -1344,7 +1348,7 @@ mod tests {
     type Window = egui_kittest::Harness<'static, MailApp>;
 
     fn app() -> MailApp {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.autosave = false;
         app.session.driver.set_auto_sync(false);
         // The lane and its arrows, on a Mac too (`overlay_scroll_tests` has the bar that floats).
@@ -1660,7 +1664,7 @@ mod tests {
         let mut a = app();
         let inbox = a.session.view.folder;
         for i in 0..60u32 {
-            let from = mailcraft_model::Address::new(format!("Sender {i}"), format!("s{i}@example.org"));
+            let from = mailsolutions_model::Address::new(format!("Sender {i}"), format!("s{i}@example.org"));
             let m = Message {
                 folder: inbox,
                 subject: format!("Message {i}"),
@@ -1717,7 +1721,7 @@ mod tests {
                 "&zwnj;&nbsp;&#847;".repeat(120)
             )),
         };
-        let from = mailcraft_model::Address::new("Fernhollow Outfitters", "news@fernhollow.example");
+        let from = mailsolutions_model::Address::new("Fernhollow Outfitters", "news@fernhollow.example");
         let id = a
             .session
             .mailbox
@@ -1834,7 +1838,7 @@ mod tests {
         let first = mb.inbox().unwrap();
         let projects = mb.folders.iter().find(|f| f.name == "Projects").unwrap().id;
         assert_eq!(crate::nav::result_folder_label(mb, mb.folder(first).unwrap()), "Inbox", "one account: the name alone");
-        let work = mb.add_account(mailcraft_model::Account { name: "Work".into(), email: "me@work.example".into(), ..Default::default() });
+        let work = mb.add_account(mailsolutions_model::Account { name: "Work".into(), email: "me@work.example".into(), ..Default::default() });
         let second = mb.folders.iter().find(|f| f.account == work && f.kind == FolderKind::Inbox).unwrap().id;
         assert_eq!(crate::nav::result_folder_label(mb, mb.folder(second).unwrap()), "Inbox - Work");
         assert!(crate::nav::result_folder_label(mb, mb.folder(first).unwrap()).starts_with("Inbox - "));
@@ -1852,11 +1856,11 @@ mod tests {
         let ids: Vec<Id> = a.session.rows().iter().map(|row| row.id).collect();
         let (partial, marked, whole) = (ids[1], ids[2], ids[3]);
         let m = a.session.mailbox.message_mut(partial).unwrap();
-        m.body = mailcraft_model::Body { text: "Only the start".into(), html: None };
+        m.body = mailsolutions_model::Body { text: "Only the start".into(), html: None };
         m.attachments.clear();
         m.unfetched = true;
-        m.server = Some(mailcraft_model::sync::ServerMessage { size: 5 << 19, ..Default::default() });
-        a.session.mailbox.message_mut(marked).unwrap().headers.push((mailcraft_model::NOT_DOWNLOADED.into(), "62914560".into()));
+        m.server = Some(mailsolutions_model::sync::ServerMessage { size: 5 << 19, ..Default::default() });
+        a.session.mailbox.message_mut(marked).unwrap().headers.push((mailsolutions_model::NOT_DOWNLOADED.into(), "62914560".into()));
         let said = |a: &MailApp, id: Id| size_label(&a.session, a.session.mailbox.message(id).unwrap());
         assert_eq!((said(&a, partial), said(&a, whole)), (None, None), "arranged by date");
         a.execute("view.sort", json!({"by": "size", "descending": true})).unwrap();
@@ -1929,7 +1933,7 @@ mod tests {
             let m = a.session.mailbox.message_mut(*id).unwrap();
             m.from.name = "Bartholomew Featherstonehaugh".into();
             (m.importance, m.answered) = (Importance::High, true);
-            m.attachments.push(mailcraft_model::Attachment::new("a.pdf", "application/pdf", vec![1]));
+            m.attachments.push(mailsolutions_model::Attachment::new("a.pdf", "application/pdf", vec![1]));
         }
         a.execute("view.sort", json!({"by": "size", "descending": true})).unwrap();
         a.execute("view.oneLine", json!({"value": true})).unwrap();

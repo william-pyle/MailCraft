@@ -221,7 +221,7 @@ fn written_its_body_is_the_original_and_its_header_the_message() {
         let again = parse(&out);
         assert_eq!((again.subject.as_str(), again.body.text.trim()), ("Signed", "Signed text."));
     }
-    // The copy put on a server carries MailCraft's marker first.
+    // The copy put on a server carries MailSolutions's marker first.
     let placed = write_placed(&m, &WriteOptions::default(), "m4rk3r");
     assert!(placed.starts_with(format!("{PLACE_HEADER}: m4rk3r\r\n").as_bytes()));
     assert_eq!(body(&placed), body(SMIME_SIGNED));

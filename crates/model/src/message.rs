@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use crate::headers::HeaderBlock;
@@ -190,18 +190,18 @@ pub fn text_hash(text: &str) -> u64 {
     h.finish()
 }
 
-/// The header `mailcraft-net` gives a message too large to download, with its size on the server.
+/// The header `mailsolutions-net` gives a message too large to download, with its size on the server.
 pub const NOT_DOWNLOADED: &str = "X-MailCraft-Not-Downloaded";
-/// How the note `mailcraft-net` keeps in place of such a message's text begins.
+/// How the note `mailsolutions-net` keeps in place of such a message's text begins.
 pub const NOT_DOWNLOADED_NOTE: &str = "This message is too large to download:";
 
 /// A byte count for people.
 pub fn size_label(bytes: u64) -> String {
-    size_label_in(mailcraft_i18n::Lang::English, bytes)
+    size_label_in(mailsolutions_i18n::Lang::English, bytes)
 }
 
 /// [`size_label`] in `lang` (its units, and its decimal mark: the template has it).
-pub fn size_label_in(lang: mailcraft_i18n::Lang, bytes: u64) -> String {
+pub fn size_label_in(lang: mailsolutions_i18n::Lang, bytes: u64) -> String {
     const KB: u64 = 1024;
     // Tenths of `unit`, rounded.
     let tenths = |unit: u64| (u128::from(bytes) * 10 + u128::from(unit / 2)) / u128::from(unit);
@@ -216,7 +216,7 @@ pub fn size_label_in(lang: mailcraft_i18n::Lang, bytes: u64) -> String {
         let t = tenths(KB * KB * KB);
         (lang.t("{n}.{tenth} GB"), t / 10, t % 10)
     };
-    mailcraft_i18n::fmt(template, &[("n", &n.to_string()), ("tenth", &tenth.to_string())])
+    mailsolutions_i18n::fmt(template, &[("n", &n.to_string()), ("tenth", &tenth.to_string())])
 }
 
 /// The most text of what a sender hid ([`Message::hidden_text`]) that is kept, in bytes.
@@ -297,7 +297,7 @@ pub struct Message {
     /// a kind that appears later brings it back.
     #[serde(skip_serializing_if = "Vec::is_empty", deserialize_with = "crate::sync::lenient_list")]
     pub warnings_dismissed: Vec<String>,
-    /// The header lines MailCraft doesn't model that it reads by name ([`crate::headers::WORKING`],
+    /// The header lines MailSolutions doesn't model that it reads by name ([`crate::headers::WORKING`],
     /// and its own notes), in order; the others are its [`Message::header_block`].
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub headers: Vec<(String, String)>,
@@ -305,7 +305,7 @@ pub struct Message {
     /// the mailbox file and read when the message is written out ([`crate::headers`]).
     #[serde(skip_serializing_if = "HeaderBlock::none_in_memory")]
     pub header_block: HeaderBlock,
-    /// Whether Exchange's stamps in [`Message::headers`] were read from the message by a MailCraft
+    /// Whether Exchange's stamps in [`Message::headers`] were read from the message by a MailSolutions
     /// that leaves them behind when mail goes to another account (#781). Only then are they
     /// believed: one saved before may be a sender's own, carried in from another account.
     #[serde(skip_serializing_if = "is_false")]
@@ -836,9 +836,9 @@ mod tests {
             (size_label(1), size_label(1024 * 1024 * 1024 * 3 / 2), size_label(u64::MAX)),
             ("1 byte".into(), "1.5 GB".into(), "17179869184.0 GB".into())
         );
-        let fr = mailcraft_i18n::test_support::po(&[("{n}.{tenth} MB", "{n},{tenth} Mo")]);
-        mailcraft_i18n::test_support::with_catalogue(mailcraft_i18n::Lang::French, &fr, || {
-            assert_eq!(size_label_in(mailcraft_i18n::Lang::French, 5 * 1024 * 1024 / 2), "2,5 Mo");
+        let fr = mailsolutions_i18n::test_support::po(&[("{n}.{tenth} MB", "{n},{tenth} Mo")]);
+        mailsolutions_i18n::test_support::with_catalogue(mailsolutions_i18n::Lang::French, &fr, || {
+            assert_eq!(size_label_in(mailsolutions_i18n::Lang::French, 5 * 1024 * 1024 / 2), "2,5 Mo");
         });
         assert_eq!(Importance::parse("HIGH"), Some(Importance::High));
     }

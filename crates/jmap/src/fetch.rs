@@ -30,7 +30,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use mailcraft_model::sync::{GraphFetchResult, GraphFetched, JmapFetchRequest};
+use mailsolutions_model::sync::{GraphFetchResult, GraphFetched, JmapFetchRequest};
 use serde_json::Value;
 
 use crate::connection::{busy_seconds, unusable};

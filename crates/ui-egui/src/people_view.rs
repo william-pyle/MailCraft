@@ -8,10 +8,10 @@
 use std::sync::Arc;
 
 use egui::{Align2, Color32, FontId, Rect, RichText, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::PeopleSort;
-use mailcraft_engine::cmd::people;
-use mailcraft_model::{AccountChoice, Address, Contact, Id, Mailbox};
-use mailcraft_time::Date;
+use mailsolutions_engine::PeopleSort;
+use mailsolutions_engine::cmd::people;
+use mailsolutions_model::{AccountChoice, Address, Contact, Id, Mailbox};
+use mailsolutions_time::Date;
 use serde_json::json;
 
 use crate::theme::{Tokens, paint_clipped, regular, semibold};
@@ -50,7 +50,7 @@ pub(crate) fn keep_picked(app: &mut MailApp) {
     let contacts = &app.session.mailbox.contacts;
     let shown = people::shown_account(&app.session);
     app.people_picked.retain(|id| {
-        contacts.get(id).is_some_and(|c| shown.shows(&c.origin) && (c.contactcraft_id.is_empty() != app.session.prefs.contactcraft_contacts))
+        contacts.get(id).is_some_and(|c| shown.shows(&c.origin) && (c.contactsolutions_id.is_empty() != app.session.prefs.contactsolutions_contacts))
     });
     if app.people_picked.len() < 2 || app.session.sel.contact.is_none_or(|c| !app.people_picked.contains(&c)) {
         app.people_picked.clear();
@@ -70,7 +70,7 @@ pub(crate) fn pick(app: &mut MailApp, id: Id) {
         if let Some(last) = app.people_picked.last().copied() {
             let _ = app.execute("people.select", json!({"id": last}));
         }
-    } else if app.people_picked.len() < mailcraft_engine::cmd::people_merge::MAX_MERGE {
+    } else if app.people_picked.len() < mailsolutions_engine::cmd::people_merge::MAX_MERGE {
         app.people_picked.push(id);
         let _ = app.execute("people.select", json!({"id": id}));
     }
@@ -196,10 +196,10 @@ impl<G: Copy + PartialEq> Layout<G> {
 /// each item's id, its account and its categories; gives each row's heading (an index into the
 /// names given back, `None` for no category) and the names.
 pub(crate) fn by_category<'a>(
-    s: &mailcraft_engine::Session,
+    s: &mailsolutions_engine::Session,
     items: impl IntoIterator<Item = (Id, Id, &'a [String])>,
 ) -> (Vec<(Id, Option<u32>)>, Vec<String>) {
-    use mailcraft_engine::list::{category_names, category_spellings};
+    use mailsolutions_engine::list::{category_names, category_spellings};
     let items: Vec<(Id, Id, &[String])> = items.into_iter().collect();
     let spelling = category_spellings(s, items.iter().map(|(_, account, categories)| (*account, *categories)));
     // (the heading's folded name, the item)
@@ -349,7 +349,7 @@ fn list_layout(app: &MailApp, ctx: &egui::Context) -> Arc<PeopleList> {
     let s = &app.session;
     let query = &s.view.people_search;
     let shown = people::shown_account(s);
-    let key = (s.rev(), s.mailbox.contacts.len(), app.contactcraft.revision, query.clone(), s.view.people_sort, shown);
+    let key = (s.rev(), s.mailbox.contacts.len(), app.contactsolutions.revision, query.clone(), s.view.people_sort, shown);
     if let Some(cached) = ctx.data(|d| d.get_temp::<CachedLayout>(slot)).filter(|c| c.key == key) {
         return cached.list;
     }
@@ -366,8 +366,12 @@ fn list_layout(app: &MailApp, ctx: &egui::Context) -> Arc<PeopleList> {
             Layout::new(ROW_H, rows.into_iter().map(|(id, i)| (id, i.map_or(Group::NoCategory, Group::Categories))))
         }
     };
-    let total =
-        s.mailbox.contacts.values().filter(|c| shown.shows(&c.origin) && (c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts)).count();
+    let total = s
+        .mailbox
+        .contacts
+        .values()
+        .filter(|c| shown.shows(&c.origin) && (c.contactsolutions_id.is_empty() != s.prefs.contactsolutions_contacts))
+        .count();
     let list = Arc::new(PeopleList { layout, names, total });
     ctx.data_mut(|d| d.insert_temp(slot, CachedLayout { key, list: list.clone() }));
     list
@@ -384,7 +388,7 @@ pub(crate) fn shown_total(app: &MailApp, ctx: &egui::Context) -> usize {
 /// characters or characters that show nothing, spaces run together, at most `max` characters,
 /// the last an ellipsis where it was cut. Whatever a file holds, a line costs no more than `max`
 /// characters to lay out.
-pub(crate) use mailcraft_names::shown as one_line;
+pub(crate) use mailsolutions_names::shown as one_line;
 
 /// `s` cut to `max` characters, with an ellipsis when something was cut.
 pub(crate) fn clip_chars(s: &str, max: usize) -> String {
@@ -467,12 +471,12 @@ fn web_target(raw: &str) -> Option<String> {
     let web = url.split_once("://").is_some_and(|(scheme, rest)| {
         (scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https")) && rest.starts_with(|c: char| c.is_alphanumeric() || c == '[')
     });
-    (web && mailcraft_html::is_safe_url(&url)).then_some(url)
+    (web && mailsolutions_html::is_safe_url(&url)).then_some(url)
 }
 
 /// `March 14, 1988`; the ISO form for a date whose month is out of range.
 fn birthday_text(day: Date) -> String {
-    if mailcraft_time::month_name(day.month).is_empty() { day.iso() } else { crate::dates::long_without_weekday(day) }
+    if mailsolutions_time::month_name(day.month).is_empty() { day.iso() } else { crate::dates::long_without_weekday(day) }
 }
 
 /// The next time the birthday comes round (today counts) and the age reached then. `None` when
@@ -480,7 +484,7 @@ fn birthday_text(day: Date) -> String {
 fn next_birthday(birthday: Date, today: Date) -> Option<(Date, i32)> {
     for year in [today.year, today.year.saturating_add(1)] {
         // Someone born on February 29th has the 28th in other years.
-        let day = birthday.day.min(mailcraft_time::days_in_month(year, birthday.month));
+        let day = birthday.day.min(mailsolutions_time::days_in_month(year, birthday.month));
         let Some(next) = Date::new(year, birthday.month, day) else { continue };
         if next >= today {
             let age = year.saturating_sub(birthday.year);
@@ -580,7 +584,7 @@ fn list(app: &mut MailApp, ui: &mut Ui, layout: &PeopleList) {
     }
     let accounts = people::contact_accounts(&app.session.mailbox);
     let shown = people::shown_account(&app.session);
-    if !accounts.is_empty() && !app.session.prefs.contactcraft_contacts {
+    if !accounts.is_empty() && !app.session.prefs.contactsolutions_contacts {
         ui.add_space(2.0);
         if let Some(choice) = widgets::account_choice(ui, &app.session.mailbox, &accounts, shown) {
             let _ = app.run("view.peopleAccount", json!({"value": choice.code()}));
@@ -610,7 +614,7 @@ fn list(app: &mut MailApp, ui: &mut Ui, layout: &PeopleList) {
 
 /// Whether each row says where its contact is: every account's contacts are in one list.
 fn labelled(app: &MailApp) -> bool {
-    if app.session.prefs.contactcraft_contacts {
+    if app.session.prefs.contactsolutions_contacts {
         return false;
     }
     people::shown_account(&app.session) == AccountChoice::All && !people::contact_accounts(&app.session.mailbox).is_empty()
@@ -766,7 +770,7 @@ fn card(app: &mut MailApp, ui: &mut Ui, total: usize) {
     // One scroll state for the card, at the top again for another contact: not one in egui's
     // memory for every contact ever shown.
     let mut area = egui::ScrollArea::vertical().auto_shrink([false, false]).id_salt("contact_card");
-    let shown = egui::Id::unique("mailcraft-contact-card-shown");
+    let shown = egui::Id::unique("mailsolutions-contact-card-shown");
     if ui.ctx().data(|d| d.get_temp::<Id>(shown)) != Some(c.id) {
         ui.ctx().data_mut(|d| d.insert_temp(shown, c.id));
         area = area.vertical_scroll_offset(0.0);
@@ -903,8 +907,8 @@ fn field(ui: &mut Ui, icon: &str, value: &str, label: &str, link: bool) -> egui:
 
 /// Where the contact is kept, where there is more than one place it could be.
 fn kept_in(app: &MailApp, c: &Contact) -> Option<String> {
-    if !c.contactcraft_id.is_empty() {
-        return Some(tl!("ContactCraft").to_string());
+    if !c.contactsolutions_id.is_empty() {
+        return Some(tl!("ContactSolutions").to_string());
     }
     let mailbox = &app.session.mailbox;
     (c.origin.is_remote() || !people::contact_accounts(mailbox).is_empty()).then(|| widgets::place_name(mailbox, c.origin.account))
@@ -913,7 +917,7 @@ fn kept_in(app: &MailApp, c: &Contact) -> Option<String> {
 /// Whether the contact is a copy of what its account's server keeps, which can't be changed here
 /// (`remote::changeable`): the card says so beside whose it is, before Edit or Delete is tried.
 fn read_only_here(app: &MailApp, c: &Contact) -> bool {
-    mailcraft_engine::cmd::remote::keeper(&app.session.mailbox, &c.origin).is_some()
+    mailsolutions_engine::cmd::remote::keeper(&app.session.mailbox, &c.origin).is_some()
 }
 
 fn card_account(app: &MailApp, ui: &mut Ui, c: &Contact) {
@@ -1049,7 +1053,7 @@ fn card_recent(app: &mut MailApp, ui: &mut Ui, c: &Contact) {
 pub(crate) mod testing {
     use egui::{Event, Key, Modifiers, PointerButton, Pos2};
     use egui_kittest::Harness;
-    use mailcraft_engine::Session;
+    use mailsolutions_engine::Session;
     use serde_json::json;
 
     use crate::{MailApp, Services};
@@ -1058,17 +1062,17 @@ pub(crate) mod testing {
 
     /// Wednesday 2026-10-14 16:00 UTC.
     pub fn now() -> i64 {
-        mailcraft_time::DateTime::new(mailcraft_time::Date::new(2026, 10, 14).unwrap(), 16, 0, 0).unwrap().to_timestamp(0)
+        mailsolutions_time::DateTime::new(mailsolutions_time::Date::new(2026, 10, 14).unwrap(), 16, 0, 0).unwrap().to_timestamp(0)
     }
 
     /// The window on the sample mailbox as of [`now`], with `module` (`view.people`,
     /// `view.tasks`) in front.
     pub fn window(module: &str) -> Harness<'static, MailApp> {
-        window_on(mailcraft_engine::sample::mailbox(now(), 0), module)
+        window_on(mailsolutions_engine::sample::mailbox(now(), 0), module)
     }
 
     /// The window on `mailbox`. Frames are 1/60 s apart, so a double click is one.
-    pub fn window_on(mailbox: mailcraft_model::Mailbox, module: &str) -> Harness<'static, MailApp> {
+    pub fn window_on(mailbox: mailsolutions_model::Mailbox, module: &str) -> Harness<'static, MailApp> {
         let mut app = MailApp::new(Session::at(mailbox, now(), 0), Services::default());
         app.autosave = false;
         app.execute(module, json!({})).unwrap();

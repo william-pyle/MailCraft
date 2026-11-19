@@ -9,9 +9,9 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use std::sync::mpsc::{self, SyncSender, TrySendError};
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 
-use mailcraft_engine::Session;
-use mailcraft_host::sync::SendReceive;
-use mailcraft_i18n::Lang;
+use mailsolutions_engine::Session;
+use mailsolutions_host::sync::SendReceive;
+use mailsolutions_i18n::Lang;
 use serde_json::Value;
 
 use crate::accounts::SignIns;
@@ -95,14 +95,14 @@ fn enter_budget(device: Option<u64>) -> Option<u64> {
         Some(bytes) => guard.1.add(id, bytes),
         None => guard.1.0.iter().map(|(_, b)| *b).min(),
     };
-    mailcraft_engine::store::set_device_budget(lowest);
+    mailsolutions_engine::store::set_device_budget(lowest);
     device.map(|_| id)
 }
 
 fn leave_budget(id: u64) {
     let mut guard = BUDGETS.lock().unwrap_or_else(PoisonError::into_inner);
     let lowest = guard.1.remove(id);
-    mailcraft_engine::store::set_device_budget(lowest);
+    mailsolutions_engine::store::set_device_budget(lowest);
 }
 
 /// Cancels a call that was not yet started when the future waiting for it is dropped (the app's
@@ -124,7 +124,7 @@ pub struct Core {
     budget_id: Option<u64>,
     events: Arc<Queue<Event>>,
     pub(crate) platform: Arc<dyn Platform>,
-    /// The same platform as the host sees it: what the sign-in code of `mailcraft-host` is given.
+    /// The same platform as the host sees it: what the sign-in code of `mailsolutions-host` is given.
     pub(crate) native: Arc<Native>,
     /// The sign-in that is open, and where its redirect lands (`accounts.rs`): the one sign-in of
     /// the phone, Add Account's and an account's signing in again alike.
@@ -177,7 +177,7 @@ impl Core {
     ) -> Result<Arc<Core>, CoreError> {
         android::check()?;
         let native = Arc::new(Native { inner: platform.clone() });
-        let host = mailcraft_host::init(native.clone())?;
+        let host = mailsolutions_host::init(native.clone())?;
         // What the device can spare caps what the session keeps of mail content: the lowest of the
         // live cores' budgets (a device that says nothing adds none: the engine's own cap stands).
         let device_budget = host.platform().memory_budget();
@@ -208,7 +208,7 @@ impl Core {
                 keep.opened(&session);
                 // The steps every opening of a mailbox file takes (mail fetched again, a retired
                 // choice dropped); the next save writes what they changed.
-                let _ = mailcraft_engine::cmd::file::after_opening(&mut session);
+                let _ = mailsolutions_engine::cmd::file::after_opening(&mut session);
             }
             // A phone keeps less than a computer: a mailbox from before the phone's own limits is
             // moved to them, once (MB3.16).
@@ -234,7 +234,7 @@ impl Core {
         let (ready_tx, ready) = mpsc::sync_channel::<bool>(1);
         let (done_tx, finished) = mpsc::sync_channel::<()>(1);
         let thread_keep = keep.clone();
-        let spawned = std::thread::Builder::new().name("mailcraft-session".to_string()).spawn(move || {
+        let spawned = std::thread::Builder::new().name("mailsolutions-session".to_string()).spawn(move || {
             run_session(make, inbox, &sink, &ready_tx, thread_keep.as_deref());
             let _ = done_tx.send(());
         });
@@ -273,7 +273,7 @@ impl Core {
         let weak: Weak<Core> = Arc::downgrade(self);
         let sync = self.sync.clone();
         let closing = self.closing.clone();
-        let started = std::thread::Builder::new().name("mailcraft-sync".to_string()).spawn(move || {
+        let started = std::thread::Builder::new().name("mailsolutions-sync".to_string()).spawn(move || {
             let mut wait = FIRST_WAIT;
             loop {
                 sync.pacer.wait(wait);
@@ -465,7 +465,7 @@ impl Core {
             // be gone, and a mailbox kept in memory would be written back by the next save. The
             // fresh one counts as saved, so nothing is written until the owner changes something;
             // the names of sign-ins still in the store are kept by `sync` for the retry.
-            session.replace_mailbox(mailcraft_model::Mailbox::with_local_account("", ""));
+            session.replace_mailbox(mailsolutions_model::Mailbox::with_local_account("", ""));
             if let Some(keep) = &keep {
                 keep.reset(session);
             }
@@ -572,7 +572,7 @@ impl Core {
     }
 
     /// `msgid` (the English text) in the interface language; English when there is no
-    /// translation. Looks up the catalogue of `mailcraft-i18n`; the app caches the answers.
+    /// translation. Looks up the catalogue of `mailsolutions-i18n`; the app caches the answers.
     pub fn t(&self, msgid: String) -> String {
         self.lang().t(&msgid).to_string()
     }
@@ -580,7 +580,7 @@ impl Core {
     /// The form of `one` / `other` (English singular and plural) that `n` takes in the interface
     /// language, with `{n}` filled in.
     pub fn tn(&self, n: u64, one: String, other: String) -> String {
-        mailcraft_i18n::fmt(self.lang().tn(n, &one, &other), &[("n", &n.to_string())])
+        mailsolutions_i18n::fmt(self.lang().tn(n, &one, &other), &[("n", &n.to_string())])
     }
 }
 
@@ -597,7 +597,7 @@ impl Core {
 
 /// What the owner is told when the list of the sign-ins kept was damaged and set aside.
 pub(crate) fn may_remain(lang: Lang) -> String {
-    lang.t("The list of sign-ins kept on this phone was damaged, so some older sign-ins may still be kept on it. Clearing MailCraft's storage in Android's Settings removes them.").to_string()
+    lang.t("The list of sign-ins kept on this phone was damaged, so some older sign-ins may still be kept on it. Clearing MailSolutions's storage in Android's Settings removes them.").to_string()
 }
 
 impl Drop for Core {

@@ -3,8 +3,10 @@
 //! Each Microsoft account's own list of categories (#633): what a read of a server's list does to
 //! it, and the commands that name a list.
 
-use mailcraft_model::remote::CategoriesDownload;
-use mailcraft_model::{AccountKind, Calendar, Category, Contact, Event, FolderKind, GREY_CATEGORY, Id, Mailbox, Message, Origin, Rgb, Rights, Task};
+use mailsolutions_model::remote::CategoriesDownload;
+use mailsolutions_model::{
+    AccountKind, Calendar, Category, Contact, Event, FolderKind, GREY_CATEGORY, Id, Mailbox, Message, Origin, Rgb, Rights, Task,
+};
 use serde_json::json;
 
 use crate::Session;
@@ -663,7 +665,7 @@ fn list_of(command: &str, account: Id) -> Id {
 /// `account` keeps its to-dos with Microsoft, so `tasks.new` may put one there.
 fn keeps_tasks(s: &mut Session, account: Id) {
     let a = s.mailbox.accounts.iter_mut().find(|x| x.id == account).unwrap();
-    a.oauth.get_or_insert_with(Default::default).provider = mailcraft_model::OAuthProvider::Microsoft;
+    a.oauth.get_or_insert_with(Default::default).provider = mailsolutions_model::OAuthProvider::Microsoft;
 }
 
 const KINDS: [&str; 3] = ["calendar", "people", "tasks"];
@@ -880,7 +882,7 @@ fn a_full_list_isnt_what_an_edit_that_fails_anyway_is_told() {
     }
     let event = event_of(&mut s, a);
     let e = s.mailbox.event_mut(event).unwrap();
-    e.attendees = vec![mailcraft_model::Attendee { address: mailcraft_model::Address::new("", "pat@example.org"), ..Default::default() }];
+    e.attendees = vec![mailsolutions_model::Attendee { address: mailsolutions_model::Address::new("", "pat@example.org"), ..Default::default() }];
     // The people invited would hear of a new time: that is asked first.
     let err = s.run("calendar.edit", &json!({"id": event, "start": "2027-01-04T10:00", "categories": ["One more"]})).unwrap_err();
     assert!(!err.to_string().contains("too many categories"), "{err}");
@@ -953,7 +955,7 @@ fn two_long_names_the_item_carries_that_differ_only_past_the_cut_both_stay() {
     // From an `.ics`, say: two names that are the same for their first 120 characters.
     let start = format!("Project {}", "a".repeat(112));
     let (one, two) = (format!("{start} north"), format!("{start} south"));
-    assert_eq!(start.chars().count(), mailcraft_model::MAX_NAME);
+    assert_eq!(start.chars().count(), mailsolutions_model::MAX_NAME);
     let came = vec![one.clone(), two.clone()];
     for (command, id) in &items {
         match *command {
@@ -998,10 +1000,11 @@ fn a_full_list_isnt_what_one_day_of_a_meeting_that_needs_send_is_told() {
     }
     let series = event_of(&mut s, a);
     let e = s.mailbox.event_mut(series).unwrap();
-    e.start = mailcraft_time::parse_iso("2027-01-04T09:00").unwrap().0;
-    e.end = mailcraft_time::parse_iso("2027-01-04T09:30").unwrap().0;
-    e.recurrence = Some(mailcraft_model::Recurrence { count: Some(5), ..mailcraft_model::Recurrence::every(mailcraft_model::Freq::Daily) });
-    e.attendees = vec![mailcraft_model::Attendee { address: mailcraft_model::Address::new("", "pat@example.org"), ..Default::default() }];
+    e.start = mailsolutions_time::parse_iso("2027-01-04T09:00").unwrap().0;
+    e.end = mailsolutions_time::parse_iso("2027-01-04T09:30").unwrap().0;
+    e.recurrence =
+        Some(mailsolutions_model::Recurrence { count: Some(5), ..mailsolutions_model::Recurrence::every(mailsolutions_model::Freq::Daily) });
+    e.attendees = vec![mailsolutions_model::Attendee { address: mailsolutions_model::Address::new("", "pat@example.org"), ..Default::default() }];
     let before = state(&s);
     // A new title for the day would be mail to those invited: that is asked before the list.
     let v = json!({"id": series, "occurrence": "2027-01-05", "title": "Stand-up, later", "categories": ["One more"]});

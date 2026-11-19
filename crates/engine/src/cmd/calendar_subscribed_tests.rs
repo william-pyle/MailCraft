@@ -3,8 +3,8 @@
 //! #209: subscribed calendars: the commands, what a look from the host does to the calendar, and
 //! that the address (which may hold a secret) is never kept.
 
-use mailcraft_model::subscription::{MAX_EVENTS, MAX_EVENTS_TOTAL, MAX_TEXT};
-use mailcraft_model::{Calendar, Id};
+use mailsolutions_model::subscription::{MAX_EVENTS, MAX_EVENTS_TOTAL, MAX_TEXT};
+use mailsolutions_model::{Calendar, Id};
 use proptest::prelude::*;
 use serde_json::{Value, json};
 
@@ -367,7 +367,7 @@ fn the_subscription_survives_the_mailbox_file_without_its_address() {
     came(&mut s, id, &ics(&[("a", "Home match", "20261114T150000Z")]), "\"v1\"");
     s.run("calendar.subscriptionSettings", &json!({"id": id, "intervalMinutes": 30})).unwrap();
     let text = serde_json::to_string(&s.mailbox).unwrap();
-    let back: mailcraft_model::Mailbox = serde_json::from_str(&text).unwrap();
+    let back: mailsolutions_model::Mailbox = serde_json::from_str(&text).unwrap();
     let sub = back.calendar(id).unwrap().subscription.clone().unwrap();
     assert_eq!((sub.host.as_str(), sub.interval_minutes, sub.etag.as_str(), sub.events), ("cal.example.org", 30, "\"v1\"", 1));
     assert!(!back.calendar(id).unwrap().can_edit());

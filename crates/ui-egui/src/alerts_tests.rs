@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::arrivals::Arrival;
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::arrivals::Arrival;
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{Address, FolderKind, Id, Message};
 use serde_json::json;
 
 use super::*;
@@ -103,7 +103,7 @@ fn up_to_three_get_an_alert_each_and_more_are_counted_in_one() {
 }
 
 fn reminder(title: &str, location: &str) -> Reminder {
-    let start = mailcraft_time::DateTime::new(mailcraft_time::Date::parse_iso("2026-10-14").unwrap(), 16, 30, 0).unwrap();
+    let start = mailsolutions_time::DateTime::new(mailsolutions_time::Date::parse_iso("2026-10-14").unwrap(), 16, 30, 0).unwrap();
     Reminder { event: 7, start, end: start, all_day: false, title: title.into(), location: location.into(), minutes: 15 }
 }
 
@@ -174,7 +174,7 @@ fn deliver(app: &mut MailApp, account: Id, inbox: Id, messages: &[(u32, &str, &s
     let uid_seen = messages.iter().map(|m| m.0).max().unwrap_or(0);
     let delta =
         FolderDelta { id: Some(inbox), remote: "INBOX".into(), kind: FolderKind::Inbox, uid_validity: 5, uid_seen, new, ..Default::default() };
-    mailcraft_engine::cmd::account::apply_sync(&mut app.session, SyncResult { account, folders: vec![delta], ..Default::default() }).unwrap();
+    mailsolutions_engine::cmd::account::apply_sync(&mut app.session, SyncResult { account, folders: vec![delta], ..Default::default() }).unwrap();
 }
 
 /// One frame of the window's alerts, with the window in front or not.
@@ -314,24 +314,24 @@ fn why_alerts_cant_be_shown_is_one_heading_and_a_reason() {
         (
             Lang::English,
             [
-                "Desktop alerts can't be shown: this copy of MailCraft wasn't installed with its installer (.msi), so Windows doesn't know it.",
-                "Desktop alerts can't be shown: this copy doesn't run from the MailCraft app.",
+                "Desktop alerts can't be shown: this copy of MailSolutions wasn't installed with its installer (.msi), so Windows doesn't know it.",
+                "Desktop alerts can't be shown: this copy doesn't run from the MailSolutions app.",
                 "Desktop alerts can't be shown: no notification service answers on this desktop.",
             ],
         ),
         (
             Lang::German,
             [
-                "Desktopbenachrichtigungen können nicht angezeigt werden: Diese Kopie von MailCraft wurde nicht mit ihrem Installationsprogramm (.msi) installiert, daher kennt Windows sie nicht.",
-                "Desktopbenachrichtigungen können nicht angezeigt werden: Diese Kopie läuft nicht aus der MailCraft-App.",
+                "Desktopbenachrichtigungen können nicht angezeigt werden: Diese Kopie von MailSolutions wurde nicht mit ihrem Installationsprogramm (.msi) installiert, daher kennt Windows sie nicht.",
+                "Desktopbenachrichtigungen können nicht angezeigt werden: Diese Kopie läuft nicht aus der MailSolutions-App.",
                 "Desktopbenachrichtigungen können nicht angezeigt werden: Auf diesem Desktop antwortet kein Benachrichtigungsdienst.",
             ],
         ),
         (
             Lang::French,
             [
-                "Impossible d'afficher les alertes sur le bureau\u{202f}: cette copie de MailCraft n'a pas été installée avec son programme d'installation (.msi), Windows ne la connaît donc pas.",
-                "Impossible d'afficher les alertes sur le bureau\u{202f}: cette copie ne s'exécute pas depuis l'application MailCraft.",
+                "Impossible d'afficher les alertes sur le bureau\u{202f}: cette copie de MailSolutions n'a pas été installée avec son programme d'installation (.msi), Windows ne la connaît donc pas.",
+                "Impossible d'afficher les alertes sur le bureau\u{202f}: cette copie ne s'exécute pas depuis l'application MailSolutions.",
                 "Impossible d'afficher les alertes sur le bureau\u{202f}: aucun service de notification ne répond sur ce bureau.",
             ],
         ),
@@ -344,12 +344,12 @@ fn why_alerts_cant_be_shown_is_one_heading_and_a_reason() {
         }
     }
     set_current(Lang::English);
-    assert_eq!(AlertTrouble::TurnedOff.notice(), "Desktop alerts are turned off for MailCraft in System Settings.");
+    assert_eq!(AlertTrouble::TurnedOff.notice(), "Desktop alerts are turned off for MailSolutions in System Settings.");
 }
 
 #[test]
 fn reminders_falling_due_show_an_alert_each_once_and_again_after_a_snooze() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
     app.autosave = false;
     let recorder = Recorder::default();
     app.services.alert = Some(Box::new(recorder.clone()));

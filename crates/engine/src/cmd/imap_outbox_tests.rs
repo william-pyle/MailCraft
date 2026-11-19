@@ -3,9 +3,9 @@
 //! An IMAP account's Outbox sends only what was queued with Send (#607): a message the owner
 //! moves into it stays there, and isn't sent, until Send Again.
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::sync::{FolderDelta, RemoteOp, SyncResult};
-use mailcraft_model::{Address, Body, Folder, FolderKind, Id, Message, Queued, ServerFolder};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::sync::{FolderDelta, RemoteOp, SyncResult};
+use mailsolutions_model::{Address, Body, Folder, FolderKind, Id, Message, Queued, ServerFolder};
 use serde_json::json;
 
 use crate::Session;
@@ -305,7 +305,7 @@ fn a_copy_doesnt_go_into_a_microsoft_accounts_outbox() {
     };
     let m = s.mailbox.add_message(received).unwrap();
     let refused = s.run("mail.copy", &json!({"ids": [m], "folder": outbox})).unwrap_err();
-    assert!(refused.to_string().contains(mailcraft_model::COPY_INTO_OUTBOX), "{refused}");
+    assert!(refused.to_string().contains(mailsolutions_model::COPY_INTO_OUTBOX), "{refused}");
     assert_eq!(s.mailbox.messages_in(outbox).count(), 0);
     assert!(s.mailbox.queued.is_empty(), "{:?}", s.mailbox.queued);
     assert!(graph_sends(&s, ms).is_empty());

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::{Account, AccountKind, Mailbox, OAuth, OAuthProvider};
+use mailsolutions_model::{Account, AccountKind, Mailbox, OAuth, OAuthProvider};
 
 use super::graph_mail::*;
 use crate::Session;

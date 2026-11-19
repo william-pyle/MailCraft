@@ -54,10 +54,10 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     GraphFolder, GraphLink, GraphMailRequest, GraphMailResult, GraphMessage, GraphProgress, MessagePage, ReadState, ServerMessage, SyncPhase, Timings,
 };
-use mailcraft_model::{Address, FlagStatus, FolderCounts, FolderKind, Importance};
+use mailsolutions_model::{Address, FlagStatus, FolderCounts, FolderKind, Importance};
 use serde_json::Value;
 
 use super::super::pace::Kind;
@@ -67,8 +67,8 @@ use crate::NetError;
 use crate::http::{self, Url};
 
 /// An instant as Graph's filters write it: `2026-10-15T08:00:00Z`, within the years they take.
-fn utc(t: mailcraft_model::time::Timestamp) -> String {
-    mailcraft_model::time::format_iso_utc(t.clamp(0, 253_402_300_799))
+fn utc(t: mailsolutions_model::time::Timestamp) -> String {
+    mailsolutions_model::time::format_iso_utc(t.clamp(0, 253_402_300_799))
 }
 
 /// What is asked for of each message: what the message list needs (R3 spec S9).
@@ -182,7 +182,7 @@ struct Run {
     seen: HashSet<String>,
     overflow: bool,
     /// The earliest received time a folder listed from its start lists (a phone's, MB3.16).
-    since: Option<mailcraft_model::time::Timestamp>,
+    since: Option<mailsolutions_model::time::Timestamp>,
 }
 
 impl Run {
@@ -227,7 +227,7 @@ pub(super) fn messages(
     emit: &mut dyn FnMut(GraphMailResult),
 ) -> GraphMailResult {
     let mut out = GraphMailResult { account: request.account, email: request.email.clone(), ..Default::default() };
-    let links: HashMap<&str, &mailcraft_model::sync::GraphLink> = request.links.iter().map(|l| (l.folder.as_str(), l)).collect();
+    let links: HashMap<&str, &mailsolutions_model::sync::GraphLink> = request.links.iter().map(|l| (l.folder.as_str(), l)).collect();
     // The Inbox pass lists nothing: its folder's counts are none of the server's.
     let listing = !phase_is_inbox(phase);
     let mut folders: Vec<GraphFolder> = listed.to_vec();
@@ -607,7 +607,7 @@ fn people(value: &Value, name: &str) -> Vec<Address> {
 }
 
 /// A date of a message's follow-up flag (`{"dateTime", "timeZone"}`), when it has one.
-fn flag_date(value: &Value, name: &str) -> Option<mailcraft_time::Timestamp> {
+fn flag_date(value: &Value, name: &str) -> Option<mailsolutions_time::Timestamp> {
     super::super::when(value.get("flag")?.get(name).filter(|date| !date.is_null()))
 }
 
@@ -640,7 +640,7 @@ fn entry_of(value: &Value, folder: &str) -> Option<Entry> {
         return Some(Entry::Removed(id));
     }
     let read = is_read(value);
-    let when = |name: &str| mailcraft_time::iso_to_timestamp(text(value, name), 0);
+    let when = |name: &str| mailsolutions_time::iso_to_timestamp(text(value, name), 0);
     // Without what a message is (when it arrived), it is a change of its read state alone.
     let Some(received) = when("receivedDateTime") else { return read.map(|read| Entry::Read(id, read)) };
     let flag = match value.get("flag").map(|f| text(f, "flagStatus")) {
@@ -679,7 +679,7 @@ fn entry_of(value: &Value, folder: &str) -> Option<Entry> {
             .map(str::to_string)
             .unwrap_or_default(),
         // The conversation it is in (#795), as an opaque id; anything odd is none.
-        thread: mailcraft_model::sync::thread_id(text(value, "conversationId")),
+        thread: mailsolutions_model::sync::thread_id(text(value, "conversationId")),
         thread_asked: false,
         thread_tries: 0,
     };

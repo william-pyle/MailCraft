@@ -12,7 +12,7 @@
 //! The list is read when the app starts, when the owner asks for a Send/Receive, right after
 //! the owner connected it, and otherwise not more often than every quarter of an hour. What
 //! comes back is taken in by the engine (`sync.applyFavorites`), and the pane lists what the
-//! engine says (`mailcraft_engine::cmd::folder::favorites`). Until there is a list, and whenever
+//! engine says (`mailsolutions_engine::cmd::folder::favorites`). Until there is a list, and whenever
 //! the server's can't be had, the favourites kept in the mailbox are shown, untouched. Nothing
 //! here ever puts a dialog in front of the owner unasked; what there is to say is a quiet line
 //! under the Favorites heading:
@@ -27,20 +27,20 @@
 //!
 //! None of these is asked about again that day unless the owner asks.
 
-use mailcraft_engine::cmd::remote;
-use mailcraft_model::remote::{FavoritesDownload, FavoritesOutcome, RemoteFavorite};
-use mailcraft_model::{Directory, Id};
+use mailsolutions_engine::cmd::remote;
+use mailsolutions_model::remote::{FavoritesDownload, FavoritesOutcome, RemoteFavorite};
+use mailsolutions_model::{Directory, Id};
 use serde_json::{Value, json};
 
 use crate::{GraphResult, MailApp, now_ms};
 
 // How often an account's Favorites are read at most, and for how long the server is left alone
-// after it said the sign-in doesn't cover them, is the engine's ([`mailcraft_engine::sync_driver`]).
+// after it said the sign-in doesn't cover them, is the engine's ([`mailsolutions_engine::sync_driver`]).
 // What a sign-in for the Favorites says when it is not the owner's to turn into a yes, the line
 // under the Favorites heading with its links, and what is remembered of keeping the Favorites
-// current are the engine's ([`mailcraft_engine::sync_driver::favorites`]).
-pub use mailcraft_engine::sync_driver::{FAVORITES_NOW_GRAPH, NEEDS_APPROVAL, REFUSED_BY_ORGANISATION, REFUSED_FOR_ACCOUNT};
-pub(crate) use mailcraft_engine::sync_driver::{Note, Step};
+// current are the engine's ([`mailsolutions_engine::sync_driver::favorites`]).
+pub use mailsolutions_engine::sync_driver::{FAVORITES_NOW_GRAPH, NEEDS_APPROVAL, REFUSED_BY_ORGANISATION, REFUSED_FOR_ACCOUNT};
+pub(crate) use mailsolutions_engine::sync_driver::{Note, Step};
 
 impl MailApp {
     /// Whether `account` signs in with Microsoft.
@@ -48,7 +48,7 @@ impl MailApp {
         self.session.is_microsoft(account)
     }
 
-    /// Which kind of Microsoft account `account` is ([`mailcraft_engine::Session::account_directory`]).
+    /// Which kind of Microsoft account `account` is ([`mailsolutions_engine::Session::account_directory`]).
     pub(crate) fn directory(&self, account: Id) -> Directory {
         self.session.account_directory(account)
     }
@@ -84,7 +84,7 @@ impl MailApp {
         if favorites && self.session.driver.favorites.is_uncovered(account) {
             return String::new();
         }
-        self.graph_tokens.get(&account).filter(|t| t.fresh(mailcraft_time::now())).map(|t| t.access.clone()).unwrap_or_default()
+        self.graph_tokens.get(&account).filter(|t| t.fresh(mailsolutions_time::now())).map(|t| t.access.clone()).unwrap_or_default()
     }
 
     /// A Graph token for `account` came from somewhere that didn't ask for the Favorites'
@@ -203,7 +203,7 @@ impl MailApp {
 
     /// What the control channel is told of the Favorites of `account`.
     fn favorites_state(&self, account: Id) -> Value {
-        let from_server = mailcraft_engine::cmd::folder::favorites_from_server(&self.session, account);
+        let from_server = mailsolutions_engine::cmd::folder::favorites_from_server(&self.session, account);
         let note = self.favorites_note_of(account);
         let steps: Vec<&str> = note.as_ref().map(|note| self.favorites_steps(note)).unwrap_or_default().into_iter().map(Step::code).collect();
         json!({
@@ -214,7 +214,7 @@ impl MailApp {
             "line": note.as_ref().map(Note::code),
             "text": note.as_ref().map(|note| tl!(note.text()).to_string()).unwrap_or_default(),
             "steps": steps,
-            "favorites": mailcraft_engine::cmd::folder::favorites(&self.session),
+            "favorites": mailsolutions_engine::cmd::folder::favorites(&self.session),
         })
     }
 
@@ -233,7 +233,7 @@ impl MailApp {
 
     /// What an administrator's approval is asked for, for `account`: its sign-in settings (as
     /// the account has them) and its organisation's directory when that is known (else empty).
-    pub(crate) fn approval_of(&self, account: Id) -> Result<(mailcraft_model::OAuth, String), String> {
+    pub(crate) fn approval_of(&self, account: Id) -> Result<(mailsolutions_model::OAuth, String), String> {
         let Some(owner) = self.session.mailbox.account(account) else { return Err(tl!("No account signs in with Microsoft").to_string()) };
         let Some(oauth) = owner.oauth.clone() else { return Err(tl!("This account doesn't sign in with Microsoft").to_string()) };
         // The organisation's own directory, when a sign-in of this run named it or the account's
@@ -248,7 +248,7 @@ impl MailApp {
     /// sign-in settings `oauth` (with the application id filled in) and the directory `tenant`
     /// (empty: whichever the administrator is of). A directory the host won't make an address of
     /// is left out of it.
-    pub(crate) fn admin_link(&self, oauth: &mailcraft_model::OAuth, tenant: &str) -> Result<String, String> {
+    pub(crate) fn admin_link(&self, oauth: &mailsolutions_model::OAuth, tenant: &str) -> Result<String, String> {
         let unable = || tl!("This build can't make a link for an administrator.").to_string();
         let make = self.services.admin_consent_link.as_ref().ok_or_else(unable)?;
         let link = make(oauth, tenant).or_else(|| if tenant.is_empty() { None } else { make(oauth, "") });
@@ -345,7 +345,7 @@ pub(crate) fn options(app: &mut MailApp, ui: &mut egui::Ui, t: &crate::theme::To
     }
     let mut outlook = !app.session.prefs.own_favorites;
     let about = tl!(
-        "For an account that signs in with Microsoft: the folders you keep under Favorites in Outlook, in the same order. They are read from the server and never changed there. Without this, the favourites you mark in MailCraft are shown."
+        "For an account that signs in with Microsoft: the folders you keep under Favorites in Outlook, in the same order. They are read from the server and never changed there. Without this, the favourites you mark in MailSolutions are shown."
     );
     let resp = ui.checkbox(&mut outlook, tl!("Show the Favorites from Outlook in the folder pane")).on_hover_text(about);
     app.hit.add("favoritesOption", 0, resp.rect);
@@ -364,7 +364,7 @@ pub(crate) fn options(app: &mut MailApp, ui: &mut egui::Ui, t: &crate::theme::To
         ui.horizontal(|ui| {
             ui.add_space(24.0);
             let link = ui.link(tl!("Connect Outlook's Favorites")).on_hover_text(tl!(
-                "Sign in with Microsoft once more to let MailCraft read the folders you keep under Favorites in Outlook. They are only read, never changed, and everything else stays as it is."
+                "Sign in with Microsoft once more to let MailSolutions read the folders you keep under Favorites in Outlook. They are only read, never changed, and everything else stays as it is."
             ));
             app.hit.add("favoritesConnect", account, link.rect);
             if link.clicked()

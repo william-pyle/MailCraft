@@ -22,7 +22,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::sync::{JmapChange, JmapChangeDone, JmapMailResult, JmapOutcome};
+use mailsolutions_model::sync::{JmapChange, JmapChangeDone, JmapMailResult, JmapOutcome};
 use serde_json::{Map, Value};
 
 use super::{Outcome, Run, Stop, arguments, get, refusal};

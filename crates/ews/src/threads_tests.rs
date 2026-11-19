@@ -6,7 +6,7 @@
 
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::sync::{EwsMailRequest, EwsMailResult, ThreadOf};
+use mailsolutions_model::sync::{EwsMailRequest, EwsMailResult, ThreadOf};
 
 use crate::standin::{AUTHORIZATION, StandIn, block_on};
 use crate::*;
@@ -70,7 +70,7 @@ fn a_server_that_doesnt_know_the_conversation_still_gives_previews_and_flags() {
     let listed: Vec<_> = pieces.iter().flat_map(|p| &p.pages).flat_map(|p| &p.messages).collect();
     let message = listed.iter().find(|m| m.server.id == id).unwrap();
     assert_eq!(message.preview, "Hello there");
-    assert_eq!(message.server.flag, mailcraft_model::FlagStatus::Flagged, "the flag still comes");
+    assert_eq!(message.server.flag, mailsolutions_model::FlagStatus::Flagged, "the flag still comes");
     let last = pieces.last().unwrap();
     assert!(last.errors.is_empty() && last.busy_for.is_none(), "{:?}", last.errors);
     // Refused, said so: the engine asks again only a few runs.

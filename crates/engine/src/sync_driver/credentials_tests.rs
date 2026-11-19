@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{Account, OAuth, OAuthProvider};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{Account, OAuth, OAuthProvider};
 
 use super::credentials::*;
 

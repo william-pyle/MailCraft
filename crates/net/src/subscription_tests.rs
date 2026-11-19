@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use mailcraft_model::subscription::{Failure, SubscriptionOutcome};
+use mailsolutions_model::subscription::{Failure, SubscriptionOutcome};
 use rustls::{ServerConfig, ServerConnection, StreamOwned};
 
 use super::*;
@@ -93,7 +93,7 @@ fn with_server(
     answer: impl Fn(usize, &str) -> Vec<u8> + Send + 'static,
     test: impl FnOnce(&Tls, &dyn Fn(&str, &str, &str, &Limits) -> Result<Fetched, Failure>),
 ) {
-    let authority = Authority::new("MailCraft Test Authority");
+    let authority = Authority::new("MailSolutions Test Authority");
     let config = authority.server(&["calendar.example", "other.example", "127.0.0.1"]);
     trusting(vec![authority.root()], || {
         let server = Tls::start(config, answer);
@@ -253,7 +253,7 @@ fn an_address_that_is_not_https_is_refused_before_anything_is_sent() {
 
 #[test]
 fn an_address_on_this_machine_or_a_private_network_is_refused() {
-    let server = Tls::start(Authority::new("MailCraft Test Authority").server(&["127.0.0.1"]), |_, _| reply("200 OK", "", CALENDAR));
+    let server = Tls::start(Authority::new("MailSolutions Test Authority").server(&["127.0.0.1"]), |_, _| reply("200 OK", "", CALENDAR));
     // The reach every other build has: this machine is out of reach, though the server is there.
     for address in [
         format!("https://127.0.0.1:{}/c.ics", server.port),
@@ -390,7 +390,7 @@ fn a_certificate_that_is_not_trusted_is_no_connection() {
     let allowed = [server.at()];
     let lookup = move |_: &str, _: u16, _: Duration| allowed.to_vec();
     let reach = Reach { lookup: &lookup, stand_ins: &allowed, dial: None };
-    let trusted = Authority::new("MailCraft Test Authority");
+    let trusted = Authority::new("MailSolutions Test Authority");
     trusting(vec![trusted.root()], || {
         let result = fetch_with(&format!("https://calendar.example:{}/c.ics", server.port), "", "", &reach, &quick());
         assert_eq!(result, Err(Failure::Network));

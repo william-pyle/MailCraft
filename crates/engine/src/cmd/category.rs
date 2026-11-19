@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Colour categories.
 
-use mailcraft_model::{GREY_CATEGORY, Id, MAX_NAME, Rgb, clean_name};
+use mailsolutions_model::{GREY_CATEGORY, Id, MAX_NAME, Rgb, clean_name};
 use serde_json::{Value, json};
 
 use super::{bad, done};
@@ -21,7 +21,7 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 /// The account whose list a call is about: `account`, and with none the list that accounts
-/// without their own share (0, as [`mailcraft_model::Mailbox::categories_of`] takes it). Anything
+/// without their own share (0, as [`mailsolutions_model::Mailbox::categories_of`] takes it). Anything
 /// but an account's id is refused, and never taken for that shared list.
 pub fn list_account(s: &Session, v: &Value) -> Result<Id, CmdError> {
     match v.get("account") {
@@ -137,7 +137,7 @@ fn outlooks_list(s: &Session, account: Id) -> Option<&Vec<String>> {
 
 /// Whether `name` is on Outlook's list of categories, as the server of `account` last gave it.
 pub fn on_outlooks_list(s: &Session, account: Id, name: &str) -> bool {
-    outlooks_list(s, account).is_some_and(|names| names.iter().any(|c| mailcraft_model::sync::same_category(c, name.trim())))
+    outlooks_list(s, account).is_some_and(|names| names.iter().any(|c| mailsolutions_model::sync::same_category(c, name.trim())))
 }
 
 fn rename(s: &mut Session, v: &Value) -> CmdResult {

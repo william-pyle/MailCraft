@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Undo for a Microsoft account, as the engine merges it. (Against the Graph stand-in, end to
-//! end: `apps/mailcraft-cli/tests/graph_undo.rs`.)
+//! end: `apps/mailsolutions-cli/tests/graph_undo.rs`.)
 
-use mailcraft_model::sync::MessageChange;
-use mailcraft_model::{Account, ServerFolder};
+use mailsolutions_model::sync::MessageChange;
+use mailsolutions_model::{Account, ServerFolder};
 use serde_json::json;
 
 use super::*;

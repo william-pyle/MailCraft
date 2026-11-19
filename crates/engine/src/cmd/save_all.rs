@@ -9,7 +9,7 @@
 //! there, or by another file of the same message, gets a number (`report (2).pdf`), and each file
 //! is created only if it isn't there yet.
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 use serde_json::{Value, json};
 
 use crate::cmd::{bad, fail};

@@ -6,11 +6,11 @@ use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     Created, Deleted, FlagsPushed, FolderState, Moved, RemoteFlags, RemoteOp, SyncPhase, SyncRequest, SyncResult, SyncStage,
 };
-use mailcraft_model::{Account, AccountKind, Address, FlagStatus, FolderKind, Id, Message, OAuth, OAuthProvider, Security, Server};
-use mailcraft_proto::ProtoError;
+use mailsolutions_model::{Account, AccountKind, Address, FlagStatus, FolderKind, Id, Message, OAuth, OAuthProvider, Security, Server};
+use mailsolutions_proto::ProtoError;
 
 use crate::fake::{Fake, FakeImap, FakeMailbox, FakeMessage, FakeSmtp, ImapWorld, SmtpWorld};
 use crate::sync::{Host, Limits, sync_as, sync_within};
@@ -372,7 +372,7 @@ fn an_oauth_account_signs_in_with_its_token() {
 fn google_xoauth2_reuses_imap_smtp_without_sending_a_password() {
     let (imap, smtp) = token_servers();
     let mut account = oauth_account(Some(&imap), Some(&smtp));
-    account.oauth.as_mut().unwrap().provider = mailcraft_model::OAuthProvider::Google;
+    account.oauth.as_mut().unwrap().provider = mailsolutions_model::OAuthProvider::Google;
     assert_eq!(test_account(&account, TOKEN), Ok(()));
     let mut request = request(account.clone(), local_folders());
     request.access_token = TOKEN.into();
@@ -441,7 +441,7 @@ fn oauth_destinations_cannot_cross_providers_or_protocols() {
 fn google_access_tokens_never_go_to_untrusted_imap_or_smtp_servers() {
     let (imap, smtp) = token_servers();
     let mut account = oauth_account(Some(&imap), Some(&smtp));
-    account.oauth.as_mut().unwrap().provider = mailcraft_model::OAuthProvider::Google;
+    account.oauth.as_mut().unwrap().provider = mailsolutions_model::OAuthProvider::Google;
     account.incoming.as_mut().unwrap().host = "imap.attacker.example".into();
     let error = test_account(&account, TOKEN).unwrap_err();
     assert!(matches!(error, NetError::Config(_)));
@@ -534,7 +534,7 @@ fn a_refused_token_is_an_error_without_the_token() {
 fn an_oauth_account_without_a_token_is_told_to_sign_in_first() {
     let (imap, smtp) = token_servers();
     let account = oauth_account(Some(&imap), Some(&smtp));
-    let sign_in = NetError::Config(mailcraft_i18n::said!("sign in to {who} first", who = "ada@example.org"));
+    let sign_in = NetError::Config(mailsolutions_i18n::said!("sign in to {who} first", who = "ada@example.org"));
     assert_eq!(test_account(&account, ""), Err(sign_in.clone()));
     assert_eq!(test_account(&oauth_account(None, Some(&smtp)), ""), Err(sign_in.clone()));
     assert_eq!(send(&account, "", &hello()), Err(sign_in));
@@ -567,7 +567,7 @@ fn a_server_that_takes_no_tokens_is_not_shown_one() {
     assert_eq!(imap.world().log, ["A0001 AUTHENTICATE XOAUTH2", "A0001 AUTHENTICATE XOAUTH2"]);
 
     let error = send(&oauth_account(None, Some(&smtp)), TOKEN, &hello()).unwrap_err();
-    assert_eq!(error, NetError::Proto(ProtoError::Auth(mailcraft_i18n::said!("the server offers no way to sign in with an access token"))));
+    assert_eq!(error, NetError::Proto(ProtoError::Auth(mailsolutions_i18n::said!("the server offers no way to sign in with an access token"))));
     // Nor is the mail sent unsigned, or with the token as if it were a password.
     assert_eq!(smtp.world().log, ["EHLO [127.0.0.1]"]);
     // A server that asks for no sign-in at all is no place for an account that needs one.
@@ -630,7 +630,7 @@ fn starttls_is_never_given_up_for_plain_text() {
     strict.incoming.as_mut().unwrap().security = Security::StartTls;
     strict.outgoing.as_mut().unwrap().security = Security::StartTls;
     let error = test_account(&strict, PASSWORD).unwrap_err();
-    assert_eq!(error, NetError::Tls { host: "127.0.0.1".into(), reason: mailcraft_i18n::said!("the server doesn't offer STARTTLS") });
+    assert_eq!(error, NetError::Tls { host: "127.0.0.1".into(), reason: mailsolutions_i18n::said!("the server doesn't offer STARTTLS") });
     let mut request = request(strict.clone(), local_folders());
     request.outbox = vec![Message { id: 3, to: vec![Address::new("Bob", "bob@example.org")], ..Default::default() }];
     let result = sync(&request);
@@ -669,13 +669,13 @@ fn the_outbox_is_sent_in_one_session() {
         bcc: to(&["erin@example.org", "BOB@example.org"]),
         subject: "Lunch".into(),
         date: SENT_AT,
-        body: mailcraft_model::Body { text: "See you at noon.\r\n.\r\n.. two dots\r\n".into(), html: None },
+        body: mailsolutions_model::Body { text: "See you at noon.\r\n.\r\n.. two dots\r\n".into(), html: None },
         ..Default::default()
     };
     // What the message is on the wire, were its Bcc line left out.
-    let written = mailcraft_mime_model::write(
+    let written = mailsolutions_mime_model::write(
         &lunch,
-        &mailcraft_mime_model::WriteOptions { include_bcc: false, offset_minutes: mailcraft_time::local_offset_minutes(SENT_AT) },
+        &mailsolutions_mime_model::WriteOptions { include_bcc: false, offset_minutes: mailsolutions_time::local_offset_minutes(SENT_AT) },
     );
     request.outbox = vec![
         lunch,
@@ -999,7 +999,7 @@ fn sent(imap: &FakeImap, text: &str) -> usize {
     imap.world().sent(text)
 }
 
-fn delta<'a>(result: &'a SyncResult, remote: &str) -> &'a mailcraft_model::sync::FolderDelta {
+fn delta<'a>(result: &'a SyncResult, remote: &str) -> &'a mailsolutions_model::sync::FolderDelta {
     result.folders.iter().find(|f| f.remote == remote).unwrap()
 }
 
@@ -1646,7 +1646,7 @@ fn a_copy_of_what_was_sent_is_kept_on_the_server() {
         bcc: to(&["erin@example.org"]),
         subject: "Lunch".into(),
         date: SENT_AT,
-        body: mailcraft_model::Body { text: "See you at noon.".into(), html: None },
+        body: mailsolutions_model::Body { text: "See you at noon.".into(), html: None },
         ..Default::default()
     };
     let undated =
@@ -2523,7 +2523,7 @@ fn a_run_that_only_tells_brings_nothing_down() {
 /// nothing in it that names a mailbox; taken in whole, the pieces add up.
 #[test]
 fn a_mail_server_run_carries_its_time_and_commands_by_phase() {
-    use mailcraft_model::sync::SyncPhase;
+    use mailsolutions_model::sync::SyncPhase;
     let imap = Fake::imap(imap_world());
     let mut pieces = Vec::new();
     sync_with(&request(account(Some(&imap), None), local_folders()), &AtomicBool::new(false), &mut |piece| pieces.push(piece));
@@ -2546,7 +2546,7 @@ fn a_mail_server_run_carries_its_time_and_commands_by_phase() {
 /// #276: mail sent is a request of the sending phase.
 #[test]
 fn mail_sent_is_counted_in_the_sending_phase() {
-    use mailcraft_model::sync::SyncPhase;
+    use mailsolutions_model::sync::SyncPhase;
     let smtp = Fake::smtp(smtp_world());
     let mut asked = request(account(None, Some(&smtp)), Vec::new());
     asked.outbox = vec![hello()];

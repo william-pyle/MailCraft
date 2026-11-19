@@ -9,7 +9,7 @@ fn greeting(caps: &str, replies: &str) -> String {
 
 #[test]
 fn plain_uses_an_initial_response_only_when_advertised() {
-    let payload = mailcraft_charset::base64::STANDARD.encode(b"\0user@example.org\0invented");
+    let payload = mailsolutions_charset::base64::STANDARD.encode(b"\0user@example.org\0invented");
     for inline in [false, true] {
         let caps = if inline { "AUTH=PLAIN SASL-IR LOGINDISABLED" } else { "AUTH=PLAIN LOGINDISABLED" };
         let replies = if inline { "A0001 OK welcome\r\n" } else { "+ continue\r\nA0001 OK welcome\r\n" };
@@ -31,7 +31,7 @@ fn login_remains_available_when_plain_is_not_advertised() {
 
 #[test]
 fn a_plain_refusal_is_redacted_and_never_retried_with_login() {
-    let payload = mailcraft_charset::base64::STANDARD.encode(b"\0user@example.org\0invented");
+    let payload = mailsolutions_charset::base64::STANDARD.encode(b"\0user@example.org\0invented");
     let mut stream = Script::new(greeting("AUTH=PLAIN SASL-IR", &format!("A0001 NO [AUTHENTICATIONFAILED] invented {payload}\r\n")));
     let mut imap = Imap::connect(&mut stream).unwrap();
     let error = imap.authenticate_password("user@example.org", "invented").unwrap_err();
@@ -79,7 +79,7 @@ fn utf8_and_line_breaks_are_encoded_not_protocol_lines() {
     let mut stream = Script::new(greeting("auth=plain sasl-ir", "A0001 OK welcome\r\n"));
     Imap::connect(&mut stream).unwrap().authenticate_password("user@example.org", "päss\r\nword").unwrap();
     assert_eq!(stream.sent().lines().count(), 1);
-    assert!(stream.sent().contains(&mailcraft_charset::base64::STANDARD.encode("\0user@example.org\0päss\r\nword".as_bytes())));
+    assert!(stream.sent().contains(&mailsolutions_charset::base64::STANDARD.encode("\0user@example.org\0päss\r\nword".as_bytes())));
 }
 
 #[test]

@@ -7,8 +7,8 @@
 //! (DER and BER).
 #![no_main]
 
-use mailcraft_model::digital_signature::Coverage;
-use mailcraft_smime::{Anchors, Context, Signed, check};
+use mailsolutions_model::digital_signature::Coverage;
+use mailsolutions_smime::{Anchors, Context, Signed, check};
 
 const CA: &[u8] = include_bytes!("../../crates/smime/testdata/ca.rsa.der");
 

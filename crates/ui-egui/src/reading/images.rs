@@ -14,7 +14,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_model::{Attachment, Message};
+use mailsolutions_model::{Attachment, Message};
 
 /// Largest attached picture that is looked at, in bytes.
 pub const MAX_PICTURE_BYTES: usize = 24 * 1024 * 1024;
@@ -298,7 +298,7 @@ pub struct Pictures {
 impl Pictures {
     /// The window's pictures.
     pub fn of(ctx: &egui::Context) -> Arc<Mutex<Pictures>> {
-        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Pictures>>>(egui::Id::unique("mailcraft-inline-pictures")).clone())
+        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Pictures>>>(egui::Id::unique("mailsolutions-inline-pictures")).clone())
     }
 
     fn entry(&mut self, data: &Arc<Vec<u8>>, frame: u64) -> Option<&mut Entry> {
@@ -436,7 +436,7 @@ impl Pictures {
         let Some(entry) = self.entries.get_mut(index) else { return Picture::Failed };
         let picture = match decode(&entry.data, max_side, wanted) {
             Some(image) => {
-                let texture = ctx.load_texture("mailcraft-inline-picture", image, egui::TextureOptions::LINEAR);
+                let texture = ctx.load_texture("mailsolutions-inline-picture", image, egui::TextureOptions::LINEAR);
                 entry.texture = Some(texture.clone());
                 Picture::Ready(texture)
             }

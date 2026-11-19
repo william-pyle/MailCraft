@@ -11,10 +11,10 @@ use std::sync::Mutex;
 use crate::fetch::Access;
 use crate::secrets::{SecretError, SecretStore};
 use crate::sync::{Adopted, Context, SendReceive};
-use mailcraft_engine::Session;
-use mailcraft_engine::sync_driver::ClientIds;
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{AccountKind, Mailbox, OAuth, OAuthProvider};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::sync_driver::ClientIds;
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{AccountKind, Mailbox, OAuth, OAuthProvider};
 
 #[derive(Default)]
 struct Store(Mutex<HashMap<String, String>>);

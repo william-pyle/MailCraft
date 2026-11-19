@@ -17,12 +17,12 @@
 //! status, and never holds the token, the id or a word of Gmail's answer.
 //!
 //! Nothing here decides to move anything: a host calls it only for a move the owner made, and
-//! only while moves between Gmail's categories are switched on (`mailcraft-engine`).
+//! only while moves between Gmail's categories are switched on (`mailsolutions-engine`).
 
 use std::time::Duration;
 
-use mailcraft_model::GmailCategory;
-use mailcraft_proto::ProtoError;
+use mailsolutions_model::GmailCategory;
+use mailsolutions_proto::ProtoError;
 use serde_json::json;
 
 use crate::NetError;
@@ -50,7 +50,7 @@ fn api_base() -> String {
 }
 
 /// Whether moves between Gmail's categories are switched on in this build
-/// ([`mailcraft_model::gmail::GMAIL_CATEGORY_MOVES`]): held to here whatever a request asks, so
+/// ([`mailsolutions_model::gmail::GMAIL_CATEGORY_MOVES`]): held to here whatever a request asks, so
 /// that while they are off nothing goes to Gmail's API. (A test's stand-in may switch them on, on
 /// its own thread: `standin::route`.)
 pub fn switched_on() -> bool {
@@ -58,7 +58,7 @@ pub fn switched_on() -> bool {
     if standin::switched_on() {
         return true;
     }
-    mailcraft_model::gmail::GMAIL_CATEGORY_MOVES
+    mailsolutions_model::gmail::GMAIL_CATEGORY_MOVES
 }
 
 /// Move the messages Gmail knows as `ids` (`X-GM-MSGID`) to `category`, as the owner of `token`
@@ -86,7 +86,7 @@ pub const MAX_BATCH: usize = 1000;
 /// [`batch_modify`] against the API at `base`.
 fn batch_modify_at(base: &str, token: &str, ids: &[u64], category: GmailCategory) -> Result<(), NetError> {
     if !switched_on() {
-        return Err(NetError::Config("moving mail between Gmail's categories comes once Google has reviewed MailCraft".into()));
+        return Err(NetError::Config("moving mail between Gmail's categories comes once Google has reviewed MailSolutions".into()));
     }
     if ids.is_empty() {
         return Ok(());

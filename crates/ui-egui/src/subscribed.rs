@@ -6,7 +6,7 @@
 //! The engine makes the calendar and takes in what a look at the web brought; this is the part in
 //! between that has the address. The address of a subscribed calendar may hold a secret (the
 //! private addresses calendar services hand out have a token in the path), so it is kept as a
-//! password is: in the system's credential store when the owner lets MailCraft remember sign-ins
+//! password is: in the system's credential store when the owner lets MailSolutions remember sign-ins
 //! (`MailApp::secret_cache` has what the background read of the store found), and in memory for
 //! the session otherwise. With neither, the calendar stays listed, with what it held, and File ›
 //! Info asks for its address again. It is never in the mailbox file, `ui.json`, a log line or a
@@ -21,8 +21,8 @@
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 
-use mailcraft_model::Id;
-use mailcraft_model::subscription::{Failure, SubscriptionAsk, SubscriptionOutcome, try_https};
+use mailsolutions_model::Id;
+use mailsolutions_model::subscription::{Failure, SubscriptionAsk, SubscriptionOutcome, try_https};
 use serde_json::{Value, json};
 
 use crate::{MailApp, now_ms};
@@ -59,7 +59,7 @@ pub(crate) struct Subscribed {
     /// The addresses of this session's subscriptions: what was typed, or typed again. (Those the
     /// credential store holds are in `MailApp::secret_cache`.)
     addresses: HashMap<Id, String>,
-    /// The look in flight: the calendar, the mailbox it was for ([`mailcraft_engine::Session::openings`])
+    /// The look in flight: the calendar, the mailbox it was for ([`mailsolutions_engine::Session::openings`])
     /// and the answer to come.
     job: Option<(Id, u64, Receiver<SubscriptionDone>)>,
     /// When the engine is next asked what is due (milliseconds); 0 for now.
@@ -78,7 +78,7 @@ impl Subscribed {
         self.next_ask = 0.0;
     }
 
-    /// Let go of every address held in memory (Remove MailCraft's Data).
+    /// Let go of every address held in memory (Remove MailSolutions's Data).
     pub(crate) fn forget_addresses(&mut self) {
         self.addresses.clear();
         self.again = None;

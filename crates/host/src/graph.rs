@@ -16,19 +16,19 @@ pub use run::{Renew, RenewSend, graph_in, graph_in_with, graph_sending_with, gra
 #[cfg(not(target_arch = "wasm32"))]
 pub use run::{graph, local_zone, open_by_address};
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 
 /// What the host is asked to do with Microsoft Graph for one account (the front end's `Services::graph`).
 pub struct GraphRequest {
-    pub account: mailcraft_model::Account,
+    pub account: mailsolutions_model::Account,
     /// The account's sign-in settings, with the application id filled in.
-    pub oauth: mailcraft_model::OAuth,
+    pub oauth: mailsolutions_model::OAuth,
     /// The account's refresh token, to get a Graph token with when `access` is empty.
     pub refresh: String,
     /// A Graph access token from earlier in this session that is still good; else empty.
     pub access: String,
     /// Mail waiting in the Outbox, to send through Graph.
-    pub outbox: Vec<mailcraft_model::Message>,
+    pub outbox: Vec<mailsolutions_model::Message>,
     /// Also bring the calendar and the contacts down.
     pub directory: bool,
     /// A stretch of the calendar to bring down when `directory` isn't asked for (Unix seconds,
@@ -36,10 +36,10 @@ pub struct GraphRequest {
     pub calendar: Option<(i64, i64)>,
     /// What was made, changed or deleted in the calendar here, for the server to be told before
     /// the calendar is brought down.
-    pub changes: Option<mailcraft_model::remote::EventsUpload>,
+    pub changes: Option<mailsolutions_model::remote::EventsUpload>,
     /// The calendars of the account to bring down, each with the series the mailbox expects in
     /// the stretch (the account's main calendar is the one with no name; it comes anyway).
-    pub asks: Vec<mailcraft_model::remote::CalendarAsk>,
+    pub asks: Vec<mailsolutions_model::remote::CalendarAsk>,
     /// Also bring the working hours the mailbox has set: an extra that takes a permission of its
     /// own, without which the answer says [`GraphResult::extras_missing`].
     pub settings: bool,
@@ -52,11 +52,11 @@ pub struct GraphRequest {
     /// For an account kept in step through Microsoft Graph (R3): the folder changes to make and
     /// the folders to list ([`GraphResult::mail`]). A token obtained for this job is asked for
     /// with `Mail.ReadWrite`.
-    pub mail: Option<mailcraft_model::sync::GraphMailRequest>,
+    pub mail: Option<mailsolutions_model::sync::GraphMailRequest>,
     /// Where the pieces of that mail run go as they come (R3.2): the folders, then a page at a
     /// time, each taken in by the window as it arrives. `None`: the run comes back whole in
     /// [`GraphResult::mail`].
-    pub mail_pieces: Option<std::sync::mpsc::SyncSender<mailcraft_model::sync::GraphMailResult>>,
+    pub mail_pieces: Option<std::sync::mpsc::SyncSender<mailsolutions_model::sync::GraphMailResult>>,
     /// Set when the owner stops the run (Cancel): it stops after the page in hand.
     pub cancel: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
@@ -64,10 +64,10 @@ pub struct GraphRequest {
 /// What a [`GraphRequest`] came to. Never an error as a whole: mail goes on either way.
 #[derive(Default)]
 pub struct GraphResult {
-    pub account: mailcraft_model::Id,
+    pub account: mailsolutions_model::Id,
     /// A Graph token that was obtained for this (kept for the session; its refresh token is the
     /// account's newest).
-    pub tokens: Option<mailcraft_model::sync::Tokens>,
+    pub tokens: Option<mailsolutions_model::sync::Tokens>,
     /// The owner hasn't allowed this program to use Graph: "Connect calendar and contacts" asks.
     pub consent_needed: bool,
     /// A shared mailbox's run had mail to send, and the owner hasn't allowed sending from shared
@@ -91,25 +91,25 @@ pub struct GraphResult {
     /// connection, an answer that doesn't say): they may have gone, and are held for the owner
     /// (AU3-26). The rest of `held` didn't go, and goes with the next run.
     pub unsure: Vec<Id>,
-    pub events: Option<mailcraft_model::remote::EventsDownload>,
-    pub contacts: Option<mailcraft_model::remote::ContactsDownload>,
+    pub events: Option<mailsolutions_model::remote::EventsDownload>,
+    pub contacts: Option<mailsolutions_model::remote::ContactsDownload>,
     /// What the server said to the calendar changes it was told ([`GraphRequest::changes`]).
-    pub uploaded: Option<mailcraft_model::remote::EventsUploaded>,
+    pub uploaded: Option<mailsolutions_model::remote::EventsUploaded>,
     pub errors: Vec<String>,
     /// The same stretch of the account's other calendars.
-    pub more_events: Vec<mailcraft_model::remote::EventsDownload>,
+    pub more_events: Vec<mailsolutions_model::remote::EventsDownload>,
     /// The account's calendars and the groups they are listed in, when they were asked for.
-    pub calendars: Option<mailcraft_model::remote::CalendarsDownload>,
+    pub calendars: Option<mailsolutions_model::remote::CalendarsDownload>,
     /// The mailbox's own categories with their colours, when they could be read.
-    pub categories: Option<mailcraft_model::remote::CategoriesDownload>,
+    pub categories: Option<mailsolutions_model::remote::CategoriesDownload>,
     /// The sign-in covers everything but an optional extra (reading the mailbox's category
     /// list): all else works, and "Connect calendar and contacts" would add it.
     pub extras_missing: bool,
     /// The working hours the mailbox has set, when they were asked for and could be read.
-    pub mailbox_hours: Option<mailcraft_engine::cmd::calendar_settings::MailboxHours>,
+    pub mailbox_hours: Option<mailsolutions_engine::cmd::calendar_settings::MailboxHours>,
     /// The Favorites as Outlook has them, when they were asked for: the list, or how the read
     /// went instead (the mailbox has none, the sign-in doesn't cover it, it failed).
-    pub favorites: Option<mailcraft_model::remote::FavoritesDownload>,
+    pub favorites: Option<mailsolutions_model::remote::FavoritesDownload>,
     /// Why reading the Favorites failed, in a few plain words for the folder pane; no name
     /// and no id in it.
     pub favorites_error: String,
@@ -117,5 +117,5 @@ pub struct GraphResult {
     /// (it was asked for with that, and the sign-in covers it).
     pub favorites_covered: Option<bool>,
     /// What the folders came to, when [`GraphRequest::mail`] asked.
-    pub mail: Option<mailcraft_model::sync::GraphMailResult>,
+    pub mail: Option<mailsolutions_model::sync::GraphMailResult>,
 }

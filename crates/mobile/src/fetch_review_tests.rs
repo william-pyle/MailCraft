@@ -8,10 +8,10 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use mailcraft_engine::Session;
-use mailcraft_host::secrets::secret_key;
-use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphSearchResult, MessagePage};
-use mailcraft_model::{FolderKind, Mailbox};
+use mailsolutions_engine::Session;
+use mailsolutions_host::secrets::secret_key;
+use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphSearchResult, MessagePage};
+use mailsolutions_model::{FolderKind, Mailbox};
 use serde_json::json;
 
 use crate::fake_tests::{FakePlatform, block_on, now};
@@ -54,7 +54,7 @@ fn two_accounts() -> Session {
         whole: true,
         ..Default::default()
     };
-    mailcraft_engine::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
+    mailsolutions_engine::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
     s
 }
 

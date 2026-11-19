@@ -20,7 +20,7 @@ pub const MAX_COLLECTIONS: usize = 50;
 /// Largest `calendar-data` or `address-data` kept in one entry; a larger one is flagged.
 pub const MAX_DATA: usize = 1024 * 1024;
 /// Longest display name kept, in characters.
-pub const MAX_NAME: usize = mailcraft_model::MAX_NAME;
+pub const MAX_NAME: usize = mailsolutions_model::MAX_NAME;
 const MAX_LIST: usize = 32;
 const MAX_HOMES: usize = 8;
 

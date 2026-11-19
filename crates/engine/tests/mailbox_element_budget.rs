@@ -10,9 +10,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::test_support::{Limits, with_limits};
-use mailcraft_model::Mailbox;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::test_support::{Limits, with_limits};
+use mailsolutions_model::Mailbox;
 use serde_json::json;
 
 /// A directory of the test's own, removed after it.
@@ -20,7 +20,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-element-budget-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-element-budget-{}-{name}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -42,7 +42,7 @@ impl Drop for Temp {
 fn payload(n: usize) -> Vec<u8> {
     let mut mb = Mailbox::with_local_account("Avery Quinn", "avery@example.org");
     let inbox = mb.inbox().unwrap();
-    mb.add_message(mailcraft_model::Message { folder: inbox, subject: "Many".into(), ..Default::default() }).unwrap();
+    mb.add_message(mailsolutions_model::Message { folder: inbox, subject: "Many".into(), ..Default::default() }).unwrap();
     let mut value = serde_json::to_value(&mb).unwrap();
     let message = value["messages"].as_object_mut().unwrap().values_mut().next().unwrap();
     message["attachments"] = json!(["ELEMENTS"]);
@@ -77,7 +77,7 @@ fn refused(result: Result<impl Sized, String>, form: &str) {
 
 /// The payload as a mailbox, read with room for it.
 fn whole_mailbox(bytes: &[u8]) -> Mailbox {
-    with_limits(limits(AMPLE, false), || mailcraft_engine::io::read_mailbox(bytes)).unwrap()
+    with_limits(limits(AMPLE, false), || mailsolutions_engine::io::read_mailbox(bytes)).unwrap()
 }
 
 #[test]
@@ -85,8 +85,8 @@ fn one_file_read_whole_is_refused() {
     let t = Temp::new("whole");
     let path = t.file("whole.mailcraft");
     fs::write(&path, payload(ELEMENTS)).unwrap();
-    refused(with_limits(limits(SMALL, false), || mailcraft_engine::store::open(&path)), "whole");
-    let opened = with_limits(limits(AMPLE, false), || mailcraft_engine::store::open(&path)).unwrap();
+    refused(with_limits(limits(SMALL, false), || mailsolutions_engine::store::open(&path)), "whole");
+    let opened = with_limits(limits(AMPLE, false), || mailsolutions_engine::store::open(&path)).unwrap();
     assert!(!opened.split, "read whole");
     assert_eq!(opened.mailbox.messages.values().next().unwrap().attachments.len(), ELEMENTS);
 }
@@ -96,8 +96,8 @@ fn one_file_read_as_a_stream_is_refused() {
     let t = Temp::new("stream");
     let path = t.file("stream.mailcraft");
     fs::write(&path, payload(ELEMENTS)).unwrap();
-    refused(with_limits(limits(SMALL, true), || mailcraft_engine::store::open(&path)), "stream");
-    let opened = with_limits(limits(AMPLE, true), || mailcraft_engine::store::open(&path)).unwrap();
+    refused(with_limits(limits(SMALL, true), || mailsolutions_engine::store::open(&path)), "stream");
+    let opened = with_limits(limits(AMPLE, true), || mailsolutions_engine::store::open(&path)).unwrap();
     assert!(opened.split, "read as a stream");
     assert_eq!(opened.mailbox.messages.values().next().unwrap().attachments.len(), ELEMENTS);
 }
@@ -107,10 +107,10 @@ fn the_form_with_a_log_of_records_is_refused() {
     let t = Temp::new("index");
     let path = t.file("index.mailcraft");
     let mailbox = whole_mailbox(&payload(ELEMENTS));
-    mailcraft_engine::store::save(&path, &mailbox).unwrap();
-    assert!(fs::read(&path).unwrap().starts_with(mailcraft_engine::io::INDEX_MAGIC));
-    refused(with_limits(limits(SMALL, false), || mailcraft_engine::store::open(&path)), "index");
-    let opened = with_limits(limits(AMPLE, false), || mailcraft_engine::store::open(&path)).unwrap();
+    mailsolutions_engine::store::save(&path, &mailbox).unwrap();
+    assert!(fs::read(&path).unwrap().starts_with(mailsolutions_engine::io::INDEX_MAGIC));
+    refused(with_limits(limits(SMALL, false), || mailsolutions_engine::store::open(&path)), "index");
+    let opened = with_limits(limits(AMPLE, false), || mailsolutions_engine::store::open(&path)).unwrap();
     assert_eq!(opened.mailbox.messages.values().next().unwrap().attachments.len(), ELEMENTS);
 }
 
@@ -118,10 +118,10 @@ fn the_form_with_a_log_of_records_is_refused() {
 fn a_mailbox_handed_over_as_text_is_refused() {
     let bytes = payload(ELEMENTS);
     // As the browser reads its stored mailbox.
-    refused(with_limits(limits(SMALL, false), || mailcraft_engine::io::read_mailbox(&bytes)), "data");
+    refused(with_limits(limits(SMALL, false), || mailsolutions_engine::io::read_mailbox(&bytes)), "data");
     assert_eq!(whole_mailbox(&bytes).messages.values().next().unwrap().attachments.len(), ELEMENTS);
     // As `file.open` reads `data`.
-    let data = mailcraft_charset::base64::STANDARD.encode(&bytes);
+    let data = mailsolutions_charset::base64::STANDARD.encode(&bytes);
     let params = json!({"name": "given.mailcraft", "data": data});
     let mut s = Session::new(Mailbox::default());
     let e = with_limits(limits(SMALL, false), || s.run("file.open", &params)).unwrap_err();
@@ -144,8 +144,8 @@ fn elements_at_any_depth_are_charged() {
         json.push_str("[]");
     }
     json.push_str("]]}]}");
-    refused(with_limits(limits(SMALL, false), || mailcraft_engine::io::read_mailbox(json.as_bytes())), "deep");
-    with_limits(limits(AMPLE, false), || mailcraft_engine::io::read_mailbox(json.as_bytes())).unwrap();
+    refused(with_limits(limits(SMALL, false), || mailsolutions_engine::io::read_mailbox(json.as_bytes())), "deep");
+    with_limits(limits(AMPLE, false), || mailsolutions_engine::io::read_mailbox(json.as_bytes())).unwrap();
 }
 
 /// A mailbox of a million messages, saved in the form with a log of records, opens within the
@@ -159,10 +159,10 @@ fn a_million_messages_open_where_memory_cant_be_measured() {
     let mut mb = Mailbox::with_local_account("Avery Quinn", "avery@example.org");
     let inbox = mb.inbox().unwrap();
     for _ in 0..1_000_000 {
-        mb.add_message(mailcraft_model::Message { folder: inbox, ..Default::default() }).unwrap();
+        mb.add_message(mailsolutions_model::Message { folder: inbox, ..Default::default() }).unwrap();
     }
-    mailcraft_engine::store::save(&path, &mb).unwrap();
+    mailsolutions_engine::store::save(&path, &mb).unwrap();
     drop(mb);
-    let opened = with_limits(limits(8 << 30, false), || mailcraft_engine::store::open(&path)).unwrap();
+    let opened = with_limits(limits(8 << 30, false), || mailsolutions_engine::store::open(&path)).unwrap();
     assert_eq!(opened.mailbox.messages.len(), 1_000_000);
 }

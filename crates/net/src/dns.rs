@@ -9,8 +9,8 @@
 
 use std::time::Duration;
 
-use mailcraft_model::provider::is_domain;
-use mailcraft_proto::ProtoError;
+use mailsolutions_model::provider::is_domain;
+use mailsolutions_proto::ProtoError;
 use serde_json::Value;
 
 use crate::NetError;
@@ -166,7 +166,7 @@ mod tests {
         }
         // A question and nothing else: no body, and nothing about who is asking.
         assert!(request.ends_with("\r\n\r\n") && !request.to_lowercase().contains("content-length"), "{request}");
-        assert!(request.contains("User-Agent: MailCraft\r\n") && !request.to_lowercase().contains("cookie"), "{request}");
+        assert!(request.contains("User-Agent: MailSolutions\r\n") && !request.to_lowercase().contains("cookie"), "{request}");
 
         // A name server whose address has a question of its own.
         lookup_mx_at(&[&server.url("/resolve?ct=application/dns-json")], "example.org").unwrap();

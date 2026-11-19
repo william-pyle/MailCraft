@@ -15,8 +15,8 @@
 //! asked for at the first send: `sync.holdSends`), what waits is held with that reason. It is
 //! never sent from the owner's own address instead.
 
-use mailcraft_model::sync::{MAX_SENDS, SEND_AS_DENIED, SendDone, SendOutcome, SendUp};
-use mailcraft_model::{FolderKind, Id, Mailbox, Queued};
+use mailsolutions_model::sync::{MAX_SENDS, SEND_AS_DENIED, SendDone, SendOutcome, SendUp};
+use mailsolutions_model::{FolderKind, Id, Mailbox, Queued};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -34,10 +34,10 @@ pub fn specs() -> Vec<CommandSpec> {
 
 /// Whether `m` was delivered by the server (into a folder 0.8.0 and before followed as the
 /// Outbox) rather than queued here: it has a server copy and is not a draft saved or sent from
-/// here (those carry MailCraft's marker, or a change of the owner's waiting to go up, which only
+/// here (those carry MailSolutions's marker, or a change of the owner's waiting to go up, which only
 /// the owner's own saves and sends make: a draft begun elsewhere and sent here before it had a
 /// marker of its own). Only what the owner queued here is ever sent (AU2-V2).
-pub fn from_server(m: &mailcraft_model::Message) -> bool {
+pub fn from_server(m: &mailsolutions_model::Message) -> bool {
     m.server.is_some() && m.server_draft.as_ref().is_none_or(|sd| sd.marker.is_empty() && !sd.pending)
 }
 
@@ -48,9 +48,9 @@ pub fn sends(s: &Session, account: Id) -> Vec<SendUp> {
     let mb = &s.mailbox;
     let Some(outbox) = mb.folder_of_kind(account, FolderKind::Outbox) else { return Vec::new() };
     let kind = mb.account(account).map(|a| a.kind);
-    let exchange = kind == Some(mailcraft_model::AccountKind::Exchange);
+    let exchange = kind == Some(mailsolutions_model::AccountKind::Exchange);
     // A JMAP account's message always goes whole: its server keeps no draft of this program's.
-    let jmap = kind == Some(mailcraft_model::AccountKind::Jmap);
+    let jmap = kind == Some(mailsolutions_model::AccountKind::Jmap);
     // (Not what waits for its Send time: due is judged here, at each run, #950.)
     let now = s.now();
     let mut waiting: Vec<_> = mb.messages_in(outbox).filter(|m| m.held.is_empty() && !m.waits_until(now) && !from_server(m)).map(|m| m.id).collect();
@@ -74,7 +74,7 @@ pub fn sends(s: &Session, account: Id) -> Vec<SendUp> {
             // Sent as it is here, every field and attachment written over what the server has:
             // whatever was changed on the server meanwhile is the owner's to lose (AU2-14).
             Some(draft) if !jmap => {
-                SendUp { message: m.id, draft: Some(mailcraft_model::sync::DraftUp { change_key: String::new(), ..draft }), mime: None }
+                SendUp { message: m.id, draft: Some(mailsolutions_model::sync::DraftUp { change_key: String::new(), ..draft }), mime: None }
             }
             _ => SendUp { message: m.id, draft: None, mime: Some(Box::new(m.as_ref().clone())) },
         })
@@ -109,13 +109,20 @@ pub fn waiting_at(mb: &Mailbox, now: i64, account: Id) -> usize {
 
 /// Take in what became of one message sent. Whether anything changed; a line for the owner when
 /// it is held.
-pub fn send_done(mb: &mut Mailbox, account: Id, done: &SendDone, lang: mailcraft_i18n::Lang, said: &mut Vec<String>) -> bool {
+pub fn send_done(mb: &mut Mailbox, account: Id, done: &SendDone, lang: mailsolutions_i18n::Lang, said: &mut Vec<String>) -> bool {
     send_done_at(mb, account, done, lang, said, None)
 }
 
 /// [`send_done`] at `now`: a message's follow-up reminder set as "after so many days" counts them
 /// from the moment it went (#948), and one whose copy the server files in Sent Items waits for it.
-pub fn send_done_at(mb: &mut Mailbox, account: Id, done: &SendDone, lang: mailcraft_i18n::Lang, said: &mut Vec<String>, now: Option<i64>) -> bool {
+pub fn send_done_at(
+    mb: &mut Mailbox,
+    account: Id,
+    done: &SendDone,
+    lang: mailsolutions_i18n::Lang,
+    said: &mut Vec<String>,
+    now: Option<i64>,
+) -> bool {
     let mut changed = false;
     // Whether the owner queued it here, as it stood before the answer: `draft_done` may take away
     // the pending change that alone says so of a draft begun elsewhere without a marker (#738).
@@ -132,7 +139,7 @@ pub fn send_done_at(mb: &mut Mailbox, account: Id, done: &SendDone, lang: mailcr
         m.sending = false;
         changed = true;
     }
-    // Queued here by the owner: one without MailCraft's marker (a draft begun elsewhere that an
+    // Queued here by the owner: one without MailSolutions's marker (a draft begun elsewhere that an
     // earlier version queued) gets it now (#738), as `compose.send` gives it. Its change may have
     // just gone up, and without the marker it would then be taken for mail the server put in the
     // Outbox: never sent again, even after Send Again. After `draft_done`, which matches the
@@ -146,16 +153,16 @@ pub fn send_done_at(mb: &mut Mailbox, account: Id, done: &SendDone, lang: mailcr
     }
     let Some(m) = mb.message(done.message).filter(|m| m.account == account) else { return changed };
     let kind = mb.account(account).map(|a| a.kind);
-    let server = if kind == Some(mailcraft_model::AccountKind::Microsoft) { "Microsoft" } else { "the server" };
+    let server = if kind == Some(mailsolutions_model::AccountKind::Microsoft) { "Microsoft" } else { "the server" };
     // A JMAP account's copy is filed in Sent (in Drafts where there is none) marked as a draft
     // before it is submitted, and the submission takes the mark off (RFC 8621 §7.5): a copy is
     // there whether or not it went, and one still marked may have gone too (the server may send it
     // and fail to change the copy), so the mark never says that it did not go.
-    let jmap = kind == Some(mailcraft_model::AccountKind::Jmap);
+    let jmap = kind == Some(mailsolutions_model::AccountKind::Jmap);
     let subject: String = m.subject.chars().filter(|c| !c.is_control()).take(60).collect();
     let subject = if subject.trim().is_empty() { lang.t("(no subject)").to_string() } else { subject };
     let couldnt = |why: &str| {
-        mailcraft_i18n::fmt(lang.t("Couldn't send '{subject}': {why}. It is held in the Outbox."), &[("subject", &subject), ("why", why)])
+        mailsolutions_i18n::fmt(lang.t("Couldn't send '{subject}': {why}. It is held in the Outbox."), &[("subject", &subject), ("why", why)])
     };
     match &done.outcome {
         SendOutcome::Waits => changed,
@@ -214,14 +221,17 @@ pub fn send_done_at(mb: &mut Mailbox, account: Id, done: &SendDone, lang: mailcr
                 format!("It wasn't sent: {why}. Change it, or send it again.")
             };
             said.push(if *lost && jmap {
-                mailcraft_i18n::fmt(
+                mailsolutions_i18n::fmt(
                     lang.t(
                         "'{subject}' may have been sent, even if its copy in Sent (or Drafts) is still marked as a draft. It is held in the Outbox.",
                     ),
                     &[("subject", &subject)],
                 )
             } else if *lost {
-                mailcraft_i18n::fmt(lang.t("'{subject}' may have been sent: look in Sent Items. It is held in the Outbox."), &[("subject", &subject)])
+                mailsolutions_i18n::fmt(
+                    lang.t("'{subject}' may have been sent: look in Sent Items. It is held in the Outbox."),
+                    &[("subject", &subject)],
+                )
             } else {
                 couldnt(why)
             });
@@ -239,18 +249,18 @@ pub fn send_done_at(mb: &mut Mailbox, account: Id, done: &SendDone, lang: mailcr
 /// the draft taken away).
 fn sent_as_draft(mb: &Mailbox, account: Id, id: Id) -> Option<Id> {
     let m = mb.message(id).filter(|m| m.account == account)?;
-    let microsoft = mb.account(account).is_some_and(|a| a.kind == mailcraft_model::AccountKind::Microsoft);
+    let microsoft = mb.account(account).is_some_and(|a| a.kind == mailsolutions_model::AccountKind::Microsoft);
     let server_draft = m.server_draft.is_some() && m.server.as_ref().is_some_and(|s| !s.gone && !s.id.is_empty());
     (microsoft && server_draft).then(|| mb.folder_of_kind(account, FolderKind::Sent)).flatten()
 }
 
 /// What a message held for having been handed to a server without an answer coming back says.
-pub const MAY_HAVE_GONE: &str = "It may have been sent: it was handed to the server, and the answer never came back (another mailbox was opened, or MailCraft stopped). Look in Sent Items before you send it again.";
+pub const MAY_HAVE_GONE: &str = "It may have been sent: it was handed to the server, and the answer never came back (another mailbox was opened, or MailSolutions stopped). Look in Sent Items before you send it again.";
 
 /// The same for a JMAP account, whose copy is in Sent (or Drafts) marked as a draft whether or not
 /// it went (RFC 8621 §7.5: the submission takes the mark off, and may go without the mark coming
 /// off).
-pub const MAY_HAVE_GONE_JMAP: &str = "It may have been sent: it was handed to the server, and the answer never came back (another mailbox was opened, or MailCraft stopped). Its copy is in Sent, or in Drafts where the account has no Sent folder: if the copy is no longer marked as a draft, it went; if it still is, it may have gone too. Ask a recipient before you send it again.";
+pub const MAY_HAVE_GONE_JMAP: &str = "It may have been sent: it was handed to the server, and the answer never came back (another mailbox was opened, or MailSolutions stopped). Its copy is in Sent, or in Drafts where the account has no Sent folder: if the copy is no longer marked as a draft, it went; if it still is, it may have gone too. Ask a recipient before you send it again.";
 
 /// Mark the messages `ids` of `account`'s Outbox as being sent (AU3-26), before the run that
 /// sends them is handed to the host. Whether any mark is new (the mailbox is to be saved before
@@ -285,9 +295,9 @@ pub fn sending_answered(mb: &mut Mailbox, account: Id) -> bool {
 /// Again), never sent again by itself. A line for the owner for each one; whether anything changed.
 /// Only what is still in the Outbox is held: a mark anywhere else (filed in Sent Items, moved
 /// away) is a stray, and is only taken off.
-pub fn hold_unanswered(mb: &mut Mailbox, account: Id, lang: mailcraft_i18n::Lang, said: &mut Vec<String>) -> bool {
+pub fn hold_unanswered(mb: &mut Mailbox, account: Id, lang: mailsolutions_i18n::Lang, said: &mut Vec<String>) -> bool {
     let outbox = mb.folder_of_kind(account, FolderKind::Outbox);
-    let jmap = mb.account(account).is_some_and(|a| a.kind == mailcraft_model::AccountKind::Jmap);
+    let jmap = mb.account(account).is_some_and(|a| a.kind == mailsolutions_model::AccountKind::Jmap);
     let mut marked: Vec<Id> = mb.messages.values().filter(|m| m.account == account && m.sending).map(|m| m.id).collect();
     marked.sort_unstable();
     for id in &marked {
@@ -304,7 +314,7 @@ pub fn hold_unanswered(mb: &mut Mailbox, account: Id, lang: mailcraft_i18n::Lang
         } else {
             lang.t("'{subject}' may have been sent: look in Sent Items. It is held in the Outbox.")
         };
-        said.push(mailcraft_i18n::fmt(line, &[("subject", &subject)]));
+        said.push(mailsolutions_i18n::fmt(line, &[("subject", &subject)]));
     }
     !marked.is_empty()
 }
@@ -313,7 +323,7 @@ pub fn hold_unanswered(mb: &mut Mailbox, account: Id, lang: mailcraft_i18n::Lang
 /// "the server") whose answer was lost (a timeout, a connection that broke, an answer that doesn't
 /// say): they may have gone, so each still in the Outbox is held for the owner, never sent again
 /// by itself (AU3-26). A line for the owner for each; whether anything changed.
-pub fn hold_lost(mb: &mut Mailbox, account: Id, ids: &[Id], server: &str, lang: mailcraft_i18n::Lang, said: &mut Vec<String>) -> bool {
+pub fn hold_lost(mb: &mut Mailbox, account: Id, ids: &[Id], server: &str, lang: mailsolutions_i18n::Lang, said: &mut Vec<String>) -> bool {
     let outbox = mb.folder_of_kind(account, FolderKind::Outbox);
     let mut changed = false;
     for id in ids {
@@ -329,7 +339,7 @@ pub fn hold_lost(mb: &mut Mailbox, account: Id, ids: &[Id], server: &str, lang: 
         m.held = format!("It may have been sent: the answer from {server} was lost. Look in Sent Items before you send it again.");
         let subject: String = m.subject.chars().filter(|c| !c.is_control()).take(60).collect();
         let subject = if subject.trim().is_empty() { lang.t("(no subject)").to_string() } else { subject };
-        said.push(mailcraft_i18n::fmt(
+        said.push(mailsolutions_i18n::fmt(
             lang.t("'{subject}' may have been sent: look in Sent Items. It is held in the Outbox."),
             &[("subject", &subject)],
         ));
@@ -341,8 +351,8 @@ pub fn hold_lost(mb: &mut Mailbox, account: Id, ids: &[Id], server: &str, lang: 
 fn hold_reason(code: &str) -> Option<&'static str> {
     match code {
         "declined" => Some("sending from shared mailboxes wasn't allowed on Microsoft's page"),
-        "approval" => Some("your organisation's administrator has to approve MailCraft sending from shared mailboxes first"),
-        "organisation" => Some("your organisation doesn't let MailCraft send from shared mailboxes"),
+        "approval" => Some("your organisation's administrator has to approve MailSolutions sending from shared mailboxes first"),
+        "organisation" => Some("your organisation doesn't let MailSolutions send from shared mailboxes"),
         _ => None,
     }
 }

@@ -20,10 +20,10 @@
 use std::sync::mpsc::Receiver;
 
 use egui::{Align2, Color32, CursorIcon, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::sync_driver::free_busy::{FreeBusyCame, ToAsk};
-use mailcraft_model::sync::Tokens as SignIn;
-use mailcraft_model::{Address, Id, ShowAs};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_engine::sync_driver::free_busy::{FreeBusyCame, ToAsk};
+use mailsolutions_model::sync::Tokens as SignIn;
+use mailsolutions_model::{Address, Id, ShowAs};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::Value;
 
 use crate::theme::{Tokens, paint_clipped, regular, semibold};
@@ -46,11 +46,11 @@ const EDGE_W: f32 = 7.0;
 
 /// What the host is asked to find out for Find a Time, and what it came to
 /// ([`Services::free_busy`](crate::Services::free_busy)).
-pub use mailcraft_host::calendar::{FreeBusyRequest, FreeBusyResult};
+pub use mailsolutions_host::calendar::{FreeBusyRequest, FreeBusyResult};
 
 /// One person's day, whose time is looked at, and what Find a Time gets when it looks: the
-/// engine's ([`mailcraft_engine::sync_driver::free_busy`]).
-pub(crate) use mailcraft_engine::sync_driver::free_busy::{Day, Key, Look, address_key};
+/// engine's ([`mailsolutions_engine::sync_driver::free_busy`]).
+pub(crate) use mailsolutions_engine::sync_driver::free_busy::{Day, Key, Look, address_key};
 
 /// What the app keeps of people's free and busy times: the question in flight. What was found out
 /// and when it is due again are the engine's.
@@ -84,8 +84,8 @@ impl MailApp {
     }
 
     /// What the host is asked about, as the engine's rules want it said.
-    fn free_busy_facts<'a>(&self, in_flight: Option<&'a Key>) -> mailcraft_engine::sync_driver::free_busy::FreeBusyFacts<'a> {
-        mailcraft_engine::sync_driver::free_busy::FreeBusyFacts {
+    fn free_busy_facts<'a>(&self, in_flight: Option<&'a Key>) -> mailsolutions_engine::sync_driver::free_busy::FreeBusyFacts<'a> {
+        mailsolutions_engine::sync_driver::free_busy::FreeBusyFacts {
             reachable: self.services.free_busy.is_some(),
             busy: self.job_busy(),
             in_flight,
@@ -100,7 +100,7 @@ impl MailApp {
         let (mut look, to_ask) = self.session.free_busy_look(calendar, people, day, &facts, now);
         let Some(ToAsk { account, key, ask }) = to_ask else { return look };
         let Some(oauth) = account.oauth.clone() else { return look };
-        let access = self.graph_tokens.get(&account.id).filter(|t| t.fresh(mailcraft_time::now())).map(|t| t.access.clone()).unwrap_or_default();
+        let access = self.graph_tokens.get(&account.id).filter(|t| t.fresh(mailsolutions_time::now())).map(|t| t.access.clone()).unwrap_or_default();
         let kept = self.tokens.get(&account.id).map(|t| t.refresh.clone()).filter(|r| !r.is_empty());
         let refresh = kept.or_else(|| self.remembered("refresh", account.id)).unwrap_or_default();
         let failed = if access.is_empty() && refresh.is_empty() {
@@ -158,7 +158,7 @@ impl MailApp {
                     mail.refresh = tokens.refresh.clone();
                 }
             }
-            let now = mailcraft_time::now();
+            let now = mailsolutions_time::now();
             self.graph_tokens.insert(account, SignIn { expires_at: tokens.expires_at.clamp(now, now.saturating_add(86_400)), ..tokens });
             // (Asked for as tokens always were: not known to be good for Outlook's Favorites.)
             self.favorites_token_is_plain(account);
@@ -277,7 +277,7 @@ fn own_day(app: &MailApp, day: Date, without: Option<Id>) -> Vec<(u32, u32, Show
     let midnight = DateTime::at_midnight(day);
     let mailbox = &app.session.mailbox;
     // (A series by another zone's clock is wherever that clock puts it on this day.)
-    let here = |instant: mailcraft_time::Timestamp| app.session.offset_at(instant);
+    let here = |instant: mailsolutions_time::Timestamp| app.session.offset_at(instant);
     let mut busy: Vec<(u32, u32, ShowAs)> = mailbox
         .events
         .values()
@@ -364,7 +364,7 @@ fn name_of(app: &MailApp, who: &Address, look_up: bool) -> String {
             .mailbox
             .contacts
             .values()
-            .find(|c| (c.contactcraft_id.is_empty() != app.session.prefs.contactcraft_contacts) && c.has_email(&who.email))
+            .find(|c| (c.contactsolutions_id.is_empty() != app.session.prefs.contactsolutions_contacts) && c.has_email(&who.email))
             .map(|c| c.name());
         contact.filter(|name| !name.trim().is_empty()).unwrap_or_else(|| who.email.clone())
     } else {
@@ -377,7 +377,7 @@ fn name_of(app: &MailApp, who: &Address, look_up: bool) -> String {
 /// who is required, 3 for one who is optional), each once and never the owner.
 fn people_of(app: &MailApp, meeting: &Meeting) -> (Address, Vec<(u8, Address)>) {
     let mailbox = &app.session.mailbox;
-    let keeper = mailbox.calendar(meeting.calendar).and_then(|c| mailcraft_engine::cmd::remote::keeper(mailbox, &c.origin));
+    let keeper = mailbox.calendar(meeting.calendar).and_then(|c| mailsolutions_engine::cmd::remote::keeper(mailbox, &c.origin));
     let owner = keeper.or(mailbox.default_account()).map(|a| a.address()).unwrap_or_default();
     let mut seen: Vec<String> = address_key(&owner.email).into_iter().collect();
     let mut invited: Vec<(u8, Address)> = Vec::new();
@@ -677,9 +677,9 @@ pub(crate) fn show(app: &mut MailApp, ui: &mut Ui, view: &mut View, meeting: &Me
 mod tests {
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_engine::Session;
-    use mailcraft_engine::sync_driver::free_busy::days_of;
-    use mailcraft_model::remote::{BusyTime, FreeBusy, FreeBusyAsk, MAX_SCHEDULES, PersonSchedule};
+    use mailsolutions_engine::Session;
+    use mailsolutions_engine::sync_driver::free_busy::days_of;
+    use mailsolutions_model::remote::{BusyTime, FreeBusy, FreeBusyAsk, MAX_SCHEDULES, PersonSchedule};
     use serde_json::json;
 
     use super::*;
@@ -696,7 +696,7 @@ mod tests {
     /// The sample mailbox with a Microsoft account whose calendar has come down, and a host for
     /// free and busy times that answers when the test says so. The id of the server's calendar.
     fn app() -> (MailApp, Asked, Id) {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.autosave = false;
         let server = serve(&mut app);
         let account = microsoft_account(&mut app);
@@ -800,7 +800,7 @@ mod tests {
         answer(&mut app, &asked, says(Vec::new()));
         // A token that came with an answer is the account's from then on.
         let account = app.session.mailbox.calendars.iter().find(|c| c.id == calendar).map(|c| c.origin.account).unwrap();
-        let fresh = SignIn { access: "newer".into(), refresh: "ref-9".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+        let fresh = SignIn { access: "newer".into(), refresh: "ref-9".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
         assert!(app.free_busy_at(calendar, &["priya@lumen.example".to_string()], day, t1 + 34_000.0).pending);
         answer(&mut app, &asked, FreeBusyResult { tokens: Some(fresh), ..says(Vec::new()) });
         assert_eq!((app.graph_tokens[&account].access.as_str(), app.tokens[&account].refresh.as_str()), ("newer", "ref-9"));

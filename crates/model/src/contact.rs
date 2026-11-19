@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! People.
 
-use mailcraft_time::Date;
+use mailsolutions_time::Date;
 use serde::{Deserialize, Serialize};
 
 use crate::{Address, Id, Origin};
@@ -144,12 +144,12 @@ mod key_bytes {
     use serde::{Deserialize as _, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(v: &[u8], s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_str(&mailcraft_charset::base64::STANDARD.encode(v))
+        s.serialize_str(&mailsolutions_charset::base64::STANDARD.encode(v))
     }
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<u8>, D::Error> {
         let text = String::deserialize(d)?;
-        mailcraft_charset::base64::STANDARD.decode(text.trim()).map_err(serde::de::Error::custom)
+        mailsolutions_charset::base64::STANDARD.decode(text.trim()).map_err(serde::de::Error::custom)
     }
 }
 
@@ -157,10 +157,10 @@ mod key_bytes {
 #[serde(default, rename_all = "camelCase")]
 pub struct Contact {
     pub id: Id,
-    /// A ContactCraft record shown in this run. It lives only in ContactCraft's shared store,
-    /// never in the MailCraft mailbox file.
+    /// A ContactSolutions record shown in this run. It lives only in ContactSolutions's shared store,
+    /// never in the MailSolutions mailbox file.
     #[serde(skip)]
-    pub contactcraft_id: String,
+    pub contactsolutions_id: String,
     /// The name lists show; when empty, [`Contact::name`] builds one.
     pub display_name: String,
     pub first: String,

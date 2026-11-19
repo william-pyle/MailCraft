@@ -5,7 +5,7 @@
 //! After the changes of messages, each draft the engine names ([`DraftUp`]) is brought up to
 //! date on the server, one at a time:
 //!
-//! - **Made** when it has no server id yet: first looked for in Drafts by MailCraft's marker (a
+//! - **Made** when it has no server id yet: first looked for in Drafts by MailSolutions's marker (a
 //!   make in an earlier run whose answer was lost), and only when nothing has it made: with
 //!   `POST /me/messages` and every field, or, for an answer or a forward of a message the server
 //!   has, with `createReply`, `createReplyAll` or `createForward` (so that it stays in that
@@ -30,9 +30,9 @@
 //! `internetMessageHeaders`): an answer has them from create-reply. No subject, address, name or
 //! id of a draft goes into a log line or an error; what the server answers is hostile JSON.
 
-use mailcraft_charset::base64::STANDARD;
-use mailcraft_model::sync::{AttachmentUp, DraftDone, DraftKind, DraftUp, MAX_DRAFTS, SyncedAttachment};
-use mailcraft_model::{Address, Importance};
+use mailsolutions_charset::base64::STANDARD;
+use mailsolutions_model::sync::{AttachmentUp, DraftDone, DraftKind, DraftUp, MAX_DRAFTS, SyncedAttachment};
+use mailsolutions_model::{Address, Importance};
 use serde_json::{Map, Value, json};
 
 use super::super::pace::Kind;

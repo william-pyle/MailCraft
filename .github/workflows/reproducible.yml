@@ -34,13 +34,13 @@ jobs:
         run: |
           set -eu
           for dir in first elsewhere/second; do
-            (cd "$dir" && RUSTFLAGS="--remap-path-prefix=$PWD=/mailcraft --remap-path-prefix=$HOME/.cargo=/cargo --remap-path-prefix=$HOME/.rustup=/rustup" \
-              cargo build --release --locked -p mailcraft -p mailcraft-cli)
+            (cd "$dir" && RUSTFLAGS="--remap-path-prefix=$PWD=/mailsolutions --remap-path-prefix=$HOME/.cargo=/cargo --remap-path-prefix=$HOME/.rustup=/rustup" \
+              cargo build --release --locked -p mailsolutions -p mailsolutions-cli)
           done
       - name: Compare
         run: |
           set -eu
-          for bin in mailcraft mailcraft-cli; do
+          for bin in mailsolutions mailsolutions-cli; do
             a=$(sha256sum "first/target/release/$bin" | cut -d' ' -f1)
             b=$(sha256sum "elsewhere/second/target/release/$bin" | cut -d' ' -f1)
             echo "$bin: $a $b"

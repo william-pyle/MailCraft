@@ -6,7 +6,7 @@
 
 #![no_main]
 
-use mailcraft_jmap::Address;
+use mailsolutions_jmap::Address;
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let Ok(text) = std::str::from_utf8(data) else {

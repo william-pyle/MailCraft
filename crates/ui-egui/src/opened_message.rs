@@ -14,7 +14,7 @@
 use std::sync::Arc;
 
 use egui::Ui;
-use mailcraft_model::Message;
+use mailsolutions_model::Message;
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -35,7 +35,7 @@ pub(crate) fn read(path: &str) -> Result<Opened, String> {
     let file = std::path::Path::new(path);
     let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_string());
     let bytes = read_capped(file).map_err(|e| format!("{name}: {e}"))?;
-    let message = mailcraft_engine::io::parse_unfiled(&name, &bytes).map_err(|e| e.to_string())?;
+    let message = mailsolutions_engine::io::parse_unfiled(&name, &bytes).map_err(|e| e.to_string())?;
     Ok(Opened { message: Arc::new(message), bytes: Arc::new(bytes) })
 }
 
@@ -43,7 +43,7 @@ pub(crate) fn read(path: &str) -> Result<Opened, String> {
 fn read_capped(file: &std::path::Path) -> Result<Vec<u8>, String> {
     use std::io::Read as _;
     // Opened once and checked through that handle, as every file named from outside is.
-    let f = mailcraft_engine::io::regular_file(file).map_err(|e| e.to_string())?;
+    let f = mailsolutions_engine::io::regular_file(file).map_err(|e| e.to_string())?;
     let too_large = || crate::i18n::fmt(tl!("larger than {mb} MB: bring it in with File › Import"), &[("mb", &(MAX_BYTES >> 20).to_string())]);
     if f.metadata().map_err(|e| e.to_string())?.len() > MAX_BYTES {
         return Err(too_large());
@@ -64,7 +64,7 @@ fn read_capped(_: &std::path::Path) -> Result<Vec<u8>, String> {
 /// File the message into `folder` (`file.import` of the same bytes, as File › Import does): the
 /// mailbox gains exactly one message. Answers its id.
 pub(crate) fn file_into(app: &mut MailApp, bytes: &[u8], folder: u64) -> Result<u64, String> {
-    let data = mailcraft_engine::cmd::base64_encode(bytes);
+    let data = mailsolutions_engine::cmd::base64_encode(bytes);
     let r = app.run("file.import", json!({"name": "message.eml", "data": data, "folder": folder}))?;
     r.get("ids")
         .and_then(Value::as_array)

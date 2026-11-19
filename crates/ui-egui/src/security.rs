@@ -13,7 +13,7 @@
 //! - **Verified is the owner's word, in this window alone (R6, R23).** `ui.verifyKey` opens a
 //!   dialog with the key's whole fingerprint; `ui.markKeyVerified` does anything only while that
 //!   very dialog (the same address and fingerprint) is open, and its buttons are what run it.
-//!   Neither is a command an agent may run ([`mailcraft_engine::agent`]), and neither the
+//!   Neither is a command an agent may run ([`mailsolutions_engine::agent`]), and neither the
 //!   buttons that lead to it (Compare fingerprint…, Verify…), its own, nor Remove and its Confirm
 //!   for an imported key, answer input the control channel injected (`MailApp::driven`, as the
 //!   password field's eye): an agent allowed to click can't mark a key or delete one.
@@ -23,10 +23,10 @@
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 use egui::{Color32, RichText, Ui, vec2};
-use mailcraft_model::digital_signature::SignatureFormat;
-use mailcraft_model::public_keys::KeySource;
-use mailcraft_model::{ContactKey, KeyKind};
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_model::digital_signature::SignatureFormat;
+use mailsolutions_model::public_keys::KeySource;
+use mailsolutions_model::{ContactKey, KeyKind};
+use mailsolutions_time::{DateTime, Timestamp};
 use serde_json::{Value, json};
 use zeroize::Zeroizing;
 
@@ -169,7 +169,7 @@ fn take(rx: &mut Option<Receiver<OwnKeysAnswer>>) -> Taken {
 
 /// What a job the host let go of is told.
 fn host_gone() -> String {
-    tl!("MailCraft's search for your keys stopped without an answer. Try again.").to_string()
+    tl!("MailSolutions's search for your keys stopped without an answer. Try again.").to_string()
 }
 
 /// Ask the host for the owner's keys.
@@ -270,7 +270,7 @@ fn imported(app: &mut MailApp, result: Result<Imported, String>) {
             }
             app.ui.imported_keys.retain(|k| k.store_key != key.store_key);
             app.ui.imported_keys.push(key);
-            let said = tl!("Imported: MailCraft keeps it in the system's credential store, still protected by its passphrase.").to_string();
+            let said = tl!("Imported: MailSolutions keeps it in the system's credential store, still protected by its passphrase.").to_string();
             app.status(said.clone());
             app.security.said = Some((true, said));
         }
@@ -293,7 +293,7 @@ fn imported(app: &mut MailApp, result: Result<Imported, String>) {
 /// What an import is told when the page lists as many imported keys as it keeps.
 fn full() -> String {
     crate::i18n::fmt(
-        tl!("MailCraft keeps at most {n} keys imported here, and has that many: remove one you don't use, then import this one."),
+        tl!("MailSolutions keeps at most {n} keys imported here, and has that many: remove one you don't use, then import this one."),
         &[("n", &crate::own_keys::MAX_IMPORTED.to_string())],
     )
 }
@@ -382,7 +382,7 @@ pub(crate) fn owners_press(app: &mut MailApp, id: &str, p: &Value) -> Option<Res
 
 fn no_host() -> &'static str {
     tl!(
-        "Your own certificates and keys are used by MailCraft's desktop program: here Digital signatures are checked, and nothing is signed or decrypted."
+        "Your own certificates and keys are used by MailSolutions's desktop program: here Digital signatures are checked, and nothing is signed or decrypted."
     )
 }
 
@@ -396,7 +396,7 @@ fn remove_private_key(app: &mut MailApp, p: &Value) -> Result<Value, String> {
         let who = key.addresses.first().cloned().unwrap_or_else(|| key.name.clone());
         let text = crate::i18n::fmt(
             tl!(
-                "Remove your {format} key for {who} from this computer? It is deleted from the system's credential store, and MailCraft can't sign with it any more. Keep a copy of the file if you may need it again."
+                "Remove your {format} key for {who} from this computer? It is deleted from the system's credential store, and MailSolutions can't sign with it any more. Keep a copy of the file if you may need it again."
             ),
             &[("format", format_name(key.format)), ("who", &crate::own_keys::clip(&who))],
         );
@@ -431,7 +431,7 @@ fn remove_private_key(app: &mut MailApp, p: &Value) -> Result<Value, String> {
     Ok(json!({"removed": key.fingerprint}))
 }
 
-/// Take every imported key out of the credential store (Remove MailCraft's data from this
+/// Take every imported key out of the credential store (Remove MailSolutions's data from this
 /// computer): the names of those still there afterwards.
 pub(crate) fn forget_imported(app: &mut MailApp) -> Vec<String> {
     let keys = std::mem::take(&mut app.ui.imported_keys);
@@ -519,7 +519,7 @@ pub(crate) fn picked(app: &mut MailApp, purpose: &str, name: &str, bytes: Result
         PURPOSE_CARD => {
             // Only to the very form that asked: not to another opened since, nor after it closed.
             let asked = app.security.card_pick.take();
-            let key = mailcraft_engine::cmd::keys::card_key_from(&bytes).map_err(|e| e.to_string());
+            let key = mailsolutions_engine::cmd::keys::card_key_from(&bytes).map_err(|e| e.to_string());
             let r = match (&mut app.dialog, key) {
                 (Some(Dialog::Form(crate::forms::Form::Contact(form))), Ok(key)) if asked.is_some() && form.key_pick() == asked => form.add_key(key),
                 (_, Err(e)) => Err(e),
@@ -582,16 +582,16 @@ pub(crate) fn show_dialog(app: &mut MailApp, ctx: &egui::Context, dialog: &mut S
                 });
                 let note = match (d.format, place) {
                     (SignatureFormat::Smime, SmimePlace::WindowsStore) => {
-                        tl!("Windows keeps the certificate and its private key in your certificate store, and asks you before MailCraft uses it.")
+                        tl!("Windows keeps the certificate and its private key in your certificate store, and asks you before MailSolutions uses it.")
                     }
                     (SignatureFormat::Smime, SmimePlace::Keychain) => {
-                        tl!("Your keychain keeps the certificate and its private key, and macOS asks you before MailCraft uses it.")
+                        tl!("Your keychain keeps the certificate and its private key, and macOS asks you before MailSolutions uses it.")
                     }
                     (SignatureFormat::Smime, _) => tl!(
-                        "MailCraft keeps the file, still protected by its passphrase, in the system's credential store. Only an ECDSA certificate (P-256 or P-384) is kept this way: an RSA one belongs on a smartcard or token (PKCS#11)."
+                        "MailSolutions keeps the file, still protected by its passphrase, in the system's credential store. Only an ECDSA certificate (P-256 or P-384) is kept this way: an RSA one belongs on a smartcard or token (PKCS#11)."
                     ),
                     (SignatureFormat::OpenPgp, _) => tl!(
-                        "MailCraft reads the key without its passphrase and keeps the file, still protected by it, in the system's credential store. The key must have a passphrase and sign with Ed25519 or ECDSA; MailCraft asks for the passphrase when you sign."
+                        "MailSolutions reads the key without its passphrase and keeps the file, still protected by it, in the system's credential store. The key must have a passphrase and sign with Ed25519 or ECDSA; MailSolutions asks for the passphrase when you sign."
                     ),
                 };
                 ui.add(egui::Label::new(RichText::new(note).color(t.text_dim).size(11.5)).wrap());
@@ -771,7 +771,7 @@ fn own_keys(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
                 ui,
                 &crate::i18n::fmt(
                     tl!(
-                        "Which keys your GnuPG trusts fully, last read: {when}. It is read again when MailCraft comes back to the front, and by Refresh."
+                        "Which keys your GnuPG trusts fully, last read: {when}. It is read again when MailSolutions comes back to the front, and by Refresh."
                     ),
                     &[("when", &when)],
                 ),
@@ -779,7 +779,7 @@ fn own_keys(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
             );
         }
         if listing.smime == SmimePlace::None {
-            dim(ui, tl!("This system has no place MailCraft knows for S/MIME certificates with a private key."), t);
+            dim(ui, tl!("This system has no place MailSolutions knows for S/MIME certificates with a private key."), t);
         }
         for line in listing.trouble.iter().take(8) {
             dim(ui, line, t);
@@ -843,7 +843,7 @@ fn public_keys(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     if ui.button(tl!("Import a Public key…")).on_hover_text(tl!("An X.509 certificate (.cer, .pem) or an OpenPGP Public key (.asc)")).clicked() {
         let _ = app.run("ui.importPublicKey", json!({}));
     }
-    let rows: Vec<(String, mailcraft_model::public_keys::PublicKey)> =
+    let rows: Vec<(String, mailsolutions_model::public_keys::PublicKey)> =
         app.session.mailbox.public_keys.iter().flat_map(|(a, keys)| keys.iter().map(move |k| (a.to_string(), k.clone()))).take(4_000).collect();
     if rows.is_empty() {
         dim(ui, tl!("No Public keys are kept yet."), t);
@@ -883,7 +883,7 @@ fn verified_said(format: SignatureFormat, verified: bool, t: &Tokens) -> (&'stat
     }
 }
 
-fn public_key_row(app: &mut MailApp, ui: &mut Ui, i: usize, address: &str, key: &mailcraft_model::public_keys::PublicKey, t: &Tokens) {
+fn public_key_row(app: &mut MailApp, ui: &mut Ui, i: usize, address: &str, key: &mailsolutions_model::public_keys::PublicKey, t: &Tokens) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(6.0, 3.0);
         ui.add(egui::Label::new(RichText::new(crate::own_keys::clip(address)).font(semibold(12.0)).color(t.text)).truncate());
@@ -924,12 +924,12 @@ fn public_key_row(app: &mut MailApp, ui: &mut Ui, i: usize, address: &str, key: 
 pub(crate) fn card_key_line(app: &MailApp, ui: &mut Ui, key: &ContactKey, t: &Tokens) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(6.0, 3.0);
-        let facts = mailcraft_engine::cmd::keys::card_key_facts(key);
+        let facts = mailsolutions_engine::cmd::keys::card_key_facts(key);
         match &key.kind {
             KeyKind::Uri => {
                 badge(ui, tl!("Link"), t);
                 ui.add(egui::Label::new(RichText::new(crate::own_keys::clip(&key.uri)).color(t.text).size(12.0)).truncate())
-                    .on_hover_text(tl!("Where the card says the key is: MailCraft doesn't fetch it."));
+                    .on_hover_text(tl!("Where the card says the key is: MailSolutions doesn't fetch it."));
                 return;
             }
             KeyKind::X509 => badge(ui, "S/MIME", t),
@@ -984,7 +984,7 @@ pub(crate) fn kept_key_lines(app: &MailApp, ui: &mut Ui, addresses: &[String], t
 }
 
 /// The Certificates section of a contact's card in People.
-pub(crate) fn card_section(app: &MailApp, ui: &mut Ui, c: &mailcraft_model::Contact) {
+pub(crate) fn card_section(app: &MailApp, ui: &mut Ui, c: &mailsolutions_model::Contact) {
     let addresses: Vec<String> = c.emails.iter().map(|e| e.value.clone()).collect();
     let kept = addresses.iter().any(|a| !app.session.mailbox.public_keys.of(&a.trim().to_lowercase()).is_empty());
     if c.keys.is_empty() && !kept {
@@ -992,7 +992,7 @@ pub(crate) fn card_section(app: &MailApp, ui: &mut Ui, c: &mailcraft_model::Cont
     }
     let t = Tokens::get(ui.ctx());
     crate::people_view::section(ui, tl!("Certificates"));
-    for key in c.keys.iter().take(mailcraft_model::Contact::MAX_KEYS) {
+    for key in c.keys.iter().take(mailsolutions_model::Contact::MAX_KEYS) {
         card_key_line(app, ui, key, &t);
     }
     kept_key_lines(app, ui, &addresses, &t);

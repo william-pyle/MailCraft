@@ -3,8 +3,8 @@
 //! #702: `account.move` puts an account in another place of the folder pane, as the drag does,
 //! and every list of the accounts follows; the default account doesn't move with it.
 
-use mailcraft_model::remote::{CalendarsDownload, RemoteCalendar};
-use mailcraft_model::{CalendarOwner, Id, Rights};
+use mailsolutions_model::remote::{CalendarsDownload, RemoteCalendar};
+use mailsolutions_model::{CalendarOwner, Id, Rights};
 use serde_json::{Value, json};
 
 use crate::Session;

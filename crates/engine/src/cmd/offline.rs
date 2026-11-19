@@ -17,7 +17,7 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::{Id, KeepOffline, Message, OfflineWindow, size_label};
+use mailsolutions_model::{Id, KeepOffline, Message, OfflineWindow, size_label};
 use serde_json::{Value, json};
 
 use super::{bad, fail, graph_down};
@@ -142,12 +142,12 @@ pub(crate) fn preview_of(s: &Session, id: Id) -> String {
     if kept.is_some_and(|k| k.text.is_some())
         && let Ok(bytes) = s.content(id, Part::Text)
     {
-        return mailcraft_html::text_preview(&String::from_utf8_lossy(&bytes), PREVIEW);
+        return mailsolutions_html::text_preview(&String::from_utf8_lossy(&bytes), PREVIEW);
     }
     if kept.is_some_and(|k| k.html.is_some())
         && let Ok(bytes) = s.content(id, Part::Html)
     {
-        return mailcraft_html::preview(&String::from_utf8_lossy(&bytes), PREVIEW);
+        return mailsolutions_html::preview(&String::from_utf8_lossy(&bytes), PREVIEW);
     }
     String::new()
 }
@@ -170,7 +170,7 @@ pub(crate) fn thin_these(s: &mut Session, ids: impl IntoIterator<Item = Id>) -> 
     let mut done = Thinned::default();
     let mut thinned = HashSet::new();
     #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
-    let mut refs: Vec<mailcraft_model::ContentRef> = Vec::new();
+    let mut refs: Vec<mailsolutions_model::ContentRef> = Vec::new();
     for id in ids {
         let preview = preview_of(s, id);
         let Some(m) = s.mailbox.messages.get(&id) else { continue };

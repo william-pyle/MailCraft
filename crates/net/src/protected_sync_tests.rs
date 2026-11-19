@@ -4,7 +4,7 @@
 //! account's server with its body as exactly those bytes, so that its signature still checks there (#30).
 //! A synthetic message with a dummy signature on the in-process fake server: no real crypto.
 
-use mailcraft_model::sync::ImapPlace;
+use mailsolutions_model::sync::ImapPlace;
 
 use super::*;
 
@@ -39,7 +39,7 @@ fn a_signed_message_comes_down_whole_and_its_body_goes_up_byte_for_byte() {
     assert!(!inbox.new.is_empty());
 
     // Moved into another account: what is put on its server is its header written from the
-    // message (MailCraft's own line first) and its body as it came, which the signature covers.
+    // message (MailSolutions's own line first) and its body as it came, which the signature covers.
     let other = two_way(true, true);
     let folders = synced_folders(&other);
     let mut message = signed.clone();
@@ -55,7 +55,7 @@ fn a_signed_message_comes_down_whole_and_its_body_goes_up_byte_for_byte() {
     assert!(put.starts_with(b"X-MailCraft-Place: m4rk-3r\r\n"));
     assert_eq!(body(&put), body(SIGNED));
     // Come down from there, it has the same body again.
-    assert_eq!(mailcraft_mime_model::parse_fetched(&put).original_bytes().map(body), Some(body(SIGNED)));
+    assert_eq!(mailsolutions_mime_model::parse_fetched(&put).original_bytes().map(body), Some(body(SIGNED)));
 }
 
 #[test]
@@ -82,7 +82,7 @@ fn put_in_projects(imap: &FakeImap) -> Vec<u8> {
 #[test]
 fn a_copy_put_on_a_server_carries_no_dkim_or_arc_seal() {
     let sealed = [&b"DKIM-Signature: v=1; d=example.org; b=x\r\nARC-Seal: i=1; b=y\r\nARC-Message-Signature: i=1; b=z\r\n"[..], SIGNED].concat();
-    let mut message = mailcraft_mime_model::parse_fetched(&sealed);
+    let mut message = mailsolutions_mime_model::parse_fetched(&sealed);
     assert!(message.all_headers().iter().any(|(name, _)| name.eq_ignore_ascii_case("dkim-signature")));
     message.id = 4_243;
     for marker in ["m4rk-3r", ""] {
@@ -106,7 +106,7 @@ fn a_binary_part_goes_up_written_from_its_parts() {
     let head = b"From: ada@example.org\r\nSubject: Sealed\r\nMessage-ID: <bin@example.org>\r\nMIME-Version: 1.0\r\n\
 Content-Type: application/pkcs7-mime; smime-type=enveloped-data; name=\"smime.p7m\"\r\nContent-Transfer-Encoding: binary\r\n\r\n";
     let bytes = [&head[..], der].concat();
-    let mut message = mailcraft_mime_model::parse_fetched(&bytes);
+    let mut message = mailsolutions_mime_model::parse_fetched(&bytes);
     assert_eq!(message.original_bytes(), Some(bytes.as_slice()));
     message.id = 4_244;
     let other = two_way(true, true);

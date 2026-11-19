@@ -28,7 +28,7 @@ fn every_family_draws_emoji() {
 /// front of egui's black-and-white emoji in every family, and nothing else moves.
 #[test]
 fn the_colour_emoji_face_goes_in_front_of_the_black_and_white() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-emoji-fonts-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-emoji-fonts-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("noto")).unwrap();
     // The bundled Inter stands in for a colour emoji face.
@@ -50,7 +50,7 @@ fn the_colour_emoji_face_goes_in_front_of_the_black_and_white() {
 /// No colour emoji face in the folders: none is used, and the families are as without one.
 #[test]
 fn no_colour_emoji_face_leaves_the_families_alone() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-no-emoji-fonts-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-no-emoji-fonts-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let system = SystemFont::none().with_emoji_from(std::slice::from_ref(&dir), &["NotoColorEmoji.ttf"]);
     let _ = std::fs::remove_dir_all(&dir);

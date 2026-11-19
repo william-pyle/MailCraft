@@ -4,7 +4,7 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::Form;
@@ -15,7 +15,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app
 }
@@ -204,7 +204,7 @@ fn categories_are_added_one_after_another() {
 /// Never-crash: every form lays out over a mailbox full of hostile text, small and large.
 #[test]
 fn forms_lay_out_over_hostile_data() {
-    use mailcraft_model::{Action, Address, Attendee, Category, Condition, Contact, Event, Labeled, PostalAddress, Recurrence, Rgb, Rule, Task};
+    use mailsolutions_model::{Action, Address, Attendee, Category, Condition, Contact, Event, Labeled, PostalAddress, Recurrence, Rgb, Rule, Task};
     let junk = "\u{0}\u{202e}é\t<b>&amp;\n".repeat(300);
     let lines = |n: usize| vec![Labeled::new(junk.clone(), junk.clone()); n];
     for (size, theme) in [((1280.0, 800.0), "light"), ((760.0, 480.0), "dark"), ((240.0, 160.0), "light")] {
@@ -223,7 +223,7 @@ fn forms_lay_out_over_hostile_data() {
             categories: vec![junk.clone(); 30],
             ..Default::default()
         });
-        let at = |hour| mailcraft_time::DateTime::new(mailcraft_time::Date::new(9999, 12, 31).unwrap(), hour, 59, 59).unwrap();
+        let at = |hour| mailsolutions_time::DateTime::new(mailsolutions_time::Date::new(9999, 12, 31).unwrap(), hour, 59, 59).unwrap();
         let event = mb
             .add_event(Event {
                 title: junk.clone(),
@@ -237,7 +237,7 @@ fn forms_lay_out_over_hostile_data() {
                     interval: u32::MAX,
                     nth: Some(i8::MIN),
                     count: Some(u32::MAX),
-                    by_day: vec![mailcraft_time::Weekday::Sun; 40],
+                    by_day: vec![mailsolutions_time::Weekday::Sun; 40],
                     ..Default::default()
                 }),
                 reminder_minutes: Some(u32::MAX),

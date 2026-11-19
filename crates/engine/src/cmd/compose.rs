@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Writing mail: new messages, replies, forwards, drafts, sending.
 
-use mailcraft_mime_model::rich::{Img, to_html_with};
-use mailcraft_model::rich::RichText;
-use mailcraft_model::signature::Picture;
-use mailcraft_model::sync::{DraftKind, DraftOf, DraftState, ServerDraft};
-use mailcraft_model::{
+use mailsolutions_mime_model::rich::{Img, to_html_with};
+use mailsolutions_model::rich::RichText;
+use mailsolutions_model::signature::Picture;
+use mailsolutions_model::sync::{DraftKind, DraftOf, DraftState, ServerDraft};
+use mailsolutions_model::{
     AccountKind, Address, Answers, Attachment, Body, FlagStatus, FolderKind, FollowUp, Id, Importance, MAX_FOLLOW_UP_AHEAD, Message, NOT_DOWNLOADED,
     NOT_DOWNLOADED_NOTE, RichBody, Signature, format_list,
 };
@@ -77,7 +77,7 @@ pub fn specs() -> Vec<CommandSpec> {
             .when_writing(needs_compose),
         CommandSpec::new("compose.readReceipt", "Request a Read Receipt", "Options › Tracking", read_receipt)
             .pure()
-            .params(r#"{"value"?: bool} (default: the other way round) — whether the message being written asks for a read receipt: `Disposition-Notification-To` naming its sender, or Exchange's flag for one. Kept with its draft. MailCraft only ever asks for receipts: it never answers a request in mail that comes in"#)
+            .params(r#"{"value"?: bool} (default: the other way round) — whether the message being written asks for a read receipt: `Disposition-Notification-To` naming its sender, or Exchange's flag for one. Kept with its draft. MailSolutions only ever asks for receipts: it never answers a request in mail that comes in"#)
             .when_writing(needs_compose),
         CommandSpec::new("compose.followUp", "Follow Up", "Message › Tags", super::followup::compose_follow_up)
             .pure()
@@ -238,8 +238,8 @@ fn new(s: &mut Session, v: &Value) -> CmdResult {
     // A link clicked somewhere else says who the message is for and how it starts; what the
     // caller names itself comes first.
     let link = match p::str(v, "mailto") {
-        Some(link) => mailcraft_mime::parse_mailto(link).ok_or_else(|| bad("`mailto` is a mailto: link"))?,
-        None => mailcraft_mime::Mailto::default(),
+        Some(link) => mailsolutions_mime::parse_mailto(link).ok_or_else(|| bad("`mailto` is a mailto: link"))?,
+        None => mailsolutions_mime::Mailto::default(),
     };
     let text = |key: &str, linked: String| p::str(v, key).map_or(linked, str::to_string);
     let body = text("body", link.body);
@@ -313,7 +313,7 @@ const QUOTED_NAMES: usize = 100;
 
 /// A recipient line for the quote under a reply or forward, cut after [`QUOTED_NAMES`] with a count.
 fn quoted_list(list: &[Address]) -> String {
-    let (mut line, more) = mailcraft_model::format_list_capped(list, QUOTED_NAMES);
+    let (mut line, more) = mailsolutions_model::format_list_capped(list, QUOTED_NAMES);
     if more > 0 {
         line.push_str(&format!("; … (+{more})"));
     }
@@ -342,23 +342,23 @@ fn quoted(s: &Session, m: &Message) -> String {
 /// its HTML reads as, under the opening line. Never the text alternative its sender wrote beside
 /// it (the owner never saw that one, and it can say something else).
 fn quote_text(marker: &str, quoted_html: &str) -> String {
-    let text = mailcraft_html::to_text(quoted_html);
+    let text = mailsolutions_html::to_text(quoted_html);
     // (The rule above the header lines is for the eye.)
     let text = text.trim_start_matches('-').trim();
     format!("\n\n{marker}\n{text}\n")
 }
 
-/// Where the quoted original starts in the HTML MailCraft writes; what is above it is the
+/// Where the quoted original starts in the HTML MailSolutions writes; what is above it is the
 /// owner's (a draft reopens on it).
-pub(crate) const QUOTE_MARK: &str = "<div id=\"mailcraft-quote\">";
+pub(crate) const QUOTE_MARK: &str = "<div id=\"mailsolutions-quote\">";
 
 /// The original under a reply or forward, in HTML: Outlook's header lines (written here, every
 /// value escaped) and the original's look, without anything in it that runs, embeds or tracks
-/// (`mailcraft_html::quotable`): it goes to other people, whose programs might run what ours never
+/// (`mailsolutions_html::quotable`): it goes to other people, whose programs might run what ours never
 /// would. With it, the pictures written into the original (`data:`) that it shows, each to go
 /// as a part of its own ([`Written`]).
 fn quoted_html(s: &Session, m: &Message, html: &str) -> (String, Vec<Attachment>) {
-    let e = mailcraft_html::escape;
+    let e = mailsolutions_html::escape;
     let [from, sent, to, cc, subject] = header_names(s).map(e);
     let mut out = String::from(QUOTE_MARK);
     out.push_str("<hr style=\"border:none;border-top:solid #E1E1E1 1.0pt\"><div>");
@@ -372,14 +372,14 @@ fn quoted_html(s: &Session, m: &Message, html: &str) -> (String, Vec<Attachment>
     }
     out.push_str(&format!("<b>{subject}</b> {}</div><br>\r\n", e(&m.subject)));
     let mut written = Written::of(m);
-    out.push_str(&mailcraft_html::quotable_with_pictures(html, &mut |mime, picture| written.add(mime, picture)));
+    out.push_str(&mailsolutions_html::quotable_with_pictures(html, &mut |mime, picture| written.add(mime, picture)));
     out.push_str("\r\n</div>");
     // (One the quote left out after all, before a `<body>` that came later, doesn't go: only
     // those a picture of the quote refers to. The Content-ID is no secret, so the sender may
     // refer to one from before the `<body>` with a picture of his own in it: what goes then is
     // still a picture of his own message, within the caps.)
     let mut pictures = written.pictures;
-    pictures.retain(|a: &Attachment| out.contains(&format!("src=\"cid:{}\"", mailcraft_html::escape(&a.content_id))));
+    pictures.retain(|a: &Attachment| out.contains(&format!("src=\"cid:{}\"", mailsolutions_html::escape(&a.content_id))));
     (out, pictures)
 }
 
@@ -402,8 +402,8 @@ impl Written {
     /// The Content-ID `picture` goes out under: unique to the picture, naming nothing of the
     /// owner, and never one the original's parts have; `None` when no such one is left, and the
     /// picture is left out. Its type is what its own bytes say, else what its address said.
-    fn add(&mut self, mime: &str, picture: &mailcraft_html::Picture) -> Option<String> {
-        let hash = mailcraft_model::sync::fingerprint(picture);
+    fn add(&mut self, mime: &str, picture: &mailsolutions_html::Picture) -> Option<String> {
+        let hash = mailsolutions_model::sync::fingerprint(picture);
         let same = self.hashes.iter().zip(&self.pictures).find(|(h, a)| **h == hash && a.data.as_slice() == &picture[..]);
         if let Some((_, same)) = same {
             return Some(same.content_id.clone());
@@ -412,8 +412,8 @@ impl Written {
         // (Ours differ from each other by `n`; only the original's can be in the way.)
         let cid = (0..=self.taken.len())
             .map(|again| match again {
-                0 => format!("quote-{n}.{hash:016x}@mailcraft.invalid"),
-                _ => format!("quote-{n}-{again}.{hash:016x}@mailcraft.invalid"),
+                0 => format!("quote-{n}.{hash:016x}@mailsolutions.invalid"),
+                _ => format!("quote-{n}-{again}.{hash:016x}@mailsolutions.invalid"),
             })
             .find(|cid| !self.taken.contains(cid))?;
         let mime = sniffed(picture).unwrap_or(mime);
@@ -451,11 +451,11 @@ fn sniffed(bytes: &[u8]) -> Option<&'static str> {
     }
 }
 
-/// The original's pictures that its HTML shows in place ([`mailcraft_model::shown`]): what an
+/// The original's pictures that its HTML shows in place ([`mailsolutions_model::shown`]): what an
 /// `<img>` asks for by `cid:` and is a picture by its bytes.
 fn shown_pictures(m: &Message, html: &str) -> Vec<Attachment> {
-    let ids = mailcraft_model::shown::shown_ids(html);
-    m.attachments.iter().filter(|a| mailcraft_model::shown::shown_in_place(&ids, a)).cloned().collect()
+    let ids = mailsolutions_model::shown::shown_ids(html);
+    m.attachments.iter().filter(|a| mailsolutions_model::shown::shown_in_place(&ids, a)).cloned().collect()
 }
 
 fn respond(s: &mut Session, v: &Value, mode: ComposeMode) -> CmdResult {
@@ -472,7 +472,7 @@ fn respond(s: &mut Session, v: &Value, mode: ComposeMode) -> CmdResult {
             // Each address once, and no more of them than a message may carry: a message's
             // lines are the sender's to write, as long as he likes.
             let add = |list: &mut Vec<Address>, others: &[Address], a: &Address| {
-                if list.len() < mailcraft_mime::MAX_RECIPIENTS && !list.iter().chain(others).any(|x| x.same_mailbox(a)) {
+                if list.len() < mailsolutions_mime::MAX_RECIPIENTS && !list.iter().chain(others).any(|x| x.same_mailbox(a)) {
                     list.push(a.clone());
                 }
             };
@@ -570,7 +570,7 @@ fn reply_and_delete(s: &mut Session, v: &Value) -> CmdResult {
         && let Some(bin) = s.mailbox.folder_of_kind(m.account, FolderKind::Deleted).filter(|bin| !s.mailbox.subtree(*bin).contains(&m.folder))
         && s.mailbox.stays_out_of(id, bin)
     {
-        return Err(fail(mailcraft_model::ONLY_SERVER_FOLDERS));
+        return Err(fail(mailsolutions_model::ONLY_SERVER_FOLDERS));
     }
     let before = s.rows();
     let mut out = respond(s, &json!({"id": id}), ComposeMode::Reply)?;
@@ -757,14 +757,14 @@ fn too_large_to_download(m: &Message) -> CmdError {
 }
 
 /// A message as a refusal names it: its subject on one line, at most 80 characters of it.
-fn subject_of(m: &Message) -> mailcraft_i18n::Arg {
+fn subject_of(m: &Message) -> mailsolutions_i18n::Arg {
     let line = m.subject.split(char::is_control).flat_map(str::split_whitespace).collect::<Vec<_>>().join(" ");
     if line.is_empty() {
-        return mailcraft_i18n::Arg::words("(no subject)");
+        return mailsolutions_i18n::Arg::words("(no subject)");
     }
     match line.char_indices().nth(80) {
-        Some((at, _)) => mailcraft_i18n::Arg::Plain(format!("{}…", line.get(..at).unwrap_or(""))),
-        None => mailcraft_i18n::Arg::Plain(line),
+        Some((at, _)) => mailsolutions_i18n::Arg::Plain(format!("{}…", line.get(..at).unwrap_or(""))),
+        None => mailsolutions_i18n::Arg::Plain(line),
     }
 }
 
@@ -794,17 +794,17 @@ fn eml_attachment(s: &Session, id: Id) -> Result<Attachment, CmdError> {
     // What is attached goes to other people: a draft's Bcc, the owner's own marks on the
     // message (read, answered, flagged, categorised), and every header kept with it but those
     // known to come from the sender or the servers on the way, stay here.
-    let opts = mailcraft_mime_model::WriteOptions { include_bcc: false, offset_minutes: s.offset_at(m.date) };
+    let opts = mailsolutions_mime_model::WriteOptions { include_bcc: false, offset_minutes: s.offset_at(m.date) };
     let unmarked = Message {
         read: false,
         answered: false,
         flag: FlagStatus::None,
         categories: Vec::new(),
         headers: m.all_headers().into_iter().filter(|(name, _)| goes_along(name)).collect(),
-        header_block: mailcraft_model::HeaderBlock::default(),
+        header_block: mailsolutions_model::HeaderBlock::default(),
         ..Message::clone(&m)
     };
-    let bytes = mailcraft_mime_model::write(&unmarked, &opts);
+    let bytes = mailsolutions_mime_model::write(&unmarked, &opts);
     Ok(Attachment::new(super::file::eml_name(&m), "message/rfc822", bytes))
 }
 
@@ -815,7 +815,7 @@ mod attach_item;
 mod attach_item_tests;
 
 /// Whether `m` is what is kept of an IMAP message too large to download: its header and, in
-/// place of its text, a note that says so, with the mark `mailcraft-net` gives it. A sender can
+/// place of its text, a note that says so, with the mark `mailsolutions-net` gives it. A sender can
 /// write that mark into a message of their own; only plain text that opens as the note does,
 /// with no file, is taken for it.
 fn not_downloaded(m: &Message) -> bool {
@@ -970,15 +970,15 @@ fn asked_receipt(m: &Message) -> bool {
 fn reopened(s: &Session, m: &Message) -> Compose {
     // A draft written here with an original quoted below opens as it was: the owner's text in
     // rich text, the original as it was carried. A draft is a file anybody could have written (or
-    // an older MailCraft, which carried the original as it came), so what is below the mark is
+    // an older MailSolutions, which carried the original as it came), so what is below the mark is
     // made fit to quote again: for what this program wrote, that changes nothing.
     let (own_html, quote) = match m.body.html.as_deref().and_then(|h| h.find(QUOTE_MARK).map(|at| (h, at))) {
         Some((html, at)) => {
             let end = html.rfind("</body>").filter(|end| *end >= at).unwrap_or(html.len());
-            let quoted = mailcraft_html::quotable(html.get(at..end).unwrap_or("")).trim_end().to_string();
+            let quoted = mailsolutions_html::quotable(html.get(at..end).unwrap_or("")).trim_end().to_string();
             // (Its text part is what the HTML reads as: the text part the draft file carries is
             // only asked which language the opening line is in.)
-            let marker = mailcraft_i18n::Lang::ALL
+            let marker = mailsolutions_i18n::Lang::ALL
                 .iter()
                 .map(|l| l.t(ORIGINAL))
                 .find(|marker| m.body.text.contains(&format!("\n\n{marker}")))
@@ -993,13 +993,13 @@ fn reopened(s: &Session, m: &Message) -> Compose {
     // as a new one is; they are the text's, no longer attachments.
     let mut pictures: Vec<Picture> = Vec::new();
     let rich = own_html.as_deref().map(|html| {
-        mailcraft_mime_model::rich::from_html_with_pictures(html, &mut |img| {
+        mailsolutions_mime_model::rich::from_html_with_pictures(html, &mut |img| {
             let id: u32 = img.cid.strip_prefix(PICTURE_CID)?.split('.').next()?.parse().ok()?;
             if pictures.iter().any(|p| p.id == id) {
                 return Some(id);
             }
             let a = m.attachments.iter().find(|a| a.inline && a.content_id == img.cid)?;
-            let picture = mailcraft_model::pictures::take(&pictures, id, &a.name, a.data.to_vec(), &img.alt, img.width)?;
+            let picture = mailsolutions_model::pictures::take(&pictures, id, &a.name, a.data.to_vec(), &img.alt, img.width)?;
             pictures.push(picture);
             Some(id)
         })
@@ -1009,7 +1009,7 @@ fn reopened(s: &Session, m: &Message) -> Compose {
         .filter_map(|p| m.attachments.iter().find(|a| a.inline && a.content_id.starts_with(&format!("{PICTURE_CID}{}.", p.id))))
         .map(|a| a.content_id.clone())
         .collect();
-    let picture_seq = pictures.iter().map(|p| p.id.saturating_sub(mailcraft_model::pictures::FIRST_ID).saturating_add(1)).max().unwrap_or(0);
+    let picture_seq = pictures.iter().map(|p| p.id.saturating_sub(mailsolutions_model::pictures::FIRST_ID).saturating_add(1)).max().unwrap_or(0);
     let attachments: Vec<Attachment> = match &quote {
         Some(q) => m.attachments.iter().filter(|a| !q.pictures.contains(a)).cloned().collect(),
         None => m.attachments.clone(),
@@ -1098,7 +1098,7 @@ fn attach(s: &mut Session, v: &Value) -> CmdResult {
     // Only the file's own name travels, never the folders it was in.
     let name = name.rsplit(['/', '\\']).next().unwrap_or("").trim().to_string();
     let name = if name.is_empty() { "attachment".to_string() } else { name };
-    let mime = p::str(v, "mime").map(str::to_string).unwrap_or_else(|| mailcraft_mime::media_type_for(&name).to_string());
+    let mime = p::str(v, "mime").map(str::to_string).unwrap_or_else(|| mailsolutions_mime::media_type_for(&name).to_string());
     let c = compose_mut(s)?;
     if c.attachments.len() >= MAX_ATTACHMENTS {
         return Err(fail("this message already has as many attachments as it can carry"));
@@ -1170,7 +1170,7 @@ fn check_names(s: &mut Session, _: &Value) -> CmdResult {
                     .mailbox
                     .contacts
                     .values()
-                    .filter(|k| k.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts)
+                    .filter(|k| k.contactsolutions_id.is_empty() != s.prefs.contactsolutions_contacts)
                     .filter(|k| k.matches(&typed))
                     .filter_map(|k| k.address())
                     .collect();
@@ -1222,7 +1222,7 @@ fn build_as(s: &Session, c: &Compose, strict: bool, message_id: Option<&str>) ->
             return Err(failed!(
                 "\"{address}\" on the {what} line isn't an e-mail address",
                 address = bad_one.email,
-                what = mailcraft_i18n::Arg::words(what)
+                what = mailsolutions_i18n::Arg::words(what)
             ));
         }
         Ok(list)
@@ -1237,7 +1237,7 @@ fn build_as(s: &Session, c: &Compose, strict: bool, message_id: Option<&str>) ->
     let domain = account.email.rsplit_once('@').map_or("", |(_, d)| d);
     let message_id = match message_id {
         Some(id) => id.to_string(),
-        None => mailcraft_mime::new_message_id(
+        None => mailsolutions_mime::new_message_id(
             domain,
             now,
             s.rev().wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ c.body.text().len() as u64 ^ (c.subject.len() as u64) << 32,
@@ -1288,12 +1288,12 @@ fn body_of(c: &Compose, message_id: &str) -> Body {
         c.pictures
             .iter()
             .find(|p| p.id == id)
-            .map(|p| if p.alt.is_empty() { mailcraft_model::pictures::PLACEHOLDER.to_string() } else { p.alt.clone() })
+            .map(|p| if p.alt.is_empty() { mailsolutions_model::pictures::PLACEHOLDER.to_string() } else { p.alt.clone() })
     };
     let Some((before, sig, after)) = sent_signature(c) else {
         let plain = format!("{}{quote_text}", text.to_plain_with(say));
         return match c.format {
-            BodyFormat::Html => Body { text: plain, html: Some(mailcraft_mime_model::rich::document(&to_html_with(text, &img), quote_html)) },
+            BodyFormat::Html => Body { text: plain, html: Some(mailsolutions_mime_model::rich::document(&to_html_with(text, &img), quote_html)) },
             BodyFormat::Plain => Body { text: plain, html: None },
         };
     };
@@ -1307,10 +1307,10 @@ fn body_of(c: &Compose, message_id: &str) -> Body {
             let own = c.signature_html();
             let html = [
                 before.as_ref().map(|t| to_html_with(t, &img)),
-                Some(own.map_or_else(|| mailcraft_mime_model::rich::signature_html(&sig, &cid), mailcraft_html::quotable)),
+                Some(own.map_or_else(|| mailsolutions_mime_model::rich::signature_html(&sig, &cid), mailsolutions_html::quotable)),
                 after.as_ref().map(|t| to_html_with(t, &img)),
             ];
-            Body { text: plain, html: Some(mailcraft_mime_model::rich::document(&html.into_iter().flatten().collect::<String>(), quote_html)) }
+            Body { text: plain, html: Some(mailsolutions_mime_model::rich::document(&html.into_iter().flatten().collect::<String>(), quote_html)) }
         }
         BodyFormat::Plain => Body { text: plain, html: None },
     }
@@ -1327,14 +1327,14 @@ fn sent_signature(c: &Compose) -> Option<(Option<RichText>, Signature, Option<Ri
 /// A signature picture's Content-ID: unique to the message, and naming nothing of the owner.
 fn signature_cid(p: &Picture, message_id: &str) -> String {
     let local = message_id.split('@').next().unwrap_or("");
-    format!("sig-{}.{local}@mailcraft.invalid", p.id)
+    format!("sig-{}.{local}@mailsolutions.invalid", p.id)
 }
 
 /// A picture the owner put in the text: its Content-ID, unique to the message and naming nothing
 /// of the owner. (A draft reads it back by the `pic-<id>.` it starts with.)
 fn picture_cid(p: &Picture, message_id: &str) -> String {
     let local = message_id.split('@').next().unwrap_or("");
-    format!("{PICTURE_CID}{}.{local}@mailcraft.invalid", p.id)
+    format!("{PICTURE_CID}{}.{local}@mailsolutions.invalid", p.id)
 }
 
 /// What a Content-ID of a picture the owner put in the text starts with.
@@ -1443,12 +1443,12 @@ pub(super) fn send_now(s: &mut Session) -> CmdResult {
     m.folder = s
         .mailbox
         .folder_of_kind(account.id, kind)
-        .ok_or_else(|| failed!("this account has no {folder} folder", folder = mailcraft_i18n::Arg::folder(kind.default_name())))?;
+        .ok_or_else(|| failed!("this account has no {folder} folder", folder = mailsolutions_i18n::Arg::folder(kind.default_name())))?;
     // The original is marked replied or forwarded once this has gone (#154): from the Outbox when
     // the server has taken it, at once for a local account, which files it as sent.
     m.answers = answers_of(s, &c).or_else(|| c.draft.and_then(|d| s.mailbox.message(d)).and_then(|d| d.answers.clone()));
     let id = s.mailbox.add_message(m.clone())?;
-    // A draft begun elsewhere and sent here is queued here: it carries MailCraft's marker, as one
+    // A draft begun elsewhere and sent here is queued here: it carries MailSolutions's marker, as one
     // saved here does, so that it is the owner's to send and never taken for mail the server
     // itself put in the Outbox (`graph_send::from_server`).
     let now = u64::try_from(s.now()).unwrap_or_default();
@@ -1621,7 +1621,7 @@ impl Typed {
         if q.is_empty() || q.chars().count() > 200 {
             return None;
         }
-        let wanted = if q.contains('@') { Vec::new() } else { mailcraft_model::words::words(&q) };
+        let wanted = if q.contains('@') { Vec::new() } else { mailsolutions_model::words::words(&q) };
         Some(Typed { wanted, q })
     }
 
@@ -1631,7 +1631,7 @@ impl Typed {
     pub(crate) fn fits(&self, name: &str, email: &str) -> bool {
         email.to_lowercase().starts_with(&self.q)
             || name.to_lowercase().starts_with(&self.q)
-            || (!self.wanted.is_empty() && mailcraft_model::words::starts_in(name, &self.wanted))
+            || (!self.wanted.is_empty() && mailsolutions_model::words::starts_in(name, &self.wanted))
     }
 }
 
@@ -1646,14 +1646,14 @@ pub fn suggest(s: &Session, query: &str, limit: usize) -> Vec<Suggestion> {
     let own: Vec<String> = s.mailbox.accounts.iter().map(|a| a.email.trim().to_lowercase()).filter(|e| !e.is_empty()).collect();
     let mut seen: std::collections::HashSet<String> = own.into_iter().collect();
     let mut out: Vec<Suggestion> = Vec::new();
-    let mut people: Vec<&std::sync::Arc<mailcraft_model::Contact>> =
-        s.mailbox.contacts.values().filter(|c| c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts).collect();
+    let mut people: Vec<&std::sync::Arc<mailsolutions_model::Contact>> =
+        s.mailbox.contacts.values().filter(|c| c.contactsolutions_id.is_empty() != s.prefs.contactsolutions_contacts).collect();
     people.sort_by_cached_key(|c| (!c.favorite, c.name().to_lowercase()));
     for c in people {
         let name = c.name();
         for e in &c.emails {
             let email = e.value.trim();
-            if mailcraft_model::Address::new("", email).is_valid() && fits(&name, email) && seen.insert(email.to_lowercase()) {
+            if mailsolutions_model::Address::new("", email).is_valid() && fits(&name, email) && seen.insert(email.to_lowercase()) {
                 out.push(Suggestion { name: name.clone(), email: email.to_string(), contact: true });
             }
         }
@@ -1664,17 +1664,17 @@ pub fn suggest(s: &Session, query: &str, limit: usize) -> Vec<Suggestion> {
         // mail there is not a source, a date after now counts as now, and an address the owner
         // has written to (Sent Items) ranks above one that only wrote.
         let (junk, sent): (Vec<Id>, Vec<Id>) = {
-            let ids = |keep: &dyn Fn(&mailcraft_model::Folder) -> bool| s.mailbox.folders.iter().filter(|f| keep(f)).map(|f| f.id).collect();
+            let ids = |keep: &dyn Fn(&mailsolutions_model::Folder) -> bool| s.mailbox.folders.iter().filter(|f| keep(f)).map(|f| f.id).collect();
             (ids(&|f| s.mailbox.in_junk(f.id)), ids(&|f| f.kind == FolderKind::Sent))
         };
         let now = s.now();
-        let mut recent: std::collections::HashMap<String, (bool, i64, &mailcraft_model::Address)> = std::collections::HashMap::new();
+        let mut recent: std::collections::HashMap<String, (bool, i64, &mailsolutions_model::Address)> = std::collections::HashMap::new();
         // A name and an address are matched once, however many messages carry them.
         let mut matched: std::collections::HashMap<(&str, &str), bool> = std::collections::HashMap::new();
         for m in s.mailbox.messages.values().filter(|m| !junk.contains(&m.folder)) {
             let written = sent.contains(&m.folder);
             let date = m.date.min(now);
-            let people: Vec<(&mailcraft_model::Address, bool)> = if written {
+            let people: Vec<(&mailsolutions_model::Address, bool)> = if written {
                 m.to.iter().chain(&m.cc).chain(&m.bcc).map(|a| (a, true)).collect()
             } else {
                 std::iter::once(&m.from).chain(&m.to).chain(&m.cc).map(|a| (a, false)).collect()
@@ -1692,7 +1692,7 @@ pub fn suggest(s: &Session, query: &str, limit: usize) -> Vec<Suggestion> {
                 }
             }
         }
-        let mut recent: Vec<(bool, i64, &mailcraft_model::Address)> = recent.into_values().collect();
+        let mut recent: Vec<(bool, i64, &mailsolutions_model::Address)> = recent.into_values().collect();
         recent.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| b.1.cmp(&a.1)).then_with(|| a.2.email.cmp(&b.2.email)));
         out.extend(recent.into_iter().map(|(_, _, a)| Suggestion {
             name: a.name.trim().to_string(),

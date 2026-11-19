@@ -191,7 +191,7 @@ impl Data {
         }
         let received = match entry.get("receivedAt") {
             None | Some(Value::Null) => self.now.clone(),
-            Some(Value::String(at)) if mailcraft_time::iso_to_timestamp(at, 0).is_some() => at.clone(),
+            Some(Value::String(at)) if mailsolutions_time::iso_to_timestamp(at, 0).is_some() => at.clone(),
             Some(_) => return Err(wrong("receivedAt")),
         };
         Ok(Email { id: self.id("E"), blob: blob.to_string(), mailboxes, keywords, received, raw })
@@ -341,7 +341,7 @@ impl Data {
             None => Some(named),
         };
         let email = email.and_then(|id| self.email(id)).ok_or_else(|| wrong("emailId"))?;
-        let message = mailcraft_mime_model::parse(&email.raw);
+        let message = mailsolutions_mime_model::parse(&email.raw);
         let (mail_from, rcpt_to) = match entry.get("envelope") {
             // The server's own, from the message's fields (RFC 8621 §7).
             None | Some(Value::Null) => {

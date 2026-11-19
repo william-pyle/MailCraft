@@ -135,9 +135,9 @@ fn the_zone_the_calendar_is_shown_in_follows_what_the_phone_says() {
 
 /// A core whose calendar holds a meeting somebody else organizes, for which the owner is invited.
 fn invited_core() -> (std::sync::Arc<Core>, u64) {
-    use mailcraft_engine::{Session, sample};
-    use mailcraft_model::{Address, Attendee, Event, Origin};
-    use mailcraft_time::{Date, DateTime};
+    use mailsolutions_engine::{Session, sample};
+    use mailsolutions_model::{Address, Attendee, Event, Origin};
+    use mailsolutions_time::{Date, DateTime};
 
     let now = crate::fake_tests::now();
     let mut mailbox = sample::mailbox(now, 0);

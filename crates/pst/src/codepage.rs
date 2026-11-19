@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Windows code pages by the name `mailcraft-charset` knows them by: one table for the mail,
+//! Windows code pages by the name `mailsolutions-charset` knows them by: one table for the mail,
 //! the contacts and the rich text of an import.
 
 /// The character set a Windows code page stands for (PidTagMessageCodepage,
-/// PidTagInternetCodepage), as `mailcraft-charset` names it.
+/// PidTagInternetCodepage), as `mailsolutions-charset` names it.
 pub fn code_page_label(cp: i64) -> Option<&'static str> {
     Some(match cp {
         65001 => "utf-8",

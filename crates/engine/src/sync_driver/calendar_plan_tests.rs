@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::Mailbox;
-use mailcraft_model::remote::EventsDownload;
+use mailsolutions_model::Mailbox;
+use mailsolutions_model::remote::EventsDownload;
 use serde_json::json;
 
 use super::*;
@@ -34,7 +34,7 @@ fn a_look_that_is_not_enabled_or_that_waits_for_another_job_asks_for_nothing_and
 #[test]
 fn a_look_at_other_days_waits_for_other_work_and_for_the_owners_permission() {
     let mut s = Session::new(Mailbox::with_local_account("", ""));
-    let day = mailcraft_time::Date::new(2026, 1, 5).unwrap();
+    let day = mailsolutions_time::Date::new(2026, 1, 5).unwrap();
     assert_eq!(s.calendar_around(1, day, true).unwrap_err(), AroundRefused::Busy);
     s.driver.calendar.consent_needed.insert(1);
     assert_eq!(s.calendar_around(1, day, false).unwrap_err(), AroundRefused::Consent);

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `cargo xtask spdx [--fix]`: every Rust and Kotlin (`.kt`, `.kts`) source file starts with its copyright and licence
 //! (REUSE-style SPDX lines), so a file copied out of the repository still says whose it is and
-//! under what terms (Kotlin only under `apps/mailcraft-android`). `--fix` adds the lines to the files that lack them.
+//! under what terms (Kotlin only under `apps/mailsolutions-android`). `--fix` adds the lines to the files that lack them.
 
 use std::path::Path;
 use std::process::Command;

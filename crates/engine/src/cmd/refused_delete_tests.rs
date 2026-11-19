@@ -4,13 +4,13 @@
 //! hollow (no text, files of no bytes), however many times the mailbox was saved and opened in
 //! between, and nothing hollow is ever moved or copied to another mailbox, which would leave an
 //! empty copy there while the server deletes the original. The servers' side of each run is
-//! written out by hand, as `mailcraft-net` answers it.
+//! written out by hand, as `mailsolutions-net` answers it.
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     FolderListing, GraphFetchResult, GraphFetched, GraphFolder, GraphMailResult, GraphMessage, MessageChange, MessageChangeDone, MessageOutcome,
     ServerMessage,
 };
-use mailcraft_model::{Address, Attachment, Body, FolderKind, Id, Message, Queued};
+use mailsolutions_model::{Address, Attachment, Body, FolderKind, Id, Message, Queued};
 use serde_json::json;
 
 use crate::Session;
@@ -21,7 +21,7 @@ const OTHER: &str = "owner@outlook.example";
 
 /// A directory of the test's own, made empty.
 fn scratch(name: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("mailcraft-793-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-793-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -122,7 +122,7 @@ fn refused_delete_after_a_reopen_puts_the_message_back_to_be_fetched_whole_and_a
     let mut s = reopen(&path);
     assert!(s.mailbox.message(id).unwrap().attachments[0].data.is_empty(), "kept outside memory");
     assert!(whole(&s, id));
-    // Deleted for good while offline, and MailCraft closed.
+    // Deleted for good while offline, and MailSolutions closed.
     s.run("mail.deletePermanently", &json!({"ids": [id]})).unwrap();
     s.run("file.save", &json!({"path": path})).unwrap();
     // Later the server refuses the delete.
@@ -211,18 +211,18 @@ fn a_kept_copy_read_back_from_a_file_is_fetched_again_rather_than_believed() {
     let written = serde_json::to_value(&q).unwrap();
     let kept = &written["deleteMessage"]["kept"];
     assert_eq!((kept["unfetched"].clone(), kept["attachments"].clone()), (json!(true), serde_json::Value::Null), "{kept}");
-    assert_eq!(kept["body"]["text"].as_str().unwrap().chars().count(), mailcraft_model::PREVIEW_CHARS);
+    assert_eq!(kept["body"]["text"].as_str().unwrap().chars().count(), mailsolutions_model::PREVIEW_CHARS);
     assert!(kept["body"].get("html").is_none_or(serde_json::Value::is_null), "{kept}");
     // A short text in memory, its HTML on disk: the text is the preview. One that couldn't be
     // read gives none (the words saying so aren't its text).
     let mut m = Message { body: Body { text: "Short.".into(), html: None }, ..Default::default() };
-    let r = mailcraft_model::ContentRef { sha256: [7; 32], len: 4096 };
-    m.kept = Some(Box::new(mailcraft_model::KeptBody { html: Some(r), ..Default::default() }));
+    let r = mailsolutions_model::ContentRef { sha256: [7; 32], len: 4096 };
+    m.kept = Some(Box::new(mailsolutions_model::KeptBody { html: Some(r), ..Default::default() }));
     assert!(m.body_is_kept());
     m.to_fetch_again();
     assert_eq!((m.body.text.as_str(), m.unfetched), ("Short.", true));
     let mut m = Message { body: Body { text: "[unavailable]".into(), html: None }, ..Default::default() };
-    m.kept = Some(Box::new(mailcraft_model::KeptBody { text: Some(r), failed: true, ..Default::default() }));
+    m.kept = Some(Box::new(mailsolutions_model::KeptBody { text: Some(r), failed: true, ..Default::default() }));
     m.to_fetch_again();
     assert_eq!(m.body.text, "");
     // A queue entry without a copy still reads as one.

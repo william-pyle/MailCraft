@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use mailcraft_host::{Notification, NotificationKind, Platform, PlatformError};
+use mailsolutions_host::{Notification, NotificationKind, Platform, PlatformError};
 
 use crate::Services;
 use crate::platform::DesktopPlatform;

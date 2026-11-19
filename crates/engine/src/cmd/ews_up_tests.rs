@@ -3,14 +3,14 @@
 //! What goes up from an Exchange server account (#252, E6), as the engine works it out from the
 //! difference with what the server last said and takes in what became of it, with results made by
 //! hand: the changes of messages and folders and their undo, drafts, sending and a send held,
-//! and the Safe and Blocked Senders lists on new mail. (Against `mailcraft-ews`'s stand-in:
-//! `apps/mailcraft/src/ews_up_flow.rs`.)
+//! and the Safe and Blocked Senders lists on new mail. (Against `mailsolutions-ews`'s stand-in:
+//! `apps/mailsolutions/src/ews_up_flow.rs`.)
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     DraftDone, EwsFolderDeltas, EwsMessagePage, FolderChange, FolderChangeDone, GraphFolder, GraphMessage, MessageChange, MessageChangeDone,
     MessageOutcome, SendDone, SendOutcome, ServerMessage,
 };
-use mailcraft_model::{Address, FolderKind, Id};
+use mailsolutions_model::{Address, FolderKind, Id};
 use serde_json::{Value, json};
 
 use super::{apply_ews_mail, ews_inbox_request, ews_mail_request};
@@ -23,8 +23,8 @@ fn folder(id: &str, name: &str, kind: FolderKind) -> GraphFolder {
     GraphFolder { id: id.into(), name: name.into(), kind, ..Default::default() }
 }
 
-pub(crate) fn piece(account: Id) -> mailcraft_model::sync::EwsMailResult {
-    mailcraft_model::sync::EwsMailResult { account, email: ME.into(), url: URL.into(), ..Default::default() }
+pub(crate) fn piece(account: Id) -> mailsolutions_model::sync::EwsMailResult {
+    mailsolutions_model::sync::EwsMailResult { account, email: ME.into(), url: URL.into(), ..Default::default() }
 }
 
 /// An Exchange server account with its folders listed and two messages in its Inbox.
@@ -40,8 +40,11 @@ pub(crate) fn setup() -> (Session, Id, Id, Id) {
         folder("F5", "Projects", FolderKind::Custom),
     ];
     let deltas = EwsFolderDeltas { changed: list, afresh: true, ..Default::default() };
-    apply_ews_mail(&mut s, mailcraft_model::sync::EwsMailResult { folders: Some(deltas), hierarchy: "H".into(), partial: true, ..piece(account) })
-        .unwrap();
+    apply_ews_mail(
+        &mut s,
+        mailsolutions_model::sync::EwsMailResult { folders: Some(deltas), hierarchy: "H".into(), partial: true, ..piece(account) },
+    )
+    .unwrap();
     let message = |id: &str, from: &str, subject: &str| GraphMessage {
         server: ServerMessage { id: id.into(), folder: "F1".into(), change_key: "CK".into(), ..Default::default() },
         message_id: format!("{id}@example.org"),
@@ -61,7 +64,7 @@ pub(crate) fn setup() -> (Session, Id, Id, Id) {
         state: "S1".into(),
         ..Default::default()
     };
-    apply_ews_mail(&mut s, mailcraft_model::sync::EwsMailResult { pages: vec![page], partial: true, ..piece(account) }).unwrap();
+    apply_ews_mail(&mut s, mailsolutions_model::sync::EwsMailResult { pages: vec![page], partial: true, ..piece(account) }).unwrap();
     let id = |server: &str| s.mailbox.messages.values().find(|m| m.server.as_ref().is_some_and(|x| x.id == server)).map(|m| m.id).unwrap();
     let (a, b) = (id("A1"), id("A2"));
     (s, account, a, b)
@@ -71,8 +74,8 @@ fn changes(s: &Session, account: Id) -> Vec<MessageChange> {
     ews_mail_request(s, account, false).unwrap().messages
 }
 
-pub(crate) fn took(s: &mut Session, account: Id, result: mailcraft_model::sync::EwsMailResult) -> Value {
-    apply_ews_mail(s, mailcraft_model::sync::EwsMailResult { account, ..result }).unwrap()
+pub(crate) fn took(s: &mut Session, account: Id, result: mailsolutions_model::sync::EwsMailResult) -> Value {
+    apply_ews_mail(s, mailsolutions_model::sync::EwsMailResult { account, ..result }).unwrap()
 }
 
 #[test]
@@ -114,7 +117,7 @@ fn a_move_takes_the_new_id_and_undo_is_another_change() {
             MessageChangeDone { change, outcome, there: None }
         })
         .collect();
-    let said = took(&mut s, account, mailcraft_model::sync::EwsMailResult { messages: done, partial: true, ..piece(account) });
+    let said = took(&mut s, account, mailsolutions_model::sync::EwsMailResult { messages: done, partial: true, ..piece(account) });
     assert_eq!(said["pushed"], 2);
     let moved = s.mailbox.message(b).unwrap().server.as_ref().unwrap();
     assert_eq!((moved.id.as_str(), moved.folder.as_str()), ("B2-new", "F5"));
@@ -135,7 +138,7 @@ fn a_refusal_is_put_back_and_said() {
     let said = took(
         &mut s,
         account,
-        mailcraft_model::sync::EwsMailResult {
+        mailsolutions_model::sync::EwsMailResult {
             messages: vec![MessageChangeDone { change, outcome: MessageOutcome::Refused { status: 403 }, there: None }],
             ..piece(account)
         },
@@ -153,8 +156,8 @@ fn folders_made_renamed_and_deleted_go_up_and_come_back_as_the_servers() {
     assert_eq!((name.as_str(), parent.as_str()), ("Apollo", "F5"));
     let change = request.changes[0].clone();
     let there = GraphFolder { id: "F9".into(), name: "Apollo".into(), parent: "F5".into(), kind: FolderKind::Custom, ..Default::default() };
-    let done = FolderChangeDone { change, outcome: mailcraft_model::sync::ChangeOutcome::Done { folder: there } };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { changes: vec![done], partial: true, ..piece(account) });
+    let done = FolderChangeDone { change, outcome: mailsolutions_model::sync::ChangeOutcome::Done { folder: there } };
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { changes: vec![done], partial: true, ..piece(account) });
     assert_eq!(s.mailbox.folder(*folder).unwrap().server.as_ref().unwrap().id, "F9");
     s.run("folder.rename", &json!({"id": *folder, "name": "Apollo 11"})).unwrap();
     let request = ews_mail_request(&s, account, false).unwrap();
@@ -182,13 +185,13 @@ fn mail_moved_into_the_archive_makes_it_on_the_server_once_and_the_move_follows(
         request.messages
     );
     let there = GraphFolder { id: "FA".into(), name: "Archive".into(), parent: String::new(), kind: FolderKind::Custom, ..Default::default() };
-    let made = FolderChangeDone { change: request.changes[0].clone(), outcome: mailcraft_model::sync::ChangeOutcome::Done { folder: there } };
+    let made = FolderChangeDone { change: request.changes[0].clone(), outcome: mailsolutions_model::sync::ChangeOutcome::Done { folder: there } };
     let moved = MessageChangeDone {
         change: request.messages[0].clone(),
         outcome: MessageOutcome::Done { categories: None, flag: None, folder: "FA".into(), id: "A1-moved".into() },
         there: None,
     };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { changes: vec![made], messages: vec![moved], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { changes: vec![made], messages: vec![moved], partial: true, ..piece(account) });
     let f = s.mailbox.folder(archive).unwrap();
     assert_eq!((f.kind, f.server.as_ref().map(|server| server.id.as_str())), (FolderKind::Archive, Some("FA")));
     assert_eq!(s.mailbox.message(a).unwrap().server.as_ref().unwrap().folder, "FA");
@@ -197,7 +200,11 @@ fn mail_moved_into_the_archive_makes_it_on_the_server_once_and_the_move_follows(
     assert!(next.changes.is_empty() && next.messages.is_empty(), "{:?} {:?}", next.changes, next.messages);
     // And the server's listing of it, as a folder like another, is the same folder.
     let deltas = EwsFolderDeltas { changed: vec![folder_at("FA", "Archive")], ..Default::default() };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { folders: Some(deltas), hierarchy: "H2".into(), partial: true, ..piece(account) });
+    took(
+        &mut s,
+        account,
+        mailsolutions_model::sync::EwsMailResult { folders: Some(deltas), hierarchy: "H2".into(), partial: true, ..piece(account) },
+    );
     assert_eq!(s.mailbox.folders.iter().filter(|f| f.account == account && f.name == "Archive").count(), 1);
     assert!(ews_mail_request(&s, account, false).unwrap().changes.is_empty());
 }
@@ -210,7 +217,11 @@ pub(crate) fn folder_at(id: &str, name: &str) -> GraphFolder {
 fn an_archive_the_server_has_already_is_the_archive_and_is_not_made() {
     let (mut s, account, a, _) = setup();
     let deltas = EwsFolderDeltas { changed: vec![folder_at("FA", "Archive")], ..Default::default() };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { folders: Some(deltas), hierarchy: "H2".into(), partial: true, ..piece(account) });
+    took(
+        &mut s,
+        account,
+        mailsolutions_model::sync::EwsMailResult { folders: Some(deltas), hierarchy: "H2".into(), partial: true, ..piece(account) },
+    );
     let archive = s.mailbox.folder_of_kind(account, FolderKind::Archive).unwrap();
     assert_eq!(s.mailbox.folder(archive).unwrap().server.as_ref().map(|server| server.id.as_str()), Some("FA"));
     assert_eq!(s.mailbox.folders.iter().filter(|f| f.account == account && f.name == "Archive").count(), 1);
@@ -239,7 +250,7 @@ fn a_draft_saved_goes_up_is_taken_in_and_a_send_is_held_when_its_answer_was_lost
         attachments: Some(vec![]),
         ..Default::default()
     };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { drafts: vec![done], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { drafts: vec![done], partial: true, ..piece(account) });
     let m = s.mailbox.message(draft).unwrap();
     assert_eq!((m.server.as_ref().unwrap().id.as_str(), m.server_draft.as_ref().unwrap().pending), ("D1", false));
     assert_eq!(crate::cmd::account::unpushed(&s, account), 0);
@@ -252,7 +263,7 @@ fn a_draft_saved_goes_up_is_taken_in_and_a_send_is_held_when_its_answer_was_lost
     // The answer to one was lost: held, said so, not sent again by itself.
     let lost = request.sends[1].message;
     let sent = SendDone { message: lost, outcome: SendOutcome::Held { lost: true, why: String::new() }, draft: None, draft_left: String::new() };
-    let said = took(&mut s, account, mailcraft_model::sync::EwsMailResult { sent: vec![sent], partial: true, ..piece(account) });
+    let said = took(&mut s, account, mailsolutions_model::sync::EwsMailResult { sent: vec![sent], partial: true, ..piece(account) });
     let held = &s.mailbox.message(lost).unwrap().held;
     assert!(held.contains("may have been sent") && held.contains("from the server") && !held.contains("Microsoft"), "{held}");
     assert!(said["errors"].to_string().contains("may have been sent"), "{said}");
@@ -261,7 +272,7 @@ fn a_draft_saved_goes_up_is_taken_in_and_a_send_is_held_when_its_answer_was_lost
     // The other went: it leaves the Outbox, the server files the copy.
     let went = request.sends[0].message;
     let sent = SendDone { message: went, outcome: SendOutcome::Sent, draft: None, draft_left: String::new() };
-    let said = took(&mut s, account, mailcraft_model::sync::EwsMailResult { sent: vec![sent], ..piece(account) });
+    let said = took(&mut s, account, mailsolutions_model::sync::EwsMailResult { sent: vec![sent], ..piece(account) });
     assert!(s.mailbox.message(went).is_none() && said["errors"].as_array().is_some());
     // Send Again puts the held one back.
     s.run("mail.sendAgain", &json!({"id": lost})).unwrap();
@@ -283,7 +294,7 @@ fn a_saved_draft_goes_as_its_mime_and_a_draft_left_after_the_send_is_deleted_by_
         attachments: Some(vec![]),
         ..Default::default()
     };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { drafts: vec![done], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { drafts: vec![done], partial: true, ..piece(account) });
     s.run("compose.send", &json!({})).unwrap();
     let request = ews_mail_request(&s, account, false).unwrap();
     // The message goes as its MIME, and names the draft the run takes away after a clear send.
@@ -294,7 +305,7 @@ fn a_saved_draft_goes_as_its_mime_and_a_draft_left_after_the_send_is_deleted_by_
     // It went, and the draft could not be taken away: the send is not offered again, and the
     // takeaway is an ordinary delete of the next run.
     let sent = SendDone { message: queued, outcome: SendOutcome::Sent, draft: None, draft_left: "D1".into() };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { sent: vec![sent], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { sent: vec![sent], partial: true, ..piece(account) });
     assert!(s.mailbox.message(queued).is_none());
     let next = ews_mail_request(&s, account, false).unwrap();
     assert!(next.sends.is_empty());
@@ -324,7 +335,7 @@ fn a_blocked_sender_on_new_mail_goes_to_junk_and_that_move_goes_up() {
         ..Default::default()
     };
     let page = EwsMessagePage { folder: "F1".into(), messages: vec![late], from: "S1".into(), state: "S2".into(), last: true, ..Default::default() };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { pages: vec![page], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { pages: vec![page], partial: true, ..piece(account) });
     let id = s.mailbox.messages.values().find(|m| m.subject == "Buy now").map(|m| m.id).unwrap();
     assert_eq!(s.mailbox.message(id).unwrap().folder, junk, "sorted by the Blocked Senders list as it arrives");
     assert!(changes(&s, account).iter().any(|c| matches!(c, MessageChange::Move { id, to, .. } if id == "A9" && to == "F6")));
@@ -344,7 +355,7 @@ fn delete_for_good_goes_up_and_is_not_undone_there() {
     assert_eq!(crate::cmd::account::unpushed(&s, account), 2);
     let outcome = MessageOutcome::Done { categories: None, flag: None, folder: String::new(), id: String::new() };
     let done = MessageChangeDone { change: delete, outcome, there: None };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { messages: vec![done], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { messages: vec![done], partial: true, ..piece(account) });
     assert!(!changes(&s, account).iter().any(|c| matches!(c, MessageChange::Delete { .. })));
     // As for a Microsoft account, undo doesn't make it again on the server (it is said, and stays gone).
     s.run("edit.undo", &json!({})).unwrap();
@@ -364,7 +375,7 @@ fn a_copy_goes_up_and_takes_the_new_id() {
         outcome: MessageOutcome::Done { categories: None, flag: None, folder: "F5".into(), id: "A1-copy".into() },
         there: None,
     };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { messages: vec![done], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { messages: vec![done], partial: true, ..piece(account) });
     let server = s.mailbox.message(copy).unwrap().server.as_ref().unwrap();
     assert_eq!((server.id.as_str(), server.folder.as_str()), ("A1-copy", "F5"));
     assert!(changes(&s, account).is_empty());
@@ -382,7 +393,7 @@ fn undo_of_a_copy_the_server_made_goes_to_deleted_items_and_is_no_removal() {
         outcome: MessageOutcome::Done { categories: None, flag: None, folder: "F5".into(), id: "A1-copy".into() },
         there: None,
     };
-    took(&mut s, account, mailcraft_model::sync::EwsMailResult { messages: vec![done], partial: true, ..piece(account) });
+    took(&mut s, account, mailsolutions_model::sync::EwsMailResult { messages: vec![done], partial: true, ..piece(account) });
     assert_eq!(check(&s, "edit.undo", &json!({}), &[]), Verdict::Run);
     assert!(!s.undo_takes_mail(false));
 }

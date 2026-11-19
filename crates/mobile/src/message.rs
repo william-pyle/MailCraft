@@ -4,9 +4,9 @@
 //! changes the mailbox (opening a message does not mark it read: `mail.markRead` does), and
 //! nothing is fetched from the web.
 
-use mailcraft_engine::{Part, Session};
-use mailcraft_html::Env;
-use mailcraft_model::{Attachment, FlagStatus, Id, Message};
+use mailsolutions_engine::{Part, Session};
+use mailsolutions_html::Env;
+use mailsolutions_model::{Attachment, FlagStatus, Id, Message};
 
 use crate::blocks::{self, Pictures};
 use crate::records::{AttachmentRecord, MessageView, PictureBytes};
@@ -48,13 +48,17 @@ fn sniff(bytes: &[u8]) -> Option<&'static str> {
 }
 
 /// The message's blocks for a pane: its HTML when it reads to something, else its text.
-fn read(message: &Message, env: &Env) -> (Vec<mailcraft_html::Block>, bool) {
-    let read = message.body.html.as_deref().map(|html| mailcraft_html::parse_in(html, env));
+fn read(message: &Message, env: &Env) -> (Vec<mailsolutions_html::Block>, bool) {
+    let read = message.body.html.as_deref().map(|html| mailsolutions_html::parse_in(html, env));
     match read {
-        Some(r) if mailcraft_html::has_text(&r.blocks) || !mailcraft_html::images(&r.blocks).is_empty() || message.body.text.trim().is_empty() => {
+        Some(r)
+            if mailsolutions_html::has_text(&r.blocks)
+                || !mailsolutions_html::images(&r.blocks).is_empty()
+                || message.body.text.trim().is_empty() =>
+        {
             (r.blocks, r.dark_design)
         }
-        _ => (mailcraft_html::text_blocks(&message.body.text), false),
+        _ => (mailsolutions_html::text_blocks(&message.body.text), false),
     }
 }
 
@@ -79,11 +83,11 @@ impl Core {
             let (blocks, dark_design) = read(&m, &env);
             let has_part = |src: &str| attachment_of(&m, src).is_some();
             let views = blocks::views(&blocks, &Pictures { has_part: &has_part, width, dark });
-            let remote_pictures = mailcraft_html::images(&blocks)
+            let remote_pictures = mailsolutions_html::images(&blocks)
                 .into_iter()
-                .filter(|b| matches!(&b.kind, mailcraft_html::BlockKind::Image { src, .. } if !mailcraft_html::is_embedded(src)))
+                .filter(|b| matches!(&b.kind, mailsolutions_html::BlockKind::Image { src, .. } if !mailsolutions_html::is_embedded(src)))
                 .count();
-            let people = |a: &[mailcraft_model::Address]| text::first(a, MAX_PEOPLE_IN_ITEM, crate::queries::address);
+            let people = |a: &[mailsolutions_model::Address]| text::first(a, MAX_PEOPLE_IN_ITEM, crate::queries::address);
             Ok(MessageView {
                 rev: s.rev(),
                 id: m.id,
@@ -93,7 +97,7 @@ impl Core {
                 to: people(&m.to),
                 cc: people(&m.cc),
                 subject: text::clip(&m.subject, MAX_SUBJECT),
-                when: mailcraft_engine::list::when(&m),
+                when: mailsolutions_engine::list::when(&m),
                 unread: !m.read,
                 flagged: m.flag == FlagStatus::Flagged,
                 categories: text::first(&m.categories, MAX_CATEGORIES, |c| text::clip(c, MAX_NAME)),
@@ -129,10 +133,10 @@ impl Core {
                     parts.next().and_then(|n| n.parse::<u16>().ok()).map(f32::from).ok_or_else(|| bad("that is not a picture of the message"))?;
                 let dark = parts.next() == Some("1");
                 let (blocks, _) = read(&m, &Env::for_pane(width, dark));
-                let picture = mailcraft_html::images(&blocks)
+                let picture = mailsolutions_html::images(&blocks)
                     .into_iter()
                     .filter_map(|b| match &b.kind {
-                        mailcraft_html::BlockKind::Image { data: Some(data), .. } => Some(data),
+                        mailsolutions_html::BlockKind::Image { data: Some(data), .. } => Some(data),
                         _ => None,
                     })
                     .nth(n)

@@ -8,10 +8,10 @@ use std::collections::VecDeque;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::remote::{CalendarsDownload, OpenedRefusal, OpenedWhy, RemoteCalendar, opened_id};
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{CalendarOwner, Id, Rights};
+use mailsolutions_engine::Session;
+use mailsolutions_model::remote::{CalendarsDownload, OpenedRefusal, OpenedWhy, RemoteCalendar, opened_id};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{CalendarOwner, Id, Rights};
 use serde_json::json;
 
 use crate::{GraphRequest, GraphResult, MailApp, Services, SignInRequest};
@@ -26,7 +26,7 @@ type Jobs = Arc<Mutex<Vec<(bool, usize)>>>;
 type SignIns = Arc<Mutex<Vec<(bool, bool)>>>;
 
 fn tokens(access: &str, refresh: &str) -> Tokens {
-    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 fn window(answer: Result<Tokens, String>) -> (MailApp, Id, Answers, Jobs, SignIns) {

@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! How long keeping a real-sized mailbox on disk takes.
 //!
-//! `cargo run --release -p mailcraft-engine --example mailbox_bench [-- --messages 5000 --attachments 300 --keep DIR --split-only]`
-//! `cargo run --release -p mailcraft-engine --example mailbox_bench -- --open DIR`
-//! `cargo run --release -p mailcraft-engine --example mailbox_bench -- --open COPY --keep-offline 1m`
-//! `cargo run --release -p mailcraft-engine --example mailbox_bench -- --messages 50000 --exchange-headers --split-only --keep DIR`
+//! `cargo run --release -p mailsolutions-engine --example mailbox_bench [-- --messages 5000 --attachments 300 --keep DIR --split-only]`
+//! `cargo run --release -p mailsolutions-engine --example mailbox_bench -- --open DIR`
+//! `cargo run --release -p mailsolutions-engine --example mailbox_bench -- --open COPY --keep-offline 1m`
+//! `cargo run --release -p mailsolutions-engine --example mailbox_bench -- --messages 50000 --exchange-headers --split-only --keep DIR`
 //!
 //! `--exchange-headers`: every message carries about 6 KB of header lines of the kind Exchange
 //! writes on all its mail (the trace, the spam filters' reports, signatures, its own stamps),
@@ -22,9 +22,9 @@
 //! and HTML bodies, 300 attachments from 20 KB to 5 MB, about 300 MB in all), then times saving and
 //! opening it both ways: as one self-contained file (how every save used to go, and how an export
 //! still does), and as the desktop app keeps it, with the content in a folder beside the mailbox
-//! file (`mailcraft_engine::store`). Everything is written under the system's temporary folder and
+//! file (`mailsolutions_engine::store`). Everything is written under the system's temporary folder and
 //! removed afterwards; `--keep DIR` writes into `DIR` instead and leaves both mailboxes there, to try
-//! the app on (`mailcraft --mailbox DIR/single.mailcraft`). `--split-only` leaves the single file
+//! the app on (`mailsolutions --mailbox DIR/single.mailcraft`). `--split-only` leaves the single file
 //! out (for a mailbox too large to serialise whole in memory).
 //!
 //! `--open DIR` only opens `DIR/mailbox.mailcraft` (one `--keep` left), in a process that has done
@@ -49,9 +49,9 @@
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::io;
-use mailcraft_model::{Address, Attachment, FolderKind, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::io;
+use mailsolutions_model::{Address, Attachment, FolderKind, Mailbox, Message};
 
 /// xorshift64*: the same mailbox every run.
 struct Rng(u64);
@@ -431,8 +431,8 @@ fn single_file(mailbox: &Mailbox, dir: &Path, keep: bool) -> Result<(), String> 
 
 /// The mailbox as the desktop app keeps it: the mailbox file, and the content in a folder beside it.
 fn split(mailbox: &Mailbox, dir: &Path) -> Result<(), String> {
-    use mailcraft_engine::io::BackgroundSave as _;
-    use mailcraft_engine::store;
+    use mailsolutions_engine::io::BackgroundSave as _;
+    use mailsolutions_engine::store;
     println!("\nThe mailbox file with its content folder (mailbox.mailcraft + mailbox.mailcraft.blobs/)");
     let path = dir.join("mailbox.mailcraft");
     // Before R6.3 the window copied the mailbox each time it handed it to the saver (every few
@@ -606,7 +606,7 @@ fn memory_free() -> Option<u64> {
 
 /// Open the mailbox kept in `dir` and nothing else: how long it takes, and what it costs.
 fn open_only(dir: &Path) -> Result<(), String> {
-    use mailcraft_engine::store;
+    use mailsolutions_engine::store;
     let path = dir.join("mailbox.mailcraft");
     let before = memory();
     let (opened, took) = timed(|| store::open(&path));
@@ -700,9 +700,9 @@ fn open_only(dir: &Path) -> Result<(), String> {
 /// to its headers and preview: how long that takes, and the disk the mailbox takes before and
 /// after. It changes the mailbox in `dir` for good: run it on a copy.
 fn keep_offline_only(dir: &Path, keep: &str) -> Result<(), String> {
-    use mailcraft_engine::store;
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{AccountKind, ServerFolder};
+    use mailsolutions_engine::store;
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{AccountKind, ServerFolder};
     let path = dir.join("mailbox.mailcraft");
     let disk = |what: &str| {
         let (content, files) = dir_size(&store::blob_dir(&path));
@@ -800,7 +800,7 @@ fn run() -> Result<(), String> {
     println!("a snapshot (clone of the mailbox) {}", ms(clone));
     drop(copy);
     let keep = args.iter().position(|a| a == "--keep").and_then(|i| args.get(i + 1)).map(std::path::PathBuf::from);
-    let dir = keep.clone().unwrap_or_else(|| std::env::temp_dir().join(format!("mailcraft-bench-{}", std::process::id())));
+    let dir = keep.clone().unwrap_or_else(|| std::env::temp_dir().join(format!("mailsolutions-bench-{}", std::process::id())));
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let single =
         if split_only { Ok(()) } else { single_file(&mailbox, &dir, keep.is_some()).map(|()| println!("  peak memory so far          {}", peak())) };

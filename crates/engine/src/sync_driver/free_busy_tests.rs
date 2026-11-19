@@ -3,10 +3,10 @@
 
 use std::collections::HashSet;
 
-use mailcraft_i18n::Lang;
-use mailcraft_model::remote::{BusyTime, FreeBusy, PersonSchedule};
-use mailcraft_model::{Id, ShowAs};
-use mailcraft_time::Date;
+use mailsolutions_i18n::Lang;
+use mailsolutions_model::remote::{BusyTime, FreeBusy, PersonSchedule};
+use mailsolutions_model::{Id, ShowAs};
+use mailsolutions_time::Date;
 use serde_json::json;
 
 use super::free_busy::*;
@@ -89,7 +89,7 @@ fn nothing_is_asked_while_something_goes_first_and_nobody_with_an_address_is_nob
     assert!(ask.is_none());
     let crowd: Vec<String> = (0..400).map(|n| format!("p{n}@lumen.example")).collect();
     let (_, ask) = s.free_busy_look(calendar, &crowd, day(), &facts(None), 0.0);
-    assert_eq!(ask.unwrap().key.people.len(), mailcraft_model::remote::MAX_SCHEDULES, "no more than one question carries");
+    assert_eq!(ask.unwrap().key.people.len(), mailsolutions_model::remote::MAX_SCHEDULES, "no more than one question carries");
 }
 
 #[test]

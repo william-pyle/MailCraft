@@ -466,7 +466,7 @@ pub fn parity_markdown(reg: &Registry) -> String {
         n("outOfScopeCount"),
         n("commands")
     ));
-    out.push_str("**Has a command** means the behaviour is reachable by id (ribbon, shortcut, CLI, control channel, MCP); it says nothing of how closely it behaves as the incumbent's does. **Complete** means the behaviour matches the incumbent's as far as MailCraft's rules allow, a test shows it, and `docs/gaps.md` has no open row for it. How far the rest falls short is tracked in `docs/gaps.md` and the per-area parity checklists.\n\n");
+    out.push_str("**Has a command** means the behaviour is reachable by id (ribbon, shortcut, CLI, control channel, MCP); it says nothing of how closely it behaves as the incumbent's does. **Complete** means the behaviour matches the incumbent's as far as MailSolutions's rules allow, a test shows it, and `docs/gaps.md` has no open row for it. How far the rest falls short is tracked in `docs/gaps.md` and the per-area parity checklists.\n\n");
     out.push_str("| Tab | Has a command | Complete | In scope |\n|---|---|---|---|\n");
     for t in p.get("tabs").and_then(Value::as_array).into_iter().flatten() {
         let c = |k: &str| t.get(k).and_then(Value::as_u64).unwrap_or(0);

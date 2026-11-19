@@ -3,8 +3,8 @@
 //! Undo and Redo of a command that brought a body in from disk while it ran, for an account
 //! kept in step with its server (#688): the body is never lost with it.
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{AccountKind, Action, Condition, FlagStatus, FolderKind, Rule, ServerFolder};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{AccountKind, Action, Condition, FlagStatus, FolderKind, Rule, ServerFolder};
 
 use super::*;
 

@@ -9,7 +9,7 @@
 
 mod support;
 
-use mailcraft_jmap_types::{
+use mailsolutions_jmap_types::{
     ChangesRequest, Email, EmailGetRequest, EmailQueryChangesRequest, EmailQueryRequest, Filter, GetRequest, GetResponse, Mailbox,
     MailboxChangesResponse, MailboxFilterCondition, MailboxSetRequest, QueryChangesResponse, QueryResponse, SetRequest, SetResponse, Thread,
     set_error,

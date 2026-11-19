@@ -3,7 +3,7 @@
 //! Sending a problem report to the project's report relay (#956), once the owner has pressed
 //! Send report in Help › Report a Problem: one `POST` of the report as JSON, and its answer read.
 //!
-//! - **Only to the relay this build names** ([`relay`], `MAILCRAFT_REPORT_URL` when it was
+//! - **Only to the relay this build names** ([`relay`], `MAILSOLUTIONS_REPORT_URL` when it was
 //!   built; a build without one has no relay and sends nothing), over HTTPS (plain `http` only
 //!   to this machine, for the tests). The crate's own HTTP client sends no cookie, credential or
 //!   referrer, and its `User-Agent` says nothing of this machine: the report is all that goes.
@@ -17,7 +17,7 @@
 
 use std::time::Duration;
 
-use mailcraft_model::report::{Field, NotSent, ProblemReport};
+use mailsolutions_model::report::{Field, NotSent, ProblemReport};
 use serde_json::Value;
 
 use crate::NetError;
@@ -31,11 +31,11 @@ pub const MAX_ANSWER: usize = 4 * 1024;
 /// The largest reference taken (a GitHub issue's number).
 const MAX_REFERENCE: u64 = 1_000_000_000;
 
-/// The relay this build sends reports to: `MAILCRAFT_REPORT_URL` as the build was given it, when
+/// The relay this build sends reports to: `MAILSOLUTIONS_REPORT_URL` as the build was given it, when
 /// that is an `https://` address. `None` in a build without one (a fork's): such a build offers
 /// Open on GitHub alone.
 pub fn relay() -> Option<&'static str> {
-    option_env!("MAILCRAFT_REPORT_URL").map(str::trim).filter(|url| is_relay(url))
+    option_env!("MAILSOLUTIONS_REPORT_URL").map(str::trim).filter(|url| is_relay(url))
 }
 
 /// Whether `url` will do as the relay: an `https://` address.

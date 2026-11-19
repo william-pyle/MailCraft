@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Telling the owner when a new version of MailCraft is out (File › About, the
+//! Telling the owner when a new version of MailSolutions is out (File › About, the
 //! status bar), and, for a copy that updates itself, downloading it and having the host install
 //! it. Any other copy's owner is told, with a link to the release's page.
 //!
@@ -28,7 +28,7 @@
 //!   update**" (`ui.restartToUpdate`, the owner's click alone). Pressed, the window closes as it
 //!   does at quit and the host installs the new version and starts it ([`MailApp::update_on_exit`]);
 //!   not pressed, the host installs it when the owner quits. It never restarts by itself. The
-//!   first time, a line above the status bar says that MailCraft now installs its updates itself.
+//!   first time, a line above the status bar says that MailSolutions now installs its updates itself.
 //! - The host says at the start what came of the last update ([`UpdateStart`]): one that wasn't
 //!   installed after all is said once; a newly installed version that didn't start twice running
 //!   offers to go back to the one it replaced (`ui.goBackVersion`), and the version gone back from
@@ -40,7 +40,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 use egui::{Ui, vec2};
-use mailcraft_model::update::{Release, Version};
+use mailsolutions_model::update::{Release, Version};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
@@ -69,13 +69,13 @@ pub const GO_BACK: &str = "ui.goBackVersion";
 /// The refusal of an update action by an agent or a script.
 pub const OWNERS_CLICK: &str = "Downloading or installing an update is the owner's click.";
 /// Said once, the first time a new version is ready to install.
-pub const INSTALLS_ITSELF: &str = "MailCraft now installs its updates itself. Turn this off in File › About.";
+pub const INSTALLS_ITSELF: &str = "MailSolutions now installs its updates itself. Turn this off in File › About.";
 
 /// What the host found at this start about the last update it installed (versions as text,
 /// `0.5.1`; the host's own record, made safe here).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct UpdateStart {
-    /// This version was to be installed when MailCraft last closed, and wasn't: the system's
+    /// This version was to be installed when MailSolutions last closed, and wasn't: the system's
     /// question (Windows' administrator prompt) was answered no, or installing failed. The old
     /// version is still here.
     pub not_installed: Option<String>,
@@ -95,7 +95,7 @@ pub enum OnExit {
     GoBack { to: String },
 }
 
-/// Whether MailCraft looks for new versions by itself.
+/// Whether MailSolutions looks for new versions by itself.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum UpdateCheck {
@@ -188,8 +188,11 @@ fn page_of(version: &Version) -> String {
 
 /// What is said of a newer release, in the status bar and in About.
 fn notice(release: &Release) -> String {
-    let text =
-        if release.security { tl!("MailCraft {version} is available and fixes a security problem") } else { tl!("MailCraft {version} is available") };
+    let text = if release.security {
+        tl!("MailSolutions {version} is available and fixes a security problem")
+    } else {
+        tl!("MailSolutions {version} is available")
+    };
     crate::i18n::fmt(text, &[("version", &release.version.to_string())])
 }
 
@@ -235,11 +238,11 @@ impl MailApp {
         if !std::mem::replace(&mut self.updates.start_said, true) {
             let start = &self.services.update_start;
             let said = if let Some(version) = start.not_installed.as_deref().and_then(version_of) {
-                Some(crate::i18n::fmt(tl!("MailCraft {version} wasn't installed: this version is still the one here."), &[("version", &version)]))
+                Some(crate::i18n::fmt(tl!("MailSolutions {version} wasn't installed: this version is still the one here."), &[("version", &version)]))
             } else {
                 start.not_gone_back.as_deref().and_then(version_of).map(|version| {
                     crate::i18n::fmt(
-                        tl!("Going back to MailCraft {version} didn't happen: this version is still the one here."),
+                        tl!("Going back to MailSolutions {version} didn't happen: this version is still the one here."),
                         &[("version", &version)],
                     )
                 })
@@ -384,16 +387,16 @@ impl MailApp {
         // the notice and nothing more.
         match answer {
             Ok(_) => {
-                log::info!("MailCraft {version} is downloaded and checked by its release signature");
+                log::info!("MailSolutions {version} is downloaded and checked by its release signature");
                 self.updates.downloaded = Some(version);
             }
             Err(why) => {
-                log::info!("MailCraft {version} wasn't downloaded: {why}");
+                log::info!("MailSolutions {version} wasn't downloaded: {why}");
                 if self.updates.approved.as_ref() == Some(&version) {
                     self.updates.approved = None;
                     self.updates.prompt_dismissed = false;
                     let said = crate::i18n::fmt(
-                        tl!("MailCraft {version} couldn't be downloaded: {why}"),
+                        tl!("MailSolutions {version} couldn't be downloaded: {why}"),
                         &[("version", &version.to_string()), ("why", &why)],
                     );
                     self.status(said);
@@ -436,7 +439,7 @@ impl MailApp {
                 } else {
                     self.updates.newer = None;
                     if pressed {
-                        let said = crate::i18n::fmt(tl!("MailCraft is up to date ({version})."), &[("version", env!("CARGO_PKG_VERSION"))]);
+                        let said = crate::i18n::fmt(tl!("MailSolutions is up to date ({version})."), &[("version", env!("CARGO_PKG_VERSION"))]);
                         self.status(said.clone());
                         self.updates.said = Some(said);
                     }
@@ -444,7 +447,7 @@ impl MailApp {
             }
             Err(why) => {
                 // (The host's words name no address.)
-                log::info!("couldn't find out whether a new version of MailCraft is out: {why}");
+                log::info!("couldn't find out whether a new version of MailSolutions is out: {why}");
                 self.updates.approved = None;
                 self.updates.prompt_dismissed = false;
                 self.updates.retry_at = now.saturating_add(AFTER_A_FAILURE);
@@ -489,7 +492,7 @@ impl MailApp {
             return Err(tl!(TURNED_OFF).to_string());
         }
         if self.services.update_download.is_none() {
-            return Err(tl!("This copy of MailCraft doesn't update itself.").to_string());
+            return Err(tl!("This copy of MailSolutions doesn't update itself.").to_string());
         }
         let on = match p.get("value") {
             None | Some(Value::Null) => !self.ui.update_install,
@@ -503,7 +506,7 @@ impl MailApp {
     /// from an earlier run, refresh its asset list before asking the host to download it.
     pub(crate) fn download_update(&mut self) -> Result<Value, String> {
         if self.services.update_download.is_none() || self.services.development_build || self.services.updates_turned_off_by_organisation {
-            return Err(tl!("This copy of MailCraft doesn't update itself.").to_string());
+            return Err(tl!("This copy of MailSolutions doesn't update itself.").to_string());
         }
         let release = self.newer_release().ok_or_else(|| tl!("No new version is available.").to_string())?;
         if release.version.is_pre_release() || release.version.to_string() == self.ui.update_skip {
@@ -563,11 +566,11 @@ fn update_state(app: &MailApp) -> Value {
 }
 
 /// What is put across the window above the status bar, one at a time: the offer to go back to
-/// the version before, the line that says MailCraft now installs its updates itself, or the
+/// the version before, the line that says MailSolutions now installs its updates itself, or the
 /// question about checking for new versions.
 pub(crate) fn question(app: &mut MailApp, ui: &mut Ui) {
     if let Some((this, kept)) = app.go_back_offer() {
-        let said = crate::i18n::fmt(tl!("MailCraft {version} didn't start."), &[("version", &this)]);
+        let said = crate::i18n::fmt(tl!("MailSolutions {version} didn't start."), &[("version", &this)]);
         let back = crate::i18n::fmt(tl!("Go back to version {version}"), &[("version", &kept)]);
         bar(app, ui, "update_go_back", &said, &[("goBack", &back, true), ("keepVersion", tl!("Keep this version"), false)], |app, which| {
             let _ = if which == "goBack" { app.run(GO_BACK, json!({})) } else { app.run("ui.dismissUpdateNotice", json!({"notice": "didntStart"})) };
@@ -587,7 +590,7 @@ pub(crate) fn question(app: &mut MailApp, ui: &mut Ui) {
         && !app.updates.prompt_dismissed
     {
         let version = app.updates.newer.as_ref().map(|r| r.version.to_string()).unwrap_or_default();
-        let said = crate::i18n::fmt(tl!("MailCraft {version} is available. Download and update?"), &[("version", &version)]);
+        let said = crate::i18n::fmt(tl!("MailSolutions {version} is available. Download and update?"), &[("version", &version)]);
         bar(
             app,
             ui,
@@ -604,7 +607,7 @@ pub(crate) fn question(app: &mut MailApp, ui: &mut Ui) {
         );
     } else if app.updates.asking {
         let said = tl!(
-            "Check daily for new versions of MailCraft? You will be asked before one is downloaded. Only GitHub is asked; nothing about you or your mail is sent."
+            "Check daily for new versions of MailSolutions? You will be asked before one is downloaded. Only GitHub is asked; nothing about you or your mail is sent."
         );
         bar(app, ui, "update_question", said, &[("updateYes", tl!("Yes"), true), ("updateNo", tl!("No"), false)], |app, which| {
             let _ = app.run("ui.updateCheck", json!({"value": which == "updateYes"}));
@@ -687,7 +690,7 @@ pub(crate) fn status_item(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     let size = crate::chrome::STATUS_TEXT;
     let link = ui.link(egui::RichText::new(tl!("Restart to update")).size(size).strong().color(t.accent_text));
     app.hit.add("restartToUpdate", 0, link.rect);
-    let link = link.on_hover_text(tl!("Close MailCraft, install the new version and start it again. Otherwise it is installed when you quit."));
+    let link = link.on_hover_text(tl!("Close MailSolutions, install the new version and start it again. Otherwise it is installed when you quit."));
     let said = ui.label(egui::RichText::new(ready_text(app, &version)).size(size).color(t.text_dim));
     app.hit.add("updateReady", 0, said.rect);
     ui.add_space(10.0);
@@ -721,7 +724,7 @@ pub(crate) fn about(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
                     let _ = app.run(RESTART, json!({}));
                 }
             });
-            ui.label(egui::RichText::new(tl!("Not now: it is installed when you quit MailCraft.")).color(t.text_dim));
+            ui.label(egui::RichText::new(tl!("Not now: it is installed when you quit MailSolutions.")).color(t.text_dim));
         } else if !app.installs_updates()
             && app.services.update_download.is_some()
             && !app.services.development_build
@@ -783,7 +786,7 @@ pub(crate) fn about(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
         "needsCheck" => (tl!("Needs Check for new versions."), t.text_dim),
         _ => (
             tl!(
-                "A new version is downloaded in the background, kept only when MailCraft's own release signature says it is ours, and installed when you restart to update or quit."
+                "A new version is downloaded in the background, kept only when MailSolutions's own release signature says it is ours, and installed when you restart to update or quit."
             ),
             t.text_dim,
         ),
@@ -811,7 +814,7 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::{Arc, Mutex};
 
-    use mailcraft_engine::Session;
+    use mailsolutions_engine::Session;
 
     use super::*;
 
@@ -846,7 +849,7 @@ mod tests {
 
     /// A start of the app at `now`, with the settings `saved` from the run before.
     fn start(services: Services, saved: &UiState, now: i64) -> MailApp {
-        let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), now, 0), services);
+        let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), now, 0), services);
         app.autosave = false;
         app.apply_prefs(saved.clone());
         app
@@ -923,7 +926,7 @@ mod tests {
         frame(&mut app);
         frame(&mut app);
         assert_eq!(host.asked.load(Ordering::Relaxed), 1);
-        assert_eq!(said(&app), Some(format!("MailCraft {} is available", newer())));
+        assert_eq!(said(&app), Some(format!("MailSolutions {} is available", newer())));
         assert_eq!(app.ui.update_told, newer());
         assert_eq!(app.ui.update_checked, NOW);
         assert_eq!(app.newer_release().unwrap().page, format!("{REPOSITORY}/releases/tag/v{}", newer()));
@@ -952,7 +955,7 @@ mod tests {
         app.ui.update_checked = 0;
         frame(&mut app);
         frame(&mut app);
-        assert_eq!(said(&app), Some(format!("MailCraft {next} is available and fixes a security problem")));
+        assert_eq!(said(&app), Some(format!("MailSolutions {next} is available and fixes a security problem")));
     }
 
     #[test]
@@ -969,7 +972,7 @@ mod tests {
         // Pressed: said.
         assert_eq!(app.run(CHECK, json!({})).unwrap()["pending"], "updateCheck");
         frame(&mut app);
-        assert_eq!(said(&app), Some(format!("MailCraft is up to date ({here}).")));
+        assert_eq!(said(&app), Some(format!("MailSolutions is up to date ({here}).")));
 
         // Failures: by itself, a line in the log and another try in an hour; pressed, said.
         *host.answer.lock().unwrap() = Err("GitHub couldn't be reached".into());
@@ -988,7 +991,7 @@ mod tests {
         *host.answer.lock().unwrap() = Ok(release("0.0.1", false));
         app.run(CHECK, json!({})).unwrap();
         frame(&mut app);
-        assert_eq!(said(&app), Some(format!("MailCraft is up to date ({here}).")));
+        assert_eq!(said(&app), Some(format!("MailSolutions is up to date ({here}).")));
         // What was told in an earlier run doesn't outlast an answer that has nothing newer.
         app.ui.update_told = newer();
         assert!(app.newer_release().is_none());
@@ -1009,7 +1012,7 @@ mod tests {
         app.run(CHECK, json!({})).unwrap();
         frame(&mut app);
         assert_eq!(host.asked.load(Ordering::Relaxed), 1);
-        assert_eq!(said(&app), Some(format!("MailCraft {} is available", newer())));
+        assert_eq!(said(&app), Some(format!("MailSolutions {} is available", newer())));
     }
 
     #[test]
@@ -1034,8 +1037,8 @@ mod tests {
         assert_eq!(host.asked.load(Ordering::Relaxed), 1);
         // Turning it on is a setting: the agents' gate asks the owner first.
         assert_eq!(
-            mailcraft_engine::agent::access("ui.updateCheck"),
-            Some(mailcraft_engine::agent::Access::Owner(mailcraft_engine::agent::Class::Settings))
+            mailsolutions_engine::agent::access("ui.updateCheck"),
+            Some(mailsolutions_engine::agent::Access::Owner(mailsolutions_engine::agent::Class::Settings))
         );
         // A build without a host has nothing to check with.
         let mut bare = start(Services::default(), &UiState::default(), NOW);
@@ -1109,7 +1112,7 @@ mod tests {
         assert_eq!(*asked.lock().unwrap(), [newer()]);
         assert_eq!(app.updates.downloaded.as_ref().map(ToString::to_string), Some(newer()));
         // The owner is told the notice, as before.
-        assert_eq!(said(&app), Some(format!("MailCraft {} is available", newer())));
+        assert_eq!(said(&app), Some(format!("MailSolutions {} is available", newer())));
         // Not twice in a run.
         app.run(CHECK, json!({})).unwrap();
         frame(&mut app);
@@ -1183,8 +1186,8 @@ mod tests {
         assert!(asked.lock().unwrap().is_empty());
         // The switch is a setting: the agents' gate asks the owner first.
         assert_eq!(
-            mailcraft_engine::agent::access("ui.updateInstall"),
-            Some(mailcraft_engine::agent::Access::Owner(mailcraft_engine::agent::Class::Settings))
+            mailsolutions_engine::agent::access("ui.updateInstall"),
+            Some(mailsolutions_engine::agent::Access::Owner(mailsolutions_engine::agent::Class::Settings))
         );
     }
 
@@ -1318,8 +1321,8 @@ mod tests {
         assert_eq!(app.execute(RESTART, json!({})), Err(OWNERS_CLICK.to_string()));
         assert!(!app.quit_requested);
         // An agent, through the gate as the MCP bridge sends it: never.
-        assert_eq!(mailcraft_engine::agent::access(RESTART), Some(mailcraft_engine::agent::Access::Never));
-        assert_eq!(mailcraft_engine::agent::access(GO_BACK), Some(mailcraft_engine::agent::Access::Never));
+        assert_eq!(mailsolutions_engine::agent::access(RESTART), Some(mailsolutions_engine::agent::Access::Never));
+        assert_eq!(mailsolutions_engine::agent::access(GO_BACK), Some(mailsolutions_engine::agent::Access::Never));
         let (request, _answer) = crate::ControlRequest::new("engine.execute", json!({"command": RESTART, "params": {}}));
         let request = request.from_agent(Vec::new());
         let Some(crate::control::Outcome::Done(reply)) = crate::agent_gate::screen(&mut app, &request, &[]) else { panic!("settled by the gate") };
@@ -1341,8 +1344,8 @@ mod tests {
         assert!(app.prefs().update_install_told);
         assert!(app.run("ui.dismissUpdateNotice", json!({"notice": "other"})).is_err());
         assert_eq!(
-            mailcraft_engine::agent::access("ui.dismissUpdateNotice"),
-            Some(mailcraft_engine::agent::Access::Owner(mailcraft_engine::agent::Class::Settings))
+            mailsolutions_engine::agent::access("ui.dismissUpdateNotice"),
+            Some(mailsolutions_engine::agent::Access::Owner(mailsolutions_engine::agent::Class::Settings))
         );
     }
 
@@ -1380,13 +1383,13 @@ mod tests {
     #[test]
     fn an_update_that_wasnt_installed_is_said_at_the_next_start() {
         let mut app = ready_app(false, UpdateStart { not_installed: Some("9.0.0".into()), ..Default::default() });
-        let text = "MailCraft 9.0.0 wasn't installed: this version is still the one here.";
+        let text = "MailSolutions 9.0.0 wasn't installed: this version is still the one here.";
         assert_eq!(app.updates.start_notice.as_deref(), Some(text));
         app.status_msg = None;
         frame(&mut app);
         assert!(said(&app).is_none(), "once");
         let gone = ready_app(false, UpdateStart { not_gone_back: Some("0.1.0".into()), ..Default::default() });
-        assert!(gone.updates.start_notice.as_deref().is_some_and(|s| s.starts_with("Going back to MailCraft 0.1.0 didn't happen")));
+        assert!(gone.updates.start_notice.as_deref().is_some_and(|s| s.starts_with("Going back to MailSolutions 0.1.0 didn't happen")));
     }
 
     #[test]

@@ -8,7 +8,7 @@
 
 mod support;
 
-use mailcraft_jmap_types::{
+use mailsolutions_jmap_types::{
     CAPABILITY_CORE, CAPABILITY_MAIL, CoreCapability, Invocation, MethodError, Request, RequestError, Response, ResultReference, Session, StateChange,
 };
 use support::round_trip;

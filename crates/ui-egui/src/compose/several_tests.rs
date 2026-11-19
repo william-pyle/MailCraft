@@ -139,7 +139,7 @@ fn every_message_with_changes_is_saved_by_itself_every_five_minutes_for_every_ki
         assert!(!c(&a, id).dirty);
         let m = saved_as(&a, id).unwrap();
         assert!(m.draft && m.body.text.contains(body), "{}", m.body.text);
-        assert_eq!(Some(m.folder), a.session.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Drafts));
+        assert_eq!(Some(m.folder), a.session.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Drafts));
     }
     assert_eq!((c(&a, clean).draft, c(&a, clean).dirty), (None, false));
     assert!(!a.session.mailbox.messages.values().any(|m| m.draft && m.account == microsoft));
@@ -163,7 +163,7 @@ fn a_microsoft_accounts_drafts_saved_by_themselves_wait_to_go_up() {
         let m = c.draft.and_then(|d| a.session.mailbox.message(d)).unwrap();
         assert!(m.server_draft.as_ref().is_some_and(|sd| sd.pending), "{}", m.subject);
     }
-    assert!(mailcraft_engine::cmd::account::unpushed(&a.session, account) >= 2);
+    assert!(mailsolutions_engine::cmd::account::unpushed(&a.session, account) >= 2);
     // With nothing left to save the five minutes stop; the next change starts them again.
     tick_at(&mut a, start, 6 * 60);
     a.execute("compose.set", json!({"body": "Two, again"})).unwrap();
@@ -225,7 +225,7 @@ fn dont_save_takes_out_of_drafts_what_only_the_background_saves_put_there() {
         // Nothing waits to go to a server for it.
         if kind == "microsoft" {
             let account = a.session.mailbox.accounts.iter().find(|x| x.email == "one@mail.example").unwrap().id;
-            assert_eq!(mailcraft_engine::cmd::account::unpushed(&a.session, account), 0);
+            assert_eq!(mailsolutions_engine::cmd::account::unpushed(&a.session, account), 0);
         }
         // A script's (or an agent's) `discard` too.
         let (mut a, start, compose) = new_message(kind, "Thrown away");
@@ -272,7 +272,7 @@ fn escape_after_a_background_save_asks_and_dont_save_takes_the_copy_out() {
         let c = a.session.compose.clone().unwrap();
         assert!(in_drafts(&a, "Closed untouched") && !c.dirty, "{kind}");
         // (What the window's ✕ asks by too.)
-        assert!(mailcraft_engine::cmd::compose::unsaved(&a.session, &c), "{kind}");
+        assert!(mailsolutions_engine::cmd::compose::unsaved(&a.session, &c), "{kind}");
         a.run("compose.close", json!({})).unwrap();
         assert!(matches!(a.dialog, Some(crate::dialogs::Dialog::DiscardDraft { .. })), "{kind}");
         a.dialog = None;
@@ -315,7 +315,7 @@ fn a_new_message_put_aside_unasked_goes_with_dont_save_and_stays_with_save() {
         assert!(a.session.composing_by_id(first).is_none() && !in_drafts(&a, "Put aside unasked"), "{kind}");
         if kind == "microsoft" {
             let account = a.session.mailbox.accounts.iter().find(|x| x.email == "one@mail.example").unwrap().id;
-            assert_eq!(mailcraft_engine::cmd::account::unpushed(&a.session, account), 0, "nothing waits to go up");
+            assert_eq!(mailsolutions_engine::cmd::account::unpushed(&a.session, account), 0, "nothing waits to go up");
         }
         // Save on closing keeps it: a draft for good, which a discard later leaves.
         let (mut a, _, first) = new_message(kind, "Put aside, then kept");

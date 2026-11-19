@@ -7,7 +7,7 @@
 //! and Save Attachment, which then go on. Only while a Graph token from this session is good:
 //! each Send/Receive renews it. Cancel (Stop) stops it all until the next Send/Receive starts,
 //! the owner's or one by itself; Send/Receive Progress says how far it has got, account by account
-//! (the engine counts them as they come in, [`mailcraft_engine::cmd::sync_progress::FullMessages`]).
+//! (the engine counts them as they come in, [`mailsolutions_engine::cmd::sync_progress::FullMessages`]).
 //! A forward of several messages (#360) waits for every one of them, an account's at a time.
 //!
 //! A JMAP account's messages come the same way (M6), at once and before a reply alike, through
@@ -19,12 +19,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::cmd::{ews_mail, graph_mail, jmap_mail};
-use mailcraft_engine::sync_driver::fetch::apply_fetch as take_in_fetch;
-use mailcraft_engine::sync_driver::fetch_flow::{FirstNote, NowNext, NowNote, Waiting};
-use mailcraft_engine::sync_driver::{FETCH_BATCH, FetchProgress};
-use mailcraft_model::sync::GraphFetchResult;
-use mailcraft_model::{AccountKind, Id};
+use mailsolutions_engine::cmd::{ews_mail, graph_mail, jmap_mail};
+use mailsolutions_engine::sync_driver::fetch::apply_fetch as take_in_fetch;
+use mailsolutions_engine::sync_driver::fetch_flow::{FirstNote, NowNext, NowNote, Waiting};
+use mailsolutions_engine::sync_driver::{FETCH_BATCH, FetchProgress};
+use mailsolutions_model::sync::GraphFetchResult;
+use mailsolutions_model::{AccountKind, Id};
 use serde_json::{Value, json};
 
 use crate::ews_mail::EwsFetchJob;
@@ -35,19 +35,19 @@ use crate::{MailApp, now_ms};
 const BATCH: usize = FETCH_BATCH;
 // How long the background waits before looking again when there was nothing to fetch, and how
 // long at most after batches that brought nothing, one after another, are the engine's
-// ([`mailcraft_engine::sync_driver::fetch`]), as are the decisions about which messages a command
+// ([`mailsolutions_engine::sync_driver::fetch`]), as are the decisions about which messages a command
 // needs and which are still to fetch.
 #[cfg(test)]
-use mailcraft_engine::sync_driver::FETCH_IDLE_MS as IDLE_MS;
+use mailsolutions_engine::sync_driver::FETCH_IDLE_MS as IDLE_MS;
 
 /// What the host is asked to fetch ([`crate::Services::graph_fetch`]).
-pub use mailcraft_host::fetch::GraphFetchJob;
+pub use mailsolutions_host::fetch::GraphFetchJob;
 
 /// The state of fetching, in the window.
 #[derive(Default)]
 pub struct Fetching {
     /// The background's batch under way: for which account, under which opening of the mailbox
-    /// ([`mailcraft_engine::Session::openings`]), and the answer to come.
+    /// ([`mailsolutions_engine::Session::openings`]), and the answer to come.
     background: Option<(Id, u64, Receiver<GraphFetchResult>)>,
     /// The owner's messages under way: which ones (one, or of a forward of several, #360), under
     /// which opening, what calls it off, and the answer to come.
@@ -83,7 +83,7 @@ impl Fetching {
 
 /// A Graph token of this session for `account` that is still good.
 fn access(app: &MailApp, account: Id) -> Option<String> {
-    app.graph_tokens.get(&account).filter(|t| t.fresh(mailcraft_time::now())).map(|t| t.access.clone())
+    app.graph_tokens.get(&account).filter(|t| t.fresh(mailsolutions_time::now())).map(|t| t.access.clone())
 }
 
 /// How messages of an account are fetched now, when they can be: by a host that fetches for its
@@ -117,7 +117,7 @@ fn fetched(app: &MailApp, kind: AccountKind) -> bool {
 impl MailApp {
     /// A command that needs its message whole waits for it to be fetched, and then runs. What is
     /// fetched, and for what the command waits, is the engine's to say
-    /// ([`mailcraft_engine::Session::fetch_first_plan`]); this hands the host the fetch.
+    /// ([`mailsolutions_engine::Session::fetch_first_plan`]); this hands the host the fetch.
     pub(crate) fn fetch_first(&mut self, id: &str, params: &Value) -> Option<Result<Value, String>> {
         let plan = match self.session.fetch_first_plan(id, params) {
             Ok(plan) => plan?,
@@ -175,7 +175,7 @@ impl MailApp {
     }
 
     /// The engine's refusal `e`, kept to be said in the interface language ([`MailApp::run`]).
-    fn kept(&mut self, e: mailcraft_engine::CmdError) -> String {
+    fn kept(&mut self, e: mailsolutions_engine::CmdError) -> String {
         let said = e.to_string();
         self.last_error = Some(e);
         said
@@ -372,9 +372,9 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::{Arc, Mutex};
 
-    use mailcraft_engine::Session;
-    use mailcraft_model::sync::{GraphFetchResult, ServerMessage, Tokens};
-    use mailcraft_model::{FolderKind, Message};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::sync::{GraphFetchResult, ServerMessage, Tokens};
+    use mailsolutions_model::{FolderKind, Message};
 
     use super::*;
     use crate::Services;
@@ -396,7 +396,8 @@ mod tests {
                     Message { account, folder: inbox, received: 1_800_000_000 - m, unfetched: true, server: Some(server), ..Default::default() };
                 app.session.mailbox.add_message(message).unwrap();
             }
-            let tokens = Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() };
+            let tokens =
+                Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() };
             app.seed_graph_token(account, tokens);
             accounts[k] = account;
         }

@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A JMAP account (M6), as the engine works out what a host should read and takes in what it
 //! brings back, with results made by hand. (Against the crate's JMAP server in the process itself:
-//! `apps/mailcraft-cli/tests/jmap_mail.rs`.)
+//! `apps/mailsolutions-cli/tests/jmap_mail.rs`.)
 
-use mailcraft_model::sync::{FolderListing, GraphFetched, GraphFolder, GraphMessage, JmapKnown, MessagePage, ServerMessage};
-use mailcraft_model::{Address, FlagStatus, Importance, Message};
+use mailsolutions_model::sync::{FolderListing, GraphFetched, GraphFolder, GraphMessage, JmapKnown, MessagePage, ServerMessage};
+use mailsolutions_model::{Address, FlagStatus, Importance, Message};
 use serde_json::json;
 
 use super::*;
@@ -662,11 +662,11 @@ fn mail_the_server_has_stays_out_of_folders_the_server_hasnt_got() {
     let ours = s.run("folder.new", &json!({"name": "Ours", "parent": inbox})).unwrap()["id"].as_u64().unwrap();
     // (The server of this account has no mailbox for the Archive nor for Junk E-mail.)
     for (command, params, why) in [
-        ("mail.move", json!({"ids": [one], "folder": elsewhere}), mailcraft_model::ONLY_SERVER_FOLDERS),
-        ("mail.move", json!({"ids": [one], "folder": ours}), mailcraft_model::ONLY_SERVER_FOLDERS),
-        ("mail.archive", json!({"ids": [one]}), mailcraft_model::ONLY_SERVER_FOLDERS),
-        ("mail.junk", json!({"ids": [one]}), mailcraft_model::ONLY_SERVER_FOLDERS),
-        ("folder.delete", json!({"id": projects}), mailcraft_model::FOLDERS_NOT_DELETED_YET),
+        ("mail.move", json!({"ids": [one], "folder": elsewhere}), mailsolutions_model::ONLY_SERVER_FOLDERS),
+        ("mail.move", json!({"ids": [one], "folder": ours}), mailsolutions_model::ONLY_SERVER_FOLDERS),
+        ("mail.archive", json!({"ids": [one]}), mailsolutions_model::ONLY_SERVER_FOLDERS),
+        ("mail.junk", json!({"ids": [one]}), mailsolutions_model::ONLY_SERVER_FOLDERS),
+        ("folder.delete", json!({"id": projects}), mailsolutions_model::FOLDERS_NOT_DELETED_YET),
     ] {
         let before = s.mailbox.clone();
         assert_eq!(s.run(command, &params).unwrap_err().to_string(), why, "{command}");
@@ -706,7 +706,7 @@ fn a_folder_the_server_has_is_neither_renamed_nor_moved_until_changes_go_up() {
     ] {
         let before = s.mailbox.clone();
         let why = s.run(command, &params).unwrap_err().to_string();
-        assert_eq!(why, mailcraft_model::FOLDERS_STAY_YET, "{command}");
+        assert_eq!(why, mailsolutions_model::FOLDERS_STAY_YET, "{command}");
         assert!(s.mailbox == before, "{command} changed the mailbox");
     }
     s.view.folder = apollo;
@@ -735,7 +735,7 @@ fn discarding_a_draft_the_server_has_deletes_it_there_too() {
     assert_eq!(s.run("compose.discard", &json!({})).unwrap(), json!({"draftDeleted": true}));
     assert!(s.compose.is_none() && s.mailbox.message(id).is_none());
     let request = jmap_mail_request(&s, account, true).unwrap();
-    assert_eq!(request.changes, [mailcraft_model::sync::JmapChange::Destroy { id: "D1".into() }]);
+    assert_eq!(request.changes, [mailsolutions_model::sync::JmapChange::Destroy { id: "D1".into() }]);
     // A draft only this computer has goes, and nothing is asked of the server for it.
     s.run("mail.new", &json!({"account": account, "subject": "Mine"})).unwrap();
     let mine = s.run("compose.saveDraft", &json!({})).unwrap()["draft"].as_u64().unwrap();

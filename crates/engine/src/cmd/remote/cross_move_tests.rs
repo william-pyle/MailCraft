@@ -4,11 +4,11 @@
 //! by address): made in the target's mailbox first, the original deleted at its own only once the
 //! copy has been seen; a meeting stays where it is; nothing is lost when either half fails.
 
-use mailcraft_model::remote::{
+use mailsolutions_model::remote::{
     CalendarsDownload, EventChangeKind, EventOp, EventOutcome, EventResult, EventsDownload, EventsUpload, EventsUploaded, RemoteCalendar,
     RemoteEvent, opened_id,
 };
-use mailcraft_model::{Address, Attendee, CalendarOwner, Event, Id, Rights};
+use mailsolutions_model::{Address, Attendee, CalendarOwner, Event, Id, Rights};
 use serde_json::{Value, json};
 
 use super::{apply_calendars, apply_event_outcomes, apply_events, event_upload, events_waiting, held_for_rights};
@@ -63,7 +63,7 @@ fn event(id: &str, title: &str, start: i64) -> RemoteEvent {
 
 /// The owner's account with an appointment, a shared mailbox (edit rights) with one.
 fn setup() -> Setup {
-    let mut s = Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0);
+    let mut s = Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0);
     let owner = s.run("account.add", &json!({"email": OWNER, "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     apply_calendars(&mut s, &calendars_of(owner, OWNER, Rights::Edit)).unwrap();
     let shared = s.run("account.addSharedMailbox", &json!({"address": SHARED})).unwrap()["id"].as_u64().unwrap();
@@ -251,8 +251,8 @@ fn the_rights_of_both_calendars_are_asked_for_and_what_would_not_arrive_whole_st
     apply_calendars(&mut s, &calendars_of(shared, SHARED, Rights::Edit)).unwrap();
     // A series and an item with files attached are not carried across.
     let weekly = RemoteEvent {
-        kind: mailcraft_model::remote::RemoteEventKind::SeriesMaster,
-        recurrence: Some(mailcraft_model::Recurrence::every(mailcraft_model::Freq::Weekly)),
+        kind: mailsolutions_model::remote::RemoteEventKind::SeriesMaster,
+        recurrence: Some(mailsolutions_model::Recurrence::every(mailsolutions_model::Freq::Weekly)),
         ..event("s-1", "Gym", NOW + 10_000)
     };
     let files = RemoteEvent { attachments: true, ..event("f-1", "Contract", NOW + 11_000) };
@@ -262,7 +262,7 @@ fn the_rights_of_both_calendars_are_asked_for_and_what_would_not_arrive_whole_st
     assert!(refused(&mut s, json!({"id": contract, "calendar": shared_main})).starts_with("This item has files attached"));
     // Nothing of this is moved into a calendar that is only on this computer.
     let local = s.mailbox.alloc_id();
-    s.mailbox.calendars.push(mailcraft_model::Calendar { id: local, name: "On this computer".into(), visible: true, ..Default::default() });
+    s.mailbox.calendars.push(mailsolutions_model::Calendar { id: local, name: "On this computer".into(), visible: true, ..Default::default() });
     assert!(refused(&mut s, json!({"id": mine, "calendar": local})).contains("not out of it"));
     assert!(s.mailbox.event_changes.is_empty());
 }

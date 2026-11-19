@@ -1,18 +1,18 @@
 [package]
-name = "mailcraft-vcard"
+name = "mailsolutions-vcard"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "MailCraft vCard (2.1, 3.0, 4.0) reader and writer"
+description = "MailSolutions vCard (2.1, 3.0, 4.0) reader and writer"
 
 [lints]
 workspace = true
 
 [dependencies]
-mailcraft-time = { workspace = true }
-mailcraft-model = { workspace = true }
-mailcraft-charset = { workspace = true }
-mailcraft-names = { workspace = true }
+mailsolutions-time = { workspace = true }
+mailsolutions-model = { workspace = true }
+mailsolutions-charset = { workspace = true }
+mailsolutions-names = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

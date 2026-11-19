@@ -6,8 +6,8 @@
 //! program or the owner's server wrote for the owner (`X-…` of any kind) and the sender's
 //! organisation and mail program stay here.
 
-use mailcraft_model::{Address, FolderKind, Message};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Address, FolderKind, Message};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::json;
 
 use crate::{Session, sample};
@@ -67,7 +67,7 @@ const OWN: [&str; 12] =
     ["date", "from", "to", "cc", "reply-to", "subject", "message-id", "in-reply-to", "references", "importance", "x-priority", "mime-version"];
 
 /// A message in Sent Items with every one of those headers, a Bcc line and replies' fields.
-fn sent_with_headers(s: &mut Session) -> mailcraft_model::Id {
+fn sent_with_headers(s: &mut Session) -> mailsolutions_model::Id {
     let account = s.mailbox.accounts[0].id;
     let folder = s.mailbox.folder_of_kind(account, FolderKind::Sent).unwrap();
     let m = Message {
@@ -83,8 +83,8 @@ fn sent_with_headers(s: &mut Session) -> mailcraft_model::Id {
         reply_to: vec![Address::new("Budget desk", "budget@lumen.example")],
         subject: "Budget".into(),
         date: 1_791_000_000,
-        importance: mailcraft_model::Importance::High,
-        body: mailcraft_model::Body { text: "The numbers.".into(), html: None },
+        importance: mailsolutions_model::Importance::High,
+        body: mailsolutions_model::Body { text: "The numbers.".into(), html: None },
         headers: KEPT.iter().chain(&DROPPED).map(|(name, value)| (name.to_string(), value.to_string())).collect(),
         ..Default::default()
     };
@@ -92,7 +92,7 @@ fn sent_with_headers(s: &mut Session) -> mailcraft_model::Id {
 }
 
 /// The `.eml` that Forward as Attachment attaches for message `id`.
-fn forwarded(s: &mut Session, id: mailcraft_model::Id) -> Vec<u8> {
+fn forwarded(s: &mut Session, id: mailsolutions_model::Id) -> Vec<u8> {
     s.run("mail.forwardAsAttachment", &json!({"id": id})).unwrap();
     match s.compose.as_ref().unwrap().attachments.as_slice() {
         [eml] => eml.data.to_vec(),
@@ -125,7 +125,7 @@ fn a_signed_message_forwarded_takes_the_same_headers_and_its_body_as_it_came() {
          --b\r\nContent-Type: text/plain\r\n\r\nThe numbers.\r\n--b\r\nContent-Type: application/pkcs7-signature\r\n\
          Content-Transfer-Encoding: base64\r\n\r\nZHVtbXk=\r\n--b--\r\n"
     );
-    s.mailbox.message_mut(id).unwrap().original = mailcraft_model::Original::new(original.clone().into_bytes());
+    s.mailbox.message_mut(id).unwrap().original = mailsolutions_model::Original::new(original.clone().into_bytes());
     let bytes = forwarded(&mut s, id);
     only_those_go(&bytes);
     let body = |b: &[u8]| b.windows(4).position(|w| w == b"\r\n\r\n").map(|at| b[at + 4..].to_vec()).unwrap();

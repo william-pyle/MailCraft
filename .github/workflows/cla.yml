@@ -44,12 +44,12 @@ jobs:
           # UCS's own maintainers, whose work is UCS's already.
           EXEMPT: benandez
           VERSION: "1.0"
-          SENTENCE: I have read the MailCraft CLA and I agree to it
+          SENTENCE: I have read the MailSolutions CLA and I agree to it
         run: |
           set -euo pipefail
           BRANCH=cla-signatures
           FILE=signatures.tsv
-          MARK='<!-- mailcraft-cla -->'
+          MARK='<!-- mailsolutions-cla -->'
           signatures() { gh api "repos/$REPO/contents/$FILE?ref=$BRANCH" -q .content | base64 -d; }
 
           # A signing comment: the sentence alone, ignoring case, spaces, a final full stop,
@@ -106,7 +106,7 @@ jobs:
 
           Still to sign:$missing
 
-          You keep the copyright in your work, and MailCraft stays MIT OR Apache-2.0. The CLA also lets UCS Care Group release MailCraft under other terms, such as a commercial edition, without asking each contributor again. Questions are welcome here."
+          You keep the copyright in your work, and MailSolutions stays MIT OR Apache-2.0. The CLA also lets UCS Care Group release MailSolutions under other terms, such as a commercial edition, without asking each contributor again. Questions are welcome here."
           else
             state=success; desc="Every author has signed the CLA"
             text="$MARK"$'\n'"Every author has signed the [CLA](https://github.com/$REPO/blob/main/CLA.md). Thank you."

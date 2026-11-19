@@ -5,7 +5,7 @@
 //! its content, is never in memory. (Small limits under test: `MAX_MAILBOX_JSON` 16 MB, an item
 //! 4 MB, 5,000 items.)
 
-use mailcraft_model::{Address, Attachment, Body, Mailbox, Message};
+use mailsolutions_model::{Address, Attachment, Body, Mailbox, Message};
 
 use serde_json::Value;
 
@@ -15,7 +15,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-stream-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-stream-{}-{name}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -87,7 +87,7 @@ fn mailbox(n: usize, attach: usize) -> Mailbox {
         };
         mb.add_message(m).unwrap();
     }
-    mb.add_contact(mailcraft_model::Contact { display_name: "Ada Aldrin".into(), ..Default::default() });
+    mb.add_contact(mailsolutions_model::Contact { display_name: "Ada Aldrin".into(), ..Default::default() });
     mb
 }
 
@@ -284,7 +284,7 @@ fn deep_nesting_and_the_wrong_types_are_errors() {
     }
     // A newer format is said to be.
     fs::write(&path, r#"{"version":99,"messages":{}}"#).unwrap();
-    assert!(open(&path).err().unwrap().contains("newer MailCraft"));
+    assert!(open(&path).err().unwrap().contains("newer MailSolutions"));
 }
 
 #[test]
@@ -418,14 +418,14 @@ fn the_newest_mail_has_its_text_read_once_the_window_shows() {
     assert!(content_later(&path).1.is_empty());
 }
 
-/// Timing of a big file (not run by default): `MC_BENCH_DIR=<folder> cargo test -p mailcraft-engine
+/// Timing of a big file (not run by default): `MC_BENCH_DIR=<folder> cargo test -p mailsolutions-engine
 /// --lib stream_bench -- --ignored --nocapture`. About 1.4 GB, 50,000 messages, 100,000 files,
-/// in a folder `mailcraft-stream-bench` made in `<folder>` (only that is cleared).
+/// in a folder `mailsolutions-stream-bench` made in `<folder>` (only that is cleared).
 #[test]
 #[ignore]
 fn stream_bench() {
     use std::io::Write as _;
-    let dir = PathBuf::from(std::env::var("MC_BENCH_DIR").unwrap()).join("mailcraft-stream-bench");
+    let dir = PathBuf::from(std::env::var("MC_BENCH_DIR").unwrap()).join("mailsolutions-stream-bench");
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).unwrap();
     let path = dir.join("mailbox.mailcraft");

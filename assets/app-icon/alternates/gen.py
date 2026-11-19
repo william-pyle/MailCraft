@@ -5,7 +5,7 @@
     python3 assets/app-icon/alternates/gen.py <out-dir>
 
 writes calmail-<scheme>.svg for every scheme below. "blue" is the app icon itself
-(assets/app-icon/source/mailcraft.svg); the others are kept for the future and not used yet.
+(assets/app-icon/source/mailsolutions.svg); the others are kept for the future and not used yet.
 """
 import sys, os
 out = sys.argv[1]

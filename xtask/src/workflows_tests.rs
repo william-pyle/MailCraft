@@ -24,7 +24,7 @@ fn the_repositorys_workflows_pass() {
 #[test]
 fn a_signing_job_that_compiles_its_tool_fails() {
     let text = job(
-        "      - run: cargo build --locked --release --package xtask\n      - name: Sign the checksums\n        env:\n          MAILCRAFT_RELEASE_KEY: ${{ secrets.MAILCRAFT_RELEASE_KEY }}\n          MAILCRAFT_XTASK: ${{ github.workspace }}/target/release/xtask\n        run: packaging/sign-sums.sh artifacts",
+        "      - run: cargo build --locked --release --package xtask\n      - name: Sign the checksums\n        env:\n          MAILSOLUTIONS_RELEASE_KEY: ${{ secrets.MAILCRAFT_RELEASE_KEY }}\n          MAILSOLUTIONS_XTASK: ${{ github.workspace }}/target/release/xtask\n        run: packaging/sign-sums.sh artifacts",
     );
     let p = problems(&text);
     assert!(p.iter().any(|p| p.contains("job `sign`") && p.contains("runs `cargo`") && p.contains("MAILCRAFT_RELEASE_KEY")), "{p:#?}");
@@ -44,11 +44,11 @@ fn build_then_sign_in_one_job_fails() {
     assert!(p.iter().any(|p| p.contains("without -SkipBuild -NoRun")), "{p:#?}");
 
     let macos = job(
-        "      - run: bash packaging/macos/package.sh --arch universal --build-only\n      - run: bash packaging/macos/import-cert.sh\n      - run: bash packaging/macos/package.sh --arch universal --skip-build\n      - run: |\n          \"$app/Contents/MacOS/MailCraft\" --version",
+        "      - run: bash packaging/macos/package.sh --arch universal --build-only\n      - run: bash packaging/macos/import-cert.sh\n      - run: bash packaging/macos/package.sh --arch universal --skip-build\n      - run: |\n          \"$app/Contents/MacOS/MailSolutions\" --version",
     );
     let p = problems(&macos);
     assert!(p.iter().filter(|p| p.contains("without --skip-build --no-run")).count() == 2, "{p:#?}");
-    assert!(p.iter().any(|p| p.contains("MacOS/MailCraft")), "{p:#?}");
+    assert!(p.iter().any(|p| p.contains("MacOS/MailSolutions")), "{p:#?}");
 }
 
 #[test]
@@ -77,6 +77,8 @@ fn what_makes_a_job_keyed() {
         "${{ secrets.GITHUB_TOKEN }}",
         "${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}",
         "${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}",
+        "${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_ID }}",
+        "${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_SECRET }}",
         "${{ mysecrets.X }}",
     ] {
         let text = job(&format!("      - run: echo {not_keyed}\n      - run: cargo build"));
@@ -150,12 +152,12 @@ fn handoff(dir: &Path, args: &[&str]) -> (bool, String) {
 #[cfg(unix)]
 #[test]
 fn handoff_checks_digests_and_refuses_names_outside_the_folder() {
-    let base = std::env::temp_dir().join(format!("mailcraft-handoff-{}", std::process::id()));
+    let base = std::env::temp_dir().join(format!("mailsolutions-handoff-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
     let made = base.join("made");
     std::fs::create_dir_all(made.join("x86_64/release")).unwrap();
-    std::fs::write(made.join("x86_64/release/mailcraft.exe"), "one").unwrap();
-    std::fs::write(made.join("mailcraft-1.dmg"), "two").unwrap();
+    std::fs::write(made.join("x86_64/release/mailsolutions.exe"), "one").unwrap();
+    std::fs::write(made.join("mailsolutions-1.dmg"), "two").unwrap();
     let (ok, digest) = handoff(&base, &["seal", "made", "build-a"]);
     assert!(ok, "{digest}");
     let digest = digest.trim().to_string();
@@ -163,7 +165,7 @@ fn handoff_checks_digests_and_refuses_names_outside_the_folder() {
     let copy = |name: &str| {
         let to = base.join(name);
         std::fs::create_dir_all(to.join("x86_64/release")).unwrap();
-        for f in ["x86_64/release/mailcraft.exe", "mailcraft-1.dmg", "build-a.sha256"] {
+        for f in ["x86_64/release/mailsolutions.exe", "mailsolutions-1.dmg", "build-a.sha256"] {
             std::fs::copy(made.join(f), to.join(f)).unwrap();
         }
         to
@@ -180,14 +182,14 @@ fn handoff_checks_digests_and_refuses_names_outside_the_folder() {
     assert!(!handoff(&base, &["check", "extra", &pair]).0);
 
     let changed = copy("changed");
-    std::fs::write(changed.join("mailcraft-1.dmg"), "evil").unwrap();
+    std::fs::write(changed.join("mailsolutions-1.dmg"), "evil").unwrap();
     assert!(!handoff(&base, &["check", "changed", &pair]).0);
 
     copy("empty");
     assert!(!handoff(&base, &["check", "empty", "build-a="]).0);
 
     // A list whose digest is given but whose names leave the folder, or don't start with ./.
-    for (case, line) in [("up", "./x/../../outside"), ("bare", "mailcraft-1.dmg"), ("abs", "/etc/passwd"), ("tail", "./x/..")] {
+    for (case, line) in [("up", "./x/../../outside"), ("bare", "mailsolutions-1.dmg"), ("abs", "/etc/passwd"), ("tail", "./x/..")] {
         let dir = base.join(case);
         std::fs::create_dir_all(&dir).unwrap();
         let list = format!("{}  {line}\n", "0".repeat(64));
@@ -267,7 +269,7 @@ fn a_build_tool_by_path_or_with_exe_counts() {
 fn trunk_cross_and_built_programs_count() {
     assert!(flagged("      - run: trunk build --release"));
     assert!(flagged("      - run: cross build --target aarch64-unknown-linux-gnu"));
-    assert!(flagged("      - run: ./dist/x86_64-pc-windows-msvc/release/mailcraft --version"));
+    assert!(flagged("      - run: ./dist/x86_64-pc-windows-msvc/release/mailsolutions --version"));
     assert!(!flagged("      - run: echo crossing trunks"));
 }
 

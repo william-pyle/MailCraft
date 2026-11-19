@@ -7,13 +7,13 @@
 //! name that hides another address.
 //!
 //! What the warnings are, and what they rest on, is the engine's
-//! ([`mailcraft_engine::Session::sender_warnings`]): this only shows them. Each says what it is
+//! ([`mailsolutions_engine::Session::sender_warnings`]): this only shows them. Each says what it is
 //! about in plain words; the sender's own words are shown as data, cut short, never as ours.
 
 use egui::{Rect, Sense, Ui, vec2};
-use mailcraft_model::Message;
-use mailcraft_model::auth_results::Failed;
-use mailcraft_model::sender_warnings::{Level, NameReason, Warning, banner_level};
+use mailsolutions_model::Message;
+use mailsolutions_model::auth_results::Failed;
+use mailsolutions_model::sender_warnings::{Level, NameReason, Warning, banner_level};
 use serde_json::json;
 
 use super::Place;
@@ -89,7 +89,7 @@ fn said(w: &Warning, m: &Message, links: usize) -> (String, String) {
             tl!("Not every layout checked.").to_string(),
             format!(
                 "{} {}",
-                tl!("This message lays itself out in more ways than MailCraft could check, so a link in one of them may go somewhere other than its text says."),
+                tl!("This message lays itself out in more ways than MailSolutions could check, so a link in one of them may go somewhere other than its text says."),
                 tl!("Point at a link to see where it goes.")
             ),
         ),
@@ -169,7 +169,7 @@ pub(super) fn banner(app: &mut MailApp, ui: &mut Ui, m: &Message, place: Place, 
         Level::Warning => (t.red, tl!("This message may not be what it seems.")),
         _ => (t.orange, tl!("Be careful with this message.")),
     };
-    let dismissed = mailcraft_model::sender_warnings::dismissed(&warnings, &m.warnings_dismissed);
+    let dismissed = mailsolutions_model::sender_warnings::dismissed(&warnings, &m.warnings_dismissed);
     let open = reopened(ui, m.id);
     if dismissed && level != Level::Warning {
         return;
@@ -294,5 +294,5 @@ pub(super) fn mismatched(app: &mut MailApp, m: &Message) -> Vec<String> {
 
 /// Whether the link to `url` (as a message's link has it) is one of `mismatched`.
 pub(super) fn is_mismatched(url: &str, mismatched: &[String]) -> bool {
-    !mismatched.is_empty() && mailcraft_model::sender_warnings::link_targets(url).iter().any(|link| mismatched.iter().any(|m| m == link.as_str()))
+    !mismatched.is_empty() && mailsolutions_model::sender_warnings::link_targets(url).iter().any(|link| mismatched.iter().any(|m| m == link.as_str()))
 }

@@ -6,7 +6,7 @@
 //! plain text. What an agent or a script selects through the control channel does not go there.
 
 use egui::{Event, Key, Modifiers, OutputCommand, PointerButton, Pos2};
-use mailcraft_model::rich::Selection;
+use mailsolutions_model::rich::Selection;
 use serde_json::json;
 
 use super::{Board, LINES, Window, editor, on_char, plain, sel, signature_page, signature_text, writing_lines};
@@ -96,7 +96,7 @@ fn pause(h: &mut Window) {
 /// agent does through the MCP bridge, allowed to drive the window's input.
 fn request(h: &mut Window, method: &str, params: serde_json::Value, agent: bool) {
     let (req, _rx) = ControlRequest::new(method, params);
-    let req = if agent { req.from_agent(vec![mailcraft_engine::agent::Class::Input]) } else { req };
+    let req = if agent { req.from_agent(vec![mailsolutions_engine::agent::Class::Input]) } else { req };
     let ctx = h.ctx.clone();
     match handle(h.state_mut(), &ctx, &req) {
         Outcome::Done(answer) => assert_eq!(answer["ok"], true, "{answer}"),

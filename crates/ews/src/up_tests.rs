@@ -8,11 +8,11 @@ use std::cell::Cell;
 use std::future::Future;
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     AttachmentUp, AttachmentsUp, CategoriesUp, ChangeOutcome, DraftBody, DraftUp, EwsMailRequest, EwsMailResult, FlagUp, FolderChange, MessageChange,
     MessageOutcome, SendOutcome, SendUp, SyncedAttachment,
 };
-use mailcraft_model::{Address, FlagStatus, Importance, Message};
+use mailsolutions_model::{Address, FlagStatus, Importance, Message};
 
 use crate::standin::{AUTHORIZATION, StandIn, block_on};
 use crate::*;
@@ -421,7 +421,7 @@ fn message(to: &str, bcc: &str) -> Box<Message> {
         bcc: if bcc.is_empty() { vec![] } else { vec![Address::new("", bcc)] },
         date: 1_791_993_600,
         message_id: "m1@example.org".into(),
-        body: mailcraft_model::Body { text: "Numbers attached.".into(), ..Default::default() },
+        body: mailsolutions_model::Body { text: "Numbers attached.".into(), ..Default::default() },
         ..Default::default()
     })
 }
@@ -513,7 +513,7 @@ fn when_the_look_for_the_draft_is_lost_its_marker_is_carried_and_the_next_run_ta
     let (pieces, _) = run_with(&refusing, &EwsMailRequest { sends: vec![send], ..base() });
     let sent: Vec<_> = pieces.iter().flat_map(|p| &p.sent).collect();
     assert_eq!(sent[0].outcome, SendOutcome::Sent);
-    assert_eq!(sent[0].draft_left, mailcraft_model::sync::marker_id("mark-9"));
+    assert_eq!(sent[0].draft_left, mailsolutions_model::sync::marker_id("mark-9"));
     assert_eq!(standin.state().outgoing.len(), 1, "sent once");
     // The next run is told of an ordinary delete by that marker: the draft goes, nothing is sent.
     let delete = MessageChange::Delete { id: sent[0].draft_left.clone() };

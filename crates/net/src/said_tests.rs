@@ -5,9 +5,9 @@
 //! that must not change a word of the English.
 use crate::fake::{Fake, ImapWorld, SmtpWorld};
 use crate::{NetError, test_account};
-use mailcraft_model::sync::SyncRequest;
-use mailcraft_model::{Account, Address, Message, Security, Server};
-use mailcraft_proto::ProtoError;
+use mailsolutions_model::sync::SyncRequest;
+use mailsolutions_model::{Account, Address, Message, Security, Server};
+use mailsolutions_proto::ProtoError;
 
 const PASSWORD: &str = "invented-horse";
 

@@ -4,8 +4,8 @@
 //! by a click or a key, or whose flag is cleared in the Flagged tab, is still listed, and the keys
 //! that move in the list go on from it; several picked with Ctrl or Shift all stay. One deleted or
 //! moved leaves at once.
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::*;
@@ -434,7 +434,7 @@ fn what_is_kept_stays_when_a_click_comes_after_a_change() {
     run(&mut s, "mail.select", json!({"id": a}));
     // Something changes in the mailbox before the list is shown again (a flag set on the
     // server), then Ctrl+click: the one opened, read, stays with the other.
-    s.mailbox.message_mut(listed[3]).unwrap().flag = mailcraft_model::FlagStatus::Flagged;
+    s.mailbox.message_mut(listed[3]).unwrap().flag = mailsolutions_model::FlagStatus::Flagged;
     s.mailbox_changed();
     run(&mut s, "mail.select", json!({"id": b, "extend": true}));
     assert_eq!(ids(&mut s), listed);

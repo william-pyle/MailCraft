@@ -3,8 +3,8 @@
 //! Send Status Report: a new message saying how a task stands, for the owner to address and
 //! send. Nothing is sent from here.
 
-use mailcraft_model::{Importance, Task};
-use mailcraft_time::Date;
+use mailsolutions_model::{Importance, Task};
+use mailsolutions_time::Date;
 use serde_json::{Value, json};
 
 use crate::cmd::fail;
@@ -14,8 +14,8 @@ use crate::{CmdError, CmdResult, Session, p};
 const MAX_NOTE_LINES: usize = 200;
 
 fn day_said(s: &Session, d: Date) -> String {
-    let day = mailcraft_i18n::date::Day { year: d.year, month: d.month, day: d.day, weekday: d.weekday().index() };
-    mailcraft_i18n::date::long(&s.dated(), day)
+    let day = mailsolutions_i18n::date::Day { year: d.year, month: d.month, day: d.day, weekday: d.weekday().index() };
+    mailsolutions_i18n::date::long(&s.dated(), day)
 }
 
 /// The task a report is of: `id`, read strictly, else the selected one.
@@ -38,7 +38,7 @@ fn status(s: &Session, t: &Task) -> String {
 /// The report's text: one line per thing known of the task, then its notes.
 pub fn text(s: &Session, t: &Task) -> String {
     let lang = s.interface_language;
-    let one = |text: &str| mailcraft_names::shown(text, 300);
+    let one = |text: &str| mailsolutions_names::shown(text, 300);
     let mut out = String::new();
     out.push_str(&format!("{} {}\n", lang.t("Task:"), one(&t.title)));
     out.push_str(&format!("{} {}\n", lang.t("Status:"), status(s, t)));
@@ -65,7 +65,7 @@ pub fn text(s: &Session, t: &Task) -> String {
     if notes.iter().any(|l| !l.trim().is_empty()) {
         out.push('\n');
         for line in notes {
-            out.push_str(&mailcraft_names::shown(line, 2_000));
+            out.push_str(&mailsolutions_names::shown(line, 2_000));
             out.push('\n');
         }
     }
@@ -76,7 +76,7 @@ pub(super) fn report(s: &mut Session, v: &Value) -> CmdResult {
     p::only(v, &["id", "discard"])?;
     let t = named(s, v)?;
     let lang = s.interface_language;
-    let subject = format!("{} {}", lang.t("Task Status Report:"), mailcraft_names::shown(&t.title, 200));
+    let subject = format!("{} {}", lang.t("Task Status Report:"), mailsolutions_names::shown(&t.title, 200));
     let body = text(s, &t);
     let compose = s.run("mail.new", &json!({"subject": subject, "body": body}))?["compose"].clone();
     Ok(json!({"composing": true, "task": t.id, "compose": compose}))

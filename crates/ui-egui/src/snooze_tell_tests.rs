@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A snooze given up (#949) is told to the owner by the run that gave it up: in the problems
 //! report and the run's summary, as any other problem of the run is.
-use mailcraft_engine::Session;
-use mailcraft_model::sync::SyncResult;
-use mailcraft_model::{FolderKind, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::SyncResult;
+use mailsolutions_model::{FolderKind, Message};
 use serde_json::json;
 
 use crate::{MailApp, MailRun, Services};

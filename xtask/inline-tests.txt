@@ -1,17 +1,17 @@
 # Source files that still hold an inline `#[cfg(test)] mod … { }` (cargo xtask test-files).
 # Only ever shrinks: move a file's tests to `<name>_tests.rs` and take its line off.
-apps/mailcraft-cli/src/main.rs
-apps/mailcraft/src/alerts.rs
-apps/mailcraft/src/clipboard.rs
-apps/mailcraft/src/control_server.rs
-apps/mailcraft/src/desktop_theme.rs
-apps/mailcraft/src/diagnostics.rs
-apps/mailcraft/src/graphics.rs
-apps/mailcraft/src/logging.rs
-apps/mailcraft/src/opened_files.rs
-apps/mailcraft/src/picture_cache.rs
-apps/mailcraft/src/secrets.rs
-apps/mailcraft/src/updater.rs
+apps/mailsolutions-cli/src/main.rs
+apps/mailsolutions/src/alerts.rs
+apps/mailsolutions/src/clipboard.rs
+apps/mailsolutions/src/control_server.rs
+apps/mailsolutions/src/desktop_theme.rs
+apps/mailsolutions/src/diagnostics.rs
+apps/mailsolutions/src/graphics.rs
+apps/mailsolutions/src/logging.rs
+apps/mailsolutions/src/opened_files.rs
+apps/mailsolutions/src/picture_cache.rs
+apps/mailsolutions/src/secrets.rs
+apps/mailsolutions/src/updater.rs
 crates/charset/src/lib.rs
 crates/engine/src/agent.rs
 crates/engine/src/cmd/calendar_extra.rs

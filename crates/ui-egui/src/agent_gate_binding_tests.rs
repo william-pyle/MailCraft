@@ -7,9 +7,9 @@
 use std::collections::BTreeSet;
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::agent::{self, Access};
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::agent::{self, Access};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::{Value, json};
 
 use crate::agent_gate::answer;
@@ -19,7 +19,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.session.driver.set_auto_sync(false);
     a
@@ -331,7 +331,7 @@ fn set_up(a: &mut MailApp, setup: Setup, i: &Ids) {
         }
         Setup::Shared => {
             let mb = &mut a.session.mailbox;
-            mb.accounts[0].oauth = Some(mailcraft_model::OAuth { provider: mailcraft_model::OAuthProvider::Microsoft, ..Default::default() });
+            mb.accounts[0].oauth = Some(mailsolutions_model::OAuth { provider: mailsolutions_model::OAuthProvider::Microsoft, ..Default::default() });
             mb.shared_task_lists.insert(i.account, ["L1".to_string()].into());
             let t = mb.task_mut(i.task).unwrap();
             t.origin.account = i.account;
@@ -518,7 +518,7 @@ fn rules_run_over_the_folder_shown() {
 }
 
 /// Mail in the Outbox or Sent Items with this subject.
-fn sent(a: &MailApp, subject: &str) -> Vec<mailcraft_model::Message> {
+fn sent(a: &MailApp, subject: &str) -> Vec<mailsolutions_model::Message> {
     let out: Vec<Id> = a.session.mailbox.folders.iter().filter(|f| matches!(f.kind, FolderKind::Outbox | FolderKind::Sent)).map(|f| f.id).collect();
     a.session.mailbox.messages.values().filter(|m| out.contains(&m.folder) && m.subject == subject).map(|m| (**m).clone()).collect()
 }

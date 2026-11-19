@@ -5,8 +5,8 @@
 //! input, the paragraphs stop at `MAX_PARAGRAPHS`, and written out the text is at most `K` times
 //! the input and a fixed allowance.
 
-use mailcraft_mime_model::rich::{from_html, from_html_with_pictures};
-use mailcraft_model::rich::{MAX_PARAGRAPHS, RichText};
+use mailsolutions_mime_model::rich::{from_html, from_html_with_pictures};
+use mailsolutions_model::rich::{MAX_PARAGRAPHS, RichText};
 use proptest::prelude::*;
 
 /// The most the text written out may be per byte of input.

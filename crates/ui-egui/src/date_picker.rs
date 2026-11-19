@@ -12,7 +12,7 @@
 
 use egui::accesskit::Role;
 use egui::{Align2, Id, Key, Modifiers, Rect, Sense, Stroke, Ui, WidgetInfo, pos2, vec2};
-use mailcraft_time::{Date, Weekday};
+use mailsolutions_time::{Date, Weekday};
 
 use crate::icons;
 use crate::theme::{Tokens, regular, semibold};

@@ -5,8 +5,8 @@
 //! is kept. Secrets are handed in and out as values; none is logged, and `Tokens` has no
 //! readable `Debug`.
 
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{Account, OAuth, OAuthProvider};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{Account, OAuth, OAuthProvider};
 
 /// The application ids a build knows: the owner's own choice (File › Options) and the build's.
 #[derive(Clone, Copy, Debug, Default)]

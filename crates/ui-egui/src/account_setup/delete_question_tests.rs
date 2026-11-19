@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Account Settings › Deleting: whether Delete on a whole conversation asks first, per account
 //! (#503).
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 use super::*;
 use crate::{MailApp, Services};
@@ -12,7 +12,7 @@ const NOW: i64 = 1_791_993_600;
 
 #[test]
 fn the_box_shows_and_saves_whether_deleting_a_conversation_asks() {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.session.driver.set_auto_sync(false);
     let id = a.session.mailbox.accounts[0].id;

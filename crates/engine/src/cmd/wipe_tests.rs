@@ -8,8 +8,8 @@
 
 use std::path::{Path, PathBuf};
 
-use mailcraft_model::{AccountKind, Attachment, Body, Calendar, Contact, Event, FolderKind, Id, Mailbox, Message, Origin, Rights};
-use mailcraft_time::Weekday;
+use mailsolutions_model::{AccountKind, Attachment, Body, Calendar, Contact, Event, FolderKind, Id, Mailbox, Message, Origin, Rights};
+use mailsolutions_time::Weekday;
 use serde_json::json;
 
 use crate::Session;
@@ -20,7 +20,7 @@ struct Scratch(PathBuf);
 
 impl Scratch {
     fn new(name: &str) -> Scratch {
-        let dir = std::env::temp_dir().join(format!("mailcraft-wipe-engine-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-wipe-engine-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Scratch(dir)
@@ -201,7 +201,7 @@ fn content_past_the_hashing_budget_is_left_to_the_sweep_and_said() {
 fn names_past_the_waiting_list_are_counted_not_dropped_silently() {
     let tmp = Scratch::new("cap");
     let path = tmp.0.join("mailbox.mailcraft");
-    let refs: Vec<mailcraft_model::ContentRef> = (0..5u8).map(|i| mailcraft_model::ContentRef { sha256: [i; 32], len: 1 }).collect();
+    let refs: Vec<mailsolutions_model::ContentRef> = (0..5u8).map(|i| mailsolutions_model::ContentRef { sha256: [i; 32], len: 1 }).collect();
     assert_eq!(crate::store::forget_with_cap_for_test(&path, 1, refs, 3), 2);
 }
 

@@ -15,8 +15,8 @@
 use std::sync::mpsc::Receiver;
 
 use egui::Ui;
-use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens};
-use mailcraft_model::{Account, Mailbox};
+use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens};
+use mailsolutions_model::{Account, Mailbox};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
@@ -40,15 +40,15 @@ pub(crate) struct Held {
     sync: Option<Box<dyn Fn(SyncRequest) -> Receiver<SyncResult>>>,
     sign_in: Option<Box<dyn Fn(SignInRequest) -> Receiver<Result<Tokens, String>>>>,
     graph: Option<Box<dyn Fn(GraphRequest) -> Receiver<GraphResult>>>,
-    graph_fetch: Option<Box<dyn Fn(crate::graph_fetch::GraphFetchJob) -> Receiver<mailcraft_model::sync::GraphFetchResult>>>,
-    graph_search: Option<Box<dyn Fn(crate::server_search::GraphSearchJob) -> Receiver<mailcraft_model::sync::GraphSearchResult>>>,
+    graph_fetch: Option<Box<dyn Fn(crate::graph_fetch::GraphFetchJob) -> Receiver<mailsolutions_model::sync::GraphFetchResult>>>,
+    graph_search: Option<Box<dyn Fn(crate::server_search::GraphSearchJob) -> Receiver<mailsolutions_model::sync::GraphSearchResult>>>,
     graph_tasks: Option<Box<dyn Fn(crate::task_sync::TasksJob) -> Receiver<crate::task_sync::TasksResult>>>,
     graph_rules: Option<Box<dyn Fn(crate::rule_sync::RulesJob) -> Receiver<crate::rule_sync::RulesResult>>>,
     graph_auto_replies: Option<Box<dyn Fn(crate::auto_replies::AutoRepliesJob) -> Receiver<crate::auto_replies::AutoRepliesResult>>>,
-    jmap: Option<Box<dyn Fn(crate::jmap_mail::JmapJob) -> Receiver<mailcraft_model::sync::JmapMailResult>>>,
-    jmap_fetch: Option<Box<dyn Fn(crate::jmap_mail::JmapFetchJob) -> Receiver<mailcraft_model::sync::GraphFetchResult>>>,
-    ews: Option<Box<dyn Fn(crate::ews_mail::EwsJob) -> Receiver<mailcraft_model::sync::EwsMailResult>>>,
-    ews_fetch: Option<Box<dyn Fn(crate::ews_mail::EwsFetchJob) -> Receiver<mailcraft_model::sync::GraphFetchResult>>>,
+    jmap: Option<Box<dyn Fn(crate::jmap_mail::JmapJob) -> Receiver<mailsolutions_model::sync::JmapMailResult>>>,
+    jmap_fetch: Option<Box<dyn Fn(crate::jmap_mail::JmapFetchJob) -> Receiver<mailsolutions_model::sync::GraphFetchResult>>>,
+    ews: Option<Box<dyn Fn(crate::ews_mail::EwsJob) -> Receiver<mailsolutions_model::sync::EwsMailResult>>>,
+    ews_fetch: Option<Box<dyn Fn(crate::ews_mail::EwsFetchJob) -> Receiver<mailsolutions_model::sync::GraphFetchResult>>>,
 }
 
 /// A hash of what a mailbox's accounts connect to: each account's address, kind and servers (a JMAP
@@ -56,7 +56,7 @@ pub(crate) struct Held {
 /// not matter. SHA-256, so that a file cannot be made to match one the owner confirmed with other
 /// servers.
 pub fn fingerprint(mailbox: &Mailbox) -> String {
-    let server = |s: &Option<mailcraft_model::Server>| match s {
+    let server = |s: &Option<mailsolutions_model::Server>| match s {
         Some(s) => format!("{}:{}:{:?}", s.host.trim().to_ascii_lowercase(), s.port, s.security),
         None => "-".to_string(),
     };
@@ -97,7 +97,7 @@ pub fn fingerprint(mailbox: &Mailbox) -> String {
 /// SHA-256 in hex.
 #[cfg(not(target_arch = "wasm32"))]
 fn digest(bytes: &[u8]) -> String {
-    mailcraft_engine::store::Digest::of(bytes).hex()
+    mailsolutions_engine::store::Digest::of(bytes).hex()
 }
 
 /// The browser build reaches no server, so nothing there is confirmed by a fingerprint: the text itself.
@@ -113,7 +113,7 @@ pub(crate) fn kept_path(path: &str) -> String {
 
 /// What an account connects to, in a line.
 fn line(a: &Account) -> String {
-    format!("{} ({})", a.email.chars().take(80).collect::<String>(), mailcraft_engine::cmd::account::servers_text(a))
+    format!("{} ({})", a.email.chars().take(80).collect::<String>(), mailsolutions_engine::cmd::account::servers_text(a))
 }
 
 impl MailApp {

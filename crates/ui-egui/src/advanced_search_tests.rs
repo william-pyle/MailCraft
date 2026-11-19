@@ -374,7 +374,7 @@ fn grid_day(w: &Window) -> String {
 }
 
 fn long(iso: &str) -> String {
-    crate::dates::long(mailcraft_time::Date::parse_iso(iso).unwrap())
+    crate::dates::long(mailsolutions_time::Date::parse_iso(iso).unwrap())
 }
 
 #[test]

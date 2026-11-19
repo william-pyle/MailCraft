@@ -30,7 +30,7 @@
 //! main calendar (`POST /me/events`) or in another of its calendars
 //! (`POST /me/calendars/{id}/events`), one changed here has what changed sent
 //! (`PATCH /me/events/{id}`), one deleted here is deleted (`DELETE /me/events/{id}`). Each is
-//! named by the id that came with it ([`mailcraft_model::Origin`]); a new one goes with a mark
+//! named by the id that came with it ([`mailsolutions_model::Origin`]); a new one goes with a mark
 //! (`transactionId`) that keeps a second try from making a second event. Contacts are only read.
 //!
 //! A series goes with its rule (`recurrence`) and its times by the clock in the owner's zone;
@@ -40,13 +40,13 @@
 //! cancellation when it is called off (`POST /me/events/{id}/cancel`, with a note). Somebody
 //! else's invitation is answered with `/accept`, `/tentativelyAccept` or `/decline`. **Nothing
 //! here decides to send mail**: an upload holds only what the mailbox was told to send
-//! (`mailcraft-engine` refuses to note such a change without the owner's yes).
+//! (`mailsolutions-engine` refuses to note such a change without the owner's yes).
 //!
 //! An event also says how much it matters (`importance`), what the people invited are asked for
 //! (`responseRequested`, `allowNewTimeProposals`) and whether it is held online: a new one is
 //! made a Teams meeting with `isOnlineMeeting` and `onlineMeetingProvider`, and Graph's answer
 //! carries the link to join by (`onlineMeeting.joinUrl`). An account that can't have one gets
-//! the event without ([`mailcraft_model::remote::EventOutcome::online`] says so). An answer may
+//! the event without ([`mailsolutions_model::remote::EventOutcome::online`] says so). An answer may
 //! propose another time (`proposedNewTime` of `/tentativelyAccept` and `/decline`), and a
 //! meeting is sent on with `POST /me/events/{id}/forward`: both are mail, and are in an upload
 //! only on the owner's yes. Graph has no way of moving an event from one calendar to another:
@@ -76,20 +76,20 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
 
-use mailcraft_charset::base64::STANDARD;
-use mailcraft_mime_model::WriteOptions;
-use mailcraft_model::remote::{
+use mailsolutions_charset::base64::STANDARD;
+use mailsolutions_mime_model::WriteOptions;
+use mailsolutions_model::remote::{
     BusyTime, CalendarsDownload, CategoriesDownload, ContactsDownload, EventChangeKind, EventFields, EventOp, EventOutcome, EventResult, EventTime,
     EventsDownload, EventsUpload, EventsUploaded, FreeBusy, FreeBusyAsk, MAX_BUSY, MAX_CONTACTS, MAX_EVENT_OPS, MAX_EVENTS, MAX_REMOTE_CALENDARS,
     MAX_REMOTE_CATEGORIES, MAX_SCHEDULE_STRETCH, MAX_SCHEDULES, PersonSchedule, RemoteCalendar, RemoteContact, RemoteEvent, RemoteEventKind,
 };
-use mailcraft_model::sync::SharedRefusal;
-use mailcraft_model::{
+use mailsolutions_model::sync::SharedRefusal;
+use mailsolutions_model::{
     Address, Attendee, CalendarOwner, Category, Freq, Importance, Labeled, Message, OnlineMeeting, OnlineProvider, PostalAddress, Recurrence,
     Response, ResponseOptions, Rgb, Rights, ShowAs,
 };
-use mailcraft_proto::ProtoError;
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday};
+use mailsolutions_proto::ProtoError;
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday};
 use serde_json::{Map, Value, json};
 
 use crate::NetError;
@@ -207,7 +207,7 @@ pub struct SendOptions {
 /// Send one message through Microsoft Graph, as the owner of `token` (an access token for
 /// Graph). Graph also files a copy in the account's Sent Items.
 ///
-/// The message goes as it would over SMTP (`mailcraft_mime_model::write`), in base64. Graph has no
+/// The message goes as it would over SMTP (`mailsolutions_mime_model::write`), in base64. Graph has no
 /// envelope: it reads who the message is for from the message's own header fields. So the `Bcc`
 /// field is written here, which it never is for SMTP; Exchange delivers to the people it names
 /// and leaves the field out of what everybody else gets.
@@ -270,7 +270,7 @@ pub struct EventsQuery {
 
 /// [`events`] of any calendar of the account, with every series that happens in the stretch as
 /// itself too: its rule, when that is one the mailbox can keep
-/// ([`RemoteEvent::recurrence`](mailcraft_model::remote::RemoteEvent::recurrence)), beside its
+/// ([`RemoteEvent::recurrence`](mailsolutions_model::remote::RemoteEvent::recurrence)), beside its
 /// occurrences in the stretch. The series are asked for together, twenty to a request.
 ///
 /// A series that couldn't be asked about just now is left out, and the download is as complete
@@ -434,12 +434,12 @@ struct Graph<'a> {
 }
 
 /// What stands in an address of Graph's for a shared mailbox (#70): `/users/{address}`, the
-/// address checked to be a plain one first ([`mailcraft_model::mailbox_address`]), so that it
+/// address checked to be a plain one first ([`mailsolutions_model::mailbox_address`]), so that it
 /// names that mailbox and nothing else. Its `@` stays as it is (a path may have one), and
 /// anything of the local part that isn't a letter, a digit or `-._~` is written as `%XX`.
 pub(crate) fn shared_mailbox_path(address: &str) -> Result<String, NetError> {
     let refused = || NetError::Proto(ProtoError::Protocol("that isn't an address a shared mailbox can be opened at".into()));
-    let address = mailcraft_model::mailbox_address(address).ok_or_else(refused)?;
+    let address = mailsolutions_model::mailbox_address(address).ok_or_else(refused)?;
     let (local, domain) = address.split_once('@').ok_or_else(refused)?;
     Ok(format!("/users/{}@{}", http::encode(local), http::encode(domain)))
 }
@@ -537,7 +537,7 @@ impl<'a> Graph<'a> {
                     tries = tries.saturating_sub(1);
                 }
                 Ok(reply) if matches!(reply.status, 429 | 503 | 504) => {
-                    let wait = pace.retry.wait_before(tries.saturating_add(1), wait_of(reply.retry_after.as_deref(), mailcraft_time::now()));
+                    let wait = pace.retry.wait_before(tries.saturating_add(1), wait_of(reply.retry_after.as_deref(), mailsolutions_time::now()));
                     // Everybody asking this mailbox waits, not just this request.
                     pace.gate.pause(wait);
                     log::debug!("graph: busy (status {}), every request of the mailbox waits {} s", reply.status, wait.as_secs());
@@ -672,7 +672,7 @@ impl<'a> Graph<'a> {
             drop(permit);
             match asked {
                 Ok(reply) if matches!(reply.status, 429 | 503) => {
-                    let wait = pace.retry.wait_before(tries.saturating_add(1), wait_of(reply.retry_after.as_deref(), mailcraft_time::now()));
+                    let wait = pace.retry.wait_before(tries.saturating_add(1), wait_of(reply.retry_after.as_deref(), mailsolutions_time::now()));
                     pace.gate.pause(wait);
                     if tries >= pace.retry.tries || wait > pace.retry.longest_wait {
                         return Ok(reply);
@@ -698,7 +698,7 @@ impl<'a> Graph<'a> {
                 return NetError::SharedRefused(why);
             }
         }
-        refusal(doing, reply, &[&self.token(), sent], mailcraft_time::now())
+        refusal(doing, reply, &[&self.token(), sent], mailsolutions_time::now())
     }
 
     /// Read a list page by page, handing every entry to `take`, `most` of them at most. Whether
@@ -798,7 +798,7 @@ fn wait_of(retry_after: Option<&str>, now: Timestamp) -> Option<u32> {
     let text = retry_after?.trim();
     let seconds = match text.parse::<u64>() {
         Ok(seconds) => seconds,
-        Err(_) => u64::try_from(mailcraft_time::parse_rfc5322(text)?.0.saturating_sub(now)).unwrap_or(0),
+        Err(_) => u64::try_from(mailsolutions_time::parse_rfc5322(text)?.0.saturating_sub(now)).unwrap_or(0),
     };
     u32::try_from(seconds.min(MAX_WAIT)).ok()
 }
@@ -879,10 +879,10 @@ fn mime_body_with(message: &Message, options: &SendOptions) -> Result<String, Ne
         return Err(NetError::Config("the message has no recipients".into()));
     }
     // A message that was never dated is dated now, as it is for SMTP.
-    let message = if message.date == 0 { Cow::Owned(Message { date: mailcraft_time::now(), ..message.clone() }) } else { Cow::Borrowed(message) };
-    let offset_minutes = options.offset_minutes.unwrap_or_else(|| mailcraft_time::local_offset_minutes(message.date));
+    let message = if message.date == 0 { Cow::Owned(Message { date: mailsolutions_time::now(), ..message.clone() }) } else { Cow::Borrowed(message) };
+    let offset_minutes = options.offset_minutes.unwrap_or_else(|| mailsolutions_time::local_offset_minutes(message.date));
     // With the Bcc field: it is the only way Graph learns of those it names.
-    let mime = mailcraft_mime_model::write(&message, &WriteOptions { include_bcc: true, offset_minutes });
+    let mime = mailsolutions_mime_model::write(&message, &WriteOptions { include_bcc: true, offset_minutes });
     if mime.len() > MAX_MESSAGE {
         return Err(NetError::Config("the message is too large to send through Microsoft Graph".into()));
     }
@@ -900,7 +900,7 @@ fn events_in_at(base: &str, token: &str, query: &EventsQuery) -> Result<EventsDo
     if to <= from {
         return Err(NetError::Config("the calendar was asked for a stretch of time with no length".into()));
     }
-    let calendar = mailcraft_model::remote::clean_key(&query.calendar);
+    let calendar = mailsolutions_model::remote::clean_key(&query.calendar);
     if calendar.is_empty() != query.calendar.trim().is_empty() {
         return Err(NetError::Config("the calendar that was asked for isn't one the server could have".into()));
     }
@@ -951,7 +951,7 @@ fn events_in_at(base: &str, token: &str, query: &EventsQuery) -> Result<EventsDo
     // Every series that happens in the stretch, and those the mailbox expected to: as themselves.
     let mut wanted: Vec<String> = Vec::new();
     let named = download.events.iter().map(|event| &event.series).chain(&query.series);
-    for series in named.map(|series| mailcraft_model::remote::clean_key(series)).filter(|series| !series.is_empty()) {
+    for series in named.map(|series| mailsolutions_model::remote::clean_key(series)).filter(|series| !series.is_empty()) {
         if wanted.len() < MAX_SERIES && !wanted.contains(&series) {
             wanted.push(series);
         }
@@ -1061,7 +1061,7 @@ fn series_of(entry: &Value, id: &str) -> Option<Box<RemoteEvent>> {
 
 /// [`events_at`], asking for `fields` of each event of `calendar` (empty: the main one).
 fn events_with(graph: &Graph<'_>, calendar: &str, from: Timestamp, to: Timestamp, fields: &str) -> Result<EventsDownload, NetError> {
-    let (start, end) = (mailcraft_time::format_iso_utc(from), mailcraft_time::format_iso_utc(to));
+    let (start, end) = (mailsolutions_time::format_iso_utc(from), mailsolutions_time::format_iso_utc(to));
     let query = http::form(&[("startDateTime", &start), ("endDateTime", &end), ("$top", PAGE_SIZE), ("$select", fields)]);
     let mut download = EventsDownload { from, to, complete: true, ..Default::default() };
     let mut seen: HashSet<String> = HashSet::new();
@@ -1134,7 +1134,7 @@ fn event_body(fields: &EventFields, mark: &str, zone: &str, own: bool) -> Option
     }
     if let Some(EventTime { start, end, all_day }) = fields.time {
         // A whole-day event is whole days: at least one, from midnight to midnight.
-        let end = if all_day { end.max(start.saturating_add(mailcraft_time::DAY)) } else { end.max(start) };
+        let end = if all_day { end.max(start.saturating_add(mailsolutions_time::DAY)) } else { end.max(start) };
         // The zones it has of its own, by the names Graph has for them.
         let zones = fields.zones.as_ref().filter(|_| !all_day);
         let named = zones.filter(|_| own).and_then(|zones| {
@@ -1251,7 +1251,7 @@ fn forward_body(op: &EventOp) -> Option<String> {
     let to: Vec<Value> = op
         .to
         .iter()
-        .take(mailcraft_model::remote::MAX_FORWARD)
+        .take(mailsolutions_model::remote::MAX_FORWARD)
         .filter(|who| is_address(who.email.trim()))
         .map(|who| json!({"EmailAddress": {"Address": who.email.trim(), "Name": who.name.trim()}}))
         .collect();
@@ -1265,7 +1265,7 @@ fn online_of(entry: &Value) -> (Option<bool>, String) {
         "" => text(entry, "onlineMeetingUrl"),
         link => link,
     };
-    let link = if link.len() <= mailcraft_model::MAX_JOIN_LINK { OnlineMeeting::clean_link(link).unwrap_or_default() } else { String::new() };
+    let link = if link.len() <= mailsolutions_model::MAX_JOIN_LINK { OnlineMeeting::clean_link(link).unwrap_or_default() } else { String::new() };
     (entry.get("isOnlineMeeting").and_then(Value::as_bool), link)
 }
 
@@ -1586,8 +1586,8 @@ impl Graph<'_> {
         if series.is_empty() || time == 0 {
             return Ok(None);
         }
-        let (from, to) = (time.saturating_sub(mailcraft_time::DAY), time.saturating_add(mailcraft_time::DAY));
-        let (start, end) = (mailcraft_time::format_iso_utc(from), mailcraft_time::format_iso_utc(to));
+        let (from, to) = (time.saturating_sub(mailsolutions_time::DAY), time.saturating_add(mailsolutions_time::DAY));
+        let (start, end) = (mailsolutions_time::format_iso_utc(from), mailsolutions_time::format_iso_utc(to));
         let query =
             http::form(&[("startDateTime", &start), ("endDateTime", &end), ("$top", PAGE_SIZE), ("$select", "id,start,originalStart,isAllDay")]);
         let url = self.url(&format!("{events}/{}/instances?{query}", http::encode(series)));
@@ -1599,7 +1599,7 @@ impl Graph<'_> {
         }
         let mut best: Option<(i64, String)> = None;
         for entry in page_of(&reply.body)?.entries.iter().take(200) {
-            let id = mailcraft_model::remote::clean_key(text(entry, "id"));
+            let id = mailsolutions_model::remote::clean_key(text(entry, "id"));
             let all_day = entry.get("isAllDay").and_then(Value::as_bool).unwrap_or(false);
             // A whole-day one is named by its day; a timed one by when the series has it.
             let at = if all_day { when(entry.get("start")) } else { instant(text(entry, "originalStart")).or_else(|| when(entry.get("start"))) };
@@ -1638,7 +1638,7 @@ fn text<'v>(of: &'v Value, name: &str) -> &'v str {
 
 /// The instant a text names (ISO 8601, read as UTC when it names no zone of its own).
 fn instant(text: &str) -> Option<Timestamp> {
-    if text.len() > MAX_DATE { None } else { mailcraft_time::iso_to_timestamp(text, 0) }
+    if text.len() > MAX_DATE { None } else { mailsolutions_time::iso_to_timestamp(text, 0) }
 }
 
 /// The instant in `{"dateTime": "2026-10-12T13:00:00.0000000", "timeZone": "UTC"}`. UTC is what
@@ -1649,8 +1649,8 @@ fn when(value: Option<&Value>) -> Option<Timestamp> {
     if !zone.is_empty() && !UTC.iter().any(|utc| utc.eq_ignore_ascii_case(zone)) {
         // Not what was asked for, but a zone that is known says when it is all the same. One
         // that isn't is not read: nothing is guessed.
-        let known = Some(zone).filter(|zone| zone.len() <= MAX_ZONE).and_then(mailcraft_time::Zone::named)?;
-        let written = Some(text(value, "dateTime")).filter(|text| text.len() <= MAX_DATE).and_then(mailcraft_time::parse_iso)?;
+        let known = Some(zone).filter(|zone| zone.len() <= MAX_ZONE).and_then(mailsolutions_time::Zone::named)?;
+        let written = Some(text(value, "dateTime")).filter(|text| text.len() <= MAX_DATE).and_then(mailsolutions_time::parse_iso)?;
         return match written {
             (wall, None) => Some(known.instant(wall)),
             (wall, Some(offset)) => Some(wall.to_timestamp(offset)),
@@ -1662,8 +1662,8 @@ fn when(value: Option<&Value>) -> Option<Timestamp> {
 /// The name Graph knows a zone by, with the zone: the name Windows has for it when it has one
 /// (which Exchange is sure to know), else its name in the IANA database, which Graph takes for
 /// most zones. `None` for a name that is no zone, and for an offset, which Graph has no name for.
-fn graph_zone(name: &str) -> Option<(mailcraft_time::Zone, String)> {
-    let zone = Some(name).filter(|name| name.len() <= MAX_ZONE).and_then(mailcraft_time::Zone::named)?;
+fn graph_zone(name: &str) -> Option<(mailsolutions_time::Zone, String)> {
+    let zone = Some(name).filter(|name| name.len() <= MAX_ZONE).and_then(mailsolutions_time::Zone::named)?;
     let known = match zone.windows_name() {
         Some(windows) => windows.to_string(),
         None if zone.id().contains('/') => zone.id(),
@@ -1783,10 +1783,10 @@ fn online_meeting(entry: &Value) -> Option<OnlineMeeting> {
 }
 
 /// Another time that one of the people invited proposes (`proposedNewTime` of an attendee).
-fn proposal_of(attendee: &Value) -> Option<mailcraft_model::remote::RemoteProposal> {
+fn proposal_of(attendee: &Value) -> Option<mailsolutions_model::remote::RemoteProposal> {
     let proposed = attendee.get("proposedNewTime").filter(|proposed| proposed.is_object())?;
     let (start, end) = (when(proposed.get("start"))?, when(proposed.get("end"))?);
-    Some(mailcraft_model::remote::RemoteProposal { from: person(attendee), start, end: end.max(start) })
+    Some(mailsolutions_model::remote::RemoteProposal { from: person(attendee), start, end: end.max(start) })
 }
 
 /// The names Graph has for the days of the week, and for which one of a month is meant.
@@ -1933,7 +1933,7 @@ fn contact_of(entry: &Value) -> Option<RemoteContact> {
         addresses: vec![postal(entry, "businessAddress", "work"), postal(entry, "homeAddress", "home"), postal(entry, "otherAddress", "other")],
         websites: vec![text(entry, "businessHomePage").to_string()],
         // The day as it is written: a birthday is a day, whatever time of it the server adds.
-        birthday: Some(text(entry, "birthday")).filter(|day| day.len() <= MAX_DATE).and_then(mailcraft_time::parse_iso).map(|(day, _)| day.date),
+        birthday: Some(text(entry, "birthday")).filter(|day| day.len() <= MAX_DATE).and_then(mailsolutions_time::parse_iso).map(|(day, _)| day.date),
         notes: text(entry, "personalNotes").to_string(),
         modified: instant(text(entry, "lastModifiedDateTime")).unwrap_or(0),
     };
@@ -2003,17 +2003,17 @@ fn calendar_color(name: &str) -> Option<Rgb> {
 }
 
 /// Our own colours for the numbered colours Graph gives a category (`preset0` to `preset24`,
-/// [`mailcraft_model::preset_category_color`]); grey for none or any other.
+/// [`mailsolutions_model::preset_category_color`]); grey for none or any other.
 fn category_color(name: &str) -> Rgb {
     let number = name.to_ascii_lowercase().strip_prefix("preset").and_then(|n| n.parse::<i64>().ok());
-    number.and_then(mailcraft_model::preset_category_color).unwrap_or(mailcraft_model::GREY_CATEGORY)
+    number.and_then(mailsolutions_model::preset_category_color).unwrap_or(mailsolutions_model::GREY_CATEGORY)
 }
 
 /// One calendar of a list as the mailbox can take it, in the group called `group`.
 fn calendar_of(entry: &Value, group: &str) -> Option<RemoteCalendar> {
     let id = text(entry, "id");
     // (An id that says it was opened by address is never one a server's list can bring: #70.)
-    (!id.is_empty() && !id.starts_with(mailcraft_model::remote::OPENED_PREFIX)).then(|| RemoteCalendar {
+    (!id.is_empty() && !id.starts_with(mailsolutions_model::remote::OPENED_PREFIX)).then(|| RemoteCalendar {
         id: id.to_string(),
         name: text(entry, "name").to_string(),
         color: Rgb::parse(text(entry, "hexColor")).or_else(|| calendar_color(text(entry, "color"))),
@@ -2068,7 +2068,7 @@ fn calendars_at(base: &str, token: &str, shared: Option<&str>) -> Result<Calenda
     let mut groups: Vec<(String, String)> = Vec::new();
     let query = http::form(&[("$top", PAGE_SIZE), ("$select", "id,name")]);
     let grouped = graph.list(Doing::Calendar, graph.url(&format!("{CALENDAR_GROUPS}?{query}")), &[], MAX_GROUPS, &mut |entry: &Value| {
-        let id = mailcraft_model::remote::clean_key(text(entry, "id"));
+        let id = mailsolutions_model::remote::clean_key(text(entry, "id"));
         if !id.is_empty() {
             groups.push((id, text(entry, "name").to_string()));
         }

@@ -9,7 +9,7 @@ use egui::accesskit::Role;
 use egui::{Event, Id, Modifiers, PointerButton, Pos2, TextEdit, pos2, vec2};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 /// Wednesday 2026-10-14 16:00 UTC.
 const NOW: i64 = 1_791_993_600;
@@ -93,7 +93,7 @@ fn draw(ui: &mut egui::Ui, rig: &mut Rig) {
 type Window = Harness<'static, Rig>;
 
 fn window(kind: Kind, menu: bool) -> Window {
-    let session = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0);
+    let session = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0);
     let rig = Rig { kind, menu, text: TEXT.to_string(), number: NUMBER, session };
     let mut h = Harness::builder().with_accessibility_check(false).allow_missing_glyphs().with_size(vec2(600.0, 500.0)).build_ui_state(draw, rig);
     h.run_steps(3);

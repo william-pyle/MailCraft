@@ -5,14 +5,14 @@
 //!
 //! As for a run, the engine never talks to a server: [`requests`] (`sync.graphSearchRequest`)
 //! says which page of which mailbox to ask for, a host with sockets asks
-//! (`mailcraft_net::graph::search_messages`), and [`apply`] (`sync.applyGraphSearch`) takes in
+//! (`mailsolutions_net::graph::search_messages`), and [`apply`] (`sync.applyGraphSearch`) takes in
 //! what came back.
 //!
 //! - **The scope is the one in view.** Current Folder asks for that folder (of a Microsoft
 //!   account, and only when its server has it); All Mailboxes asks each Microsoft account's
 //!   mailbox and each shared mailbox opened through one, once each. IMAP accounts are not asked.
 //! - **What goes** is the part of the query Graph's search understands
-//!   ([`mailcraft_model::search::Query::for_server`]); the rest is checked here against what
+//!   ([`mailsolutions_model::search::Query::for_server`]); the rest is checked here against what
 //!   comes back, and the search says so ([`ServerSearch::checked_here`]).
 //! - **Server results are held in the session, never in the mailbox**: 50 to a page, newest
 //!   first, with the next page asked for on the owner's say-so. One that is on this computer
@@ -27,10 +27,10 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::search::Query;
-use mailcraft_model::sync::{GraphMessage, GraphSearchRequest, GraphSearchResult};
-use mailcraft_model::{AccountKind, FolderKind, Id, Message};
-use mailcraft_time::{Date, Weekday};
+use mailsolutions_model::search::Query;
+use mailsolutions_model::sync::{GraphMessage, GraphSearchRequest, GraphSearchResult};
+use mailsolutions_model::{AccountKind, FolderKind, Id, Message};
+use mailsolutions_time::{Date, Weekday};
 use serde_json::{Value, json};
 
 use super::{bad, fail, graph_down};
@@ -148,7 +148,7 @@ pub fn mailboxes_for(s: &Session) -> Vec<(Id, String)> {
     let usable = |account: Id| {
         mb.account(account).is_some_and(|a| {
             a.kind == AccountKind::Microsoft
-                && (!a.is_shared() || (mb.owner_of(account).is_some() && mailcraft_model::mailbox_address(&a.email).is_some()))
+                && (!a.is_shared() || (mb.owner_of(account).is_some() && mailsolutions_model::mailbox_address(&a.email).is_some()))
         })
     };
     match s.view.scope {
@@ -205,7 +205,7 @@ pub fn current(s: &mut Session) -> &mut ServerSearch {
 /// more and isn't being asked already. Each is then waited for.
 pub fn requests(s: &mut Session) -> Result<Vec<GraphSearchRequest>, CmdError> {
     if let Some(why) = offered_reason(s) {
-        return Err(failed!("More results on the server aren't offered: {why}", why = mailcraft_i18n::Arg::words(why)));
+        return Err(failed!("More results on the server aren't offered: {why}", why = mailsolutions_i18n::Arg::words(why)));
     }
     current(s);
     let query = s.view.search.clone();

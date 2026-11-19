@@ -9,9 +9,9 @@ use std::sync::{Arc, Mutex, mpsc};
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens};
-use mailcraft_model::{AccountKind, FolderKind, GraphSwitch, Id, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens};
+use mailsolutions_model::{AccountKind, FolderKind, GraphSwitch, Id, Message};
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -53,10 +53,10 @@ fn page(h: &Harness<'static, MailApp>) -> Option<&'static str> {
 /// The sample mailbox, kept in a file of the test's own, with a Microsoft account on IMAP that
 /// has a token at hand (and no refresh token: nothing of Graph's is asked before the switch).
 fn app(name: &str) -> (MailApp, Id, std::path::PathBuf) {
-    let dir = std::env::temp_dir().join(format!("mailcraft-r37-ui-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-r37-ui-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
-    let mut s = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0);
+    let mut s = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0);
     s.path = Some(dir.join("mailbox.mailcraft"));
     let mut app = MailApp::new(s, Services::default());
     app.autosave = false;
@@ -66,7 +66,7 @@ fn app(name: &str) -> (MailApp, Id, std::path::PathBuf) {
         json!({"email": "owner@contoso.example", "auth": "oauth2", "provider": "microsoft", "incoming": {"host": "outlook.office365.com"}, "outgoing": {"host": "smtp.office365.com", "port": 587, "security": "starttls"}}),
     );
     let account = added.unwrap()["id"].as_u64().unwrap();
-    let tokens = Tokens { access: "imap-token".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+    let tokens = Tokens { access: "imap-token".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
     app.tokens.insert(account, tokens);
     (app, account, dir)
 }
@@ -124,11 +124,11 @@ fn switch_without_them_switches_at_once_and_says_what_is_in_the_backup() {
         folder: inbox,
         subject: "Figures".into(),
         uid: 7,
-        synced: Some(mailcraft_model::sync::RemoteFlags { uid: 7, ..Default::default() }),
+        synced: Some(mailsolutions_model::sync::RemoteFlags { uid: 7, ..Default::default() }),
         ..Default::default()
     };
     let message = app.session.mailbox.add_message(message).unwrap();
-    app.session.mailbox.message_mut(message).unwrap().flag = mailcraft_model::FlagStatus::Flagged;
+    app.session.mailbox.message_mut(message).unwrap().flag = mailsolutions_model::FlagStatus::Flagged;
     app.session.mailbox.account_mut(account).unwrap().graph_switch = GraphSwitch::Switching;
     app.services.sync = Some(Box::new(|req: SyncRequest| {
         let (tx, rx) = mpsc::channel();
@@ -145,8 +145,8 @@ fn switch_without_them_switches_at_once_and_says_what_is_in_the_backup() {
     assert_eq!(page(&h), None);
     assert_eq!(h.state().session.mailbox.account(account).unwrap().kind, AccountKind::Microsoft);
     let backup = dir.join("mailbox (backup 2026-10-14).mailcraft");
-    let kept = mailcraft_engine::io::open_path(&backup).unwrap();
-    assert_eq!(kept.message(message).map(|m| m.flag), Some(mailcraft_model::FlagStatus::Flagged));
+    let kept = mailsolutions_engine::io::open_path(&backup).unwrap();
+    assert_eq!(kept.message(message).map(|m| m.flag), Some(mailsolutions_model::FlagStatus::Flagged));
     assert!(status(&h).contains("1 change that didn't reach the IMAP server is in the copy"), "{}", status(&h));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -156,8 +156,12 @@ fn switch_sends_what_waits_first_waits_while_offline_and_then_switches() {
     let (mut app, account, dir) = app("switch");
     // Something waits for the IMAP server: a message in the Outbox.
     let outbox = app.session.mailbox.folder_of_kind(account, FolderKind::Outbox).unwrap();
-    let waiting =
-        Message { folder: outbox, subject: "Minutes".into(), to: vec![mailcraft_model::Address::new("", "kit@example.org")], ..Default::default() };
+    let waiting = Message {
+        folder: outbox,
+        subject: "Minutes".into(),
+        to: vec![mailsolutions_model::Address::new("", "kit@example.org")],
+        ..Default::default()
+    };
     let waiting = app.session.mailbox.add_message(waiting).unwrap();
     // The IMAP host: offline until told otherwise; online, it sends what it was given.
     let offline = Arc::new(AtomicBool::new(true));
@@ -182,7 +186,7 @@ fn switch_sends_what_waits_first_waits_while_offline_and_then_switches() {
     assert_eq!(*runs.lock().unwrap(), 1);
     let a = h.state().session.mailbox.account(account).unwrap();
     assert_eq!((a.kind, a.graph_switch), (AccountKind::Imap, GraphSwitch::Switching));
-    assert!(status(&h).contains("waits until MailCraft can reach the server"), "{}", status(&h));
+    assert!(status(&h).contains("waits until MailSolutions can reach the server"), "{}", status(&h));
     assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0, "no backup yet");
     // And it offers to switch without what waits (the Outbox goes through Graph: nothing is left).
     assert_eq!(page(&h), Some("graphSwitch"));
@@ -327,7 +331,7 @@ fn after_signing_in_the_mail_run_goes_ahead() {
     tx.send(Ok(Tokens {
         access: "graph-token".into(),
         refresh: "new-refresh".into(),
-        expires_at: mailcraft_time::now() + 3600,
+        expires_at: mailsolutions_time::now() + 3600,
         ..Default::default()
     }))
     .unwrap();
@@ -338,7 +342,11 @@ fn after_signing_in_the_mail_run_goes_ahead() {
     // (The stand-in says no to every run.)
     assert_eq!(asked.lock().unwrap().len(), 1, "no second trip to Microsoft's page");
     assert!(!h.state().signing_in());
-    assert!(status(&h).starts_with("Signed in, but Microsoft still won't let MailCraft read the mail of owner@contoso.example"), "{}", status(&h));
+    assert!(
+        status(&h).starts_with("Signed in, but Microsoft still won't let MailSolutions read the mail of owner@contoso.example"),
+        "{}",
+        status(&h)
+    );
     assert_ne!(h.state().session.sync_status, "Sending and receiving…");
     // The owner's own Send/Receive after that asks once more.
     h.state_mut().run("ui.sync", json!({})).unwrap();
@@ -348,7 +356,7 @@ fn after_signing_in_the_mail_run_goes_ahead() {
 }
 
 /// A host that writes the copy in the background: the test says when it is done, and how.
-type Done = Arc<Mutex<Option<(std::path::PathBuf, mailcraft_model::Mailbox, mpsc::Sender<Result<(), String>>)>>>;
+type Done = Arc<Mutex<Option<(std::path::PathBuf, mailsolutions_model::Mailbox, mpsc::Sender<Result<(), String>>)>>>;
 
 fn copying_host(app: &mut MailApp) -> Done {
     let pending: Done = Arc::default();
@@ -379,7 +387,7 @@ fn the_page_says_the_copy_is_being_saved_and_the_switch_waits_for_it() {
     let (path, mailbox, tx) = pending.lock().unwrap().take().unwrap();
     assert_eq!(path, dir.join("mailbox (backup 2026-10-14).mailcraft"));
     assert_eq!(mailbox.account(account).map(|a| a.graph_switch), Some(GraphSwitch::NotAsked));
-    mailcraft_engine::store::save_single(&path, &mailbox).unwrap();
+    mailsolutions_engine::store::save_single(&path, &mailbox).unwrap();
     tx.send(Ok(())).unwrap();
     h.run_steps(6);
     assert_eq!(page(&h), None);
@@ -427,7 +435,8 @@ fn a_run_whose_mail_came_in_pieces_doesnt_say_it_ended_without_the_mail() {
     h.state_mut().services.graph = Some(Box::new(move |req: crate::GraphRequest| {
         let (tx, rx) = mpsc::channel();
         if let Some(to) = &req.mail_pieces {
-            let piece = mailcraft_model::sync::GraphMailResult { account: req.account.id, email: req.account.email.clone(), ..Default::default() };
+            let piece =
+                mailsolutions_model::sync::GraphMailResult { account: req.account.id, email: req.account.email.clone(), ..Default::default() };
             to.send(piece).unwrap();
         }
         drop(req.mail_pieces);
@@ -444,7 +453,7 @@ fn a_run_whose_mail_came_in_pieces_doesnt_say_it_ended_without_the_mail() {
 }
 
 /// The mailbox of `app`, built the same way again: an account of the same id, in the same state.
-fn same_mailbox_again() -> mailcraft_model::Mailbox {
+fn same_mailbox_again() -> mailsolutions_model::Mailbox {
     let (other, _, _) = app("again");
     other.session.mailbox.clone()
 }

@@ -28,7 +28,7 @@ fn a_clock_that_went_back_is_not_a_reason_and_not_a_crash() {
 
 #[test]
 fn a_session_with_no_account_that_has_a_window_does_nothing_and_does_not_ask_again_the_same_day() {
-    let mut s = crate::Session::new(mailcraft_model::Mailbox::with_local_account("", ""));
+    let mut s = crate::Session::new(mailsolutions_model::Mailbox::with_local_account("", ""));
     assert_eq!(s.offline_tick(0.0), Thinned::Idle);
     assert!(!s.driver.thinning.due(s.openings(), 1.0));
 }

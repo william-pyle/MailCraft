@@ -8,10 +8,10 @@
 use std::collections::HashSet;
 use std::io::Cursor;
 
-use mailcraft_model::{FlagStatus, Importance, Message};
-use mailcraft_pst::test_writer::{self as w, AttachSpec, FileSpec, FolderSpec, Layout, MessageSpec, Value, one_off};
-use mailcraft_pst::{Encryption, Format, Limits, PS_PUBLIC_STRINGS};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::{FlagStatus, Importance, Message};
+use mailsolutions_pst::test_writer::{self as w, AttachSpec, FileSpec, FolderSpec, Layout, MessageSpec, Value, one_off};
+use mailsolutions_pst::{Encryption, Format, Limits, PS_PUBLIC_STRINGS};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use proptest::prelude::*;
 use serde_json::{Value as Json, json};
 
@@ -32,7 +32,7 @@ fn now() -> Timestamp {
 }
 
 fn session() -> Session {
-    Session::at(mailcraft_model::Mailbox::with_local_account("", ""), now(), 0)
+    Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), now(), 0)
 }
 
 fn note(subject: &str) -> MessageSpec {
@@ -142,7 +142,7 @@ fn job(dry_run: bool) -> Job {
         kept_room: crate::import_pst::item::KEPT_TEXT_BUDGET,
         keep_at: None,
         calendar: None,
-        here: crate::import_pst::calendar::Here { offset: Some(0), zone: mailcraft_time::Zone::UTC },
+        here: crate::import_pst::calendar::Here { offset: Some(0), zone: mailsolutions_time::Zone::UTC },
     }
 }
 
@@ -219,7 +219,7 @@ fn the_mail_of_every_folder_comes_in_and_every_item_is_accounted_for() {
     // An empty folder of mail comes too; a calendar with no mail in it doesn't.
     assert!(folder_id(&s, &["old-mail", "Empty"]).is_some());
     assert!(folder_id(&s, &["old-mail", "Calendar"]).is_none());
-    let local = s.mailbox.accounts.iter().find(|a| a.kind == mailcraft_model::AccountKind::Local).unwrap().id;
+    let local = s.mailbox.accounts.iter().find(|a| a.kind == mailsolutions_model::AccountKind::Local).unwrap().id;
     assert!(s.mailbox.messages.values().all(|m| m.account == local));
     // Every message brought in remembers where in the file it was.
     assert!(s.mailbox.messages.values().all(|m| m.headers.iter().any(|(k, _)| k == PST_ITEM_HEADER)));
@@ -255,7 +255,7 @@ fn a_message_keeps_its_people_dates_state_and_attachments() {
     let attached = &m.attachments[1];
     assert_eq!(attached.mime, "message/rfc822");
     assert!(attached.name.ends_with(".eml"), "{}", attached.name);
-    let inner = mailcraft_mime_model::parse(&attached.data);
+    let inner = mailsolutions_mime_model::parse(&attached.data);
     assert_eq!(inner.subject, "Minutes of the garden committee");
     assert_eq!(inner.to[0].email, "eli@example.org");
     assert_eq!(inner.attachments[0].name, "minutes.txt");
@@ -267,7 +267,7 @@ fn a_message_keeps_its_people_dates_state_and_attachments() {
 #[test]
 fn the_headers_it_was_sent_with_come_first() {
     let mut m = note("Ignored subject");
-    let date = mailcraft_time::format_rfc5322(DELIVERED_AT - 600, 0);
+    let date = mailsolutions_time::format_rfc5322(DELIVERED_AT - 600, 0);
     m.extra = vec![(
         0x007D,
         w::unicode(&format!(
@@ -524,8 +524,8 @@ fn the_files_list_of_categories_is_read_with_its_colours() {
     let list = categories(xml);
     assert_eq!(list.len(), 3);
     assert_eq!(list[0].0, "Finance & Board");
-    assert_eq!(Some(list[0].1), mailcraft_model::preset_category_color(7));
-    assert_eq!(list[1].1, mailcraft_model::GREY_CATEGORY);
+    assert_eq!(Some(list[0].1), mailsolutions_model::preset_category_color(7));
+    assert_eq!(list[1].1, mailsolutions_model::GREY_CATEGORY);
     assert_eq!(list[2].0, "Quiet");
     assert!(categories("<categories><category name=\"\u{0}\"/><categoryx name=\"x\"/>").is_empty());
 }
@@ -617,7 +617,7 @@ fn folders_nested_too_deeply_go_into_the_deepest_that_fits() {
     assert_eq!(answer["added"], 1, "{answer}");
     assert_eq!(s.mailbox.messages.len(), 1);
     let m = s.mailbox.messages.values().next().unwrap();
-    assert_eq!(s.mailbox.depth(m.folder), mailcraft_model::MAX_FOLDER_DEPTH);
+    assert_eq!(s.mailbox.depth(m.folder), mailsolutions_model::MAX_FOLDER_DEPTH);
     let deep = answer["folders"].as_array().unwrap().iter().find(|r| r["path"].as_str().unwrap().ends_with("Level 40")).unwrap();
     assert!(deep["into"].as_str().unwrap().ends_with("Level 31"), "{deep}");
 
@@ -632,7 +632,7 @@ fn folders_nested_too_deeply_go_into_the_deepest_that_fits() {
     adds_up(&answer);
     assert_eq!(answer["added"], 1, "{answer}");
     let m = s.mailbox.messages.values().next().unwrap();
-    assert_eq!(s.mailbox.depth(m.folder), mailcraft_model::MAX_FOLDER_DEPTH);
+    assert_eq!(s.mailbox.depth(m.folder), mailsolutions_model::MAX_FOLDER_DEPTH);
 }
 
 /// The batches of an import the window hands over are one step to undo (P2-2), which takes the
@@ -719,7 +719,7 @@ fn an_import_whose_last_word_fails_is_one_step_too() {
 fn undoing_an_import_keeps_what_the_owner_put_in_its_folders() {
     let mut s = session();
     let account = s.mailbox.local_account();
-    let inbox = s.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Inbox).unwrap();
+    let inbox = s.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Inbox).unwrap();
     let own = s.mailbox.add_message(Message { folder: inbox, subject: "the owner's".into(), ..Default::default() }).unwrap();
     let (batches, outcome) = staged(&letters(8));
     let params = json!({"staged": true, "name": "old-mail"});
@@ -770,7 +770,7 @@ fn another_import_waits_while_one_runs() {
 fn a_message_is_measured_by_all_it_holds() {
     let mut m = Message::default();
     let small = crate::import_pst::item::held(&m);
-    m.to = (0..1000).map(|i| mailcraft_model::Address { name: "x".repeat(100), email: format!("p{i}@example.org") }).collect();
+    m.to = (0..1000).map(|i| mailsolutions_model::Address { name: "x".repeat(100), email: format!("p{i}@example.org") }).collect();
     m.headers = (0..1000).map(|i| (format!("X-H{i}"), "v".repeat(100))).collect();
     m.references = vec!["<r@example.org>".repeat(10); 100];
     assert!(crate::import_pst::item::held(&m) > small + 200_000, "{}", crate::import_pst::item::held(&m));
@@ -878,7 +878,7 @@ fn a_place_moved_to_deleted_items_stops_the_import() {
     s.staged_pst = Some(crate::import_pst::Staged::Batch(batches.remove(0)));
     s.run("file.importPst", &params).unwrap();
     let before = s.mailbox.messages.len();
-    let deleted = s.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Deleted).unwrap();
+    let deleted = s.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Deleted).unwrap();
     s.mailbox.folders.iter_mut().find(|f| f.id == under).unwrap().parent = Some(deleted);
     s.staged_pst = Some(crate::import_pst::Staged::Batch(batches.remove(0)));
     let e = s.run("file.importPst", &params).unwrap_err().to_string();
@@ -1047,13 +1047,13 @@ fn a_contact_keeps_every_field_the_model_has() {
     // The private key is in nothing that is shown or exported.
     let shown = s.run("people.get", &json!({"id": c.id})).unwrap().to_string();
     assert!(!shown.contains(&c.imported));
-    assert!(!mailcraft_vcard::write(&[&c]).contains(&c.imported));
+    assert!(!mailsolutions_vcard::write(&[&c]).contains(&c.imported));
 }
 
 #[test]
 fn imported_contacts_are_marked_found_and_keep_the_mark() {
     let mut s = session();
-    let own = s.mailbox.add_contact(mailcraft_model::Contact { first: "Hal".into(), ..Default::default() });
+    let own = s.mailbox.add_contact(mailsolutions_model::Contact { first: "Hal".into(), ..Default::default() });
     import(&mut s, &people_file(vec![ada(), contact_item("Eli", vec![(0x3001, w::unicode("Eli Marsh"))])]), json!({})).unwrap();
     let ids: Vec<u64> = s.mailbox.contacts.values().filter(|c| !c.imported_from.is_empty()).map(|c| c.id).collect();
     assert_eq!(ids.len(), 2);
@@ -1073,7 +1073,7 @@ fn imported_contacts_are_marked_found_and_keep_the_mark() {
     s.run("people.merge", &json!({"keep": own, "others": [ids[0]]})).unwrap();
     assert_eq!(s.mailbox.contact(own).unwrap().imported_from, "old-mail.pst");
     // Not written to a vCard.
-    assert!(!mailcraft_vcard::write(&[s.mailbox.contact(own).unwrap()]).contains("old-mail"));
+    assert!(!mailsolutions_vcard::write(&[s.mailbox.contact(own).unwrap()]).contains("old-mail"));
     // No place for contacts to choose: they all go to the one list.
     let answer = import(&mut session(), &people_file(vec![ada()]), json!({"places": {"contacts": "elsewhere"}})).unwrap();
     assert_eq!(answer["contacts"], 1);
@@ -1150,7 +1150,7 @@ fn importing_contacts_again_adds_nothing() {
     assert_eq!(s.mailbox.contacts.len(), 2);
     // Saved and opened again, the key is still there.
     let saved = serde_json::to_string(&*s.mailbox.contacts[&id]).unwrap();
-    let back: mailcraft_model::Contact = serde_json::from_str(&saved).unwrap();
+    let back: mailsolutions_model::Contact = serde_json::from_str(&saved).unwrap();
     assert_eq!(back.imported, s.mailbox.contacts[&id].imported);
 }
 
@@ -1228,7 +1228,7 @@ fn undoing_an_import_keeps_the_contacts_the_owner_made_meanwhile() {
     let names = ["Ida", "Jon", "Kim", "Lou", "Mae", "Ned", "Ora"];
     let bytes = people_file(names.iter().map(|n| contact_item(n, vec![(0x3001, w::unicode(n))])).collect());
     let mut s = session();
-    let before = s.mailbox.add_contact(mailcraft_model::Contact { first: "Hal".into(), last: "Ortiz".into(), ..Default::default() });
+    let before = s.mailbox.add_contact(mailsolutions_model::Contact { first: "Hal".into(), last: "Ortiz".into(), ..Default::default() });
     let (batches, outcome) = staged(&bytes);
     assert!(batches.len() >= 2, "{}", batches.len());
     let params = json!({"staged": true, "name": "old-mail"});
@@ -1236,14 +1236,14 @@ fn undoing_an_import_keeps_the_contacts_the_owner_made_meanwhile() {
     for (i, b) in batches.into_iter().enumerate() {
         hand_over(&mut s, crate::import_pst::Staged::Batch(b), &params).unwrap();
         if i == 0 {
-            later = Some(s.mailbox.add_contact(mailcraft_model::Contact { first: "Pia".into(), ..Default::default() }));
+            later = Some(s.mailbox.add_contact(mailsolutions_model::Contact { first: "Pia".into(), ..Default::default() }));
         }
     }
     hand_over(&mut s, crate::import_pst::Staged::Done(Box::new(outcome)), &params).unwrap();
     assert_eq!(s.mailbox.contacts.len(), 9);
     assert_eq!(s.undo_label(), Some("Import a .pst File"));
     s.run("edit.undo", &json!({})).unwrap();
-    let left: Vec<mailcraft_model::Id> = s.mailbox.contacts.keys().copied().collect();
+    let left: Vec<mailsolutions_model::Id> = s.mailbox.contacts.keys().copied().collect();
     assert_eq!(left.len(), 2, "{left:?}");
     assert!(s.mailbox.contact(before).is_some() && s.mailbox.contact(later.unwrap()).is_some());
     s.run("edit.redo", &json!({})).unwrap();
@@ -1362,7 +1362,7 @@ fn a_lists_notes_fit_a_vcard_line_and_the_cut_is_named() {
     for c in s.mailbox.contacts.values() {
         assert!(crate::cmd::people_merge::notes_line(&c.notes) <= crate::cmd::people_merge::MAX_NOTES, "{}", c.display_name);
         // Exported and read back, nothing is lost.
-        let back = mailcraft_vcard::parse_bytes(mailcraft_vcard::write(&[c.as_ref()]).as_bytes());
+        let back = mailsolutions_vcard::parse_bytes(mailsolutions_vcard::write(&[c.as_ref()]).as_bytes());
         assert_eq!(back[0].notes, c.notes, "{}", c.display_name);
     }
 }
@@ -1558,9 +1558,9 @@ fn undo_does_not_warn_about_contacts_it_would_leave_alone() {
 #[test]
 fn the_file_a_contact_came_from_is_not_free_text_but_is_imported_finds_it() {
     let mut s = session();
-    let own = s.mailbox.add_contact(mailcraft_model::Contact {
+    let own = s.mailbox.add_contact(mailsolutions_model::Contact {
         first: "Martin".into(),
-        emails: vec![mailcraft_model::Labeled::new("work", "martin@example.org")],
+        emails: vec![mailsolutions_model::Labeled::new("work", "martin@example.org")],
         ..Default::default()
     });
     let bytes = people_file(vec![contact_item(
@@ -1843,7 +1843,7 @@ fn repeating_rtf(head: &[u8], period: usize, repeats: usize) -> Vec<u8> {
     let mut v = ((body.len() + 12) as u32).to_le_bytes().to_vec();
     v.extend(0u32.to_le_bytes());
     v.extend(b"LZFu");
-    v.extend(mailcraft_pst::crc32(&body).to_le_bytes());
+    v.extend(mailsolutions_pst::crc32(&body).to_le_bytes());
     v.extend(body);
     v
 }

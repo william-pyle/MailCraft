@@ -24,9 +24,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::sync::{GraphMessage, GraphProgress, MessagePage, ServerMessage, merge_categories};
-use mailcraft_model::time::Timestamp;
-use mailcraft_model::{AccountKind, Body, FlagStatus, FolderKind, Id, Mailbox, Message, OfflineWindow};
+use mailsolutions_model::sync::{GraphMessage, GraphProgress, MessagePage, ServerMessage, merge_categories};
+use mailsolutions_model::time::Timestamp;
+use mailsolutions_model::{AccountKind, Body, FlagStatus, FolderKind, Id, Mailbox, Message, OfflineWindow};
 
 /// Where each message a server knows is, by its server id: kept between pages, as finding one
 /// otherwise means a walk through every message of the mailbox.
@@ -283,7 +283,7 @@ fn update(mb: &mut Mailbox, account: Id, id: Id, folder: Id, server_folder: &str
         // The server's own version, a draft on its word: so kept through a save and the repair
         // of sent copies an earlier version took for drafts, wherever the server has it.
         if copy.draft {
-            copy.server_draft = Some(mailcraft_model::sync::ServerDraft { theirs: true, ..Default::default() });
+            copy.server_draft = Some(mailsolutions_model::sync::ServerDraft { theirs: true, ..Default::default() });
         }
         return super::graph_drafts::keep_twice(mb, id, Some(copy)).is_some();
     }
@@ -390,7 +390,7 @@ fn update(mb: &mut Mailbox, account: Id, id: Id, folder: Id, server_folder: &str
 pub fn sweep(mb: &mut Mailbox, account: Id, since: Option<Timestamp>, down: &mut Down) {
     // But for a draft saved here that waits to go up: it is made on the server anew (S26); and
     // for what waits in the Outbox, or is held there (R3.4.2): it stays, for the owner to see.
-    let outbox = mb.folder_of_kind(account, mailcraft_model::FolderKind::Outbox);
+    let outbox = mb.folder_of_kind(account, mailsolutions_model::FolderKind::Outbox);
     for m in mb.messages.values_mut() {
         let keeps = (m.draft && m.server_draft.as_ref().is_some_and(|d| d.pending)) || Some(m.folder) == outbox;
         let waits = m.account == account && keeps && m.server.as_ref().is_some_and(|s| s.gone);
@@ -449,7 +449,7 @@ pub fn moving_out(mb: &Mailbox, account: Id, id: &str) -> Option<Id> {
 }
 
 /// What the status bar says while a run is under way.
-pub fn progress_words(mb: &Mailbox, account: Id, progress: &GraphProgress, lang: mailcraft_i18n::Lang) -> String {
+pub fn progress_words(mb: &Mailbox, account: Id, progress: &GraphProgress, lang: mailsolutions_i18n::Lang) -> String {
     let name = mb.folder_by_server(account, &progress.folder).and_then(|f| mb.folder(f)).map(|f| f.name.clone()).unwrap_or_default();
     let name: String = name.chars().filter(|c| !c.is_control()).take(60).collect();
     let (read, total) = (progress.read.min(progress.total).to_string(), progress.total.to_string());
@@ -459,7 +459,7 @@ pub fn progress_words(mb: &Mailbox, account: Id, progress: &GraphProgress, lang:
     } else {
         lang.t("Receiving {name} · folder {number} of {folders}")
     };
-    mailcraft_i18n::fmt(template, &[("name", &name), ("read", &read), ("total", &total), ("number", &number), ("folders", &folders)])
+    mailsolutions_i18n::fmt(template, &[("name", &name), ("read", &read), ("total", &total), ("number", &number), ("folders", &folders)])
 }
 
 /// The next messages of `account` to fetch whole in the background (R3 spec S12): not fetched,
@@ -562,7 +562,7 @@ pub fn take_fetched_as(mb: &mut Mailbox, index: &mut ServerIndex, account: Id, i
     // What came brought no original (#30): the server's copy isn't protected either.
     let brought = read.original.is_some();
     // Within what the mailbox keeps of originals in all (#30), counting the one it replaces.
-    let replaced = mb.message(here).and_then(|m| m.original.as_ref()).map_or(0, mailcraft_model::Original::size);
+    let replaced = mb.message(here).and_then(|m| m.original.as_ref()).map_or(0, mailsolutions_model::Original::size);
     // (No room for it: how much room it needs, which there must be before it is asked again.)
     let mut no_room = 0;
     let needs = read.original.as_ref().map_or(0, |o| o.size().saturating_sub(replaced));
@@ -620,7 +620,7 @@ pub fn take_fetched_as(mb: &mut Mailbox, index: &mut ServerIndex, account: Id, i
     (m.headers, m.header_block, m.fresh_stamps) = (read.headers, read.header_block, read.fresh_stamps);
     // Fetched to go on to another account's server: this server's stamps stay behind (#781).
     if m.account != account {
-        mailcraft_model::auth_results::forget_stamps(m);
+        mailsolutions_model::auth_results::forget_stamps(m);
     }
     // What it is now is all of it: nothing the mailbox kept on disk of its preview is its body.
     m.kept = None;
@@ -634,7 +634,7 @@ pub fn take_fetched_as(mb: &mut Mailbox, index: &mut ServerIndex, account: Id, i
     }
     // A draft as the server has it now: what a change made here is worked out from.
     if m.draft {
-        let state = mailcraft_model::sync::DraftState::of(m);
+        let state = mailsolutions_model::sync::DraftState::of(m);
         let sd = m.server_draft.get_or_insert_with(Default::default);
         if !sd.pending {
             sd.synced = Some(state);
@@ -647,7 +647,7 @@ pub fn take_fetched_as(mb: &mut Mailbox, index: &mut ServerIndex, account: Id, i
 /// when a complete listing of the folders left that folder out (#30): no page of it will come, so
 /// they went with it. What waited for the bytes it came as from one goes made of its parts, and
 /// says so (at most [`crate::cmd::imap_again::MAX_AGAIN`] are said).
-pub(crate) fn gone_with_folders(s: &mut crate::Session, account: Id, listing: &mailcraft_model::sync::FolderListing) -> Vec<String> {
+pub(crate) fn gone_with_folders(s: &mut crate::Session, account: Id, listing: &mailsolutions_model::sync::FolderListing) -> Vec<String> {
     if !listing.complete {
         return Vec::new();
     }
@@ -727,7 +727,7 @@ pub fn refetch_unreadable(mb: &mut Mailbox) -> usize {
         return 0;
     }
     const MARK: char = char::REPLACEMENT_CHARACTER;
-    let graph: HashSet<Id> = mb.accounts.iter().filter(|a| a.kind == mailcraft_model::AccountKind::Microsoft).map(|a| a.id).collect();
+    let graph: HashSet<Id> = mb.accounts.iter().filter(|a| a.kind == mailsolutions_model::AccountKind::Microsoft).map(|a| a.id).collect();
     // Without a Microsoft account there is nothing to look for, and the mailbox stays as it is.
     if graph.is_empty() {
         return 0;
@@ -775,7 +775,7 @@ pub fn refetch_hollow(mb: &mut Mailbox) -> usize {
     let servers: HashSet<Id> = mb
         .accounts
         .iter()
-        .filter(|a| matches!(a.kind, mailcraft_model::AccountKind::Microsoft | mailcraft_model::AccountKind::Exchange))
+        .filter(|a| matches!(a.kind, mailsolutions_model::AccountKind::Microsoft | mailsolutions_model::AccountKind::Exchange))
         .map(|a| a.id)
         .collect();
     if servers.is_empty() {
@@ -822,8 +822,8 @@ mod sent_not_draft_tests;
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{AccountKind, DownloadInFull, FlagStatus, Folder, FolderKind, Mailbox, Message};
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{AccountKind, DownloadInFull, FlagStatus, Folder, FolderKind, Mailbox, Message};
 
     use super::*;
 
@@ -877,7 +877,7 @@ mod tests {
     #[test]
     fn a_message_not_fetched_yet_has_the_attachments_the_server_said() {
         let (mut mb, account, folder) = mailbox();
-        mb.folder_mut(folder).unwrap().server = Some(mailcraft_model::ServerFolder { id: "F".into(), ..Default::default() });
+        mb.folder_mut(folder).unwrap().server = Some(mailsolutions_model::ServerFolder { id: "F".into(), ..Default::default() });
         let page = |id: &str, has_attachments: bool| MessagePage {
             folder: "F".into(),
             messages: vec![GraphMessage {
@@ -893,7 +893,7 @@ mod tests {
         let id = mb.messages.values().find(|m| m.subject == "Quarterly figures").unwrap().id;
         let m = mb.message(id).unwrap();
         assert!(m.unfetched && m.attachments.is_empty() && m.attachments_on_server && m.has_attachments());
-        let query = mailcraft_model::search::Query::parse("has:attachment");
+        let query = mailsolutions_model::search::Query::parse("has:attachment");
         assert!(query.matches(m, 0));
         assert!(!query.matches(mb.messages.values().find(|m| m.subject == "Preview 1").unwrap(), 0));
         // Written to the mailbox file and read back; a file from before has none.
@@ -920,8 +920,8 @@ mod tests {
         let (mut mb, account, _) = mailbox();
         let id = mb.messages.values().find(|m| m.subject == "Preview 1").unwrap().id;
         // Its preview's HTML is on disk, not in memory (R6.1).
-        let stale = mailcraft_model::ContentRef { sha256: [7; 32], len: 40 };
-        mb.message_mut(id).unwrap().kept = Some(Box::new(mailcraft_model::KeptBody { html: Some(stale), ..Default::default() }));
+        let stale = mailsolutions_model::ContentRef { sha256: [7; 32], len: 40 };
+        mb.message_mut(id).unwrap().kept = Some(Box::new(mailsolutions_model::KeptBody { html: Some(stale), ..Default::default() }));
         let mime = b"From: Kit <kit@example.org>\r\nSubject: Plain\r\nContent-Type: text/plain\r\n\r\nOnly text.\r\n";
         assert!(take_fetched(&mut mb, &mut ServerIndex::default(), account, "AAkA1", mime));
         let m = mb.message(id).unwrap();
@@ -948,7 +948,7 @@ Content-Type: text/html; charset=windows-1250\r\nContent-Transfer-Encoding: quot
                 received: 9_000 + i64::from(n),
                 server: Some(server),
                 draft,
-                from: mailcraft_model::Address::new("Tarik Gvo\u{FFFD}\u{FFFD}ar", "tarik@example.org"),
+                from: mailsolutions_model::Address::new("Tarik Gvo\u{FFFD}\u{FFFD}ar", "tarik@example.org"),
                 subject: "Introduction \u{FFFD} Josh".into(),
                 body: Body { text: "Hi Avery, we\u{FFFD}ve met.".into(), html: Some("<p>Hi Avery, we\u{FFFD}ve met.</p>".into()) },
                 read: true,

@@ -23,7 +23,7 @@ use aes::cipher::{BlockModeDecrypt, KeyIvInit};
 use const_oid::ObjectIdentifier;
 use der::Decode;
 use hmac::{KeyInit, Mac};
-use mailcraft_ber::{self as ber, Tlv};
+use mailsolutions_ber::{self as ber, Tlv};
 use zeroize::Zeroizing;
 
 /// The largest file opened (the window reads at most as much).
@@ -100,7 +100,7 @@ pub enum Error {
     #[error("the file is encrypted in a way that is no longer safe (RC2, RC4, DES or 40-bit keys); export it again with AES")]
     WeakEncryption,
     /// It uses an algorithm this program doesn't know.
-    #[error("the file uses an algorithm MailCraft doesn't know")]
+    #[error("the file uses an algorithm MailSolutions doesn't know")]
     UnknownAlgorithm,
     /// It asks for more iterations than any file needs, or more bags or nesting than there is room for.
     #[error("the file asks for more work than a certificate file needs")]

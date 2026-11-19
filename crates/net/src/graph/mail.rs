@@ -36,11 +36,11 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     ChangeOutcome, FolderChange, FolderChangeDone, FolderListing, GraphFolder, GraphMailRequest, GraphMailResult, MAX_FOLDER_CHANGES,
     MAX_LISTED_FOLDERS, OWN_FOLDER_CODES, SyncPhase,
 };
-use mailcraft_model::{FolderKind, clean_name};
+use mailsolutions_model::{FolderKind, clean_name};
 use serde_json::{Value, json};
 
 use super::pace::{Gate, Kind, Priority, Retry};
@@ -63,7 +63,7 @@ const MAX_NAME: usize = 255;
 /// the top of the mailbox: what lies in it directly is at the top here.
 ///
 /// The server's Outbox is not among them: what Exchange holds there is queued for sending with
-/// the owner's rights, and MailCraft's own Outbox (the queue it sends from) is never bound to
+/// the owner's rights, and MailSolutions's own Outbox (the queue it sends from) is never bound to
 /// it (AU2-V2). It is asked for by [`OUTBOX`] only to be told apart: an empty one is left out
 /// of the listing (an Exchange mailbox's always is, over IMAP), so the folder pane doesn't show two
 /// Outboxes; one that holds mail is listed as any folder is.
@@ -192,7 +192,7 @@ fn inbox_pass(
     token: &str,
     bearer: &Bearer<'_>,
     request: &GraphMailRequest,
-    inbox: &mailcraft_model::sync::GraphFolder,
+    inbox: &mailsolutions_model::sync::GraphFolder,
     gate: Arc<Gate>,
     retry: Retry,
     cancel: &AtomicBool,
@@ -457,7 +457,7 @@ fn shared_address(request: &GraphMailRequest) -> Option<&str> {
 struct Known {
     root: String,
     kinds: HashMap<String, FolderKind>,
-    /// The server's Outbox, when it has one: never MailCraft's own (AU2-V2).
+    /// The server's Outbox, when it has one: never MailSolutions's own (AU2-V2).
     outbox: Option<String>,
     /// The server's own folders, those of [`WELL_KNOWN`] it has (#756).
     own: HashSet<String>,
@@ -693,7 +693,7 @@ fn listing(graph: &Graph<'_>, known: &Known) -> Result<FolderListing, (FolderLis
                     if entry.unseen || !seen.insert(entry.id.clone()) {
                         continue;
                     }
-                    // The server's Outbox while it holds nothing: MailCraft's own Outbox is the
+                    // The server's Outbox while it holds nothing: MailSolutions's own Outbox is the
                     // one shown.
                     if known.outbox.as_deref() == Some(entry.id.as_str()) && entry.counted && entry.total == 0 && entry.children == 0 {
                         continue;

@@ -6,10 +6,10 @@
 //! go on as before. (Its invitations: `calendar/invitation.rs`; its reading: `jmap_mail_tests.rs`;
 //! the changes of its messages: `jmap_up_tests.rs`.)
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     FolderListing, GraphFolder, GraphMessage, JmapChange, JmapMailResult, MessagePage, SendDone, SendOutcome, ServerMessage,
 };
-use mailcraft_model::{Account, AccountKind, Address, FolderKind, Id, JmapServer, Mailbox};
+use mailsolutions_model::{Account, AccountKind, Address, FolderKind, Id, JmapServer, Mailbox};
 use serde_json::json;
 
 use super::jmap_mail::{apply_jmap_mail, jmap_mail_request};
@@ -196,7 +196,7 @@ fn a_copy_doesnt_go_into_a_jmap_accounts_outbox() {
     let lunch = written(&mut s, jmap, "Lunch");
     for id in [invoice, lunch] {
         let refused = s.run("mail.copy", &json!({"ids": [id], "folder": outbox})).unwrap_err();
-        assert!(refused.to_string().contains(mailcraft_model::COPY_INTO_OUTBOX), "{refused}");
+        assert!(refused.to_string().contains(mailsolutions_model::COPY_INTO_OUTBOX), "{refused}");
     }
     assert_eq!(count(&s, jmap, FolderKind::Outbox), 1);
     // The next run sends what Send queued, once, and nothing else.
@@ -216,7 +216,7 @@ fn a_message_moved_into_a_jmap_accounts_outbox_is_held_and_not_sent() {
     let outbox = s.mailbox.folder_of_kind(jmap, FolderKind::Outbox).unwrap();
     let drafts = s.mailbox.folder_of_kind(jmap, FolderKind::Drafts).unwrap();
     let inbox = s.mailbox.folder_of_kind(jmap, FolderKind::Inbox).unwrap();
-    let here = |folder, subject: &str, draft| mailcraft_model::Message {
+    let here = |folder, subject: &str, draft| mailsolutions_model::Message {
         folder,
         subject: subject.into(),
         from: Address::new("Bo", "bo@example.org"),
@@ -231,7 +231,7 @@ fn a_message_moved_into_a_jmap_accounts_outbox_is_held_and_not_sent() {
     s.run("mail.move", &json!({"ids": [draft, brought], "folder": outbox})).unwrap();
     for id in [draft, brought] {
         let m = s.mailbox.message(id).unwrap();
-        assert_eq!((m.folder, m.held.as_str()), (outbox, mailcraft_model::MOVED_INTO_OUTBOX));
+        assert_eq!((m.folder, m.held.as_str()), (outbox, mailsolutions_model::MOVED_INTO_OUTBOX));
     }
     // The next run sends what Send queued, and nothing that was only moved there.
     assert_eq!(offered(&s, jmap), [queued]);

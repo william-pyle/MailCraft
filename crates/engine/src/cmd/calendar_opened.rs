@@ -3,7 +3,7 @@
 //! Open Shared Calendar (#70): another person's calendar, opened by their address.
 //!
 //! Microsoft Graph can't add somebody's calendar to the owner's list on the server (accepting a
-//! sharing invitation is done in an Outlook client), so MailCraft keeps its own list of the
+//! sharing invitation is done in an Outlook client), so MailSolutions keeps its own list of the
 //! calendars the owner opened by address, on this computer only: [`Account::opened_calendars`],
 //! under the owner's work or school account, until the owner removes one. Each is read, and
 //! written when the server lets the owner edit it, at `/users/{address}/calendar/…` with the
@@ -19,8 +19,8 @@
 //!
 //! [`apply_calendars`]: super::remote::apply_calendars
 
-use mailcraft_model::remote::{OpenedRefusal, OpenedWhy, opened_address, opened_id};
-use mailcraft_model::{Account, Calendar, Directory, Id, MAX_OPENED_CALENDARS, OAuthProvider, OpenedCalendar};
+use mailsolutions_model::remote::{OpenedRefusal, OpenedWhy, opened_address, opened_id};
+use mailsolutions_model::{Account, Calendar, Directory, Id, MAX_OPENED_CALENDARS, OAuthProvider, OpenedCalendar};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -73,10 +73,10 @@ fn hide_listed_copy(s: &mut Session, v: &Value) -> CmdResult {
     };
     let kept = shared.email.trim().to_string();
     let owner = s.mailbox.account_mut(account).map_err(|e| fail(e.to_string()))?;
-    let room = owner.listed_twice.len() < mailcraft_model::MAX_SHARED;
+    let room = owner.listed_twice.len() < mailsolutions_model::MAX_SHARED;
     match owner.listed_twice.iter_mut().find(|entry| entry.address.eq_ignore_ascii_case(&kept)) {
         Some(entry) => entry.hidden = hide,
-        None if room => owner.listed_twice.push(mailcraft_model::ListedTwice { address: kept.clone(), hidden: hide }),
+        None if room => owner.listed_twice.push(mailsolutions_model::ListedTwice { address: kept.clone(), hidden: hide }),
         None => return Err(fail("Too many shared mailboxes are listed twice")),
     }
     let (calendars, events) = if hide {
@@ -94,7 +94,7 @@ fn hide_listed_copy(s: &mut Session, v: &Value) -> CmdResult {
 fn listed_twice(s: &Session, account: Id) -> Vec<Value> {
     let Some(owner) = s.mailbox.account(account) else { return Vec::new() };
     let mut said: Vec<Value> = Vec::new();
-    for shared in s.mailbox.shared_mailboxes(account).into_iter().take(mailcraft_model::MAX_SHARED) {
+    for shared in s.mailbox.shared_mailboxes(account).into_iter().take(mailsolutions_model::MAX_SHARED) {
         let address = shared.email.trim();
         if address.is_empty() || owner.listed_twice_answer(address).is_some() {
             continue;
@@ -120,7 +120,7 @@ pub fn eligible(account: &Account) -> Result<(), &'static str> {
         .oauth
         .as_ref()
         .is_some_and(|oauth| oauth.directory == Directory::Personal || Directory::of_tenant(&oauth.tenant) == Directory::Personal)
-        || mailcraft_model::provider::by_domain(account.email.rsplit_once('@').map_or("", |(_, domain)| domain))
+        || mailsolutions_model::provider::by_domain(account.email.rsplit_once('@').map_or("", |(_, domain)| domain))
             .is_some_and(|preset| preset.service == "Outlook.com");
     if personal {
         return Err("Other people's calendars can only be opened under a Microsoft work or school account, not a personal one (Outlook.com)");
@@ -144,7 +144,7 @@ fn has_opened(s: &Session) -> Option<&'static str> {
 /// an address of Microsoft Graph's, as a shared mailbox's does.
 fn address(v: &Value) -> Result<String, CmdError> {
     let text = p::req_str(v, "address")?;
-    mailcraft_model::mailbox_address(text).ok_or_else(|| {
+    mailsolutions_model::mailbox_address(text).ok_or_else(|| {
         let shown: String = text.chars().filter(|c| !c.is_control()).take(80).collect();
         bad(format!("\"{}\" isn't an e-mail address", shown.trim()))
     })
@@ -269,7 +269,7 @@ pub(crate) fn after_list(s: &mut Session, account: Id, refused: &[OpenedRefusal]
         said.push(json!({"address": refusal.address, "why": refusal.why, "removed": removed}));
     }
     // What each opened calendar is now, kept on the list.
-    let mut kept: Vec<(String, String, mailcraft_model::Rgb, bool)> = Vec::new();
+    let mut kept: Vec<(String, String, mailsolutions_model::Rgb, bool)> = Vec::new();
     let mut duplicates: Vec<Value> = Vec::new();
     if let Some(owner) = s.mailbox.account(account) {
         for opened in owner.opened_calendars.iter().take(MAX_OPENED_CALENDARS) {

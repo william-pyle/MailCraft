@@ -102,7 +102,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use mailcraft_time::{DAY, Date, DateTime, Timestamp, Weekday};
+use mailsolutions_time::{DAY, Date, DateTime, Timestamp, Weekday};
 use serde_json::{Map, Value, json};
 
 /// The token a stand-in takes unless it is told another.
@@ -713,11 +713,11 @@ const ADDITIONAL_ZONES: &[&str] = &[
 /// one Windows has for a zone, written as Windows writes it, or one of [`ADDITIONAL_ZONES`]. Any
 /// other name of the IANA database (`Europe/Amsterdam`) is not one the service is documented to
 /// take, and neither is an offset or a name Windows once had.
-fn documented_zone(zone: &str) -> Option<mailcraft_time::Zone> {
+fn documented_zone(zone: &str) -> Option<mailsolutions_time::Zone> {
     if zone.len() > 64 {
         return None;
     }
-    let known = mailcraft_time::Zone::named(zone)?;
+    let known = mailsolutions_time::Zone::named(zone)?;
     (known.windows_name() == Some(zone) || ADDITIONAL_ZONES.contains(&zone)).then_some(known)
 }
 
@@ -847,7 +847,7 @@ impl Stored {
     }
 
     /// How the series repeats, as this crate reads a recurrence, with its first day.
-    fn rule(&self) -> Option<(mailcraft_model::Recurrence, Date)> {
+    fn rule(&self) -> Option<(mailsolutions_model::Recurrence, Date)> {
         self.recurrence.as_ref().and_then(super::rule_of)
     }
 
@@ -1520,7 +1520,7 @@ impl State {
                 }
                 let document = self.configuration_document.clone().unwrap_or_else(|| self.configuration_xml());
                 let context = format!("{}/beta/$metadata#users('me')/mailFolders('root')/userConfigurations/$entity", self.base);
-                let packed = mailcraft_charset::base64::STANDARD.encode(document);
+                let packed = mailsolutions_charset::base64::STANDARD.encode(document);
                 Ok((200, Some(json!({"@odata.context": context, "id": name, "xmlData": packed}))))
             }
             [first, ..] => Err(refuse(400, "BadRequest", format!("Resource not found for the segment '{first}'."))),
@@ -2023,7 +2023,7 @@ impl State {
             let message = "This request requires a time window specified by the query string parameters StartDateTime and EndDateTime.";
             refuse(400, "ErrorInvalidParameter", message)
         };
-        let read = |name: &str| asked.param(name).and_then(|text| mailcraft_time::iso_to_timestamp(text, 0)).ok_or_else(needs);
+        let read = |name: &str| asked.param(name).and_then(|text| mailsolutions_time::iso_to_timestamp(text, 0)).ok_or_else(needs);
         let (from, to) = (read("startDateTime")?, read("endDateTime")?);
         if to < from {
             return Err(bad("The end of the time window is before its start."));
@@ -2196,7 +2196,10 @@ impl State {
             .map(|all| all.iter().filter_map(Value::as_str).map(str::to_string).collect())
             .unwrap_or_default();
         let read = |name: &str| {
-            body.get(name).and_then(|time| time.get("dateTime")).and_then(Value::as_str).and_then(|text| mailcraft_time::iso_to_timestamp(text, 0))
+            body.get(name)
+                .and_then(|time| time.get("dateTime"))
+                .and_then(Value::as_str)
+                .and_then(|text| mailsolutions_time::iso_to_timestamp(text, 0))
         };
         let (Some(from), Some(to)) = (read("startTime"), read("endTime")) else {
             return Err(bad("The time window of a schedule is its startTime and its endTime."));

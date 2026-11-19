@@ -4,7 +4,7 @@
 //! `From ` line.
 
 use crate::Message;
-use mailcraft_time::{DateTime, month_short};
+use mailsolutions_time::{DateTime, month_short};
 
 use crate::{WriteOptions, header, parse_fetched, write};
 

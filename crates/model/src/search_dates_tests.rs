@@ -4,7 +4,7 @@
 //! (`received:A..B`), or one side of one (`>=`, `<=`, `>`, `<`); a date without a year and the days
 //! Outlook names in words, in a search made on a day.
 
-use mailcraft_time::{Date, DateTime, Weekday};
+use mailsolutions_time::{Date, DateTime, Weekday};
 
 use crate::Message;
 use crate::search::{Query, keyword_pills, keyword_spans};

@@ -5,7 +5,7 @@
 use std::io::{ErrorKind, Read, Write};
 
 use crate::{MAX_LINE, MAX_LITERAL, ProtoError};
-use mailcraft_i18n::said;
+use mailsolutions_i18n::said;
 
 /// How much is asked of the stream in one read.
 const CHUNK: usize = 16 * 1024;
@@ -167,7 +167,7 @@ impl<S: Read + Write> Wire<S> {
     /// Exactly `n` bytes (at most [`MAX_LITERAL`]).
     pub(crate) fn read_block(&mut self, n: usize) -> Result<Vec<u8>, ProtoError> {
         if n > MAX_LITERAL {
-            return Err(ProtoError::Protocol(said!("the server sent {n} bytes in one piece, more than MailCraft accepts", n)));
+            return Err(ProtoError::Protocol(said!("the server sent {n} bytes in one piece, more than MailSolutions accepts", n)));
         }
         // The size is the server's word: memory is taken as the bytes arrive.
         let mut out = Vec::with_capacity(n.min(CHUNK));

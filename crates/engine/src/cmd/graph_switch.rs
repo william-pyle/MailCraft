@@ -29,7 +29,7 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::{Account, AccountKind, Folder, FolderKind, GraphSwitch, Id, Mailbox, Message, clean_name};
+use mailsolutions_model::{Account, AccountKind, Folder, FolderKind, GraphSwitch, Id, Mailbox, Message, clean_name};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -248,8 +248,12 @@ pub fn switch(s: &mut Session, account: Id) -> Result<Switched, CmdError> {
         if let Some(d) = drafts {
             m.folder = d;
         }
-        m.server_draft =
-            Some(mailcraft_model::sync::ServerDraft { marker: super::graph_drafts::marker(*id, now), pending: true, saves: 1, ..Default::default() });
+        m.server_draft = Some(mailsolutions_model::sync::ServerDraft {
+            marker: super::graph_drafts::marker(*id, now),
+            pending: true,
+            saves: 1,
+            ..Default::default()
+        });
     }
     // What only is here, in a local folder.
     let in_leaving = mb.messages.values().filter(|m| leaving.contains(&m.folder)).count();

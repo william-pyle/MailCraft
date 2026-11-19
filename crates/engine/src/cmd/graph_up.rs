@@ -22,9 +22,9 @@
 
 use std::collections::BTreeMap;
 
-use mailcraft_model::sync::{CategoriesUp, FlagUp, GraphMessage, MessageChange, MessageChangeDone, MessageOutcome, ServerMessage, same_category};
-use mailcraft_model::{FlagStatus, Folder, FolderKind, Id, Mailbox, Message, Queued};
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_model::sync::{CategoriesUp, FlagUp, GraphMessage, MessageChange, MessageChangeDone, MessageOutcome, ServerMessage, same_category};
+use mailsolutions_model::{FlagStatus, Folder, FolderKind, Id, Mailbox, Message, Queued};
+use mailsolutions_time::{DateTime, Timestamp};
 
 use crate::Session;
 
@@ -119,7 +119,7 @@ pub(super) fn destination(mb: &Mailbox, account: Id, folder: Id) -> Option<(Stri
 pub(super) fn made_on_server(mb: &Mailbox, f: &Folder) -> bool {
     f.kind == FolderKind::Archive
         && !f.awaiting_listing
-        && mb.account(f.account).is_some_and(|a| a.kind == mailcraft_model::AccountKind::Exchange)
+        && mb.account(f.account).is_some_and(|a| a.kind == mailsolutions_model::AccountKind::Exchange)
         && mb.folder_of_kind(f.account, FolderKind::Inbox).and_then(|i| mb.folder(i)).is_some_and(|i| i.server.is_some())
         && mb.messages_in(f.id).next().is_some()
 }

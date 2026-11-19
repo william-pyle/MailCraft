@@ -6,9 +6,9 @@
 
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::agent::Class;
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::agent::Class;
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::{Value, json};
 
 use crate::agent_gate::answer;
@@ -20,7 +20,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a
 }
@@ -444,7 +444,7 @@ fn the_appointment_is_known_however_its_number_is_written() {
 }
 
 /// A message from Bo with a calendar part saying `method` of the meeting `uid`, to `owner`.
-fn meeting_mail(method: &str, uid: &str, owner: &str) -> mailcraft_model::Message {
+fn meeting_mail(method: &str, uid: &str, owner: &str) -> mailsolutions_model::Message {
     let ics = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
@@ -461,15 +461,15 @@ fn meeting_mail(method: &str, uid: &str, owner: &str) -> mailcraft_model::Messag
         "END:VCALENDAR",
     ]
     .join("\r\n");
-    mailcraft_model::Message {
+    mailsolutions_model::Message {
         message_id: format!("{method}.{uid}@example.org"),
-        from: mailcraft_model::Address::new("Bo Marsh", "bo@example.org"),
-        to: vec![mailcraft_model::Address::new("", owner)],
+        from: mailsolutions_model::Address::new("Bo Marsh", "bo@example.org"),
+        to: vec![mailsolutions_model::Address::new("", owner)],
         subject: format!("{method}: Design review"),
         date: NOW - 3_600,
         received: NOW - 3_600,
-        attachments: vec![mailcraft_model::Attachment::new("invite.ics", "text/calendar", (ics + "\r\n").into_bytes())],
-        ..mailcraft_model::Message::default()
+        attachments: vec![mailsolutions_model::Attachment::new("invite.ics", "text/calendar", (ics + "\r\n").into_bytes())],
+        ..mailsolutions_model::Message::default()
     }
 }
 
@@ -481,7 +481,7 @@ fn a_meeting_called_off(w: &mut testing::Window) -> (Id, Id) {
     let inbox = w.state().session.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
     let mut deliver = |method: &str| {
         let m = meeting_mail(method, "uid-agent-494", &owner);
-        let id = w.state_mut().session.mailbox.add_message(mailcraft_model::Message { folder: inbox, ..m }).unwrap();
+        let id = w.state_mut().session.mailbox.add_message(mailsolutions_model::Message { folder: inbox, ..m }).unwrap();
         w.state_mut().session.mailbox_changed();
         id
     };
@@ -639,9 +639,9 @@ fn a_merge_that_takes_away_a_contact_being_changed_is_undone() {
 #[test]
 fn another_mailbox_doesnt_wait_for_a_save_for_an_agent() {
     let mut a = app();
-    let path = std::env::temp_dir().join(format!("mailcraft-agent-494-{}.mailcraft", std::process::id()));
+    let path = std::env::temp_dir().join(format!("mailsolutions-agent-494-{}.mailcraft", std::process::id()));
     a.session.path = Some(path);
-    a.services.saver = Some(Box::new(mailcraft_engine::store::Saver::spawn(|| {}).unwrap()));
+    a.services.saver = Some(Box::new(mailsolutions_engine::store::Saver::spawn(|| {}).unwrap()));
     a.execute("mail.markRead", json!({"id": received(&a)})).unwrap();
     assert!(a.waits_for_save());
     // It would run once the mailbox is written, when the owner may be writing a message.

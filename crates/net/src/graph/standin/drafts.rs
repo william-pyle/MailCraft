@@ -26,7 +26,7 @@
 //! - **Answers lost on demand** ([`State::lose_next`](super::State::lose_next)): a request of a
 //!   method and an address (`*` for any one piece of it) is carried out and its answer lost.
 
-use mailcraft_charset::base64::STANDARD;
+use mailsolutions_charset::base64::STANDARD;
 use serde_json::{Map, Value, json};
 
 use super::messages::Message;
@@ -203,7 +203,7 @@ fn preview_of(content: &str, html: bool) -> String {
 
 /// A draft's MIME, made of what it has.
 pub(super) fn mime_of(m: &Message) -> String {
-    let date = mailcraft_time::DateTime::from_timestamp(m.received, 0);
+    let date = mailsolutions_time::DateTime::from_timestamp(m.received, 0);
     let mut head = format!("From: {}\r\nTo: {}\r\n", m.from, m.to.join(", "));
     if !m.cc.is_empty() {
         head.push_str(&format!("Cc: {}\r\n", m.cc.join(", ")));

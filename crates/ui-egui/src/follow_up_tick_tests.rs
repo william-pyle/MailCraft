@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-use mailcraft_engine::Session;
-use mailcraft_model::{Address, FolderKind, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Address, FolderKind, Mailbox, Message};
 use serde_json::json;
 
 use super::EVERY;

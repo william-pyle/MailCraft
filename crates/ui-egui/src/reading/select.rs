@@ -33,7 +33,7 @@ use std::sync::Arc;
 use egui::text::{CCursor, CCursorRange, CharIndex};
 use egui::text_selection::LabelSelectionState;
 use egui::{Color32, Galley, PointerButton, Pos2, Rect, Response, Sense, Ui, Vec2, vec2};
-use mailcraft_model::{Id, Message};
+use mailsolutions_model::{Id, Message};
 use serde_json::{Value, json};
 
 use super::Place;
@@ -1176,7 +1176,7 @@ fn select_all(app: &mut MailApp, p: &Value) -> Result<Value, String> {
 /// Copy a link's address: the one a message's link really leads to.
 fn copy_link(app: &mut MailApp, p: &Value) -> Result<Value, String> {
     let url = p.get("url").and_then(Value::as_str).ok_or_else(|| "missing `url`".to_string())?.trim();
-    if url.len() > MAX_LINK || !mailcraft_html::is_safe_url(url) || mailcraft_html::is_embedded(url) {
+    if url.len() > MAX_LINK || !mailsolutions_html::is_safe_url(url) || mailsolutions_html::is_embedded(url) {
         return Err(tl!("That is not a link's address").to_string());
     }
     let ctx = app.ctx.clone().ok_or_else(|| tl!("No message is being read there").to_string())?;

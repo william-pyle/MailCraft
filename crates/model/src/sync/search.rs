@@ -3,7 +3,7 @@
 //! A search of a Microsoft account's mailbox on its server (R6.2): More results on the server.
 //!
 //! The engine says what to ask for ([`GraphSearchRequest`], one page of one mailbox), a host with
-//! sockets asks Microsoft Graph (`mailcraft_net::graph::search_messages`), and the engine takes
+//! sockets asks Microsoft Graph (`mailsolutions_net::graph::search_messages`), and the engine takes
 //! in what came back ([`GraphSearchResult`]): server results, held in the session and never in
 //! the mailbox until the owner opens one. Nothing is asked until the owner asks for it.
 //!

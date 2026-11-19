@@ -19,7 +19,7 @@
 //! One job at a time per account, on a thread of the host's; its answer is taken in on the
 //! session's thread at the driver's next wake, so the mailbox has one writer. The owner's opens
 //! and searches wait in a small queue ([`QUEUE`]) ahead of the background. A job's Graph token is
-//! Send/Receive's ([`mailcraft_host::sync::SendReceive::mail_access`]); a token it renewed goes
+//! Send/Receive's ([`mailsolutions_host::sync::SendReceive::mail_access`]); a token it renewed goes
 //! back to Send/Receive, which keeps the newest refresh token as a round does.
 //!
 //! Nothing half: a job that is called off (shutdown, the account removed, the sign-ins forgotten,
@@ -31,13 +31,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, TryRecvError};
 use std::sync::{Arc, Mutex, PoisonError};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::{device_limits, graph_mail, search_server};
-use mailcraft_host::NetworkState;
-use mailcraft_host::fetch::{Access, Renewal};
-use mailcraft_host::sync::Adopted;
-use mailcraft_model::sync::{GraphFetchRequest, GraphFetchResult, GraphSearchRequest, GraphSearchResult};
-use mailcraft_model::{AccountKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::{device_limits, graph_mail, search_server};
+use mailsolutions_host::NetworkState;
+use mailsolutions_host::fetch::{Access, Renewal};
+use mailsolutions_host::sync::Adopted;
+use mailsolutions_model::sync::{GraphFetchRequest, GraphFetchResult, GraphSearchRequest, GraphSearchResult};
+use mailsolutions_model::{AccountKind, Id};
 
 use crate::CoreError;
 use crate::events::Event;
@@ -155,9 +155,9 @@ pub(crate) fn default_runner() -> FetchRunner {
 #[cfg_attr(test, allow(dead_code))]
 pub(crate) fn real_runner() -> FetchRunner {
     Arc::new(|access, work, cancel| {
-        let (answer, renewal) = mailcraft_host::fetch::with_access(access, |token| match work {
-            Work::Messages(request) => Answer::Messages(mailcraft_net::graph::fetch_messages(token, &request, &cancel)),
-            Work::Search(request) => Answer::Search(mailcraft_net::graph::search_messages(token, &request)),
+        let (answer, renewal) = mailsolutions_host::fetch::with_access(access, |token| match work {
+            Work::Messages(request) => Answer::Messages(mailsolutions_net::graph::fetch_messages(token, &request, &cancel)),
+            Work::Search(request) => Answer::Search(mailsolutions_net::graph::search_messages(token, &request)),
         });
         FetchDone { answer, renewal }
     })
@@ -239,7 +239,7 @@ fn words(text: &'static str) -> &'static str {
 }
 
 /// What a message that couldn't come is said as, to the owner.
-pub(crate) fn failure_words(lang: mailcraft_i18n::Lang, why: FetchFailure) -> String {
+pub(crate) fn failure_words(lang: mailsolutions_i18n::Lang, why: FetchFailure) -> String {
     let text = match why {
         FetchFailure::Offline => words("There is no network connection."),
         FetchFailure::SignInNeeded => words("The account has to be signed in again."),
@@ -374,7 +374,7 @@ impl SyncHost {
                 if query.is_empty() || query.len() > MAX_QUERY {
                     return Err(CoreError::BadRequest { reason: "the search is empty or too long".to_string() });
                 }
-                if mailcraft_model::search::Query::parse(&query).for_server().terms.is_empty() {
+                if mailsolutions_model::search::Query::parse(&query).for_server().terms.is_empty() {
                     return Err(CoreError::Failed { reason: lang.t(words("Nothing of this search can be asked of the server.")).to_string() });
                 }
                 (query, String::new())
@@ -597,7 +597,7 @@ impl SyncHost {
         let cancel = Arc::new(AtomicBool::new(false));
         let runner = self.fetch_runner.lock().unwrap_or_else(PoisonError::into_inner).clone();
         let flag = cancel.clone();
-        let answer = self.host.run_job("mailcraft-fetch", move |_| runner(access, work, flag), || {});
+        let answer = self.host.run_job("mailsolutions-fetch", move |_| runner(access, work, flag), || {});
         inner.fetch.running.insert(account, Job { what, opening: session.openings(), cancel, answer, most_bytes, most_total });
     }
 
@@ -705,7 +705,7 @@ impl SyncHost {
         let (too_large, missing, failed) = (result.too_large.clone(), result.missing.clone(), result.failed.clone());
         let (offline, busy) = (result.offline, result.busy_for.is_some());
         let any = !result.fetched.is_empty();
-        if let Err(e) = mailcraft_engine::sync_driver::fetch::apply_fetch(session, result) {
+        if let Err(e) = mailsolutions_engine::sync_driver::fetch::apply_fetch(session, result) {
             log::warn!("fetch: what came couldn't be taken in: {e}");
         }
         if any {
@@ -756,7 +756,7 @@ impl SyncHost {
         let mut answer = ServerSearchAnswer { offline: result.offline, errors: clipped(&result.errors), ..Default::default() };
         let mut added = Vec::new();
         let mut seen = std::collections::HashSet::new();
-        let mut found: Vec<&mailcraft_model::sync::GraphMessage> = result.messages.iter().take(MOST_ON_A_PAGE).collect();
+        let mut found: Vec<&mailsolutions_model::sync::GraphMessage> = result.messages.iter().take(MOST_ON_A_PAGE).collect();
         found.sort_by_key(|m| std::cmp::Reverse(m.received));
         for g in found {
             let id = g.server.id.as_str();

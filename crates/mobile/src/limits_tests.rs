@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! What the phone keeps (MB3.16): its defaults, the one move to them, and the owner's choices.
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Account, AccountKind, DownloadInFull, KeepOffline, Mailbox, PHONE_DEFAULTS, PHONE_STORAGE};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Account, AccountKind, DownloadInFull, KeepOffline, Mailbox, PHONE_DEFAULTS, PHONE_STORAGE};
 
 use crate::limits::{DownloadSettings, KeepWindow, settle};
 
@@ -39,7 +39,7 @@ fn a_storage_cap_the_owner_had_chosen_is_kept_by_the_move() {
     let (mut s, _) = before_the_limits();
     // (A cap from before the phone had defaults: its record says none were applied. The command
     // starts a new record at the phone's defaults, so that is made here as such a file has it.)
-    s.mailbox.device_limits = Some(mailcraft_model::DeviceLimits { storage: 2u64 << 30, ..Default::default() });
+    s.mailbox.device_limits = Some(mailsolutions_model::DeviceLimits { storage: 2u64 << 30, ..Default::default() });
     assert!(settle(&mut s, None));
     assert_eq!(s.mailbox.device_limits.unwrap().storage, 2 << 30);
 }
@@ -53,9 +53,9 @@ fn the_settings_of_a_new_account_are_applied_by_commands() {
     assert_eq!(s.mailbox.device_limits.unwrap().storage, 1 << 30);
     // A cap out of bounds is brought within them, never refused nor overflowing.
     crate::limits::set_storage(&mut s, u64::MAX).unwrap();
-    assert_eq!(s.mailbox.device_limits.unwrap().storage, mailcraft_model::device_limits::MAX_STORAGE);
+    assert_eq!(s.mailbox.device_limits.unwrap().storage, mailsolutions_model::device_limits::MAX_STORAGE);
     crate::limits::set_storage(&mut s, 0).unwrap();
-    assert_eq!(s.mailbox.device_limits.unwrap().storage, mailcraft_model::device_limits::MIN_STORAGE);
+    assert_eq!(s.mailbox.device_limits.unwrap().storage, mailsolutions_model::device_limits::MIN_STORAGE);
     assert_eq!(DownloadSettings::default(), DownloadSettings { window: KeepWindow::Month1, storage_mb: 500 });
 }
 
@@ -69,8 +69,8 @@ fn every_window_goes_both_ways() {
 /// A phone's mailbox with a Microsoft account whose Inbox the server has, holding mail received
 /// `days_ago`; the account.
 fn with_mail(days_ago: &[i64]) -> Session {
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{FolderKind, Message, ServerFolder};
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{FolderKind, Message, ServerFolder};
     let (mut s, account) = before_the_limits();
     s.prefs.sync_minutes = 0;
     let inbox = s.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
@@ -88,7 +88,7 @@ fn with_mail(days_ago: &[i64]) -> Session {
 #[test]
 fn a_phone_opened_with_years_of_headers_is_thinned_to_its_window_between_runs() {
     let platform = crate::fake_tests::FakePlatform::new();
-    let core = crate::Core::start_with(platform, || with_mail(&[1, 10, 100, 1000]), mailcraft_host::sync::SendReceive::new()).unwrap();
+    let core = crate::Core::start_with(platform, || with_mail(&[1, 10, 100, 1000]), mailsolutions_host::sync::SendReceive::new()).unwrap();
     let sync = core.sync.clone();
     let subjects = crate::fake_tests::block_on(core.call(move |s| {
         sync.tick(s);

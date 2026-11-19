@@ -6,8 +6,8 @@
 
 use std::path::PathBuf;
 
-use mailcraft_engine::Session;
-use mailcraft_model::FolderKind;
+use mailsolutions_engine::Session;
+use mailsolutions_model::FolderKind;
 use serde_json::{Value, json};
 
 use crate::{MailApp, Services};
@@ -17,14 +17,14 @@ const NOW: i64 = 1_791_993_600;
 const EML: &str = "From: Maya Lin <maya@lumen.example>\r\nTo: avery@lumen.example\r\nSubject: Handed over\r\nDate: Wed, 14 Oct 2026 10:00:00 +0000\r\nMessage-ID: <handed@lumen.example>\r\n\r\nHello.\r\n";
 
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.session.driver.set_auto_sync(false);
     a
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("mailcraft-opened-message-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-opened-message-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir

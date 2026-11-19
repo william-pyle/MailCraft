@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! `cargo xtask icon`: write MailCraft's app icon in every size the platforms want.
+//! `cargo xtask icon`: write MailSolutions's app icon in every size the platforms want.
 //!
-//! The source is one vector drawing, `assets/app-icon/source/mailcraft.svg`: a solid white
+//! The source is one vector drawing, `assets/app-icon/source/mailsolutions.svg`: a solid white
 //! envelope on a solid blue rounded tile, in the Craft family's style. It is rendered with
 //! `resvg`, a pure-Rust SVG renderer, here in
 //! xtask only: the program itself never reads the SVG, only the files written from it.
@@ -12,16 +12,16 @@
 //! with the margin macOS icons keep. The 16–48 px renders show the drawing a little closer inside
 //! the same tile, so the envelope still reads.
 //!
-//! Output (all listed in ATTRIBUTION.md): `assets/app-icon/mailcraft-1024.png`,
-//! `mailcraft-macos-512.png` (with the margin macOS icons keep), `mailcraft.ico`, `mailcraft.icns`
+//! Output (all listed in ATTRIBUTION.md): `assets/app-icon/mailsolutions-1024.png`,
+//! `mailsolutions-macos-512.png` (with the margin macOS icons keep), `mailsolutions.ico`, `mailsolutions.icns`
 //! and the `hicolor` PNG tree for Linux, with the SVG itself as the scalable one.
 
 use std::path::Path;
 
 /// The drawing, under `assets/app-icon`.
-const SOURCE: &str = "source/mailcraft.svg";
+const SOURCE: &str = "source/mailsolutions.svg";
 /// The reverse-DNS name the Linux icon files carry.
-const APP_ID: &str = "io.github.billsecond.mailcraft";
+const APP_ID: &str = "io.github.billsecond.mailsolutions";
 /// macOS icons sit on Apple's grid: an 824 px body on a 1024 px canvas.
 const MAC_SCALE: f32 = 824.0 / 1024.0;
 
@@ -162,9 +162,9 @@ pub fn run(root: &Path) -> Result<(), String> {
     }
     let text = std::str::from_utf8(&svg).map_err(|e| format!("{}: {e}", path.display()))?;
     write(&format!("hicolor/scalable/apps/{APP_ID}.svg"), drawing.fitted(text)?.as_bytes())?;
-    write("mailcraft-1024.png", &get(1024)?)?;
-    write("mailcraft-macos-512.png", &drawing.png(512, MAC_SCALE)?)?;
-    write("mailcraft.ico", &crate::ico::pack(&[get(16)?, get(24)?, get(32)?, get(48)?, get(64)?, get(128)?, get(256)?])?)?;
+    write("mailsolutions-1024.png", &get(1024)?)?;
+    write("mailsolutions-macos-512.png", &drawing.png(512, MAC_SCALE)?)?;
+    write("mailsolutions.ico", &crate::ico::pack(&[get(16)?, get(24)?, get(32)?, get(48)?, get(64)?, get(128)?, get(256)?])?)?;
     let mac = |size: u32| drawing.png(size, MAC_SCALE);
     let entries: Vec<(&[u8; 4], Vec<u8>)> = vec![
         (b"icp4", mac(16)?),
@@ -179,7 +179,7 @@ pub fn run(root: &Path) -> Result<(), String> {
         (b"ic13", mac(256)?),
         (b"ic14", mac(512)?),
     ];
-    write("mailcraft.icns", &icns(&entries))?;
+    write("mailsolutions.icns", &icns(&entries))?;
     Ok(())
 }
 

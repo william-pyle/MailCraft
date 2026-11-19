@@ -4,8 +4,8 @@
 //! or act on the current one, an agent names it once more than one is open, and each keeps its
 //! own text undo, its "the owner changed this" mark (#577) and is saved first by itself (#470).
 
-use mailcraft_model::FolderKind;
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::FolderKind;
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::composing::MAX_COMPOSING;
@@ -92,11 +92,11 @@ fn a_command_acts_on_the_message_it_names_and_the_current_one_stays_current() {
     let c = s.composing_by_id(first).unwrap();
     assert_eq!(c.subject, "First, again");
     assert!(text(&s, first).contains("typed"));
-    assert_eq!(c.importance, mailcraft_model::Importance::High);
+    assert_eq!(c.importance, mailsolutions_model::Importance::High);
     let c = s.composing_by_id(second).unwrap();
     assert_eq!(c.subject, "Second");
     assert!(!text(&s, second).contains("typed"));
-    assert_eq!(c.importance, mailcraft_model::Importance::Normal);
+    assert_eq!(c.importance, mailsolutions_model::Importance::Normal);
     // Without one, the current one.
     run(&mut s, "compose.set", json!({"subject": "Second, again"}));
     assert_eq!(s.compose.as_ref().unwrap().subject, "Second, again");

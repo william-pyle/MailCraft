@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use mailcraft_model::sync::{GraphLink, GraphMailRequest, GraphMailResult};
+use mailsolutions_model::sync::{GraphLink, GraphMailRequest, GraphMailResult};
 
 use super::whole_run;
 use crate::graph::pace::{Gate, Retry};
@@ -200,7 +200,7 @@ fn messages_come_without_their_size_and_are_fetched_whole_by_their_immutable_id(
     assert_eq!(sizes, [0, 0, 0]);
 
     server.state().mailbox.delete(&ids[2]);
-    let request = mailcraft_model::sync::GraphFetchRequest {
+    let request = mailsolutions_model::sync::GraphFetchRequest {
         account: 3,
         email: "owner@example.org".into(),
         ids: ids.clone(),
@@ -254,8 +254,8 @@ fn folders_the_server_refuses_to_list_are_said_with_graphs_code() {
     assert!(pieces.iter().all(|p| p.pages.is_empty()));
 }
 
-fn fetch_request(ids: &[String]) -> mailcraft_model::sync::GraphFetchRequest {
-    mailcraft_model::sync::GraphFetchRequest {
+fn fetch_request(ids: &[String]) -> mailsolutions_model::sync::GraphFetchRequest {
+    mailsolutions_model::sync::GraphFetchRequest {
         account: 3,
         email: "owner@example.org".into(),
         ids: ids.to_vec(),
@@ -321,7 +321,7 @@ fn three_messages_refused_one_after_another_stop_the_batch() {
 /// folders in the first piece, the mail in each page's, and nothing in them names a folder.
 #[test]
 fn every_piece_of_a_run_carries_its_time_and_requests() {
-    use mailcraft_model::sync::SyncPhase;
+    use mailsolutions_model::sync::SyncPhase;
     let server = StandIn::start().unwrap();
     let inbox = server.state().well_known("inbox");
     server.state().mailbox.generate(&inbox, 250, NOW);
@@ -350,7 +350,7 @@ fn every_piece_of_a_run_carries_its_time_and_requests() {
 /// #276: what is sent is timed apart from the listing of the folders.
 #[test]
 fn changes_made_here_are_timed_as_sending() {
-    use mailcraft_model::sync::{FolderChange, SyncPhase};
+    use mailsolutions_model::sync::{FolderChange, SyncPhase};
     let server = StandIn::start().unwrap();
     let mut asked = request(Vec::new());
     asked.changes = vec![FolderChange::Create { folder: 9, name: "Projects".into(), parent: String::new(), parent_folder: None }];
@@ -364,8 +364,8 @@ fn changes_made_here_are_timed_as_sending() {
 /// The Inbox pass (#276): the Inbox's delta from its stored link, and nothing else.
 mod inbox_pass {
     use super::*;
-    use mailcraft_model::FolderKind;
-    use mailcraft_model::sync::{GraphFolder, SyncPhase};
+    use mailsolutions_model::FolderKind;
+    use mailsolutions_model::sync::{GraphFolder, SyncPhase};
 
     fn pass(server: &StandIn, inbox: &str, links: Vec<GraphLink>, cancel: &AtomicBool) -> Vec<GraphMailResult> {
         let folder = GraphFolder { id: inbox.into(), name: "Inbox".into(), kind: FolderKind::Inbox, ..Default::default() };
@@ -404,7 +404,7 @@ mod inbox_pass {
         assert_eq!(got, [new_inbox.as_str()]);
         assert!(pieces.iter().flat_map(|p| &p.pages).all(|p| p.folder == inbox && p.caught_up));
         // Its time is the Inbox phase's, with its request.
-        let mut timings = mailcraft_model::sync::Timings::default();
+        let mut timings = mailsolutions_model::sync::Timings::default();
         pieces.iter().for_each(|p| timings.absorb(&p.timings));
         assert_eq!(timings.phases.len(), 1);
         assert_eq!((timings.phases[0].phase, timings.phases[0].requests), (SyncPhase::Inbox, 1));

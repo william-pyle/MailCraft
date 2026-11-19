@@ -5,7 +5,7 @@
 //! answer is a pass over every message ([`ThreadIndex`]).
 //!
 //! What is kept is checked rather than thrown away when the mailbox changes: with it is kept, of
-//! each chunk of the map of messages ([`Messages`](mailcraft_model::Messages): 1,024 consecutive
+//! each chunk of the map of messages ([`Messages`](mailsolutions_model::Messages): 1,024 consecutive
 //! ids, shared between the copies of the map until one changes it), a weak pointer to the chunk,
 //! and of each of its messages a weak pointer to it and a hash of what [`ThreadIndex::build`]
 //! reads of it (its account, subject, linking headers and server conversation id). When the
@@ -27,8 +27,8 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 
-use mailcraft_model::messages::Chunk;
-use mailcraft_model::{Id, Mailbox, Message, ThreadIndex, ThreadKey};
+use mailsolutions_model::messages::Chunk;
+use mailsolutions_model::{Id, Mailbox, Message, ThreadIndex, ThreadKey};
 
 use crate::Session;
 

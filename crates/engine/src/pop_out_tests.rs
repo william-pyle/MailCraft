@@ -3,7 +3,7 @@
 //! Pop Out (#286): `compose.popOut` names the message being written that the window moves into a
 //! window of its own, and changes nothing of it or of the mailbox.
 
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};

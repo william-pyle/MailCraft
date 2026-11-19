@@ -48,7 +48,7 @@ commands:
   parity          recompute the Outlook feature-parity summary in docs/parity-checklist.md
   ico <out.ico> <in.png>...
                   pack square PNGs (<= 256 px) into a Windows .ico (see packaging/icons.sh)
-  icon            render the app icon (assets/app-icon/source/mailcraft.svg) in every size into assets/app-icon
+  icon            render the app icon (assets/app-icon/source/mailsolutions.svg) in every size into assets/app-icon
   version [...]   show or set the workspace version
   release-notes [--write]
                   print the release notes with the fragments in packaging/release-notes.d/ joined in;
@@ -59,7 +59,7 @@ commands:
   release-key new <dir>
                   make the two release keys (in use, spare): private keys into <dir>, public keys printed
   release-key sign <file>
-                  sign <file> into <file>.sig with the key in MAILCRAFT_RELEASE_KEY (base64 PKCS#8)
+                  sign <file> into <file>.sig with the key in MAILSOLUTIONS_RELEASE_KEY (base64 PKCS#8)
 ";
 
 fn main() -> ExitCode {
@@ -175,7 +175,7 @@ fn wasm_set() -> Result<Vec<String>, String> {
         })
         .map(|c| c.name)
         // The browser app itself: its own code is wasm-only, and the release builds it.
-        .chain(std::iter::once("mailcraft-web".to_string()))
+        .chain(std::iter::once("mailsolutions-web".to_string()))
         .collect())
 }
 

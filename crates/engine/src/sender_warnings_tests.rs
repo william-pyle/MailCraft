@@ -5,8 +5,8 @@
 //!
 //! The people, hosts and addresses are invented.
 
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{Address, Body, Contact, FolderKind, Id, Labeled, Mailbox, Message};
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{Address, Body, Contact, FolderKind, Id, Labeled, Mailbox, Message};
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -20,7 +20,7 @@ fn known_senders_follow_the_selected_contacts_manager() {
         ..Default::default()
     });
     mailbox.add_contact(Contact {
-        contactcraft_id: "shared-one".into(),
+        contactsolutions_id: "shared-one".into(),
         display_name: "Shared".into(),
         emails: vec![Labeled::new("work", "shared@example.org")],
         ..Default::default()
@@ -28,7 +28,7 @@ fn known_senders_follow_the_selected_contacts_manager() {
     let mut session = Session::new(mailbox);
     assert!(session.knows("included@example.org"));
     assert!(!session.knows("shared@example.org"));
-    session.prefs.contactcraft_contacts = true;
+    session.prefs.contactsolutions_contacts = true;
     session.transient_contacts_changed();
     assert!(!session.knows("included@example.org"));
     assert!(session.knows("shared@example.org"));
@@ -201,7 +201,7 @@ fn the_knowledge_follows_another_mailbox() {
     let (mut s, _) = imap(vec![]);
     s.run("people.new", &json!({"displayName": "Lin Zhao", "email": "lin.zhao@harborworks.example"})).unwrap();
     assert!(s.knows("lin.zhao@harborworks.example"));
-    s.replace_mailbox(mailcraft_model::Mailbox::with_local_account("", ""));
+    s.replace_mailbox(mailsolutions_model::Mailbox::with_local_account("", ""));
     assert!(!s.knows("lin.zhao@harborworks.example"));
 }
 
@@ -223,7 +223,7 @@ fn hostile_messages_never_panic_mail_get() {
 fn banner_dismissed(s: &mut Session, subject: &str) -> bool {
     let m = s.mailbox.messages.get(&id_of(s, subject)).unwrap().clone();
     let warnings = s.sender_warnings(&m, true);
-    mailcraft_model::sender_warnings::dismissed(&warnings, &m.warnings_dismissed)
+    mailsolutions_model::sender_warnings::dismissed(&warnings, &m.warnings_dismissed)
 }
 
 #[test]
@@ -363,7 +363,7 @@ fn a_message_with_more_looks_than_are_checked_says_so() {
     assert!(found.contains(&"linksUnchecked".to_string()), "{found:?}");
 }
 
-/// R7, link warnings: a verdict the sender wrote, or one MailCraft left behind, takes no warning
+/// R7, link warnings: a verdict the sender wrote, or one MailSolutions left behind, takes no warning
 /// away from a link (they are judged by the link alone).
 #[test]
 fn a_forged_verdict_takes_no_link_warning_away() {

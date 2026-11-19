@@ -7,7 +7,7 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -17,7 +17,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// The sample mailbox with an IMAP account to send from, as of [`NOW`]; the account's id.
 fn window() -> (Harness<'static, MailApp>, u64) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let _ = app.execute("ui.dismissReminder", json!({"all": true}));
     let account = app
@@ -168,7 +168,7 @@ fn the_late_line_says_why_where_it_is_known() {
     app.sync_problems.push((account, "Mine".into(), "10:00".into(), Vec::new()));
     assert_eq!(why(app, Some(account)).as_deref(), Some("the last Send/Receive had problems"));
     // A shared mailbox the server refused isn't a sign-in.
-    app.shared_refused.insert(account, mailcraft_model::sync::SharedRefusal::NoAccess);
+    app.shared_refused.insert(account, mailsolutions_model::sync::SharedRefusal::NoAccess);
     assert_eq!(why(app, Some(account)).as_deref(), Some("the mailbox wasn't opened"));
     // Offline says so first.
     app.session.prefs.offline = true;

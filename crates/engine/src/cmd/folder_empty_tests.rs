@@ -7,8 +7,8 @@
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
 
-use mailcraft_model::sync::{RemoteFlags, ServerMessage};
-use mailcraft_model::{Account, AccountKind, Address, Directory, FolderKind, Id, Mailbox, Message, OAuth, OAuthProvider, Pending, Queued};
+use mailsolutions_model::sync::{RemoteFlags, ServerMessage};
+use mailsolutions_model::{Account, AccountKind, Address, Directory, FolderKind, Id, Mailbox, Message, OAuth, OAuthProvider, Pending, Queued};
 use serde_json::json;
 
 use crate::Session;

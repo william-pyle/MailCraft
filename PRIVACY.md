@@ -1,13 +1,13 @@
-# MailCraft privacy statement
+# MailSolutions privacy statement
 
-MailCraft is a mail, calendar, contacts and tasks program that runs on your own computer. There
-is no MailCraft account and no MailCraft mail server. The project runs one service, the report
+MailSolutions is a mail, calendar, contacts and tasks program that runs on your own computer. There
+is no MailSolutions account and no MailSolutions mail server. The project runs one service, the report
 relay, which takes a problem report you send yourself (below). Nothing is sent to the project
 unless you press Send in Report a Problem, and then only what that window showed you.
 
 ## What the project collects
 
-Nothing by itself. MailCraft has no telemetry, no analytics, no crash reporting and no
+Nothing by itself. MailSolutions has no telemetry, no analytics, no crash reporting and no
 advertising. It checks for new versions only if you turn that on (see below), and that check
 sends nothing about you. The one thing the project receives is a problem report you chose to
 send ([Problem reports](#problem-reports)).
@@ -15,7 +15,7 @@ send ([Problem reports](#problem-reports)).
 ## Where your data is
 
 - **Your mailbox** (messages, calendar, contacts, tasks, settings) is kept in files on your
-  computer, in MailCraft's settings folder, and on the servers of the mail provider you connect
+  computer, in MailSolutions's settings folder, and on the servers of the mail provider you connect
   to, as with any mail program. Those files are protected as your other files are, by your
   operating system's user account (and its disk encryption, where you have that on). Mail travels
   between your computer and your provider only over encrypted connections.
@@ -25,8 +25,8 @@ send ([Problem reports](#problem-reports)).
   desktop's Secret Service, such as GNOME Keyring or KWallet) and nowhere else: not into the
   mailbox file, the settings, a log or a command line. Where no such store is running, or it
   stays locked, nothing is remembered: you sign in each time the program starts, and the program
-  says why. MailCraft notes the names (never the contents) of the entries it puts there in its
-  settings, so that Remove MailCraft's data, and turning remembering off, can remove every one,
+  says why. MailSolutions notes the names (never the contents) of the entries it puts there in its
+  settings, so that Remove MailSolutions's data, and turning remembering off, can remove every one,
   also those of mailboxes you opened earlier, and list any that could not be removed.
 - **Digitally signed and encrypted messages** (S/MIME and OpenPGP) are also kept as they
   arrived, beside the mailbox file with the rest of its content (up to 64 MB a message and 1 GB in
@@ -44,57 +44,57 @@ send ([Problem reports](#problem-reports)).
   Files On-Demand entries, are omitted.
 - **Attachment previews** are off until you enable them in File › Options. Previewing passes a
   temporary copy of the selected attachment and rendering arguments to a local executable, which
-  runs with your operating system permissions. For PDFs or images respectively, MailCraft uses
-  the path in `MAILCRAFT_PDFCRAFT_CLI` or `MAILCRAFT_PHOTOCRAFT_CLI` if set. Otherwise it looks
+  runs with your operating system permissions. For PDFs or images respectively, MailSolutions uses
+  the path in `MAILSOLUTIONS_PDFCRAFT_CLI` or `MAILSOLUTIONS_PHOTOCRAFT_CLI` if set. Otherwise it looks
   for the expected CLI name in the usual Windows or macOS installation location and then on
   `PATH`. It selects the file by path and name without verifying the program's publisher or
   identity. In Junk E-mail and its subfolders, choose Preview Attachment from the attachment menu.
 - **A downloaded new version** (only for a copy that updates itself) is kept in the `updates`
-  folder of MailCraft's settings folder until it is installed (when you press Restart to update,
-  or when you quit), and is deleted when it doesn't pass MailCraft's release signature or when a
+  folder of MailSolutions's settings folder until it is installed (when you press Restart to update,
+  or when you quit), and is deleted when it doesn't pass MailSolutions's release signature or when a
   newer one replaces it. Installing it runs only the operating system's own tools on it (Windows
   Installer, `hdiutil` and `codesign` on macOS) and sends nothing anywhere. The version it
   replaced is kept in `previous-version` (on Windows its installer, from the second update on, in
-  `this-version` and `previous-version`), so that MailCraft can go back to it when the new one
+  `this-version` and `previous-version`), so that MailSolutions can go back to it when the new one
   doesn't start; a short record of the last update (`update-record.json`, `update-starts.json`:
   version numbers and a count of starts) is kept beside them. Before a new version first writes
   your mailbox file in a newer format, it keeps the file as it was beside it
   (`mailbox.mailcraft.before-<version>`, one kept). An organisation can turn this
   off for every user of the computer: the registry value `DisableAutomaticUpdates` (a DWORD other
-  than 0) under `HKEY_LOCAL_MACHINE\Software\Policies\MailCraft` on Windows, or a file named
-  `no-automatic-updates` in `/Library/Application Support/MailCraft/` on macOS and in
-  `/etc/mailcraft/` on Linux and FreeBSD.
+  than 0) under `HKEY_LOCAL_MACHINE\Software\Policies\MailSolutions` on Windows, or a file named
+  `no-automatic-updates` in `/Library/Application Support/MailSolutions/` on macOS and in
+  `/etc/mailsolutions/` on Linux and FreeBSD.
 
 ## What the program connects to, and when
 
-MailCraft connects only to these, over encrypted connections:
+MailSolutions connects only to these, over encrypted connections:
 
 | What | When | What is sent |
 |---|---|---|
 | Your mail provider's servers (IMAP, SMTP) | Send/Receive, and on the timer you set; and, while the window is open and automatic Send/Receive is on, one connection kept open to each IMAP server that offers IDLE (your own mail server, signed in as Send/Receive is, looking at the Inbox only) so that new mail shows when it arrives. It is closed when you turn automatic Send/Receive off, work offline, edit the account (server, user name or sign-in) or sign out, remove the account or close the mailbox | What a mail program sends: your sign-in and your mail |
 | A JMAP server you add an account for (the session address you gave it, and the addresses at the same server that its session names) | Send/Receive, on the timer you set, a few seconds after you mark, move or delete a message of the account or send one from it, and when you open a message that isn't downloaded yet; only in a build that connects to JMAP servers (the browser build, from the version that adds it) | What a mail program sends: your password or access token, and what you change in your mail: the marks you set on a message (read, flagged, answered, forwarded), the messages you move between the server's folders and those you delete for good are told to that server, and to nobody else. Mail you send from the account goes to that server to be sent, and to nobody else: the message whole, and the addresses it goes to, those in Bcc among them (the message itself names no Bcc); the server keeps its copy, in the account's Sent folder where it has one. A password or token you type is kept in memory only, until the program closes, the server turns it down or the account's server changes; it is never remembered in the credential store, the mailbox file, the settings or the browser's storage. Where the page you use signed you in itself, the program asks it for the credential at each Send/Receive or download (once more if the server turns it down), and keeps none of it beyond that |
 | Microsoft's sign-in pages and Microsoft Graph, for an account that signs in with Microsoft | When you sign in; for calendar, contacts, tasks (Microsoft To Do), sending mail, working hours, categories, automatic replies, the rules kept on the server and Outlook's Favorites | Your sign-in happens on Microsoft's page in your browser; the program receives tokens, never your password |
-| Google's sign-in page (`accounts.google.com/o/oauth2/v2/auth`) and token endpoint (`oauth2.googleapis.com/token`), for an account that signs in with Google | When you sign in, switch an existing account to Google sign-in or reconnect; the token endpoint is also used when a saved sign-in is renewed | The browser's sign-in request carries the application's client ID, the permissions requested, your account address as a login hint, a random state value, a PKCE challenge and a return address on your own computer. The token endpoint receives the authorization code and PKCE verifier, or the refresh token, together with the application's client ID and Desktop client-secret registration value. Google returns tokens and identifies the signed-in address in the identity token; MailCraft makes no separate user-info request. You enter your Google password on Google's page: MailCraft never sees it. |
-| Gmail's API (`gmail.googleapis.com`), for an account that signs in with Google, to move mail between Gmail's inbox categories | Not in this version: moving mail between Gmail's categories is switched off until Google has reviewed MailCraft's use of the API. Once it is switched on, only at the Send/Receive after you move a message of the Inbox from one Gmail category to another; never for an account that signs in with an app password | Gmail's own id of each message you moved, the category it goes to (the labels to add and take off), and the account's sign-in token, which Gmail's API takes as it is; nothing else of the message or of you |
+| Google's sign-in page (`accounts.google.com/o/oauth2/v2/auth`) and token endpoint (`oauth2.googleapis.com/token`), for an account that signs in with Google | When you sign in, switch an existing account to Google sign-in or reconnect; the token endpoint is also used when a saved sign-in is renewed | The browser's sign-in request carries the application's client ID, the permissions requested, your account address as a login hint, a random state value, a PKCE challenge and a return address on your own computer. The token endpoint receives the authorization code and PKCE verifier, or the refresh token, together with the application's client ID and Desktop client-secret registration value. Google returns tokens and identifies the signed-in address in the identity token; MailSolutions makes no separate user-info request. You enter your Google password on Google's page: MailSolutions never sees it. |
+| Gmail's API (`gmail.googleapis.com`), for an account that signs in with Google, to move mail between Gmail's inbox categories | Not in this version: moving mail between Gmail's categories is switched off until Google has reviewed MailSolutions's use of the API. Once it is switched on, only at the Send/Receive after you move a message of the Inbox from one Gmail category to another; never for an account that signs in with an app password | Gmail's own id of each message you moved, the category it goes to (the labels to add and take off), and the account's sign-in token, which Gmail's API takes as it is; nothing else of the message or of you |
 | A public DNS-over-HTTPS resolver (Cloudflare, then Google) | When you press Connect while adding an account at a domain the program does not know: once for the domain's mail exchangers and twice for where its Exchange automatic setup is (the `_autodiscover._tcp` record and `autodiscover.<domain>`), and, when the exchangers name no provider the program knows, up to four times more for the DNS records that say where the domain's mail servers are (its `_imaps`, `_imap`, `_submissions` and `_submission` SRV records); and while an Exchange server account is set up | The domain of your address (the part after the @), never the mailbox name |
 | Your address's own domain, over HTTPS (`autoconfig.<domain>`, then `<domain>` at `/.well-known/autoconfig/…`) | Only when you press Connect while adding an account at a domain the program does not know and neither its mail exchangers nor its DNS records say where both its mail servers are; nothing is sent to the mail servers found until you have seen them and pressed Connect again | A request for the settings the domain publishes for mail programs, with the domain in the address and nothing else: not the mailbox name, no cookie, no sign-in |
 | Mozilla's ISP database (`autoconfig.thunderbird.net`) | Only after that, when neither the domain's DNS records nor what it publishes say where both its mail servers are | The domain of your address, and then, when its mail exchangers are in another domain (a hosting company's), that domain; never the mailbox name |
 | The web address of a picture in a message | Only when you ask for a message's pictures, or for a sender or domain you chose to always download from (and then only for mail that your own mail server, not the sender, says really came from that domain) | The address alone: no cookies, no referrer, no sign-in |
 | The address a mailing list gives for one-click unsubscribing (`List-Unsubscribe`, RFC 8058), in the desktop app | Only when you click Unsubscribe above a message from a list and say yes to the question; never by itself, and only for mail that your own mail server says really came from its sender's domain, with that sender's signature (DKIM) covering the unsubscribe headers, outside Junk E-mail and with no warning about its sender. A list that unsubscribes by mail gets a message from your account through your Outbox, after the same question; one that unsubscribes on a web page has it opened in your browser | One request, over HTTPS, to a public address, with no redirect followed: the address the list gave (which may name you to the list, as its link would) and `List-Unsubscribe=One-Click`, nothing else: no cookies, no referrer, no sign-in |
-| A calendar on the web that you subscribed to (an `https://` or `webcal://` address ending in an `.ics` file, Calendar › Open Calendar › From Internet…), in the desktop app | Only after you press Subscribe, then every hour while MailCraft runs (you can choose 15 minutes to a day in File › Info), when you press Send/Receive and when you choose Update Now, for as long as you keep the subscription; never in the browser build | One HTTPS request to the address you gave, to a public host only (never this computer or a private network, checked again for every redirect, of which five at most are followed, each to HTTPS only), asking for the file and, after the first time, whether it changed (`If-None-Match`, `If-Modified-Since`, with what that server last told us): no cookies, no referrer, no sign-in and nothing that says who you are, and an address with a user name in it, or starting with `http://`, is refused. A private calendar address holds a secret in its path, so it is kept like a password: in your system's credential store when you let MailCraft remember sign-ins, otherwise only until you quit (the calendar then stays listed, with what it held, and asks for its address again); only the address's host name is kept in the mailbox file, and nothing of the address is written to a log. The file is read as calendar events only (at most 8 MB, 20,000 events a calendar), nothing in it runs or is fetched, and the people and reminders in it are dropped |
-| Gravatar (`gravatar.com`), then favicon.im, then Google's favicon service (`www.google.com/s2/favicons`), for sender images | Off unless you turn on File › Options › Show sender images: then while a sender's mail is in the part of the message list on screen, only for the people you know (your contacts, and whoever you have written to) and the mail whose pictures you download, never for mail in Junk E-mail, and a sender's picture only for mail your mail server says really came from them (its `dmarc=pass`, or, when it gives no DMARC verdict, its `dkim=pass` for their domain's signature; on Microsoft 365, only the verdict Exchange Online writes as it takes the mail in from the internet, and also its word that the mail came from inside your own organisation and your own domain; never for mail MailCraft itself put on a server, moving or copying it there from this computer or another account, which leaves what any server said of it behind); each in turn until one has a picture, and nothing more once you turn it off (a request already on its way finishes, and what it brings is not kept) | Gravatar: a hash (SHA-256) of the sender's address. favicon.im and Google: the domain of the sender's website (`nutrient.io` for mail from `mail.nutrient.io`), never a mail provider's such as `gmail.com` or a hosting platform's such as `onmicrosoft.com`; Google's service passes the request on to its `gstatic.com`, which is told the same domain. Nothing about you: no cookies, no referrer, no sign-in. It does tell those services whose pictures you look at |
-| The certificate authority that issued a server's certificate, on Windows and macOS | When a server MailCraft connects to leaves out the intermediate certificate its own was issued by: the system fetches it from the address the certificate names, as it does for other programs (and may ask whether the certificate was revoked) | Nothing of yours: the authority learns only which of its certificates a server on the way uses |
-| GitHub's API (`api.github.com`), to see whether a new version is out | Off unless you turn it on (the program asks once, and the switch in File › About changes it): then at most once a day; and whenever you press Check for Updates in File › About | One request for the newest release of MailCraft's repository (`GET /repos/william-pyle/MailCraft/releases/latest`), with nothing about you, your accounts, your mail or this computer in it, not even the version you run |
-| GitHub's release downloads (`github.com`, and `objects.githubusercontent.com` or `release-assets.githubusercontent.com`, where GitHub sends those), to download a new version | Only for a copy installed from the Windows MSI, the macOS app or a Linux AppImage: after you press Download and update for a newer release, or after a daily check finds one if you turn on Install updates automatically in File > About | Requests for three files of that release: its list of checksums, the signature over it, and the package for your kind of computer. Nothing about you, your accounts, your mail or the version you run. The package is kept in the program's own folder, installed only when MailCraft's release signature says it is the project's own (when you press Restart to update, or when you quit), and deleted otherwise. Installing it connects to nothing |
-| The project's report relay (`mailcraft.work/api/report`), in the desktop app | Only when you press Send report (or Try again) in Help › Report a Problem; never by itself, never again by itself, and never for a script or an agent | One request, over HTTPS, with what the window showed you: the title, what you wrote, MailCraft's version and your platform, the GitHub username if you gave one, and the diagnostics if you left them ticked. No account, address, mailbox name, computer name or identifier, no cookie, no sign-in. The relay sees your IP address, as any web server does ([Problem reports](#problem-reports)) |
+| A calendar on the web that you subscribed to (an `https://` or `webcal://` address ending in an `.ics` file, Calendar › Open Calendar › From Internet…), in the desktop app | Only after you press Subscribe, then every hour while MailSolutions runs (you can choose 15 minutes to a day in File › Info), when you press Send/Receive and when you choose Update Now, for as long as you keep the subscription; never in the browser build | One HTTPS request to the address you gave, to a public host only (never this computer or a private network, checked again for every redirect, of which five at most are followed, each to HTTPS only), asking for the file and, after the first time, whether it changed (`If-None-Match`, `If-Modified-Since`, with what that server last told us): no cookies, no referrer, no sign-in and nothing that says who you are, and an address with a user name in it, or starting with `http://`, is refused. A private calendar address holds a secret in its path, so it is kept like a password: in your system's credential store when you let MailSolutions remember sign-ins, otherwise only until you quit (the calendar then stays listed, with what it held, and asks for its address again); only the address's host name is kept in the mailbox file, and nothing of the address is written to a log. The file is read as calendar events only (at most 8 MB, 20,000 events a calendar), nothing in it runs or is fetched, and the people and reminders in it are dropped |
+| Gravatar (`gravatar.com`), then favicon.im, then Google's favicon service (`www.google.com/s2/favicons`), for sender images | Off unless you turn on File › Options › Show sender images: then while a sender's mail is in the part of the message list on screen, only for the people you know (your contacts, and whoever you have written to) and the mail whose pictures you download, never for mail in Junk E-mail, and a sender's picture only for mail your mail server says really came from them (its `dmarc=pass`, or, when it gives no DMARC verdict, its `dkim=pass` for their domain's signature; on Microsoft 365, only the verdict Exchange Online writes as it takes the mail in from the internet, and also its word that the mail came from inside your own organisation and your own domain; never for mail MailSolutions itself put on a server, moving or copying it there from this computer or another account, which leaves what any server said of it behind); each in turn until one has a picture, and nothing more once you turn it off (a request already on its way finishes, and what it brings is not kept) | Gravatar: a hash (SHA-256) of the sender's address. favicon.im and Google: the domain of the sender's website (`nutrient.io` for mail from `mail.nutrient.io`), never a mail provider's such as `gmail.com` or a hosting platform's such as `onmicrosoft.com`; Google's service passes the request on to its `gstatic.com`, which is told the same domain. Nothing about you: no cookies, no referrer, no sign-in. It does tell those services whose pictures you look at |
+| The certificate authority that issued a server's certificate, on Windows and macOS | When a server MailSolutions connects to leaves out the intermediate certificate its own was issued by: the system fetches it from the address the certificate names, as it does for other programs (and may ask whether the certificate was revoked) | Nothing of yours: the authority learns only which of its certificates a server on the way uses |
+| GitHub's API (`api.github.com`), to see whether a new version is out | Off unless you turn it on (the program asks once, and the switch in File › About changes it): then at most once a day; and whenever you press Check for Updates in File › About | One request for the newest release of MailSolutions's repository (`GET /repos/william-pyle/MailSolutions/releases/latest`), with nothing about you, your accounts, your mail or this computer in it, not even the version you run |
+| GitHub's release downloads (`github.com`, and `objects.githubusercontent.com` or `release-assets.githubusercontent.com`, where GitHub sends those), to download a new version | Only for a copy installed from the Windows MSI, the macOS app or a Linux AppImage: after you press Download and update for a newer release, or after a daily check finds one if you turn on Install updates automatically in File > About | Requests for three files of that release: its list of checksums, the signature over it, and the package for your kind of computer. Nothing about you, your accounts, your mail or the version you run. The package is kept in the program's own folder, installed only when MailSolutions's release signature says it is the project's own (when you press Restart to update, or when you quit), and deleted otherwise. Installing it connects to nothing |
+| The project's report relay (`mailcraft.work/api/report`), in the desktop app | Only when you press Send report (or Try again) in Help › Report a Problem; never by itself, never again by itself, and never for a script or an agent | One request, over HTTPS, with what the window showed you: the title, what you wrote, MailSolutions's version and your platform, the GitHub username if you gave one, and the diagnostics if you left them ticked. No account, address, mailbox name, computer name or identifier, no cookie, no sign-in. The relay sees your IP address, as any web server does ([Problem reports](#problem-reports)) |
 
 Nothing in a message runs, and nothing in a message is fetched unless you ask for its pictures, or ask to unsubscribe from a list in one click (then only the list's address is told, as above). A message's own style sheet is read for how the message looks (colours, sizes, spacing, what the sender hid), but nothing in it is ever fetched: a sheet's `@import`, its fonts and its pictures are ignored, and a link it styles is never shown as visited. Its `@media` rules are tested against two things on your own computer and nothing else: how wide the message is laid out in the reading pane, and whether your window is dark; the program sends neither to anyone. One consequence to know: once you allow pictures, a message can show a different picture in a dark window, or at each of several widths, and the picture for the look on screen is fetched, so its server can tell from which address was asked for that your window is dark and how wide the message is laid out, to within a few pixels (it is told nothing else, and nothing is fetched until you allow pictures). What a sender hid in a message (a line of preview text, the other copy of a desktop and mobile pair) is not shown to you and is not quoted in your replies, but it is kept with the message on your computer, so that your search and your rules can find it, and it is what an agent you have allowed to read your mail is given as the message's text. The one other thing fetched for your mail is a sender's picture, and only once you turn sender images on.
 
-Read receipts go one way only. A message you write with Request a Read Receipt asks its recipients' programs to tell your own address when they read it. A request for a receipt in mail you receive is ignored: MailCraft never answers one, and nobody learns from MailCraft when you read their message.
+Read receipts go one way only. A message you write with Request a Read Receipt asks its recipients' programs to tell your own address when they read it. A request for a receipt in mail you receive is ignored: MailSolutions never answers one, and nobody learns from MailSolutions when you read their message.
 
 ## Permissions asked of a Microsoft account
 
-When you sign in with Microsoft, its page lists what MailCraft asks for. Each is used on your
+When you sign in with Microsoft, its page lists what MailSolutions asks for. Each is used on your
 computer, for you, and for nothing else:
 
 - reading and sending your mail (IMAP and SMTP access, and sending through Microsoft Graph);
@@ -113,7 +113,7 @@ computer, for you, and for nothing else:
   and an old one alike, the first time its tasks would be kept in step, after the program has asked you,
   and File › Info shows whether it was given. Until it is, tasks stay on this computer and nothing of them is sent. Even then, tasks that exist only on this computer are not sent on their own: the program asks you once ("Send your tasks to your account's To Do?", with the account to choose when you have several, and Not now) and keeps them here until you say yes; File › Info offers it again. A new task goes to the account you choose when you make it, and one made from a message (Add to Tasks) to that message's account when it has To Do;
 - changing the rules your mailbox keeps on Microsoft's servers (the same permission), so that a
-  rule you keep there runs whether MailCraft is open or not, and shows in Outlook on the web and on your
+  rule you keep there runs whether MailSolutions is open or not, and shows in Outlook on the web and on your
   phone: the rule's name, the words it looks for and what it does go to your own Microsoft account and
   nowhere else. It is never asked for on a sign-in page, so signing in for mail never waits on it: it is
   asked for by itself the first time a rule is to go to the server, after the program has asked you, and
@@ -133,16 +133,16 @@ computer, for you, and for nothing else:
   and kept on this computer only, and what you may see of it is up to its owner and your organisation;
 - keeping you signed in (a refresh token, stored as described above).
 
-An administrator who approves MailCraft for an organisation is asked, in advance, for all of
+An administrator who approves MailSolutions for an organisation is asked, in advance, for all of
 these, so that one approval covers what is asked later.
 
 You can take these back at any time in your Microsoft account's or your organisation's list of
-approved applications; MailCraft then asks again the next time it needs them.
+approved applications; MailSolutions then asks again the next time it needs them.
 
 ## Permissions asked of a Google account
 
-When you sign in with Google (Gmail or Google Workspace), Google's page lists what MailCraft asks
-for. MailCraft asks for three things, and uses each on your computer, for you, and for nothing else:
+When you sign in with Google (Gmail or Google Workspace), Google's page lists what MailSolutions asks
+for. MailSolutions asks for three things, and uses each on your computer, for you, and for nothing else:
 
 - `https://mail.google.com/`: reading, sending, moving and deleting your mail over IMAP and SMTP,
   as you do in the program. This is the only permission Google offers for a mail program that uses
@@ -151,30 +151,30 @@ for. MailCraft asks for three things, and uses each on your computer, for you, a
   move a message you moved there through Gmail's API, as the table above says;
 - `openid` and `email`: your Google address, so that the program can check that the account you
   signed in with is the one you added. It is read from what Google sends back at sign-in, and
-  MailCraft asks Google for nothing else about you;
+  MailSolutions asks Google for nothing else about you;
 - keeping you signed in (a refresh token, stored as described above).
 
-MailCraft does not ask for your Google Calendar, Contacts, Drive or anything else of your Google
+MailSolutions does not ask for your Google Calendar, Contacts, Drive or anything else of your Google
 account. The mail goes from Google's servers to your computer and stays there: nothing of your
 Google data is sent to the project, to anybody who works on it, or to anybody else. (The project's
 one service, the report relay, receives only a problem report you write and send yourself, and
 its diagnostics hold no message, address or sign-in.) Nobody at the project can read it, it is not used for advertising, it is
 not sold, and it is not used to develop, improve or train any AI or machine-learning model.
 Scripts and AI agents (below) can read it only on your own computer, when you start the program
-with them and they act for you. MailCraft itself sends none of it to any AI service. An agent you
+with them and they act for you. MailSolutions itself sends none of it to any AI service. An agent you
 connect is a program you chose, under its own terms: what it does with what it reads is up to it
-and to you, and MailCraft never asks it to send your mail anywhere.
+and to you, and MailSolutions never asks it to send your mail anywhere.
 
 Your mail is kept on your computer until you delete it, remove the account, or use
-File › Info › Remove MailCraft's data from this computer.
+File › Info › Remove MailSolutions's data from this computer.
 
-MailCraft's use and transfer to any other app of information received from Google APIs will
+MailSolutions's use and transfer to any other app of information received from Google APIs will
 adhere to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
 including the Limited Use requirements.
 
 You can take the permissions back at any time at <https://myaccount.google.com/permissions>;
-MailCraft then asks you to sign in again the next time it needs them. File › Info › Remove
-MailCraft's data from this computer removes your mail and every stored sign-in from your computer.
+MailSolutions then asks you to sign in again the next time it needs them. File › Info › Remove
+MailSolutions's data from this computer removes your mail and every stored sign-in from your computer.
 
 ## Problem reports
 
@@ -200,22 +200,22 @@ report, and a script or an AI agent can fill the window but never send it.
   anything personal they find, and mention your GitHub username there if you gave one. That is
   why the window asks you to leave out anything private. A report that isn't copied stays private
   and notifies nobody.
-- **Open on GitHub** sends nothing through MailCraft: it opens GitHub's own page in your browser,
+- **Open on GitHub** sends nothing through MailSolutions: it opens GitHub's own page in your browser,
   filled in, for you to read and submit there, publicly, under your GitHub account.
 
 ## The phone apps
 
-MailCraft for Android (and, after it, for iPhone and iPad) is the same program on a smaller
+MailSolutions for Android (and, after it, for iPhone and iPad) is the same program on a smaller
 screen, and everything above holds for it unless this section says otherwise. There is no iPhone
 or iPad app yet: what is said of iPhone below is for when that app is released. There is still no
-MailCraft account and no MailCraft server that sees your mail: nothing goes through a server of
+MailSolutions account and no MailSolutions server that sees your mail: nothing goes through a server of
 the project, and notifications are raised on the phone itself. Parts of the phone apps that are
 not in a release yet are marked "when the app is released".
 
 - **Signing in.** You sign in on Microsoft's page, in a browser tab the system opens (Custom Tabs
   on Android; on iPhone, when that app is released, the system's own sign-in session); the app never shows you a page
   of its own for your password and never sees it. The page sends you back through a link on a
-  scheme only MailCraft registers (`work.mailcraft.android` on Android), and the app checks that
+  scheme only MailSolutions registers (`work.mailcraft.android` on Android), and the app checks that
   link, to the letter, before it believes it. What is asked of your account, and why, is
   [Permissions asked of a Microsoft account](#permissions-asked-of-a-microsoft-account). The phone
   apps do not use your phone's own calendar or contacts and ask for no permission to them.
@@ -302,7 +302,7 @@ not in a release yet are marked "when the app is released".
 
 ## Scripts and agents
 
-MailCraft can be driven by scripts and AI agents through a control channel and an MCP server.
+MailSolutions can be driven by scripts and AI agents through a control channel and an MCP server.
 Both are off unless you start the program with them, listen on your own computer only, and take
 requests only with a key the program keeps in a file in your settings folder.
 

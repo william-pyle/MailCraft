@@ -5,7 +5,7 @@
 //! fonts they name stays a small multiple of the input.
 #![no_main]
 
-use mailcraft_html::{Block, BlockKind};
+use mailsolutions_html::{Block, BlockKind};
 
 /// The bytes of text, links and fonts the blocks hold, counted once per span or picture.
 fn held(blocks: &[Block], depth: usize) -> usize {
@@ -29,11 +29,11 @@ fn held(blocks: &[Block], depth: usize) -> usize {
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let html = String::from_utf8_lossy(data);
-    let blocks = mailcraft_html::parse(&html);
+    let blocks = mailsolutions_html::parse(&html);
     let held = held(&blocks, 0);
     assert!(held <= 8 * html.len() + 64 * 1024, "{held} bytes held from {} of input", html.len());
-    let _ = mailcraft_mime_model::rich::from_html(&html);
-    let quoted = mailcraft_html::quotable(&html).to_ascii_lowercase();
+    let _ = mailsolutions_mime_model::rich::from_html(&html);
+    let quoted = mailsolutions_html::quotable(&html).to_ascii_lowercase();
     for tag in ["<script", "<style", "<iframe", "<object", "<embed"] {
         assert!(!quoted.contains(tag), "{tag} carried");
     }

@@ -8,10 +8,10 @@
 use std::sync::Arc;
 
 use egui::{Align2, Color32, FontId, Rect, RichText, Sense, Shape, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::cmd::{tasks, tasks_remote};
-use mailcraft_engine::{TaskFilter, TaskSort};
-use mailcraft_model::{AccountChoice, Id, Importance, Task};
-use mailcraft_time::{Date, Weekday};
+use mailsolutions_engine::cmd::{tasks, tasks_remote};
+use mailsolutions_engine::{TaskFilter, TaskSort};
+use mailsolutions_model::{AccountChoice, Id, Importance, Task};
+use mailsolutions_time::{Date, Weekday};
 use serde_json::json;
 
 use crate::people_view::{
@@ -1059,7 +1059,7 @@ mod tests {
         w.state_mut().execute("edit.undo", json!({})).unwrap();
         assert_eq!((lists(w.state(), &ctx).counts, &*lists(w.state(), &ctx).layout), (first.counts, &*first.layout));
         // Midnight passes: what was due today is late, with nothing else changed.
-        w.state_mut().session.clock.now = Some(testing::now() + mailcraft_time::DAY);
+        w.state_mut().session.clock.now = Some(testing::now() + mailsolutions_time::DAY);
         let tomorrow = lists(w.state(), &ctx);
         assert_eq!(tomorrow.counts, [5, 3, 2, 1, 6]);
         let buckets: Vec<Bucket> = tomorrow.layout.rows.iter().filter_map(|r| r.heading.and_then(Heading::due)).collect();
@@ -1069,7 +1069,7 @@ mod tests {
     #[test]
     fn a_very_long_list_paints_only_what_shows() {
         use crate::people_view::testing;
-        let mut mb = mailcraft_model::Mailbox::with_local_account("Me", "me@example.org");
+        let mut mb = mailsolutions_model::Mailbox::with_local_account("Me", "me@example.org");
         let start = day(2026, 10, 1);
         for i in 0..50_000u32 {
             mb.add_task(Task {

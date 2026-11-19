@@ -5,7 +5,7 @@
 //! `compose.attachItem` or `insert.businessCard` with its id.
 
 use egui::Ui;
-use mailcraft_model::{Id, contains_ci};
+use mailsolutions_model::{Id, contains_ci};
 use serde_json::json;
 
 use crate::MailApp;
@@ -113,7 +113,7 @@ pub fn rows(app: &MailApp, kind: PickKind, query: &str) -> Vec<(Id, String, Stri
     let q = query.trim();
     match kind {
         PickKind::Message => {
-            let mut v: Vec<&mailcraft_model::Message> = mb
+            let mut v: Vec<&mailsolutions_model::Message> = mb
                 .messages
                 .values()
                 .map(|m| m.as_ref())
@@ -129,7 +129,7 @@ pub fn rows(app: &MailApp, kind: PickKind, query: &str) -> Vec<(Id, String, Stri
                 })
                 .collect()
         }
-        PickKind::Contact => mailcraft_engine::cmd::people::sorted_of(&app.session, q, mailcraft_model::AccountChoice::All)
+        PickKind::Contact => mailsolutions_engine::cmd::people::sorted_of(&app.session, q, mailsolutions_model::AccountChoice::All)
             .into_iter()
             .take(MAX_ROWS)
             .filter_map(|id| mb.contact(id))

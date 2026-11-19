@@ -1,11 +1,11 @@
-# MailCraft roadmap
+# MailSolutions roadmap
 
 **Stage: public beta** (0.8.0, 2026-10-24) · next: leaving beta, when every item of [the beta checklist](#the-beta-checklist) passes
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-11-14 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365, classic desktop)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-11-19 · **Change:** minor · **Target:** Microsoft Outlook (Microsoft 365, classic desktop)
 
-MailCraft aims for complete parity with Microsoft Outlook, then goes further on speed, openness,
-privacy and agent control. This page is the direction: where MailCraft stands, what beta must
+MailSolutions aims for complete parity with Microsoft Outlook, then goes further on speed, openness,
+privacy and agent control. This page is the direction: where MailSolutions stands, what beta must
 pass and the steps to it, what comes after, and what has landed. The ranked list of shortfalls and
 rough edges is [`docs/gaps.md`](docs/gaps.md). The parity checklists stay beside the two:
 [`docs/parity-checklist.md`](docs/parity-checklist.md) (generated: the ribbon and menus),
@@ -17,14 +17,14 @@ and [`docs/calendar-parity.md`](docs/calendar-parity.md).
 | Number | Value | Kind |
 |---|---|---|
 | Ribbon/menu catalog coverage | **247 / 315 in scope (78.4%) have a command; 0 are Complete (0%)**; 17 rows out of scope | measured (`cargo xtask parity` → [`docs/parity-checklist.md`](docs/parity-checklist.md)) |
-| Ready for real work with a real account | **~25%** | estimated ([how](#methodology)); in daily use on one Microsoft 365 mailbox, the author's; the beta run is under way (#11) and no tester has reported a figure yet. Whether MailCraft is ready for beta is decided by [the beta checklist](#the-beta-checklist), not by this estimate |
+| Ready for real work with a real account | **~25%** | estimated ([how](#methodology)); in daily use on one Microsoft 365 mailbox, the author's; the beta run is under way (#11) and no tester has reported a figure yet. Whether MailSolutions is ready for beta is decided by [the beta checklist](#the-beta-checklist), not by this estimate |
 | Ready as a local viewer and organiser of exported mail | **~55%** | estimated ([how](#methodology)) |
 | Commands / crates | 344 commands · 27 crates, 4 apps, `xtask` | measured (source) |
 | Tests | 8,413 `#[test]`s (`cargo xtask stats`, which counts source attributes); property tests on every reader, and a cargo-fuzz target for each in CI | measured |
 | Builds verified | Windows, macOS and Linux (CI on each), FreeBSD and Windows ARM64 (scheduled), the browser build (wasm) | measured |
 | 200,000 messages (R6.4, 2026-10-18) | open **1.5 s** cold (1.1 s warm), a save after a change **8 ms**, **770 MB** held after opening (peak 840 MB); a search everywhere answers from the word index in **0.16 s**, the process at most **849 MB** (R6.2) | measured (`mailbox_bench`, see the progress log) |
 | 64,000 messages, 677 MB, 374 folders (#519, 2026-10-27) | the window's open **0.84 s** warm (was 1.35 s), the bodies the budget holds following in the background in about 0.23 s, on a made-up mailbox shaped as a large real one (about 7 KB of headers a message) | measured (`store_bench_tests.rs`, see the progress log) |
-| Releases | twenty-two published, v0.1.0 to v0.13.0 ([Releases](https://github.com/UCS-Care-Group/mailcraft/releases)); from v0.5.0 each carries MailCraft's own release signature, none is signed by Windows or macOS, and on macOS updates are installed by the owner until the builds are notarized (#497) | measured |
+| Releases | twenty-two published, v0.1.0 to v0.13.0 ([Releases](https://github.com/UCS-Care-Group/mailcraft/releases)); from v0.5.0 each carries MailSolutions's own release signature, none is signed by Windows or macOS, and on macOS updates are installed by the owner until the builds are notarized (#497) | measured |
 
 The gap between the two readiness numbers is the story of this release: the mailbox, the
 commands, the interface and the file formats are in good shape, and the connection to real mail
@@ -40,19 +40,19 @@ run against other servers only in part (a Windows acceptance of Gmail and Google
   registry has and writes [`docs/parity-checklist.md`](docs/parity-checklist.md). Parity is two
   counts. **Has a command**: the behaviour is reachable by id (ribbon, shortcut, CLI, control
   channel, MCP); it says nothing about how closely it behaves as Outlook's does. **Complete**: the
-  behaviour matches Outlook's as far as MailCraft's rules allow, a test shows it, and
+  behaviour matches Outlook's as far as MailSolutions's rules allow, a test shows it, and
   [`docs/gaps.md`](docs/gaps.md) has no open row for it; a feature is marked Complete by the change
-  that closes its last gap, and none is marked yet. Features MailCraft will not build (Outlook's
-  drawing items in Insert, Recall, Reply with IM and a few that don't fit how MailCraft keeps
+  that closes its last gap, and none is marked yet. Features MailSolutions will not build (Outlook's
+  drawing items in Insert, Recall, Reply with IM and a few that don't fit how MailSolutions keeps
   mail in step) are marked **Out of scope** with a reason, and left out of both percentages. Tests
   are counted by `cargo xtask stats`; the 200,000-message figures come from `mailbox_bench`, and
   the progress log says how to repeat them.
 - **Estimated.** "Ready for real work" weighs what a person does in a week (reading and filing
-  mail, answering, scheduling, finding things) by how completely MailCraft does it, then discounts
+  mail, answering, scheduling, finding things) by how completely MailSolutions does it, then discounts
   for what stops them getting started (connecting an account, an administrator's approval) and
   what would make them leave (losing server state, not seeing a message as sent). "Ready as a
   local viewer" weighs the same for mail exported to files (`.mbox`, `.eml`, `.ics`, `.vcf`). Both
-  are the authors' judgement: no tester has reported figures yet. MailCraft is in public beta from 0.8.0; it
+  are the authors' judgement: no tester has reported figures yet. MailSolutions is in public beta from 0.8.0; it
   leaves beta not by an estimate but by passing every item of [the beta checklist](#the-beta-checklist).
 
 ## Parity themes
@@ -85,13 +85,13 @@ against a pass/fail checklist, several at once. The shortfalls behind them are i
 | **Reading and triage** | Virtualised list measured against Outlook's, date groups, sort, filters, conversations, pin, flags with due dates, categories, importance, junk, archive, two-step delete, full undo, drag onto folders, Send/Receive Progress. Arranged by categories too (#327). Missing: column view (in review, #344), Focused Inbox, Sweep, Ignore and Clean Up Conversation; conversations are grouped by subject ([gaps](docs/gaps.md) 17 and rough edges) |
 | **Search** | A query language with field keywords, negation and dates, answered from a word index beside the mailbox (0.16 s at 200,000 messages); More results on the server for Microsoft accounts; an Advanced Search panel with date ranges and a calendar beside each date (#329). Missing: search folders, searching on an IMAP server |
 | **Rendering mail** | Display blocks of our own: tables, colours, alignment, lists and pictures (the message's own shown, the web's on the owner's say-so), adjusted for the dark theme, nothing run; a message's `@media` follows the pane's width and the theme (#599), and its text is drawn in the first of its fonts installed on this computer, none ever fetched (#600). Missing: background pictures, right-to-left text (gap 6) |
-| **Writing mail** | A rich-text editor; HTML with a plain-text part; a reply or forward carries the original's look without what runs or tracks; rich signatures with a logo, and HTML signatures sent as written; drafts, attachments, name checking, Insert › Date & Time and Word Count (#507); a message being written is never dropped by opening another mailbox (#470). Pictures go into the body (#547). Delay Delivery (Send Later…, kept in the Outbox and sent by MailCraft at its time, also for Microsoft accounts) and Undo Send (File › Options › Wait before sending) are there (#950). Missing: spell check, templates, delivery receipts (read receipts are asked for, never answered) (gaps 7, 17) |
+| **Writing mail** | A rich-text editor; HTML with a plain-text part; a reply or forward carries the original's look without what runs or tracks; rich signatures with a logo, and HTML signatures sent as written; drafts, attachments, name checking, Insert › Date & Time and Word Count (#507); a message being written is never dropped by opening another mailbox (#470). Pictures go into the body (#547). Delay Delivery (Send Later…, kept in the Outbox and sent by MailSolutions at its time, also for Microsoft accounts) and Undo Send (File › Options › Wait before sending) are there (#950). Missing: spell check, templates, delivery receipts (read receipts are asked for, never answered) (gaps 7, 17) |
 | **Servers** | Microsoft accounts kept in step through Microsoft Graph (folders, mail down, changes up, drafts, sending, undo, calendars, contacts read-only, Outlook's Favorites, search on the server, shared mailboxes); other accounts over IMAP and SMTP, two-way for read marks, flags, moves, deletes and sent copies; mail moves and copies between accounts, onto the other server (#451); Safe and Blocked Senders per account (#516); an organisation's own Exchange server through Exchange Web Services, for mail, tried against Grommunio and, for reading, Exchange Server 2019 (#252, #746). In daily use on one Microsoft 365 mailbox; bounded Windows Gmail/Workspace OAuth and app-password acceptance is documented in the [Google account guide](docs/google-accounts.md); other provider limits remain in [gaps](docs/gaps.md); the browser build connects to JMAP servers only (gap 5; [jmap.md](docs/jmap.md)) |
-| **Calendar** | Day, work week, week and month; recurrence; time zones; meetings through Microsoft 365 with invitations, updates, cancellations and answers, Propose New Time, forwarding and Teams meetings; Find a Time (everyone's free and busy time) for one day; shared mailboxes' calendars and a colleague's calendar opened by address (#70); reminders with desktop alerts. Missing: rooms, Find a Time over several days, sharing or publishing one's own calendar, alerts while MailCraft is closed (gaps 9–11, [calendar-parity.md](docs/calendar-parity.md)) |
+| **Calendar** | Day, work week, week and month; recurrence; time zones; meetings through Microsoft 365 with invitations, updates, cancellations and answers, Propose New Time, forwarding and Teams meetings; Find a Time (everyone's free and busy time) for one day; shared mailboxes' calendars and a colleague's calendar opened by address (#70); reminders with desktop alerts. Missing: rooms, Find a Time over several days, sharing or publishing one's own calendar, alerts while MailSolutions is closed (gaps 9–11, [calendar-parity.md](docs/calendar-parity.md)) |
 | **People** | Contacts with several addresses and phones, favourites, categories, `.vcf` in and out in every character set, a Microsoft account's contacts read. Missing: contact groups, photos, the organisation's directory (gap 17) |
 | **Tasks** | To-dos with dates, importance, categories, completion, links to flagged mail. Kept in step with Microsoft To Do for Microsoft accounts, both ways (#248). Missing: recurrence, assignment, My Day, the To-Do bar (gap 17) |
-| **Files** | `.eml`, `.mbox`, `.ics`, `.vcf` and MailCraft's own mailbox (a log of records, with message content in files beside it). `.pst` import (mail, contacts, calendar, tasks, notes, journal). Missing: `.ost`, `.msg`, `.olm` (gap 12), printing (gap 15) |
-| **Platforms** | Built and tested in CI on Windows, macOS and Linux, FreeBSD and Windows ARM64 on a schedule, and the browser; releases carry MailCraft's own signature and update themselves, and are not signed for Windows or macOS (gap 18); on macOS an update is installed by the owner until the builds are notarized (#497) |
+| **Files** | `.eml`, `.mbox`, `.ics`, `.vcf` and MailSolutions's own mailbox (a log of records, with message content in files beside it). `.pst` import (mail, contacts, calendar, tasks, notes, journal). Missing: `.ost`, `.msg`, `.olm` (gap 12), printing (gap 15) |
+| **Platforms** | Built and tested in CI on Windows, macOS and Linux, FreeBSD and Windows ARM64 on a schedule, and the browser; releases carry MailSolutions's own signature and update themselves, and are not signed for Windows or macOS (gap 18); on macOS an update is installed by the owner until the builds are notarized (#497) |
 | **Agents** | Ahead of Outlook: every action is a command with a documented id and parameters, reachable from a CLI, a keyed local control channel and MCP, with a headless mode; what an agent may do is the owner's to allow, an agent names the messages it acts on (#620, #553) and never changes a message the owner is writing (#577) |
 | **Privacy and safety** | Ahead of Outlook by default: nothing in a message runs or is fetched unless the owner asks for its pictures; passwords and sign-ins are kept only by the operating system's credential store; unencrypted connections to servers are refused |
 
@@ -102,13 +102,13 @@ against a pass/fail checklist, several at once. The shortfalls behind them are i
 - The readers: messages, calendars, contacts and server responses are treated as hostile and
   property-tested with arbitrary bytes.
 - Privacy by default: nothing in a message runs or is fetched; passwords and sign-ins are kept only
-  by the operating system's credential store, never in MailCraft's own files.
+  by the operating system's credential store, never in MailSolutions's own files.
 - One code base for desktop and browser.
 - Agent control: CLI, control channel, MCP.
 
 ## The beta checklist
 
-Beta is for Microsoft accounts (personal, or work or school). MailCraft is in public beta from 0.8.0
+Beta is for Microsoft accounts (personal, or work or school). MailSolutions is in public beta from 0.8.0
 (2026-10-24): a working program for those accounts, with testers using it and nothing lost so far.
 It leaves beta when every item below passes; each is checked by testers' reports and GitHub
 issues, not by estimate. Where each stands
@@ -117,11 +117,11 @@ issues, not by estimate. Where each stands
 | # | To leave beta | Status |
 |---|---|---|
 | B1 | At least 5 testers, none of them authors, each on a Microsoft account (personal, or work or school) | In progress: 11 signed up ([#11](https://github.com/UCS-Care-Group/mailcraft/issues/11)), 6 of them on Microsoft accounts; 4 of those also for the beta run, 1 short |
-| B2 | Each uses MailCraft on 14 working days (Monday to Friday; about three weeks), on at least 2 devices | The 14-day beta run has been under way since 2026-10-22 or before; each tester's 14 days count from when they start (R8) |
+| B2 | Each uses MailSolutions on 14 working days (Monday to Friday; about three weeks), on at least 2 devices | The 14-day beta run has been under way since 2026-10-22 or before; each tester's 14 days count from when they start (R8) |
 | B3 | Windows x64, macOS (Apple silicon and Intel) and Linux x86_64, each with at least one tester | Met on paper: each platform, an Intel Mac included, has a tester on a Microsoft account signed up for the beta run; to be proven in it. All are built in CI |
 | B4 | No data-loss incident, and no crash that loses work, in those 14 working days | Counting: no data loss in the beta run, which has been running since 2026-10-22 or before |
 | B5 | Reading, filing, searching, forwarding and replying in rich text, with the quoted original kept | Built (R3, R4, R6.2); to be proven in the beta run |
-| B6 | Accepting and declining a meeting; reminders come up as system notifications while MailCraft runs | In progress: meetings are answered from the reading pane and the calendar; desktop alerts (R7.1, 0.5.2) seen on Linux (KDE) and on macOS (Apple silicon, 0.8.2) ([#25](https://github.com/UCS-Care-Group/mailcraft/issues/25), closed 2026-11-09); no report from Windows yet |
+| B6 | Accepting and declining a meeting; reminders come up as system notifications while MailSolutions runs | In progress: meetings are answered from the reading pane and the calendar; desktop alerts (R7.1, 0.5.2) seen on Linux (KDE) and on macOS (Apple silicon, 0.8.2) ([#25](https://github.com/UCS-Care-Group/mailcraft/issues/25), closed 2026-11-09); no report from Windows yet |
 | B7 | Every account in step with Outlook on the web, checked by each tester at the end | Built: Microsoft accounts are kept in step through Microsoft Graph (R3); R3.8, no IMAP or SMTP left for a Microsoft account, waits on testers ([#19](https://github.com/UCS-Care-Group/mailcraft/issues/19)); the check is the beta run's last step |
 | B8 | Accounts of up to 200,000 messages: open under 3 s, a save under 1 s, under 1 GB of memory, measured on the reference machine and reported by testers | Met on the reference machine (R6.4, R6.2: open 1.5 s, a save 8 ms, at most 849 MB with a search); testers' reports to come |
 | B9 | Sign-ins remembered on every beta platform | In progress: seen across a restart and a reboot on Windows by a tester (0.12.0, IMAP and SMTP accounts, [#11](https://github.com/UCS-Care-Group/mailcraft/issues/11), 2026-11-12); built for macOS, not yet seen there; Linux through the Secret Service (R5), across a restart on GNOME and KDE still to be seen |
@@ -144,18 +144,18 @@ The steps R1–R8 of the roadmap reset led to the public beta and lead to the ch
 | R8 | The beta run: 5 testers on Microsoft accounts, 14 working days, nothing lost | Under way, still recruiting ([#11](https://github.com/UCS-Care-Group/mailcraft/issues/11)): 11 signed up, 6 on Microsoft accounts, 4 of them for the beta run; one more wanted |
 
 Two things outside the code stand in the way of testers in other organisations: the publisher
-verification of MailCraft's Microsoft registration (in progress; until then an administrator
-approves MailCraft first), and signing the Windows and macOS builds (so the systems stop warning).
+verification of MailSolutions's Microsoft registration (in progress; until then an administrator
+approves MailSolutions first), and signing the Windows and macOS builds (so the systems stop warning).
 
 ## After beta
 
 Not scheduled; in the order of how much each matters to someone leaving classic Outlook at work,
-the first people MailCraft is for. Each is a shortfall in [`docs/gaps.md`](docs/gaps.md).
+the first people MailSolutions is for. Each is a shortfall in [`docs/gaps.md`](docs/gaps.md).
 
 1. Shared mailboxes' calendars are read, changed where the owner may edit, and their meeting requests answered (#70, calendars 2 and 3); calendars opened by address are there too (#70, calendars 4); delegated calendars with their permissions are still to come (gap 5, #70).
 2. An Android app: the same program on a phone or tablet, for Microsoft accounts first, signing in
    through the system's browser, with the mailbox kept on the device and a layout for a small
-   screen. Under way (`apps/mailcraft-android`, MB3: accounts and sign-in, the mail list, background
+   screen. Under way (`apps/mailsolutions-android`, MB3: accounts and sign-in, the mail list, background
    Send/Receive with new-mail notifications); not in a release yet.
 3. Bringing an Outlook archive across: `.pst` files come in (#815); `.msg` files remain (gap 12).
 4. Printing messages, calendars and contacts (gap 15).
@@ -180,7 +180,7 @@ the first people MailCraft is for. Each is a shortfall in [`docs/gaps.md`](docs/
 
 ## The browser build
 
-MailCraft also builds for the browser (WebAssembly), from the same code. Every change is checked to
+MailSolutions also builds for the browser (WebAssembly), from the same code. Every change is checked to
 build, and each release carries it as a download, but it has not yet been reviewed in use, and it
 can't open the connections IMAP and SMTP need: the only mail servers it reaches are JMAP ones, to
 read, to take changes up to and to send through ([#226](https://github.com/UCS-Care-Group/mailcraft/issues/226),
@@ -216,6 +216,7 @@ follows:
 
 | Date | What landed |
 |---|---|
+| 2026-11-19 | MC-RENAME: MailSolutions 0.14.0 branding, retained mailbox/credential identities, guarded profile migration and published ContactSolutions 1.3.0 integration. Installed upgrade and real-account acceptance remain unverified. |
 | 2026-11-15 | MB3.17: the phone fetches mail it holds only the headers of: a message the owner opens comes whole at once (one job at a time per account, a small queue, called off on shutdown, an account's removal or "remove my data", nothing half kept), recent mail up to the Download messages in full (1 MB) comes in small batches between rounds on a connection that isn't metered and rests while the phone's storage is nearly full, an attachment comes with its message and is judged by its kind as the desktop judges it, and a search on the server brings the headers of older mail onto the phone for the session; the core gives the app `open_message`, `fetch_attachment`, `search_server` and the `MessageFetched` and `FetchFailed` events, and a Graph fetch can be asked to keep each message and the batch within a size |
 | 2026-11-15 | MB3.16: the phone keeps less than a computer: a Microsoft account added on it keeps one month of mail, fetches a message whole in the background only up to 1 MB and lists no mail older than its window, not even headers; at most 500 MB of mail and a number of messages from the platform's memory budget, past which the oldest mail goes back to its headers and then leaves the phone (never the server, never mail not yet sent or uploaded); Add Account offers the window and the space with those defaults chosen, the core can read and change them later, and a phone set up before is moved to them once |
 | 2026-11-15 | MB3.12: the Android app has a Calendar tab (agenda, day, month, event editor, invitations, .ics) on the shared binding, read again whenever the mailbox changes (a sync included) and dated in the phone's zone and language; the current-time line and answering invitations from the agenda wait for later steps |
@@ -600,6 +601,7 @@ follows:
 
 | Date | Change |
 |---|---|
+| 2026-11-19 | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-15 | Headline numbers recomputed (parity 247 / 315, 344 commands, 27 crates, 8,413 tests, twenty-two releases to v0.13.0); beta checklist rows B2, B4, B6, B9 and steps R2, R7 brought to what testers reported; after-beta items 1, 2, 3, 6, 7 and 13 brought to the code |
 | 2026-11-15 | Writing mail and the list of what comes next: Delay Delivery and Undo Send are in (#950). |
 | 2026-11-15 | Progress log: follow-up reminders (#948) |

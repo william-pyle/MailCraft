@@ -31,7 +31,7 @@ fn expected(m: &Message, opts: &WriteOptions) -> Message {
     let html = m.body.html.as_deref().map(lines);
     let text = lines(&m.body.text);
     let text = match &html {
-        Some(html) if text.trim().is_empty() => mailcraft_html::to_text(html),
+        Some(html) if text.trim().is_empty() => mailsolutions_html::to_text(html),
         _ => text,
     };
     let mut attachments = m.attachments.clone();

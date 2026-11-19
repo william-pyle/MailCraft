@@ -10,9 +10,9 @@
 
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::cmd::search_server;
-use mailcraft_model::Id;
-use mailcraft_model::sync::{GraphSearchRequest, GraphSearchResult};
+use mailsolutions_engine::cmd::search_server;
+use mailsolutions_model::Id;
+use mailsolutions_model::sync::{GraphSearchRequest, GraphSearchResult};
 use serde_json::json;
 
 use crate::MailApp;
@@ -55,7 +55,7 @@ pub enum Link {
 impl MailApp {
     /// A Graph token of this session for `account` that is still good.
     fn search_token(&self, account: Id) -> Option<String> {
-        self.graph_tokens.get(&account).filter(|t| t.fresh(mailcraft_time::now())).map(|t| t.access.clone())
+        self.graph_tokens.get(&account).filter(|t| t.fresh(mailsolutions_time::now())).map(|t| t.access.clone())
     }
 
     /// What the link below the local results is now.
@@ -145,9 +145,9 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::{Arc, Mutex};
 
-    use mailcraft_engine::Session;
-    use mailcraft_model::sync::{FolderListing, GraphFetchResult, GraphFolder, GraphMailResult, GraphMessage, ServerMessage, Tokens};
-    use mailcraft_model::{FolderKind, Id};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::sync::{FolderListing, GraphFetchResult, GraphFolder, GraphMailResult, GraphMessage, ServerMessage, Tokens};
+    use mailsolutions_model::{FolderKind, Id};
     use serde_json::json;
 
     use super::*;
@@ -160,7 +160,7 @@ mod tests {
     const NOW: i64 = 1_790_000_000;
 
     fn token() -> Tokens {
-        Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+        Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
     }
 
     /// A window with a Microsoft account whose Inbox and Archive are listed, a host that keeps
@@ -178,7 +178,7 @@ mod tests {
             listing: Some(FolderListing { folders, complete: true }),
             ..Default::default()
         };
-        mailcraft_engine::cmd::graph_mail::apply_graph_mail(&mut app.session, listing).unwrap();
+        mailsolutions_engine::cmd::graph_mail::apply_graph_mail(&mut app.session, listing).unwrap();
         if signed_in {
             app.seed_graph_token(account, token());
         }
@@ -262,12 +262,12 @@ mod tests {
 
     /// The section On the server, with its rows' folders under the time and one row selected, in
     /// light and dark at 100 % and 200 %, as PNG files to look at:
-    /// `MAILCRAFT_SHOTS_DIR=<dir> cargo test -p mailcraft-ui-egui shots_of_server_results -- --ignored`
+    /// `MAILSOLUTIONS_SHOTS_DIR=<dir> cargo test -p mailsolutions-ui-egui shots_of_server_results -- --ignored`
     #[test]
     #[ignore = "writes screenshots, for looking at them"]
     fn shots_of_server_results() {
-        let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") else {
-            eprintln!("set MAILCRAFT_SHOTS_DIR to the directory to write to");
+        let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") else {
+            eprintln!("set MAILSOLUTIONS_SHOTS_DIR to the directory to write to");
             return;
         };
         for theme in ["light", "dark"] {

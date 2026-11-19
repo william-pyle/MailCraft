@@ -9,7 +9,7 @@
 //! where it would go, and "not allowed" anywhere else.
 
 use egui::{CursorIcon, Id as EguiId};
-use mailcraft_model::{Id, Mailbox};
+use mailsolutions_model::{Id, Mailbox};
 
 /// What the folder under the pointer wrote this frame: whether it takes the drag (kept by its
 /// type, under the null id).

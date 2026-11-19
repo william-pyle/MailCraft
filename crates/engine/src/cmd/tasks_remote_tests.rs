@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! To-dos kept in step with Microsoft To Do (#248): downloads merged, changes worked out, and
 //! what the server made of them taken in. The server's side is written out by hand, as
-//! `mailcraft-net` brings it.
+//! `mailsolutions-net` brings it.
 
-use mailcraft_model::remote_tasks::{MAX_TASK_LISTS, RemoteTask, RemoteTaskList, TaskOpKind, TaskOutcome, TaskResult, TasksDownload, TasksUploaded};
-use mailcraft_model::{Id, Importance, Task};
-use mailcraft_time::Date;
+use mailsolutions_model::remote_tasks::{
+    MAX_TASK_LISTS, RemoteTask, RemoteTaskList, TaskOpKind, TaskOutcome, TaskResult, TasksDownload, TasksUploaded,
+};
+use mailsolutions_model::{Id, Importance, Task};
+use mailsolutions_time::Date;
 use serde_json::{Value, json};
 
 use super::tasks_remote::{carries_delete, mark_sent, merge_tasks, task_upload};
@@ -229,7 +231,7 @@ fn what_the_server_refuses_is_not_sent_over_and_over() {
     run(&mut s, "tasks.sendLocal", json!({"account": a}));
     let up = task_upload(&s.mailbox, a).unwrap();
     let (first, second) = (up.ops[0].clone(), up.ops[1].clone());
-    let refused = |op: &mailcraft_model::remote_tasks::TaskOp, result| TaskOutcome {
+    let refused = |op: &mailsolutions_model::remote_tasks::TaskOp, result| TaskOutcome {
         kind: op.kind,
         task: op.task,
         result,
@@ -338,7 +340,7 @@ fn only_a_microsoft_account_can_be_chosen_and_removing_it_asks_again() {
     assert!(s.run("tasks.sendLocal", &json!({"account": 12_345})).is_err());
     run(&mut s, "tasks.sendLocal", json!({"account": a}));
     s.mailbox.remove_account(a).unwrap();
-    assert_eq!(s.mailbox.local_tasks, mailcraft_model::LocalTasks::Unasked);
+    assert_eq!(s.mailbox.local_tasks, mailsolutions_model::LocalTasks::Unasked);
 }
 
 #[test]
@@ -356,14 +358,14 @@ fn old_mailbox_files_load_with_the_question_not_yet_asked() {
     let (s, _) = session();
     let mut value = serde_json::to_value(&s.mailbox).unwrap();
     assert!(value.get("localTasks").is_none());
-    let back: mailcraft_model::Mailbox = serde_json::from_value(value.clone()).unwrap();
-    assert_eq!(back.local_tasks, mailcraft_model::LocalTasks::Unasked);
+    let back: mailsolutions_model::Mailbox = serde_json::from_value(value.clone()).unwrap();
+    assert_eq!(back.local_tasks, mailsolutions_model::LocalTasks::Unasked);
     value["localTasks"] = json!({"sendTo": 7});
-    let back: mailcraft_model::Mailbox = serde_json::from_value(value).unwrap();
-    assert_eq!(back.local_tasks, mailcraft_model::LocalTasks::SendTo(7));
+    let back: mailsolutions_model::Mailbox = serde_json::from_value(value).unwrap();
+    assert_eq!(back.local_tasks, mailsolutions_model::LocalTasks::SendTo(7));
 }
 
-fn outcome(op: &mailcraft_model::remote_tasks::TaskOp, result: TaskResult) -> TaskOutcome {
+fn outcome(op: &mailsolutions_model::remote_tasks::TaskOp, result: TaskResult) -> TaskOutcome {
     TaskOutcome {
         kind: op.kind,
         task: op.task,
@@ -505,11 +507,11 @@ fn a_shared_list_is_remembered_until_the_server_says_otherwise() {
     assert_eq!(saved["sharedTaskLists"], json!([{"account": a, "id": "L2"}]));
     let mut old = saved.clone();
     old.as_object_mut().unwrap().remove("sharedTaskLists");
-    assert!(serde_json::from_value::<mailcraft_model::Mailbox>(old).unwrap().shared_task_lists.is_empty());
+    assert!(serde_json::from_value::<mailsolutions_model::Mailbox>(old).unwrap().shared_task_lists.is_empty());
     // Junk in its place doesn't stop the mailbox loading.
     let mut junk = saved;
     junk["sharedTaskLists"] = json!([7, "x", {"account": "no"}]);
-    assert!(serde_json::from_value::<mailcraft_model::Mailbox>(junk).is_ok());
+    assert!(serde_json::from_value::<mailsolutions_model::Mailbox>(junk).is_ok());
     // A download that doesn't name every list leaves L2 as it was.
     let mut partial = download(a, vec![remote("t1", "Mine")]);
     partial.complete = false;
@@ -653,7 +655,7 @@ fn an_agents_command_that_changes_a_shared_to_do_by_another_way_is_undone() {
 
 /// A to-do of `account`'s in its list `list`.
 fn in_list(account: Id, list: &str) -> Task {
-    Task { origin: mailcraft_model::Origin { account, id: "x".into(), ..Default::default() }, list: list.into(), ..Default::default() }
+    Task { origin: mailsolutions_model::Origin { account, id: "x".into(), ..Default::default() }, list: list.into(), ..Default::default() }
 }
 
 #[test]
@@ -675,18 +677,18 @@ fn every_accounts_shared_lists_are_kept_however_many_accounts_have_them() {
         assert!(s.mailbox.in_shared_task_list(&in_list(other, &format!("S{}", MAX_TASK_LISTS - 1))), "{other}");
     }
     // Saved and read back: all of them.
-    let back: mailcraft_model::Mailbox = serde_json::from_value(serde_json::to_value(&s.mailbox).unwrap()).unwrap();
+    let back: mailsolutions_model::Mailbox = serde_json::from_value(serde_json::to_value(&s.mailbox).unwrap()).unwrap();
     assert_eq!(back.shared_task_lists, s.mailbox.shared_task_lists);
 }
 
 #[test]
 fn a_mailbox_file_with_too_many_shared_lists_for_one_account_keeps_the_others() {
-    let too_many = mailcraft_model::remote_tasks::MAX_TASKS + 500;
+    let too_many = mailsolutions_model::remote_tasks::MAX_TASKS + 500;
     let mut lists: Vec<Value> = (0..too_many * 2).map(|i| json!({"account": 1, "id": format!("L{}", i % too_many)})).collect();
     lists.extend([json!({"account": 1, "id": ""}), json!({"account": 2, "id": "Bell\u{7}"}), json!({"account": 2, "id": "Kept"})]);
-    let mb: mailcraft_model::Mailbox = serde_json::from_value(json!({"sharedTaskLists": lists})).unwrap();
+    let mb: mailsolutions_model::Mailbox = serde_json::from_value(json!({"sharedTaskLists": lists})).unwrap();
     let one = mb.shared_task_lists.get(&1).unwrap();
-    assert_eq!(one.len(), mailcraft_model::remote_tasks::MAX_TASKS);
+    assert_eq!(one.len(), mailsolutions_model::remote_tasks::MAX_TASKS);
     // What was kept of that account's is gated; the other account's are all there.
     let first = one.iter().next().unwrap().clone();
     assert!(mb.in_shared_task_list(&in_list(1, &first)));

@@ -4,7 +4,7 @@
 //! `Session`, progress that advances, cancelling that changes nothing, and a staged tree that is
 //! put in as one undo step.
 
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use proptest::prelude::*;
 use serde_json::{Value, json};
 

@@ -10,7 +10,7 @@ use super::{check, find_exact, html_message, in_frame, lay_out, shown_pictures};
 use crate::reading::layout::{Item, ItemKind, Laid};
 use crate::theme::Tokens;
 
-fn message(html: &str) -> mailcraft_model::Message {
+fn message(html: &str) -> mailsolutions_model::Message {
     html_message(60, ("Marrowby Trust", "garden@marrowby.example"), "Open day", html)
 }
 

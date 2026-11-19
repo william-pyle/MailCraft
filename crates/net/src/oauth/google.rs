@@ -6,7 +6,7 @@
 
 use super::*;
 
-const GOOGLE_DESKTOP_ID: &str = match option_env!("MAILCRAFT_GOOGLE_CLIENT_ID") {
+const GOOGLE_DESKTOP_ID: &str = match option_env!("MAILSOLUTIONS_GOOGLE_CLIENT_ID") {
     Some(id) => id,
     None => "",
 };
@@ -21,13 +21,13 @@ fn registration<'a>(oauth: &'a OAuth, secret: &'a str) -> Result<(&'a str, &'a s
     // installation explicitly supplied an override (e.g. File > Options).
     let id = if oauth.client_id.trim().is_empty() && !GOOGLE_DESKTOP_ID.is_empty() { GOOGLE_DESKTOP_ID } else { client_id(oauth)? };
     if id.len() > 200 || !id.bytes().all(|b| b.is_ascii_graphic()) {
-        return Err(NetError::Config("MailCraft's Google Desktop OAuth client ID is invalid".into()));
+        return Err(NetError::Config("MailSolutions's Google Desktop OAuth client ID is invalid".into()));
     }
     if secret.is_empty() {
-        return Err(NetError::Config("MailCraft's Google Desktop OAuth client secret is not configured".into()));
+        return Err(NetError::Config("MailSolutions's Google Desktop OAuth client secret is not configured".into()));
     }
     if secret.len() > 512 || !secret.bytes().all(|b| b.is_ascii_graphic()) {
-        return Err(NetError::Config("MailCraft's Google Desktop OAuth client secret is invalid".into()));
+        return Err(NetError::Config("MailSolutions's Google Desktop OAuth client secret is invalid".into()));
     }
     Ok((id, secret))
 }
@@ -129,7 +129,7 @@ fn exchange(endpoint: &Url, fields: &[(&str, &str)], previous: &str, secrets: &[
     if !identify && parsed.as_ref().and_then(|data| data.get("error")).and_then(Value::as_str) == Some("invalid_grant") {
         return Err(NetError::Proto(ProtoError::Auth(GOOGLE_REFRESH_REVOKED.into())).into());
     }
-    let tokens = tokens_from(&answer, previous, mailcraft_time::now(), secrets)?;
+    let tokens = tokens_from(&answer, previous, mailsolutions_time::now(), secrets)?;
     let scopes = parsed.as_ref().and_then(|data| data.get("scope")).and_then(Value::as_str);
     // OAuth 2.0 permits scope omission when the grant matches what was requested (RFC 6749
     // section 5.1). A returned narrower scope must explicitly include Gmail access.

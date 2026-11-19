@@ -15,12 +15,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use mailcraft_model::{Security, Server};
+use mailsolutions_model::{Security, Server};
 use rustls::pki_types::ServerName;
 use rustls::{ClientConfig, ClientConnection, StreamOwned};
 
 use crate::NetError;
-use mailcraft_i18n::{Text, said};
+use mailsolutions_i18n::{Text, said};
 
 /// How long connecting may take, over all of a server's addresses.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
@@ -403,11 +403,13 @@ fn handshake_problem(e: &std::io::Error) -> Text {
         ErrorKind::UnexpectedEof | ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted => said!("the server closed the connection"),
         // No suite in common: an old server that offers only CBC suites, which are not used here (#977).
         _ if no_suite_in_common(e) => {
-            said!("the server offers only older encryption (CBC suites) that MailCraft doesn't use; its administrator can turn on the AES-GCM suites")
+            said!(
+                "the server offers only older encryption (CBC suites) that MailSolutions doesn't use; its administrator can turn on the AES-GCM suites"
+            )
         }
         // The server's alert has other causes too (a version, a curve), so the suites are said as the likely one.
         _ if refused_handshake(e) => said!(
-            "the server and MailCraft found no encryption in common; often the server offers only older encryption (CBC suites) that MailCraft doesn't use, and its administrator can turn on the AES-GCM suites"
+            "the server and MailSolutions found no encryption in common; often the server offers only older encryption (CBC suites) that MailSolutions doesn't use, and its administrator can turn on the AES-GCM suites"
         ),
         // rustls says what is wrong with the certificate or the protocol, in its own words.
         _ => Text::verbatim(e.to_string().chars().filter(|c| !c.is_control()).take(200).collect::<String>()),

@@ -6,13 +6,13 @@
 //!
 //! The date is the session's clock (or the instant `at` names: the dialog's, so that OK puts in
 //! what it showed) in the zone the calendar is shown in ([`Session::local`]), written in the
-//! interface language the way of the system's region ([`Session::dated`], `mailcraft_i18n::date`): a
+//! interface language the way of the system's region ([`Session::dated`], `mailsolutions_i18n::date`): a
 //! person reads it in the message. Both work on the signature open in File › Signatures instead,
 //! as the other editing commands do ([`Session::doc`]).
 
-use mailcraft_i18n::date::{self, Day};
-use mailcraft_model::RichText;
-use mailcraft_time::Timestamp;
+use mailsolutions_i18n::date::{self, Day};
+use mailsolutions_model::RichText;
+use mailsolutions_time::Timestamp;
 use serde_json::{Value, json};
 use unicode_segmentation::UnicodeSegmentation;
 

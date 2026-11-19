@@ -11,10 +11,10 @@
 //!
 //! What comes back is hostile JSON like everything else from a server: the answer is capped, a
 //! status or an audience that isn't one is none, and each reply is cut to
-//! [`MAX_REPLY_HTML`](mailcraft_model::auto_replies::MAX_REPLY_HTML). The replies are HTML: they
+//! [`MAX_REPLY_HTML`](mailsolutions_model::auto_replies::MAX_REPLY_HTML). The replies are HTML: they
 //! are handed on as they are, for the engine to turn into plain text; nothing here shows them.
 
-use mailcraft_model::auto_replies::{AutoReplies, AutoReplyStatus};
+use mailsolutions_model::auto_replies::{AutoReplies, AutoReplyStatus};
 use serde_json::{Value, json};
 
 use super::{ASK_TIMEOUT, Doing, Graph, nonsense};

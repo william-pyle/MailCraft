@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! What a sender (or a file's giver, or MailCraft itself) writes of a message is never its
+//! What a sender (or a file's giver, or MailSolutions itself) writes of a message is never its
 //! server's word (R7). One set of messages, each one whose verdict was written by somebody other
 //! than the account's server, run through every use of the server's word: `vouched` (which the
 //! reading pane's pictures, its offer to remember a sender and sender images all go by, and of
@@ -9,11 +9,13 @@
 //!
 //! The people, hosts and addresses are invented.
 
-use mailcraft_model::auth_results::{failed_check, vouched};
-use mailcraft_model::sync::{FolderDelta, FolderListing, GraphFolder, GraphMailResult, MessageOutcome, PlaceDone, Placed, RemoteFlags, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, JunkList, Message};
-use mailcraft_pst::test_writer::{self as w, FileSpec, FolderSpec, Layout, MessageSpec};
-use mailcraft_pst::{Encryption, Format};
+use mailsolutions_model::auth_results::{failed_check, vouched};
+use mailsolutions_model::sync::{
+    FolderDelta, FolderListing, GraphFolder, GraphMailResult, MessageOutcome, PlaceDone, Placed, RemoteFlags, SyncResult,
+};
+use mailsolutions_model::{Address, FolderKind, Id, JunkList, Message};
+use mailsolutions_pst::test_writer::{self as w, FileSpec, FolderSpec, Layout, MessageSpec};
+use mailsolutions_pst::{Encryption, Format};
 use serde_json::json;
 
 use crate::Session;
@@ -194,9 +196,9 @@ fn moved_into_microsoft(w: &mut World, id: Id, made: &str) {
 }
 
 #[test]
-fn mail_from_a_file_put_on_a_server_by_mailcraft_is_not_vouched_for_by_what_it_says_of_itself() {
+fn mail_from_a_file_put_on_a_server_by_mailsolutions_is_not_vouched_for_by_what_it_says_of_itself() {
     let mut w = world(Vec::new(), Vec::new());
-    let dir = std::env::temp_dir().join(format!("mailcraft-r7-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-r7-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     // From an .eml file.
     let path = dir.join("statement.eml");

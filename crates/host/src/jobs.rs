@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Running a job on a thread of the host's: the one way the desktop and the phones start the
 //! work the sync driver decided on. What to run and when is the engine's
-//! ([`mailcraft_engine::sync_driver`]); this only runs it, with the platform in hand.
+//! ([`mailsolutions_engine::sync_driver`]); this only runs it, with the platform in hand.
 
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, channel};

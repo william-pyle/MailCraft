@@ -9,10 +9,10 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
 use egui_kittest::kittest::{By, Queryable as _};
-use mailcraft_engine::Session;
-use mailcraft_model::remote_rules::{RemoteRule, RuleOpKind, RuleOutcome, RuleResult, RulesDownload, RulesUploaded};
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{Action, Condition, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_model::remote_rules::{RemoteRule, RuleOpKind, RuleOutcome, RuleResult, RulesDownload, RulesUploaded};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{Action, Condition, Id};
 use serde_json::json;
 
 use crate::rule_sync::{Permission, RulesJob, RulesResult};
@@ -26,11 +26,11 @@ type Answers = Arc<Mutex<VecDeque<RulesResult>>>;
 type SignIns = Arc<Mutex<Vec<(Id, bool, bool)>>>;
 
 fn tokens(access: &str, refresh: &str) -> Tokens {
-    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 fn window() -> (MailApp, Id, Answers, Jobs, SignIns) {
-    let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
     app.autosave = false;
     let owner = app.execute("account.add", json!({"email": OWNER, "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     app.tokens.insert(owner, tokens("own-access", "ref-1"));
@@ -221,7 +221,7 @@ fn a_sign_in_for_another_purpose_never_asks_for_the_rules() {
 #[test]
 fn a_held_key_deletes_one_rule() {
     for held in [egui::Key::Space, egui::Key::Enter] {
-        let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
         app.autosave = false;
         for name in ["One", "Two", "Three"] {
             let rule = json!({"name": name, "conditions": [{"type": "subjectContains", "value": "x"}], "actions": [{"type": "markRead"}]});
@@ -397,14 +397,14 @@ fn changes_held_back_from_the_server_say_the_server_still_has_the_rule_as_it_was
     app.execute("ui.dialog", json!({"name": "rules"})).unwrap();
     app.session.driver.set_auto_sync(false);
     let h = shown(app);
-    let said = "1 rule deleted here is still on the server until MailCraft may change the server's rules (File › Info › Ask again).";
+    let said = "1 rule deleted here is still on the server until MailSolutions may change the server's rules (File › Info › Ask again).";
     assert!(h.query_by_label(said).is_some());
 }
 
 #[test]
 fn the_new_rule_is_not_filled_in_from_a_shared_mailboxs_message_or_an_id_that_is_none() {
-    use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult};
-    use mailcraft_model::{Address, FolderKind, Message};
+    use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult};
+    use mailsolutions_model::{Address, FolderKind, Message};
     let (mut app, _, _, _, _) = window();
     app.session.driver.set_auto_sync(false);
     let shared = app.execute("account.addSharedMailbox", json!({"address": "team@example.org"})).unwrap()["id"].as_u64().unwrap();
@@ -416,7 +416,7 @@ fn the_new_rule_is_not_filled_in_from_a_shared_mailboxs_message_or_an_id_that_is
         listing: Some(FolderListing { folders, complete: true }),
         ..Default::default()
     };
-    mailcraft_engine::cmd::graph_mail::apply_graph_mail(&mut app.session, listing).unwrap();
+    mailsolutions_engine::cmd::graph_mail::apply_graph_mail(&mut app.session, listing).unwrap();
     let mb = &app.session.mailbox;
     let (inbox, archive) = (mb.folder_of_kind(shared, FolderKind::Inbox).unwrap(), mb.folder_of_kind(shared, FolderKind::Archive).unwrap());
     let m =

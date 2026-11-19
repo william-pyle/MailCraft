@@ -4,7 +4,7 @@
 //! plain data that builds for the browser) and the run itself ([`run`], native only), which brings
 //! the messages the request names down a few at a time and stops at the next safe place when it
 //! is called off. Which messages, in what order and when to look again is the front end's and
-//! the engine's ([`mailcraft_engine::sync_driver`]).
+//! the engine's ([`mailsolutions_engine::sync_driver`]).
 //!
 //! A host with no window (the phone, MB3.17) has no Graph token of its own at hand: it asks
 //! Send/Receive for the account's ([`crate::sync::SendReceive::mail_access`]), which is a token of
@@ -15,10 +15,10 @@
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::sync::GraphFetchRequest;
+use mailsolutions_model::sync::GraphFetchRequest;
 #[cfg(not(target_arch = "wasm32"))]
-use mailcraft_model::sync::GraphFetchResult;
-use mailcraft_model::sync::Tokens;
+use mailsolutions_model::sync::GraphFetchResult;
+use mailsolutions_model::sync::Tokens;
 
 /// What the host is asked to fetch.
 pub struct GraphFetchJob {
@@ -31,7 +31,7 @@ pub struct GraphFetchJob {
 /// Fetch the messages the job names.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run(job: GraphFetchJob) -> GraphFetchResult {
-    mailcraft_net::graph::fetch_messages(&job.access, &job.request, &job.cancel)
+    mailsolutions_net::graph::fetch_messages(&job.access, &job.request, &job.cancel)
 }
 
 /// How a job of an account's mail gets its Graph token. Never in `Debug` output.
@@ -41,7 +41,7 @@ pub enum Access {
     /// None is: one is had from the account's refresh token, as a Graph mail run has it.
     Renew {
         /// The account's sign-in settings, with the application id filled in.
-        oauth: mailcraft_model::OAuth,
+        oauth: mailsolutions_model::OAuth,
         refresh: String,
     },
 }
@@ -87,14 +87,14 @@ impl std::fmt::Debug for Renewal {
 /// the answer when no token could be had (the renewal says why).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn with_access<T>(access: Access, work: impl FnOnce(&str) -> T) -> (Option<T>, Renewal) {
-    with_access_renewing(access, &mailcraft_net::oauth::refresh_graph_mail, work)
+    with_access_renewing(access, &mailsolutions_net::oauth::refresh_graph_mail, work)
 }
 
 /// [`with_access`], with how a token is renewed as `renew` (the tests' own, which asks nobody).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn with_access_renewing<T>(
     access: Access,
-    renew: &dyn Fn(&mailcraft_model::OAuth, &str) -> Result<mailcraft_net::oauth::GraphTokens, mailcraft_net::NetError>,
+    renew: &dyn Fn(&mailsolutions_model::OAuth, &str) -> Result<mailsolutions_net::oauth::GraphTokens, mailsolutions_net::NetError>,
     work: impl FnOnce(&str) -> T,
 ) -> (Option<T>, Renewal) {
     let mut renewal = Renewal::default();

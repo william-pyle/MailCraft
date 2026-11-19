@@ -4,8 +4,8 @@
 //! the request says it, and each answer as it is taken in, with results made by hand. (What is
 //! sent from such an account: `jmap_sending_tests.rs`; what a run reads: `jmap_mail_tests.rs`.)
 
-use mailcraft_model::sync::{FolderListing, JmapChange, JmapChangeDone, JmapOutcome, MessagePage, SendDone, SendOutcome};
-use mailcraft_model::{FlagStatus, FolderKind, Message, Queued};
+use mailsolutions_model::sync::{FolderListing, JmapChange, JmapChangeDone, JmapOutcome, MessagePage, SendDone, SendOutcome};
+use mailsolutions_model::{FlagStatus, FolderKind, Message, Queued};
 use serde_json::json;
 
 use super::tests::{ME, email, folder_here, here, mailboxes, marks, piece, run, session, window};
@@ -385,14 +385,14 @@ fn a_folder_whose_server_id_is_no_id_takes_none_of_the_servers_mail_so_no_move_i
     let inbox = folder_here(&s, account, "M1");
     // A mailbox file can say anything: a folder of the account tied to a "mailbox" no server names.
     let odd = s.run("folder.new", &json!({"name": "Odd", "parent": inbox})).unwrap()["id"].as_u64().unwrap();
-    s.mailbox.folder_mut(odd).unwrap().server = Some(mailcraft_model::ServerFolder { id: "not an id".into(), ..Default::default() });
+    s.mailbox.folder_mut(odd).unwrap().server = Some(mailsolutions_model::ServerFolder { id: "not an id".into(), ..Default::default() });
     // The move is refused, as into a folder the server hasn't got: where mail may go and what
     // goes up are told by one test, so nothing lies in a folder with its move never sent.
     let before = s.mailbox.clone();
-    assert_eq!(s.run("mail.move", &json!({"ids": [one], "folder": odd})).unwrap_err().to_string(), mailcraft_model::ONLY_SERVER_FOLDERS);
+    assert_eq!(s.run("mail.move", &json!({"ids": [one], "folder": odd})).unwrap_err().to_string(), mailsolutions_model::ONLY_SERVER_FOLDERS);
     assert!(s.mailbox == before && up(&s, account).is_empty());
     // With an id that is one, it takes the message and the move goes up.
-    s.mailbox.folder_mut(odd).unwrap().server = Some(mailcraft_model::ServerFolder { id: "M9".into(), ..Default::default() });
+    s.mailbox.folder_mut(odd).unwrap().server = Some(mailsolutions_model::ServerFolder { id: "M9".into(), ..Default::default() });
     s.run("mail.move", &json!({"ids": [one], "folder": odd})).unwrap();
     assert_eq!(up(&s, account), [JmapChange::Move { message: one, id: "E1".into(), from: "M1".into(), to: "M9".into() }]);
 }
@@ -402,12 +402,12 @@ fn the_outbox_takes_none_of_the_servers_mail_whatever_a_mailbox_file_says_of_it(
     let (mut s, account, [one, ..]) = mail();
     let outbox = s.mailbox.folder_of_kind(account, FolderKind::Outbox).unwrap();
     // A mailbox file can say anything: the Outbox tied to a mailbox id that is one.
-    s.mailbox.folder_mut(outbox).unwrap().server = Some(mailcraft_model::ServerFolder { id: "M7".into(), ..Default::default() });
+    s.mailbox.folder_mut(outbox).unwrap().server = Some(mailsolutions_model::ServerFolder { id: "M7".into(), ..Default::default() });
     assert_eq!(s.mailbox.jmap_mailbox(account, outbox), None);
     // What lies in the Outbox is mail to send and no change of a message: a move into it would
     // never go up, so it is refused like a folder the server hasn't got.
     let before = s.mailbox.clone();
-    assert_eq!(s.run("mail.move", &json!({"ids": [one], "folder": outbox})).unwrap_err().to_string(), mailcraft_model::ONLY_SERVER_FOLDERS);
+    assert_eq!(s.run("mail.move", &json!({"ids": [one], "folder": outbox})).unwrap_err().to_string(), mailsolutions_model::ONLY_SERVER_FOLDERS);
     assert!(s.mailbox == before && up(&s, account).is_empty());
 }
 

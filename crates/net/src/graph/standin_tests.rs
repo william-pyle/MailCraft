@@ -3,9 +3,9 @@
 //! What this crate writes to Microsoft Graph's calendar, held against a stand-in that takes only
 //! what the documented service takes ([`standin`]). Nothing here leaves this machine.
 
-use mailcraft_model::remote::{EventReminder, EventRepeat, EventWall};
-use mailcraft_model::{Freq, Recurrence, ShowAs};
-use mailcraft_time::{Date, Weekday};
+use mailsolutions_model::remote::{EventReminder, EventRepeat, EventWall};
+use mailsolutions_model::{Freq, Recurrence, ShowAs};
+use mailsolutions_time::{Date, Weekday};
 use serde_json::json;
 
 use super::check::{STEPS, check_calendar_at};
@@ -762,7 +762,7 @@ fn a_meeting_is_made_online_answered_with_another_time_and_forwarded_as_the_serv
 
 /// An event with zones of its own, as the mailbox sends one.
 fn in_zones(fields: EventFields, start: &str, end: &str) -> EventFields {
-    EventFields { zones: Some(mailcraft_model::remote::EventZones { start: start.into(), end: end.into() }), ..fields }
+    EventFields { zones: Some(mailsolutions_model::remote::EventZones { start: start.into(), end: end.into() }), ..fields }
 }
 
 #[test]
@@ -783,7 +783,7 @@ fn the_stand_in_takes_the_zone_names_the_reference_lists_and_no_others() {
     for (windows, iana) in
         [("Eastern Standard Time", "America/New_York"), ("W. Europe Standard Time", "Europe/Berlin"), ("GMT Standard Time", "Europe/London")]
     {
-        let known = mailcraft_time::Zone::named(iana).unwrap();
+        let known = mailsolutions_time::Zone::named(iana).unwrap();
         let mut instant = at(2026, 1, 1, 0, 0);
         while instant < at(2028, 1, 1, 0, 0) {
             assert_eq!(zone_offset(windows, instant), Some(known.offset_at(instant)), "{windows} at {instant}");

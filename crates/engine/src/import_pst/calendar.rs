@@ -8,9 +8,9 @@
 use std::collections::HashMap;
 use std::io::{Read, Seek};
 
-use mailcraft_model::{Address, Attendee, Event, Freq, Importance, JournalEntry, Note, Recurrence, Response, ShowAs, Task};
-use mailcraft_pst::{Error as PstError, NamedMap, PropName, PropValue, Pst, Recur, recur};
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday, Zone};
+use mailsolutions_model::{Address, Attendee, Event, Freq, Importance, JournalEntry, Note, Recurrence, Response, ShowAs, Task};
+use mailsolutions_pst::{Error as PstError, NamedMap, PropName, PropValue, Pst, Recur, recur};
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday, Zone};
 
 use super::contact::value;
 use super::item::{self, Named, PSETID_TASK, Text, filetime};
@@ -309,10 +309,15 @@ fn splits_weeks(r: &Recur) -> bool {
     days().any(|d| d < start) && days().any(|d| d >= start)
 }
 
-fn zone_of<R: Read + Seek>(pst: &mut Pst<R>, m: &mailcraft_pst::Message, id: Option<u16>, notes: &mut Vec<String>) -> Result<Option<Zone>, PstError> {
+fn zone_of<R: Read + Seek>(
+    pst: &mut Pst<R>,
+    m: &mailsolutions_pst::Message,
+    id: Option<u16>,
+    notes: &mut Vec<String>,
+) -> Result<Option<Zone>, PstError> {
     let Some(id) = id else { return Ok(None) };
     let Some(PropValue::Binary(b)) = value(pst, m, id, MAX_BLOB, "time zone", notes)? else { return Ok(None) };
-    Ok(mailcraft_pst::time_zone_key(&b).ok().and_then(|key| Zone::named(&key)))
+    Ok(mailsolutions_pst::time_zone_key(&b).ok().and_then(|key| Zone::named(&key)))
 }
 
 fn show_as(status: Option<i64>) -> ShowAs {
@@ -325,7 +330,7 @@ fn show_as(status: Option<i64>) -> ShowAs {
     }
 }
 
-fn importance(p: &mailcraft_pst::Properties) -> Importance {
+fn importance(p: &mailsolutions_pst::Properties) -> Importance {
     match p.int(0x0017) {
         Some(0) => Importance::Low,
         Some(2) => Importance::High,
@@ -338,7 +343,7 @@ fn hex(b: &[u8]) -> String {
 }
 
 /// The people of a meeting, and its organizer when a row of them is.
-fn people(m: &mailcraft_pst::Message, text: &Text, notes: &mut Vec<String>) -> (Vec<Attendee>, Option<Address>) {
+fn people(m: &mailsolutions_pst::Message, text: &Text, notes: &mut Vec<String>) -> (Vec<Attendee>, Option<Address>) {
     let (mut list, mut organizer) = (Vec::new(), None);
     for r in &m.recipients {
         let p = &r.properties;
@@ -368,7 +373,7 @@ fn people(m: &mailcraft_pst::Message, text: &Text, notes: &mut Vec<String>) -> (
 /// The appointment `m` as an event, or why it isn't brought.
 pub fn build<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     named: &Named,
     here: Here,
 ) -> Result<Result<BuiltEvent, &'static str>, PstError> {
@@ -422,7 +427,7 @@ pub fn build<R: Read + Seek>(
     };
     let zone = if blob.is_some() { zone_of(pst, m, ids.id(ZONE_RECUR), &mut notes)? } else { None };
     let series = match &blob {
-        Some(PropValue::Binary(b)) => match mailcraft_pst::appointment_recurrence(b) {
+        Some(PropValue::Binary(b)) => match mailsolutions_pst::appointment_recurrence(b) {
             Ok(r) => {
                 let whole = zone.map_or_else(|| DateTime::from_timestamp(start, clock_offset(start, r.start_offset)).date, |z| z.wall(start).date);
                 match first_of(&r, whole) {
@@ -461,7 +466,7 @@ pub fn build<R: Read + Seek>(
     let length = i64::from(r.end_offset.saturating_sub(r.start_offset));
     let instant = |w: DateTime| match by_clock {
         Some(z) => z.instant(w),
-        None => mailcraft_model::zoned::instant_at(w, &offset_at),
+        None => mailsolutions_model::zoned::instant_at(w, &offset_at),
     };
     e.recurrence = Some(rule);
     if all_day {
@@ -471,7 +476,7 @@ pub fn build<R: Read + Seek>(
         let begins = instant(clock);
         let ends = begins.saturating_add(length.saturating_mul(60));
         e.set_instants(begins, ends, &offset_at);
-        (e.start_zone, e.end_zone) = mailcraft_model::zoned::own_zones(zone, None, (begins, ends), true, &offset_at);
+        (e.start_zone, e.end_zone) = mailsolutions_model::zoned::own_zones(zone, None, (begins, ends), true, &offset_at);
     }
     let day_here = |e: &Event, minutes: u32| {
         let day = wall(minutes).date;
@@ -520,7 +525,7 @@ pub fn build<R: Read + Seek>(
             let at = instant(begins);
             let until = instant(wall(x.end)).max(at);
             one.set_instants(at, until, &offset_at);
-            (one.start_zone, one.end_zone) = mailcraft_model::zoned::own_zones(zone, None, (at, until), false, &offset_at);
+            (one.start_zone, one.end_zone) = mailsolutions_model::zoned::own_zones(zone, None, (at, until), false, &offset_at);
         }
         if !charge(named, held(&one)) {
             past_budget = past_budget.saturating_add(1);
@@ -547,7 +552,7 @@ pub fn build<R: Read + Seek>(
 }
 
 /// What the reader couldn't read of an item.
-fn left_out_notes(m: &mailcraft_pst::Message, notes: &mut Vec<String>) {
+fn left_out_notes(m: &mailsolutions_pst::Message, notes: &mut Vec<String>) {
     notes.extend(m.left_out.iter().map(|part| format!("{}: {}", item::part_name(&part.part), part.reason)));
 }
 
@@ -563,12 +568,12 @@ fn place_once(e: &mut Event, start: Timestamp, end: Timestamp, zs: Option<Zone>,
     let offset_at = |t: Timestamp| here.at(t);
     if e.all_day {
         // Whole days are kept as the days they were in the zone they were made in.
-        let day = |t: Timestamp, z: Option<Zone>| z.map_or_else(|| mailcraft_model::zoned::wall_at(t, &offset_at).date, |z| z.wall(t).date);
+        let day = |t: Timestamp, z: Option<Zone>| z.map_or_else(|| mailsolutions_model::zoned::wall_at(t, &offset_at).date, |z| z.wall(t).date);
         e.start = DateTime::at_midnight(day(start, zs));
         e.end = DateTime::at_midnight(day(end, ze.or(zs))).max(e.start.add_days(1));
     } else {
         e.set_instants(start, end, &offset_at);
-        (e.start_zone, e.end_zone) = mailcraft_model::zoned::own_zones(zs, ze, (start, end), false, &offset_at);
+        (e.start_zone, e.end_zone) = mailsolutions_model::zoned::own_zones(zs, ze, (start, end), false, &offset_at);
     }
 }
 
@@ -602,7 +607,7 @@ fn categories_held(categories: &[String]) -> usize {
 /// A task of the file as a to-do on this computer.
 pub fn build_task<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     named: &Named,
 ) -> Result<Result<(Task, Vec<String>), &'static str>, PstError> {
     let p = &m.properties;
@@ -653,7 +658,7 @@ fn charge_kept(named: &Named, cost: usize) -> bool {
     cost <= room
 }
 
-fn files_left_out(m: &mailcraft_pst::Message, kind: &str, notes: &mut Vec<String>) {
+fn files_left_out(m: &mailsolutions_pst::Message, kind: &str, notes: &mut Vec<String>) {
     let files = m.attachments.iter().filter(|a| !a.properties.bool(0x7FFE).unwrap_or(false)).count();
     if files > 0 {
         notes.push(format!("{files} attached files are left out: {kind} here don't keep files"));
@@ -663,7 +668,7 @@ fn files_left_out(m: &mailcraft_pst::Message, kind: &str, notes: &mut Vec<String
 /// A sticky note. Its text is its body; the subject Outlook keeps is only its first line.
 pub fn build_note<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     named: &Named,
 ) -> Result<Result<(Note, Vec<String>), &'static str>, PstError> {
     let p = &m.properties;
@@ -698,7 +703,7 @@ pub fn build_note<R: Read + Seek>(
 /// A journal entry.
 pub fn build_journal<R: Read + Seek>(
     pst: &mut Pst<R>,
-    m: &mailcraft_pst::Message,
+    m: &mailsolutions_pst::Message,
     named: &Named,
 ) -> Result<Result<(JournalEntry, Vec<String>), &'static str>, PstError> {
     let p = &m.properties;

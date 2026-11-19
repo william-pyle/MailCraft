@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Time zones in the window: the list a zone is picked from, and how a zone is called in a line.
 //!
-//! What a zone is, and how times are kept, is the engine's (`mailcraft_engine::cmd::zones`,
-//! `mailcraft_model::zoned`); here is only how it looks. The names of zones are our own wording:
+//! What a zone is, and how times are kept, is the engine's (`mailsolutions_engine::cmd::zones`,
+//! `mailsolutions_model::zoned`); here is only how it looks. The names of zones are our own wording:
 //! the label a zone has (its Windows name without "Standard", which is an identifier any
 //! calendar file may carry) and the place the database names it after.
 
 use egui::Ui;
-use mailcraft_engine::Session;
-use mailcraft_time::{Timestamp, Zone};
+use mailsolutions_engine::Session;
+use mailsolutions_time::{Timestamp, Zone};
 
 use crate::theme::Tokens;
 
@@ -49,7 +49,7 @@ pub(crate) fn picker(ui: &mut Ui, id: egui::Id, s: &Session, current: Zone, quer
             if !was_open {
                 field.request_focus();
             }
-            let zones = mailcraft_engine::cmd::zones::choices(s, query, LISTED);
+            let zones = mailsolutions_engine::cmd::zones::choices(s, query, LISTED);
             if zones.is_empty() {
                 ui.label(egui::RichText::new(tl!("No time zone is called that")).color(t.text_dim));
             }

@@ -4,8 +4,8 @@
 //! meets a thrown exception it was not told about, and a failure of native code that Rust called
 //! (`UnexpectedUniFFICallbackError`) becomes an error here, never a panic.
 
-use mailcraft_engine::CmdError;
-use mailcraft_host::{InitError, PlatformError, SecretError};
+use mailsolutions_engine::CmdError;
+use mailsolutions_host::{InitError, PlatformError, SecretError};
 use uniffi::UnexpectedUniFFICallbackError;
 
 /// Why a call of the core did nothing (or failed). The text is the program's own words; it never

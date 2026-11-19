@@ -9,7 +9,7 @@
 //! the source of every workspace crate the browser app links, module by module from each crate's
 //! root, and fails on such a call outside code that is compiled natively only: a module, an item,
 //! a block or a statement under `#[cfg(not(target_arch = "wasm32"))]` (or `test`, `windows`,
-//! `unix`, a `target_os`). Code the browser runs asks `mailcraft_time` instead (`now`,
+//! `unix`, a `target_os`). Code the browser runs asks `mailsolutions_time` instead (`now`,
 //! `Stopwatch`), which asks the browser's clock there.
 //!
 //! A call the browser build compiles but can never reach (a type only the desktop app makes)
@@ -364,7 +364,7 @@ pub fn browser_crates(meta: &Value) -> Result<Vec<(String, PathBuf)>, String> {
     let pkgs = meta["packages"].as_array().ok_or("metadata: no packages array")?;
     let find = |name: &str| pkgs.iter().find(|p| p["name"].as_str() == Some(name));
     let mut out = Vec::new();
-    let mut todo = vec!["mailcraft-web".to_string()];
+    let mut todo = vec!["mailsolutions-web".to_string()];
     let mut seen = BTreeSet::new();
     while let Some(name) = todo.pop() {
         if !seen.insert(name.clone()) {
@@ -400,7 +400,7 @@ pub fn run(root: &Path, meta: &Value) -> Result<(), String> {
         return Ok(());
     }
     Err(format!(
-        "{} std clock or sleep call(s) the browser build would run, and panic on (#1337): use `mailcraft_time::now`/`Stopwatch`, or put the call under `#[cfg(not(target_arch = \"wasm32\"))]`:\n  {}",
+        "{} std clock or sleep call(s) the browser build would run, and panic on (#1337): use `mailsolutions_time::now`/`Stopwatch`, or put the call under `#[cfg(not(target_arch = \"wasm32\"))]`:\n  {}",
         found.len(),
         found.join("\n  ")
     ))

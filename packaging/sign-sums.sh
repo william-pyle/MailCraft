@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Sign a release's SHA256SUMS.txt with MailCraft's own release key: writes SHA256SUMS.txt.sig
-# beside it (an ed25519 signature in base64, docs/releasing.md). A copy of MailCraft installs an
+# Sign a release's SHA256SUMS.txt with MailSolutions's own release key: writes SHA256SUMS.txt.sig
+# beside it (an ed25519 signature in base64, docs/releasing.md). A copy of MailSolutions installs an
 # update only when this signature verifies by one of the public keys it carries.
 #
-#   MAILCRAFT_RELEASE_KEY=… packaging/sign-sums.sh <folder with SHA256SUMS.txt>
+#   MAILSOLUTIONS_RELEASE_KEY=… packaging/sign-sums.sh <folder with SHA256SUMS.txt>
 #
 # The key (base64 PKCS#8, from `cargo xtask release-key new`) is a secret of the protected
 # `release` environment and comes in through the environment only; it is never printed or
@@ -123,13 +123,13 @@ if [[ ! -f "$SUMS" ]]; then
   exit 1
 fi
 rm -f "$SUMS.sig"
-if [[ -z "${MAILCRAFT_RELEASE_KEY:-}" ]]; then
-  echo "unsigned: MAILCRAFT_RELEASE_KEY isn't set, so there is no SHA256SUMS.txt.sig and no copy of MailCraft will install this release by itself"
+if [[ -z "${MAILSOLUTIONS_RELEASE_KEY:-}" ]]; then
+  echo "unsigned: MAILSOLUTIONS_RELEASE_KEY isn't set, so there is no SHA256SUMS.txt.sig and no copy of MailSolutions will install this release by itself"
   exit 0
 fi
 if [[ -n "${GITHUB_ACTIONS:-}" ]] || openssl3; then
   checked_openssl
-  sign_with_openssl "$SUMS" MAILCRAFT_RELEASE_KEY
+  sign_with_openssl "$SUMS" MAILSOLUTIONS_RELEASE_KEY
   exit 0
 fi
 cd "$ROOT"

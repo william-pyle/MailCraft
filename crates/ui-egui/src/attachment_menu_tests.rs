@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 
 use egui::{Key, PointerButton, Rect, accesskit::Role};
 use egui_kittest::kittest::{NodeT, Queryable};
-use mailcraft_model::Attachment;
+use mailsolutions_model::Attachment;
 use serde_json::json;
 
 use crate::people_view::testing::{self, Window, click, key};
@@ -253,7 +253,7 @@ fn a_greyed_entry_is_greyed_in_both_menus() {
 /// A message file that is not filed: its `▾` is greyed, takes no keyboard and opens nothing.
 #[test]
 fn an_unfiled_message_has_a_greyed_arrow() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-attachment-menu-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-attachment-menu-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("handed.eml");
@@ -363,7 +363,7 @@ fn a_disguised_pdf_and_an_oversized_attachment_never_start_the_helper() {
     assert!(app.execute("ui.previewAttachment", json!({"id":A, "index":0})).is_err());
     let file = app.session.mailbox.message_mut(A).unwrap().attachments.first_mut().unwrap();
     file.data = Arc::new(Vec::new());
-    file.kept = Some(mailcraft_model::ContentRef { sha256: [0; 32], len: MAX_INPUT_BYTES as u64 + 1 });
+    file.kept = Some(mailsolutions_model::ContentRef { sha256: [0; 32], len: MAX_INPUT_BYTES as u64 + 1 });
     assert!(!crate::attachment_preview::available(app, A, 0));
     assert!(app.execute("ui.previewAttachment", json!({"id":A, "index":0})).is_err());
 }
@@ -411,7 +411,7 @@ fn assert_junk_preview_restrictions(in_subfolder: bool) {
     app.ui.attachment_previews = true;
     let message = app.session.mailbox.message(A).unwrap();
     let account = message.account;
-    let junk = app.session.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Junk).unwrap();
+    let junk = app.session.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Junk).unwrap();
     let folder = if in_subfolder { app.session.mailbox.add_folder(account, Some(junk), "Held").unwrap() } else { junk };
     let message = app.session.mailbox.message_mut(A).unwrap();
     message.attachments = vec![Attachment::new("notes.pdf", "application/pdf", b"%PDF-1.7".to_vec())];

@@ -4,7 +4,7 @@
 //! its colon (`[From:] stuart smith [Subject:] iqa`), so the owner sees which part of a message is
 //! searched (#196); what is typed after it stays plain text, so a full name reads as words. The
 //! text is the query as typed and stays the only truth: a pill is only how the box lays it out
-//! ([`mailcraft_model::search::keyword_pills`] says where they are). A pill appears as soon as a
+//! ([`mailsolutions_model::search::keyword_pills`] says where they are). A pill appears as soon as a
 //! known keyword's colon is typed and keeps it while its value is being typed; it holds the same
 //! characters as the text (only the keyword's first letter is drawn as a capital), so the cursor
 //! and Backspace go through it as through any text.
@@ -35,7 +35,7 @@ pub(crate) struct Pill {
 pub(crate) fn pills(text: &str, cursor: Option<usize>) -> Vec<Pill> {
     let chars = |byte: usize| text.get(..byte).map_or(0, |s| s.chars().count());
     let cursor = cursor.map(|c| text.char_indices().nth(c).map_or(text.len(), |(b, _)| b));
-    mailcraft_model::search::keyword_pills(text, cursor)
+    mailsolutions_model::search::keyword_pills(text, cursor)
         .into_iter()
         .map(|r| {
             let dash = usize::from(text.get(r.clone()).is_some_and(|h| h.starts_with('-')));

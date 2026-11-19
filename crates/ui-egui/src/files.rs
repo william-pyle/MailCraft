@@ -60,15 +60,15 @@ pub struct PendingDialog {
 fn export_name(app: &MailApp, id: &str, params: &Value) -> Option<String> {
     let s = &app.session;
     // The same names the commands give: made safe by `opening`, as every file named from mail is.
-    let clean = mailcraft_engine::opening::export_name;
+    let clean = mailsolutions_engine::opening::export_name;
     Some(match id {
-        "file.saveAs" => format!("mailbox.{}", mailcraft_engine::io::MAILBOX_EXT),
-        "file.save" if s.path.is_none() && app.services.persist.is_none() => format!("mailbox.{}", mailcraft_engine::io::MAILBOX_EXT),
+        "file.saveAs" => format!("mailbox.{}", mailsolutions_engine::io::MAILBOX_EXT),
+        "file.save" if s.path.is_none() && app.services.persist.is_none() => format!("mailbox.{}", mailsolutions_engine::io::MAILBOX_EXT),
         // The message named (a Save As that waited for its download names it), else the selected,
         // by the name the command gives it.
         "file.exportMessage" => {
             let message = params.get("id").and_then(Value::as_u64).and_then(|id| s.mailbox.message(id)).or_else(|| s.focused_message());
-            message.map_or_else(|| clean("message", "eml"), mailcraft_engine::cmd::file::eml_name)
+            message.map_or_else(|| clean("message", "eml"), mailsolutions_engine::cmd::file::eml_name)
         }
         "file.exportFolder" => clean(&s.mailbox.folder(s.view.folder).map(|f| f.name.clone()).unwrap_or_default(), "mbox"),
         "file.exportCalendar" => clean(
@@ -82,7 +82,7 @@ fn export_name(app: &MailApp, id: &str, params: &Value) -> Option<String> {
             let index = params.get("index").and_then(Value::as_u64)? as usize;
             let id = params.get("id").and_then(Value::as_u64).or(s.sel.focus())?;
             // Only the file's own name, cleaned: a message can name its attachment anything.
-            mailcraft_engine::opening::save_name(&s.mailbox.message(id)?.attachments.get(index)?.name)
+            mailsolutions_engine::opening::save_name(&s.mailbox.message(id)?.attachments.get(index)?.name)
         }
         _ => return None,
     })
@@ -296,8 +296,8 @@ pub(crate) fn saved_said(command: &str, v: &Value, name: &str) -> String {
 pub const MOST_ATTACHED: usize = 100;
 
 /// The most bytes one file to attach may have: a larger one is never read
-/// ([`mailcraft_engine::cmd::compose::MAX_ATTACHMENT`], which refuses it after reading).
-pub const MOST_ATTACHMENT_BYTES: u64 = mailcraft_engine::cmd::compose::MAX_ATTACHMENT as u64;
+/// ([`mailsolutions_engine::cmd::compose::MAX_ATTACHMENT`], which refuses it after reading).
+pub const MOST_ATTACHMENT_BYTES: u64 = mailsolutions_engine::cmd::compose::MAX_ATTACHMENT as u64;
 
 /// The most bytes read for one pick together: on the desktop that much memory, in the browser
 /// more than a page can hold at all, and the message being written would go down with it.
@@ -434,7 +434,7 @@ fn attached_said(app: &mut MailApp, batch: Batch) -> Result<Value, String> {
 /// (The message is the one the window with the keyboard writes, [`crate::windows::compose_window::target`]:
 /// from the main window, the reading pane's alone, never one in a window behind it.)
 fn purpose_of(app: &MailApp, name: &str) -> &'static str {
-    use mailcraft_engine::io::Format;
+    use mailsolutions_engine::io::Format;
     let writing = crate::windows::compose_window::target(app).is_some();
     match Format::from_extension(name) {
         Some(Format::Mailbox) => "mailbox",
@@ -544,7 +544,7 @@ pub(crate) fn dropped_path(app: &mut MailApp, path: &str) {
 
 /// Whether `path` names a file of mail (.eml or .mbox), by its extension.
 fn is_mail_file(path: &str) -> bool {
-    use mailcraft_engine::io::Format;
+    use mailsolutions_engine::io::Format;
     matches!(Format::from_extension(path), Some(Format::Eml | Format::Mbox))
 }
 
@@ -564,7 +564,7 @@ const MOST_WAITING: usize = 32;
 
 /// [`MailApp::open_from_system`].
 pub(crate) fn from_system(app: &mut MailApp, what: &str) {
-    use mailcraft_engine::io::Format;
+    use mailsolutions_engine::io::Format;
     if is_mailto_link(what) {
         return dropped_path(app, what);
     }
@@ -586,8 +586,8 @@ pub(crate) fn from_system(app: &mut MailApp, what: &str) {
 
 /// Save As in the window of a message file ([`crate::opened_message`]): the file's own bytes,
 /// where the owner says (a download in the browser).
-pub(crate) fn save_opened(app: &mut MailApp, window: u64, m: &mailcraft_model::Message, bytes: &[u8]) {
-    let name = mailcraft_engine::cmd::file::eml_name(m);
+pub(crate) fn save_opened(app: &mut MailApp, window: u64, m: &mailsolutions_model::Message, bytes: &[u8]) {
+    let name = mailsolutions_engine::cmd::file::eml_name(m);
     if let Some(save) = &app.services.download {
         match save(&name, bytes) {
             Ok(()) => app.status(crate::i18n::fmt(tl!("Downloaded {name}"), &[("name", &name)])),
@@ -607,7 +607,7 @@ fn is_mailto_link(text: &str) -> bool {
     text.trim().get(..7).is_some_and(|scheme| scheme.eq_ignore_ascii_case("mailto:"))
 }
 
-/// The next calendar or contact file the system asked MailCraft to open, asked about once
+/// The next calendar or contact file the system asked MailSolutions to open, asked about once
 /// nothing else is: Import runs `file.import` with it, Cancel leaves it. The question is the
 /// window's, so only the owner answers it (an agent can't name a file to import).
 pub(crate) fn ask_next(app: &mut MailApp) {
@@ -622,14 +622,14 @@ pub(crate) fn ask_next(app: &mut MailApp) {
 /// The name of the folder mail imported now goes to (#1401): the folder in view, or, for a
 /// folder of an account a server keeps, this computer's Imported folder.
 fn import_target(app: &MailApp) -> String {
-    use mailcraft_engine::io::{Lands, lands_in, mail_aimed_at};
+    use mailsolutions_engine::io::{Lands, lands_in, mail_aimed_at};
     let mb = &app.session.mailbox;
     // Where `file.import` with no folder named puts mail: the folder in view, never an Outbox
     // (its account's Drafts or Inbox), and this computer's Drafts or Imported for a server's.
     let landed = mail_aimed_at(mb, app.session.view.folder, None, true).ok().map(|aimed| lands_in(mb, aimed));
     match landed {
-        Some(Lands::Folder(f)) => mb.folder(f).map_or_else(|| mailcraft_model::IMPORTED.to_string(), |f| crate::nav::folder_name(f).to_string()),
-        _ => mailcraft_model::IMPORTED.to_string(),
+        Some(Lands::Folder(f)) => mb.folder(f).map_or_else(|| mailsolutions_model::IMPORTED.to_string(), |f| crate::nav::folder_name(f).to_string()),
+        _ => mailsolutions_model::IMPORTED.to_string(),
     }
 }
 
@@ -642,7 +642,7 @@ const MOST_COUNTED: u64 = 8 << 20;
 #[cfg(not(target_arch = "wasm32"))]
 fn messages_in_file(path: &str) -> Option<usize> {
     use std::io::Read as _;
-    let file = mailcraft_engine::io::regular_file(std::path::Path::new(path)).ok()?;
+    let file = mailsolutions_engine::io::regular_file(std::path::Path::new(path)).ok()?;
     if file.metadata().ok()?.len() > MOST_COUNTED {
         return None;
     }
@@ -651,7 +651,7 @@ fn messages_in_file(path: &str) -> Option<usize> {
     if u64::try_from(bytes.len()).map_or(true, |n| n > MOST_COUNTED) {
         return None;
     }
-    mailcraft_engine::io::count_messages(path, &bytes)
+    mailsolutions_engine::io::count_messages(path, &bytes)
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -662,7 +662,7 @@ fn messages_in_file(_path: &str) -> Option<usize> {
 /// What the owner is asked before a file from outside is imported: mail (#1401), a calendar or
 /// contacts.
 pub(crate) fn import_question(app: &MailApp, path: &str) -> crate::dialogs::Question {
-    use mailcraft_engine::io::Format;
+    use mailsolutions_engine::io::Format;
     let name = file_name(path);
     if is_mail_file(path) {
         let folder = import_target(app);

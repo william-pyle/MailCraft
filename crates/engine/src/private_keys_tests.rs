@@ -3,8 +3,8 @@
 //! The rules for the owner's own private keys (#30 R13, the owner's decisions of 2026-11-11),
 //! and a contact card's keys: with synthetic `example.org` keys made for these tests alone.
 
-use mailcraft_charset::base64::STANDARD;
-use mailcraft_model::Mailbox;
+use mailsolutions_charset::base64::STANDARD;
+use mailsolutions_model::Mailbox;
 use serde_json::json;
 
 use crate::Session;
@@ -55,7 +55,7 @@ fn a_file_of_two_keys_is_refused() {
 /// whatever the window would say of it.
 #[test]
 fn a_p12_with_its_key_in_clear_is_refused() {
-    let opened = mailcraft_smime::pkcs12::open(&p12(PLAIN_P12), PASS).unwrap();
+    let opened = mailsolutions_smime::pkcs12::open(&p12(PLAIN_P12), PASS).unwrap();
     assert!(!opened.key_encrypted);
     let err = smime_import(&p12(PLAIN_P12), PASS).unwrap_err().to_string();
     assert!(err.contains("isn't encrypted"), "{err}");

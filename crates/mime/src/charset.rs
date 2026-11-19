@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Bytes to text, for the character sets mail still arrives in: `mailcraft-charset`'s decoder,
+//! Bytes to text, for the character sets mail still arrives in: `mailsolutions-charset`'s decoder,
 //! which vCard files are read with too, and line endings.
 
-pub(crate) use mailcraft_charset::{decode, guess};
+pub(crate) use mailsolutions_charset::{decode, guess};
 
 /// Line endings as `\n`: CRLF and a lone CR both become LF.
 pub(crate) fn unix_lines(text: &str) -> String {

@@ -6,8 +6,8 @@
 
 use std::sync::{Arc, Mutex};
 
-use mailcraft_model::remote_rules::{RemoteRule, RuleOp, RuleOpKind, RuleResult, RulesUpload};
-use mailcraft_model::{Action, Condition, Importance};
+use mailsolutions_model::remote_rules::{RemoteRule, RuleOp, RuleOpKind, RuleResult, RulesUpload};
+use mailsolutions_model::{Action, Condition, Importance};
 use serde_json::{Value, json};
 
 use super::rules::{push_rules_at, rule_body, rule_of, rules_at};

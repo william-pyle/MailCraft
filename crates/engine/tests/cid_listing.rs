@@ -8,12 +8,12 @@
 //!
 //! The people, hosts and files are invented.
 
-use mailcraft_engine::{Session, sample};
-use mailcraft_model::search::Query;
-use mailcraft_model::{Condition, Message};
-use mailcraft_pst::test_writer::{self as w, AttachSpec, FileSpec, FolderSpec, Layout, MessageSpec};
-use mailcraft_pst::{Encryption, Format};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_engine::{Session, sample};
+use mailsolutions_model::search::Query;
+use mailsolutions_model::{Condition, Message};
+use mailsolutions_pst::test_writer::{self as w, AttachSpec, FileSpec, FolderSpec, Layout, MessageSpec};
+use mailsolutions_pst::{Encryption, Format};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::json;
 
 /// A PNG's signature and the start of its header: a picture by its bytes. (Base64 for the wire.)
@@ -73,7 +73,7 @@ fn a_file_that_is_no_picture_is_listed_whatever_the_body_says_of_it() {
         ("nothing", "<p>Hello</p>"),
     ] {
         for part_type in ["application/zip", "image/png"] {
-            let m = mailcraft_mime_model::parse(&raw(html, part_type, ZIP));
+            let m = mailsolutions_mime_model::parse(&raw(html, part_type, ZIP));
             assert!(listed(&m), "{label}, {part_type}");
             let (pictures, sent) = reply_carries(&mut session(), m);
             assert!(pictures.is_empty() && sent.is_empty(), "{label}, {part_type}: {pictures:?} {sent:?}");
@@ -84,13 +84,13 @@ fn a_file_that_is_no_picture_is_listed_whatever_the_body_says_of_it() {
 #[test]
 fn a_picture_an_img_asks_for_is_shown_in_place_and_goes_with_a_reply() {
     for html in ["<p>Hello <img src=\"cid:z9@a.example\"></p>", "<p><IMG alt=x SRC='CID:z9@a.example'></p>", "<img src=cid:z9%40a.example>"] {
-        let m = mailcraft_mime_model::parse(&raw(html, "image/png", PNG_B64));
+        let m = mailsolutions_mime_model::parse(&raw(html, "image/png", PNG_B64));
         assert!(!listed(&m), "{html}");
         let (pictures, sent) = reply_carries(&mut session(), m);
         assert_eq!((pictures.len(), sent.len()), (1, 1), "{html}");
     }
     // Only mentioned, it is listed like any other file.
-    let m = mailcraft_mime_model::parse(&raw("<p>cid:z9@a.example</p>", "image/png", PNG_B64));
+    let m = mailsolutions_mime_model::parse(&raw("<p>cid:z9@a.example</p>", "image/png", PNG_B64));
     assert!(listed(&m));
 }
 
@@ -136,7 +136,7 @@ fn a_pst_files_inline_part_is_a_picture_an_img_asks_for() {
         named_strings: Vec::new(),
     };
     let mut s = session();
-    let data = mailcraft_engine::cmd::base64_encode(&w::build(&file));
+    let data = mailsolutions_engine::cmd::base64_encode(&w::build(&file));
     s.run("file.importPst", &json!({"name": "old-mail.pst", "data": data})).unwrap();
     let found = |subject: &str| s.mailbox.messages.values().find(|m| m.subject == subject).map(|m| Message::clone(m)).unwrap();
     // No file of another kind is inline, whatever the body or the file says.

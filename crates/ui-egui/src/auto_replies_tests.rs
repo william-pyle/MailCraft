@@ -10,10 +10,10 @@ use std::collections::VecDeque;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::Id;
-use mailcraft_model::auto_replies::{AutoReplies, AutoReplyStatus, ExternalAudience};
-use mailcraft_model::sync::Tokens;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Id;
+use mailsolutions_model::auto_replies::{AutoReplies, AutoReplyStatus, ExternalAudience};
+use mailsolutions_model::sync::Tokens;
 use serde_json::json;
 
 use crate::auto_replies::{Again, AutoRepliesJob, AutoRepliesResult, Draft, Permission, Trouble, Unchanged};
@@ -28,11 +28,11 @@ type Answers = Arc<Mutex<VecDeque<AutoRepliesResult>>>;
 type SignIns = Arc<Mutex<Vec<(Id, bool, bool)>>>;
 
 fn tokens(refresh: &str) -> Tokens {
-    Tokens { access: "a".into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: "a".into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 fn window() -> (MailApp, Id, Answers, Jobs, SignIns) {
-    let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(true);
     let added = app.execute("account.add", json!({"email": OWNER, "incoming": {"host": "outlook.example.org"}, "auth": "oauth2"})).unwrap();
@@ -295,7 +295,7 @@ fn another_mailbox_forgets_what_waited_and_what_was_on_its_way() {
         app.execute("account.setAutomaticReplies", json!({"account": owner, "status": "disabled"})).unwrap();
         let before = jobs.lock().unwrap().len();
         // Another mailbox, whose account has the same id.
-        app.session.replace_mailbox(mailcraft_model::Mailbox::with_local_account("", ""));
+        app.session.replace_mailbox(mailsolutions_model::Mailbox::with_local_account("", ""));
         if noticed_first {
             app.drop_secrets_if_replaced();
         }
@@ -442,11 +442,11 @@ fn why_automatic_replies_werent_changed_is_one_heading_and_a_reason() {
                 (Unchanged::Offline, "Your automatic replies weren't changed: you are working offline."),
                 (
                     Unchanged::NeedsPermission,
-                    "Your automatic replies weren't changed: MailCraft needs your permission first (File › Info › Ask again).",
+                    "Your automatic replies weren't changed: MailSolutions needs your permission first (File › Info › Ask again).",
                 ),
-                (Unchanged::Denied, "Your automatic replies weren't changed: your organisation doesn't let MailCraft change them."),
-                (Unchanged::NotAllowed, "Your automatic replies weren't changed: MailCraft wasn't allowed to change them."),
-                (Unchanged::SignInToRead, "Your automatic replies weren't changed: sign in again to let MailCraft read them (File › Info)."),
+                (Unchanged::Denied, "Your automatic replies weren't changed: your organisation doesn't let MailSolutions change them."),
+                (Unchanged::NotAllowed, "Your automatic replies weren't changed: MailSolutions wasn't allowed to change them."),
+                (Unchanged::SignInToRead, "Your automatic replies weren't changed: sign in again to let MailSolutions read them (File › Info)."),
                 (Unchanged::SignInOver, "Your automatic replies weren't changed: Microsoft no longer takes your sign-in."),
                 (failed(), "Your automatic replies weren't changed: the server didn't answer"),
                 (Unchanged::Unknown, "Your automatic replies weren't changed"),
@@ -458,13 +458,13 @@ fn why_automatic_replies_werent_changed_is_one_heading_and_a_reason() {
                 (Unchanged::Offline, "Uw automatische antwoorden zijn niet gewijzigd: u werkt offline."),
                 (
                     Unchanged::NeedsPermission,
-                    "Uw automatische antwoorden zijn niet gewijzigd: MailCraft heeft eerst uw toestemming nodig (Bestand › Info › Opnieuw vragen).",
+                    "Uw automatische antwoorden zijn niet gewijzigd: MailSolutions heeft eerst uw toestemming nodig (Bestand › Info › Opnieuw vragen).",
                 ),
-                (Unchanged::Denied, "Uw automatische antwoorden zijn niet gewijzigd: uw organisatie staat MailCraft niet toe ze te wijzigen."),
-                (Unchanged::NotAllowed, "Uw automatische antwoorden zijn niet gewijzigd: MailCraft mocht ze niet wijzigen."),
+                (Unchanged::Denied, "Uw automatische antwoorden zijn niet gewijzigd: uw organisatie staat MailSolutions niet toe ze te wijzigen."),
+                (Unchanged::NotAllowed, "Uw automatische antwoorden zijn niet gewijzigd: MailSolutions mocht ze niet wijzigen."),
                 (
                     Unchanged::SignInToRead,
-                    "Uw automatische antwoorden zijn niet gewijzigd: meld u opnieuw aan zodat MailCraft ze kan lezen (Bestand › Info).",
+                    "Uw automatische antwoorden zijn niet gewijzigd: meld u opnieuw aan zodat MailSolutions ze kan lezen (Bestand › Info).",
                 ),
                 (Unchanged::SignInOver, "Uw automatische antwoorden zijn niet gewijzigd: Microsoft accepteert uw aanmelding niet meer."),
                 (failed(), "Uw automatische antwoorden zijn niet gewijzigd: the server didn't answer"),

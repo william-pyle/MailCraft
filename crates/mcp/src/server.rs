@@ -55,7 +55,7 @@ fn skip_line(input: &mut impl BufRead) -> std::io::Result<()> {
     }
 }
 
-const INSTRUCTIONS: &str = "MailCraft is a mail, calendar, contacts and tasks program (in the style of Microsoft Outlook). Every \
+const INSTRUCTIONS: &str = "MailSolutions is a mail, calendar, contacts and tasks program (in the style of Microsoft Outlook). Every \
 action is a command: find ids and parameters with list_commands and run them with execute (or several with batch). \
 Typical flow: list_folders → list_messages {folder: \"Inbox\"} → read_message {id} → execute mail.reply {id} → \
 execute compose.set {compose, body: \"...\"} → execute compose.send {compose} (`compose`: the id mail.reply answered; \
@@ -70,8 +70,8 @@ when there is no window unless the owner started the server with `--allow`. File
 by path (pass base64 `data` instead), unless the owner gave a folder with `--files`.";
 
 /// Resource URIs.
-pub const MAILBOX_URI: &str = "mailcraft://mailbox";
-pub const COMMANDS_URI: &str = "mailcraft://commands";
+pub const MAILBOX_URI: &str = "mailsolutions://mailbox";
+pub const COMMANDS_URI: &str = "mailsolutions://commands";
 
 /// An MCP server bound to one backend.
 pub struct Server {
@@ -199,9 +199,9 @@ impl Server {
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": {"tools": {}, "resources": {}},
-                    "serverInfo": {"name": "mailcraft", "title": "MailCraft", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": "https://github.com/UCS-Care-Group/mailcraft"},
+                    "serverInfo": {"name": "mailsolutions", "title": "MailSolutions", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": "https://github.com/william-pyle/MailSolutions"},
                     "instructions": format!(
-                        "{INSTRUCTIONS} Backend: {}. Project: https://github.com/UCS-Care-Group/mailcraft",
+                        "{INSTRUCTIONS} Backend: {}. Project: https://github.com/william-pyle/MailSolutions",
                         self.backend.describe()
                     ),
                 }))

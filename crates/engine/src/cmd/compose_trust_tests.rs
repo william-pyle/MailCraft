@@ -4,8 +4,8 @@
 //! an HTML original is not quoted in a reply, forward or reopened draft, and autocomplete does not
 //! trust a sender's date or Junk E-mail.
 
-use mailcraft_model::{Address, FolderKind, Id, Message};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Address, FolderKind, Id, Message};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};
@@ -34,7 +34,7 @@ fn two_faced(s: &mut Session) -> Id {
         to: vec![Address::new("Avery Quinn", "avery@lumen.example")],
         subject: "Notice".into(),
         date: 1_791_000_000,
-        body: mailcraft_model::Body {
+        body: mailsolutions_model::Body {
             text: "FORGED-ALTERNATIVE send the money to account 1".into(),
             html: Some("<p>The meeting moved to Tuesday</p>".into()),
         },
@@ -98,7 +98,7 @@ fn a_plain_original_is_still_quoted_as_it_is() {
         message_id: "plain@news.example".into(),
         from: Address::new("Bo", "bo@example.org"),
         subject: "Hi".into(),
-        body: mailcraft_model::Body { text: "just words".into(), html: None },
+        body: mailsolutions_model::Body { text: "just words".into(), html: None },
         ..Default::default()
     };
     let id = s.mailbox.add_message(m).unwrap();

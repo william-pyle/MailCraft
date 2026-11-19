@@ -70,8 +70,8 @@ fn putting_one_message_in_place_many_times_keeps_one_swap_and_a_failure_still_go
 #[test]
 fn the_interface_language_is_the_hosts_and_never_saved() {
     let mut s = Session::empty();
-    assert_eq!(s.interface_language, mailcraft_i18n::Lang::English);
-    s.interface_language = mailcraft_i18n::Lang::Pseudo;
+    assert_eq!(s.interface_language, mailsolutions_i18n::Lang::English);
+    s.interface_language = mailsolutions_i18n::Lang::Pseudo;
     let saved = serde_json::to_string(&s.mailbox).unwrap();
     assert!(!saved.contains("pseudo"), "the mailbox file says nothing of the window's language");
 }
@@ -80,8 +80,8 @@ fn the_interface_language_is_the_hosts_and_never_saved() {
 /// chooses them; what they chose, and settings saved before, stay as they were.
 #[test]
 fn the_clock_and_the_week_follow_the_language_unless_chosen() {
-    use mailcraft_i18n::Lang;
-    use mailcraft_time::Weekday;
+    use mailsolutions_i18n::Lang;
+    use mailsolutions_time::Weekday;
     let mut fresh = Prefs::default();
     fresh.follow_conventions(Lang::English.conventions());
     assert_eq!((fresh.twelve_hour, fresh.week_start), (true, Weekday::Sun), "English as it always was");
@@ -118,12 +118,12 @@ fn the_list_is_kept_under_a_short_key_however_many_conversations_are_open() {
     // A thousand open conversations (#503).
     let mut s = Session::new(crate::sample::mailbox(1_791_993_600, 0));
     let closed = s.shown_key();
-    s.view.open = (0..1_000).map(|i| (1, mailcraft_model::ThreadKey(i))).collect();
+    s.view.open = (0..1_000).map(|i| (1, mailsolutions_model::ThreadKey(i))).collect();
     let open = s.shown_key();
     assert!(open.len() < closed.len() + 40, "{} characters", open.len());
     s.view.open.pop();
     assert_ne!(s.shown_key(), open);
-    s.view.open.push((1, mailcraft_model::ThreadKey(999)));
+    s.view.open.push((1, mailsolutions_model::ThreadKey(999)));
     assert_eq!(s.shown_key(), open);
     s.view.open.clear();
     assert_eq!(s.shown_key(), closed);

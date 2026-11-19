@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::{Id, LocalTasks};
+use mailsolutions_model::{Id, LocalTasks};
 use serde_json::json;
 
 use super::SharedPermission;

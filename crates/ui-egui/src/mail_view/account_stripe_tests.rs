@@ -4,8 +4,8 @@
 //! left edge of its mail's rows where the list holds more than one account's mail (a search of
 //! every mailbox); a list of one folder stays as it was.
 
-use mailcraft_engine::Session;
-use mailcraft_model::FolderKind;
+use mailsolutions_engine::Session;
+use mailsolutions_model::FolderKind;
 use serde_json::json;
 
 use super::*;
@@ -17,7 +17,7 @@ type Window = egui_kittest::Harness<'static, MailApp>;
 /// sample's messages moved into its Inbox; the window on the first account's Inbox, the two
 /// accounts and the moved message.
 fn window() -> (Window, Id, Id, Id) {
-    let mut s = Session::at(mailcraft_engine::sample::mailbox(testing::now(), 0), testing::now(), 0);
+    let mut s = Session::at(mailsolutions_engine::sample::mailbox(testing::now(), 0), testing::now(), 0);
     let first = s.mailbox.accounts[0].id;
     let second = s.run("account.add", &json!({"email": "me@second.example"})).unwrap()["id"].as_u64().unwrap();
     s.run("account.edit", &json!({"id": first, "color": "#2F6FD0"})).unwrap();
@@ -42,7 +42,7 @@ fn striped(harness: &mut Window) -> Vec<Id> {
 #[test]
 fn each_account_heading_wears_its_colour() {
     let (mut harness, first, second, _) = window();
-    assert_eq!(harness.state().session.mailbox.account(second).unwrap().color, Some(mailcraft_model::PALETTE[0]));
+    assert_eq!(harness.state().session.mailbox.account(second).unwrap().color, Some(mailsolutions_model::PALETTE[0]));
     for account in [first, second] {
         let heading = harness.state().hit.rect("folderHeading", account).unwrap();
         let dot = harness.state().hit.rect("accountColor", account).unwrap_or_else(|| panic!("no dot for {account}"));
@@ -81,7 +81,7 @@ fn rows_wear_their_accounts_colour_only_in_a_search_of_every_mailbox() {
 
 #[test]
 fn one_account_never_mixes() {
-    let mut s = Session::at(mailcraft_engine::sample::mailbox(testing::now(), 0), testing::now(), 0);
+    let mut s = Session::at(mailsolutions_engine::sample::mailbox(testing::now(), 0), testing::now(), 0);
     s.run("view.search", &json!({"query": "e", "scope": "everywhere"})).unwrap();
     assert!(!mixes_accounts(&s));
     s.run("account.add", &json!({"email": "me@second.example"})).unwrap();

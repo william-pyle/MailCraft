@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Send Status Report: a new message saying how a task stands, which nothing sends.
 
-use mailcraft_model::{Importance, Task};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Importance, Task};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::agent::{Access, classify};

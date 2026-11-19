@@ -5,9 +5,9 @@
 
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::agent::Class;
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::agent::Class;
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::{Value, json};
 
 use crate::agent_gate::answer;
@@ -17,7 +17,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a
 }

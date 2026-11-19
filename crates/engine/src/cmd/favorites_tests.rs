@@ -4,8 +4,8 @@
 //! Outlook shows under Favorites): what `sync.applyFavorites` makes of a download, what the pane
 //! then lists, what `folder.favorite` says, and what a mailbox file holds of it.
 
-use mailcraft_model::remote::{FavoritesDownload, FavoritesOutcome, MAX_FAVORITES, RemoteFavorite};
-use mailcraft_model::{FolderKind, Id, Mailbox};
+use mailsolutions_model::remote::{FavoritesDownload, FavoritesOutcome, MAX_FAVORITES, RemoteFavorite};
+use mailsolutions_model::{FolderKind, Id, Mailbox};
 use proptest::prelude::*;
 use serde_json::{Value, json};
 
@@ -336,7 +336,7 @@ proptest! {
 
 #[test]
 fn a_mailbox_that_chose_exchange_web_services_opens_reads_through_graph_and_says_so_once() {
-    use mailcraft_model::Directory;
+    use mailsolutions_model::Directory;
     let mut t = setup();
     apply_favorites(&mut t.s, &read(t.account, vec![favorite(&["Receipts"], FolderKind::Custom, FolderKind::Custom)])).unwrap();
     let file = String::from_utf8(crate::io::write_mailbox(&t.s.mailbox).unwrap()).unwrap();
@@ -362,14 +362,14 @@ fn a_mailbox_that_chose_exchange_web_services_opens_reads_through_graph_and_says
 
     // Opened as a mailbox: the answer says so, and the mailbox is to be saved without it.
     let mut s = Session::at(Mailbox::with_local_account("", ""), 1_791_993_600, 0);
-    let data = mailcraft_charset::base64::STANDARD.encode(old.as_bytes());
+    let data = mailsolutions_charset::base64::STANDARD.encode(old.as_bytes());
     let answer = run(&mut s, "file.open", json!({"name": "old.mailcraft", "data": data}));
     assert_eq!(answer["favoritesNowGraph"], 1);
     assert!(s.dirty);
     let saved = String::from_utf8(crate::io::write_mailbox(&s.mailbox).unwrap()).unwrap();
     assert!(!saved.contains("favoritesSource"), "{saved}");
     // Opened again, there is nothing more to say.
-    let data = mailcraft_charset::base64::STANDARD.encode(saved.as_bytes());
+    let data = mailsolutions_charset::base64::STANDARD.encode(saved.as_bytes());
     let again = run(&mut s, "file.open", json!({"name": "old.mailcraft", "data": data}));
     assert_eq!((again["favoritesNowGraph"].clone(), s.dirty), (json!(0), false));
 }

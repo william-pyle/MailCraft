@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use super::*;
 
-const SVG: &[u8] = include_bytes!("../../assets/app-icon/source/mailcraft.svg");
+const SVG: &[u8] = include_bytes!("../../assets/app-icon/source/mailsolutions.svg");
 
 /// The alpha of the pixel at (x, y) of a straight-alpha RGBA8 render.
 fn alpha(px: &[u8], size: u32, x: u32, y: u32) -> u8 {

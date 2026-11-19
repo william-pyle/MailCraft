@@ -9,8 +9,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use mailcraft_model::{Mailbox, Message};
-use mailcraft_pst::test_writer::MessageSpec;
+use mailsolutions_model::{Mailbox, Message};
+use mailsolutions_pst::test_writer::MessageSpec;
 use serde_json::json;
 
 use crate::Session;
@@ -40,7 +40,7 @@ fn batches_for(s: &Session, pst: &str) -> (Vec<crate::import_pst::Batch>, crate:
     let outcome = crate::import_pst::read(
         std::io::Cursor::new(std::fs::read(pst).unwrap()),
         &job,
-        mailcraft_pst::Limits::default(),
+        mailsolutions_pst::Limits::default(),
         &crate::import_pst::Progress::default(),
         &mut |b| {
             batches.push(b);
@@ -191,7 +191,7 @@ fn cancelling_midway_keeps_what_is_in_with_its_content() {
         Ok(())
     };
     let outcome =
-        crate::import_pst::read(std::io::Cursor::new(std::fs::read(&pst).unwrap()), &job, mailcraft_pst::Limits::default(), &progress, &mut sink)
+        crate::import_pst::read(std::io::Cursor::new(std::fs::read(&pst).unwrap()), &job, mailsolutions_pst::Limits::default(), &progress, &mut sink)
             .unwrap();
     assert!(outcome.report.cancelled);
     crate::import_pst::finish(&mut s, &place, outcome, false).unwrap();

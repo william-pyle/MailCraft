@@ -1,15 +1,15 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Writing in rich text: the selection in the message being written, typing, formatting and
-//! undo inside the message (`mailcraft_model::rich`).
+//! undo inside the message (`mailsolutions_model::rich`).
 //!
 //! These are pure commands: they change the message being written, never the mailbox, so they
 //! are not on the mailbox's undo history. The message has its own (`compose.undo`). While a
 //! signature is open in File › Signatures they work on it instead ([`Session::doc`]).
 //! Positions count characters of the body's text, a paragraph break being one.
 
-use mailcraft_model::rich::{Font, Format, ListKind, MAX_SIZE, MIN_SIZE, safe_color};
-use mailcraft_model::{ModelError, RichBody, RichText};
+use mailsolutions_model::rich::{Font, Format, ListKind, MAX_SIZE, MIN_SIZE, safe_color};
+use mailsolutions_model::{ModelError, RichBody, RichText};
 use serde_json::{Value, json};
 
 use super::{bad, fail, needs_compose};
@@ -275,10 +275,10 @@ pub fn symbol_ok(c: char) -> bool {
     let private = (0xe000..=0xf8ff).contains(&n) || n >= 0xf_0000;
     let nonchar = (0xfdd0..=0xfdef).contains(&n) || n & 0xfffe == 0xfffe;
     !(c.is_control()
-        || mailcraft_names::is_format(c)
+        || mailsolutions_names::is_format(c)
         || private
         || nonchar
-        || c == mailcraft_model::rich::OBJECT
+        || c == mailsolutions_model::rich::OBJECT
         || (c.is_whitespace() && c != '\u{a0}'))
 }
 
@@ -404,7 +404,7 @@ fn clipboard(s: &mut Session, v: &Value) -> Result<Value, CmdError> {
         return Err(fail("nothing is selected in the message"));
     }
     let part = d.body.text().slice(sel.start(), sel.end()).map_err(model)?;
-    let html = (!d.plain).then(|| mailcraft_mime_model::rich::to_html(&part));
+    let html = (!d.plain).then(|| mailsolutions_mime_model::rich::to_html(&part));
     Ok(json!({"text": part.to_plain(), "html": html}))
 }
 
@@ -438,7 +438,7 @@ fn paste(s: &mut Session, v: &Value) -> CmdResult {
     let from_html = match html {
         Some(html) if html.len() > MAX_PASTE => return Err(too_much()),
         Some(html) => {
-            let rich = mailcraft_mime_model::rich::from_html(html);
+            let rich = mailsolutions_mime_model::rich::from_html(html);
             Some(if plain { RichText::from_plain(&rich.text()) } else { rich }).filter(|rich| !rich.is_empty())
         }
         None => None,

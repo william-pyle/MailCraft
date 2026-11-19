@@ -8,8 +8,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, channel};
 use std::time::{Duration, Instant};
 
-use mailcraft_model::sync::{IdleEnd, IdleNote, SyncRequest};
-use mailcraft_model::{Account, AccountKind, Security, Server};
+use mailsolutions_model::sync::{IdleEnd, IdleNote, SyncRequest};
+use mailsolutions_model::{Account, AccountKind, Security, Server};
 
 use crate::fake::{Fake, FakeImap, FakeMailbox, FakeMessage, ImapWorld};
 use crate::idle::{Timing, watch_with};

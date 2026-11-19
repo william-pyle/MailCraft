@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Notes and journal entries: listed, searched and read. They come from a .pst file (#815).
 
-use mailcraft_model::{Id, JournalEntry, Note};
+use mailsolutions_model::{Id, JournalEntry, Note};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -49,7 +49,7 @@ fn snippet(text: &str) -> String {
 
 /// A time as text; 0 is none.
 fn when(t: i64) -> Option<String> {
-    (t != 0).then(|| mailcraft_time::format_iso_utc(t))
+    (t != 0).then(|| mailsolutions_time::format_iso_utc(t))
 }
 
 fn first_line(text: &str) -> &str {

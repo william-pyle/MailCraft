@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Names: the people, folders, categories, calendars, accounts, signatures and rules that come
-//! into MailCraft from messages, servers, files and what the owner types (#454).
+//! into MailSolutions from messages, servers, files and what the owner types (#454).
 //!
 //! [`is_format`] is the one list of Unicode's format characters (general category Cf, Unicode
 //! 17.0): bidirectional marks, embeddings, overrides and isolates, zero-width marks and joiners,

@@ -3,7 +3,7 @@
 //! A message being written in a window of its own (#286).
 //!
 //! The engine holds every message being written, each with an id, and one of them is current: the
-//! one a command that names none acts on ([`mailcraft_engine::Session::show_compose`]). Here is
+//! one a command that names none acts on ([`mailsolutions_engine::Session::show_compose`]). Here is
 //! where each of them is shown: in a window of its own, in the reading pane (at most one,
 //! [`pane_compose`]), or nowhere for now (one put aside for another in the reading pane, saved to
 //! Drafts first; it is shown again once it is current, a click on its draft, say).
@@ -84,7 +84,7 @@ pub(crate) fn before_run(app: &MailApp, id: &str, params: &Value) -> Result<(), 
     if !app.windows.full() {
         return Ok(());
     }
-    let starting = mailcraft_engine::cmd::compose::STARTING.contains(&id);
+    let starting = mailsolutions_engine::cmd::compose::STARTING.contains(&id);
     let agent = app.session.agent.is_some();
     let window = matches!(app.windows.place, Some(Opens::Window { .. })) || agent;
     if starting && window && (agent || !pane_first(id)) {
@@ -103,7 +103,7 @@ pub(crate) fn before_run(app: &MailApp, id: &str, params: &Value) -> Result<(), 
 /// The message being written of the draft `mail.editDraft` with `params` would open, when it is
 /// being written already.
 fn being_written(app: &MailApp, params: &Value) -> Option<u64> {
-    let draft = mailcraft_engine::p::id(params, "id").or_else(|| app.session.sel.focus())?;
+    let draft = mailsolutions_engine::p::id(params, "id").or_else(|| app.session.sel.focus())?;
     Some(app.session.all_composing().find(|c| c.draft == Some(draft))?.id)
 }
 
@@ -196,7 +196,7 @@ pub(crate) fn pop_out(app: &mut MailApp, compose: u64) -> Result<Value, String> 
 
 /// `ui.openWindow` of a draft, as a double click on it in the list does: it opens in a window of
 /// its own, ready to be written in (or its window comes forward).
-pub(crate) fn open_draft(app: &mut MailApp, draft: mailcraft_model::Id) -> Result<Value, String> {
+pub(crate) fn open_draft(app: &mut MailApp, draft: mailsolutions_model::Id) -> Result<Value, String> {
     let agent = app.session.agent.is_some();
     app.windows.place = Some(Opens::Window { behind: agent });
     let r = app.execute("mail.editDraft", json!({"id": draft}));
@@ -263,7 +263,7 @@ pub(crate) fn discarding(app: &MailApp, closing: &[u64]) -> Vec<Value> {
         .filter(|w| closing.contains(&w.id))
         .filter_map(|w| w.what.compose())
         .filter_map(|id| s.composing_by_id(id))
-        .filter(|c| c.owner_changed && mailcraft_engine::cmd::compose::unsaved(s, c))
+        .filter(|c| c.owner_changed && mailsolutions_engine::cmd::compose::unsaved(s, c))
         .map(|c| json!({"form": "message", "title": c.subject}))
         .collect()
 }
@@ -273,7 +273,7 @@ pub(crate) fn discarding(app: &MailApp, closing: &[u64]) -> Vec<Value> {
 /// said, at the first that can't be: the owner is asked then, as before.
 pub(crate) fn save_all_for_quit(app: &mut MailApp) -> bool {
     let s = &app.session;
-    let unsaved: Vec<u64> = s.all_composing().filter(|c| c.dirty || mailcraft_engine::cmd::compose::draft_gone(s, c)).map(|c| c.id).collect();
+    let unsaved: Vec<u64> = s.all_composing().filter(|c| c.dirty || mailsolutions_engine::cmd::compose::draft_gone(s, c)).map(|c| c.id).collect();
     unsaved.into_iter().all(|compose| match app.execute("compose.saveDraft", json!({"compose": compose})) {
         Ok(_) => true,
         Err(e) => {
@@ -409,7 +409,7 @@ fn run_keys(app: &mut MailApp, ctx: &egui::Context) {
             continue;
         }
         let combo = crate::keys::combo(modifiers, name);
-        let bound = |c: &&mailcraft_engine::CommandSpec| {
+        let bound = |c: &&mailsolutions_engine::CommandSpec| {
             c.writing && !c.shortcut.is_empty() && c.shortcut.split(" / ").any(|k| k.eq_ignore_ascii_case(&combo) && k != "Escape")
         };
         let found = app.session.registry.all().iter().filter(bound).find(|c| (c.enabled)(&app.session).is_none()).map(|c| c.id);

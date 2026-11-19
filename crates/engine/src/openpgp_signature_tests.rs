@@ -5,8 +5,8 @@
 //! signer's key kept, and nothing else. Synthetic `example.org` people's keys and messages, made
 //! with rPGP for these tests.
 
-use mailcraft_model::digital_signature::{SignatureFormat, Verdict, Why};
-use mailcraft_model::{Contact, ContactKey, KeyKind, Labeled, Mailbox};
+use mailsolutions_model::digital_signature::{SignatureFormat, Verdict, Why};
+use mailsolutions_model::{Contact, ContactKey, KeyKind, Labeled, Mailbox};
 use serde_json::json;
 
 use crate::Session;
@@ -26,7 +26,7 @@ fn session_with(messages: &[&str]) -> (Session, Vec<u64>) {
     let inbox = mb.inbox().unwrap();
     let mut ids = Vec::new();
     for text in messages {
-        let mut m = mailcraft_mime_model::parse_fetched(&crlf(text));
+        let mut m = mailsolutions_mime_model::parse_fetched(&crlf(text));
         m.folder = inbox;
         ids.push(mb.add_message(m).unwrap());
     }
@@ -50,7 +50,7 @@ fn settle(s: &mut Session) {
 fn a_signature_without_its_key_cant_be_checked_until_the_key_is_kept() {
     let (mut s, ids) = session_with(&[SIGNED]);
     assert_eq!(said(&mut s, ids[0]), (Verdict::Unchecked, Some(Why::NoPublicKey)));
-    s.run("keys.import", &json!({"data": mailcraft_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
+    s.run("keys.import", &json!({"data": mailsolutions_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
     assert_eq!(said(&mut s, ids[0]), (Verdict::NotVerified, Some(Why::KeyNotVerified)));
     // The owner's word in the window, and only that, makes it Verified; taken back, it isn't.
     s.set_key_verified(ALICE, ALICE_FPR, true).unwrap();
@@ -108,14 +108,14 @@ fn a_from_shown_that_isnt_the_one_checked_is_a_mismatch() {
     let inbox = mb.inbox().unwrap();
     let mut ids = Vec::new();
     for shown in ["mallory@example.org", " Alice@Example.org "] {
-        let mut m = mailcraft_mime_model::parse_fetched(&crlf(WITH_KEY));
+        let mut m = mailsolutions_mime_model::parse_fetched(&crlf(WITH_KEY));
         m.folder = inbox;
         m.from.email = shown.to_string();
         ids.push(mb.add_message(m).unwrap());
     }
     let mut s = Session::new(mb);
     s.clock.now = Some(NOW);
-    s.run("keys.import", &json!({"data": mailcraft_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
+    s.run("keys.import", &json!({"data": mailsolutions_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
     s.set_key_verified(ALICE, ALICE_FPR, true).unwrap();
     assert_eq!(said(&mut s, ids[0]), (Verdict::NotVerified, Some(Why::AddressMismatch)));
     assert_eq!(said(&mut s, ids[1]).0, Verdict::Verified, "the same address, in another case and with spaces");
@@ -141,7 +141,7 @@ fn the_signers_key_in_the_message_is_kept_and_nobody_elses() {
 fn a_draft_is_never_checked_and_keeps_nothing() {
     let mut mb = Mailbox::with_local_account("Bob", "bob@example.org");
     let inbox = mb.inbox().unwrap();
-    let mut m = mailcraft_mime_model::parse_fetched(&crlf(WITH_KEY));
+    let mut m = mailsolutions_mime_model::parse_fetched(&crlf(WITH_KEY));
     m.folder = inbox;
     m.draft = true;
     let id = mb.add_message(m).unwrap();
@@ -155,7 +155,7 @@ fn a_draft_is_never_checked_and_keeps_nothing() {
 #[test]
 fn a_revocation_in_a_message_reaches_the_kept_key() {
     let (mut s, ids) = session_with(&[SIGNED, WITH_REVOKED]);
-    s.run("keys.import", &json!({"data": mailcraft_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
+    s.run("keys.import", &json!({"data": mailsolutions_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
     s.set_key_verified(ALICE, ALICE_FPR, true).unwrap();
     assert_eq!(said(&mut s, ids[0]).0, Verdict::Verified);
     assert_eq!(said(&mut s, ids[1]), (Verdict::Unchecked, Some(Why::KeyRevoked)));
@@ -174,7 +174,7 @@ fn a_revocation_in_a_message_reaches_the_kept_key() {
 #[test]
 fn an_imported_revocation_stays_through_an_undo() {
     let (mut s, ids) = session_with(&[SIGNED]);
-    let encode = |t: &str| mailcraft_charset::base64::STANDARD.encode(t);
+    let encode = |t: &str| mailsolutions_charset::base64::STANDARD.encode(t);
     s.run("keys.import", &json!({"data": encode(ALICE_ASC)})).unwrap();
     s.run("keys.import", &json!({"data": encode(ALICE_REVOKED_ASC)})).unwrap();
     assert_eq!(said(&mut s, ids[0]), (Verdict::Unchecked, Some(Why::KeyRevoked)));
@@ -189,7 +189,7 @@ fn an_imported_revocation_stays_through_an_undo() {
 fn a_signed_message_read_before_its_bytes_were_kept_says_check_again() {
     let mut mb = Mailbox::with_local_account("Bob", "bob@example.org");
     let inbox = mb.inbox().unwrap();
-    let mut m = mailcraft_mime_model::parse(&crlf(SIGNED));
+    let mut m = mailsolutions_mime_model::parse(&crlf(SIGNED));
     m.folder = inbox;
     let id = mb.add_message(m).unwrap();
     let mut s = Session::new(mb);
@@ -200,7 +200,7 @@ fn a_signed_message_read_before_its_bytes_were_kept_says_check_again() {
 fn an_inline_signed_message_is_checked() {
     let (mut s, ids) = session_with(&[INLINE]);
     assert_eq!(said(&mut s, ids[0]).1, Some(Why::NoPublicKey));
-    s.run("keys.import", &json!({"data": mailcraft_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
+    s.run("keys.import", &json!({"data": mailsolutions_charset::base64::STANDARD.encode(ALICE_ASC)})).unwrap();
     assert_eq!(said(&mut s, ids[0]).0, Verdict::NotVerified);
 }
 

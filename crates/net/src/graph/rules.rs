@@ -18,10 +18,10 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::remote_rules::{
+use mailsolutions_model::remote_rules::{
     MAX_RULE_OPS, MAX_SERVER_RULES, RemoteRule, RuleOp, RuleOpKind, RuleOutcome, RuleResult, RulesDownload, RulesUpload, RulesUploaded,
 };
-use mailcraft_model::{Action, Condition, Importance};
+use mailsolutions_model::{Action, Condition, Importance};
 use serde_json::{Map, Value, json};
 
 use super::tasks::valid_id;
@@ -421,8 +421,8 @@ pub(super) fn push_rules_at(base: &str, token: &str, upload: &RulesUpload) -> Ru
             }
             status => {
                 done.result = RuleResult::Refused;
-                done.error = match super::refusal(Doing::Rules, &reply, &[token, sent], mailcraft_time::now()) {
-                    NetError::Proto(mailcraft_proto::ProtoError::Rejected(why)) => why.to_string(),
+                done.error = match super::refusal(Doing::Rules, &reply, &[token, sent], mailsolutions_time::now()) {
+                    NetError::Proto(mailsolutions_proto::ProtoError::Rejected(why)) => why.to_string(),
                     e => e.to_string(),
                 };
                 if done.error.is_empty() {

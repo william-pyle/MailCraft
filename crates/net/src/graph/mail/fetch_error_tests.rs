@@ -25,7 +25,7 @@ fn a_busy_answer_with_a_body_longer_than_the_devices_room_is_busy_not_a_message_
             state.fail_next.push(("GET".into(), 503, "TooManyRequests".into()));
         }
     }
-    let mut request = mailcraft_model::sync::GraphFetchRequest {
+    let mut request = mailsolutions_model::sync::GraphFetchRequest {
         account: 3,
         email: "owner@example.org".into(),
         ids: ids.clone(),

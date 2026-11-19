@@ -9,8 +9,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::remote::FavoritesOutcome;
-use mailcraft_model::{Directory, Id};
+use mailsolutions_model::remote::FavoritesOutcome;
+use mailsolutions_model::{Directory, Id};
 
 use crate::Session;
 
@@ -27,7 +27,7 @@ pub const REFUSED_FOR_ACCOUNT: &str = "Not available for this account";
 /// What the owner is told, once, of a mailbox whose file had them read another way
 /// (`Mailbox::take_retired_favorites_choices`): Exchange Web Services, or not at all.
 pub const FAVORITES_NOW_GRAPH: &str =
-    "Outlook's Favorites are now read through Microsoft Graph. To show MailCraft's own instead, turn them off in File › Options.";
+    "Outlook's Favorites are now read through Microsoft Graph. To show MailSolutions's own instead, turn them off in File › Options.";
 
 /// What the pane says under the Favorites heading, when there is something to say.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -72,10 +72,10 @@ impl Step {
     pub fn about(self) -> &'static str {
         match self {
             Step::CopyMessage => {
-                "Copies a short message with the address of Microsoft's page where an administrator of your organisation approves MailCraft, once for everybody. Nothing is sent: paste it into mail or chat yourself."
+                "Copies a short message with the address of Microsoft's page where an administrator of your organisation approves MailSolutions, once for everybody. Nothing is sent: paste it into mail or chat yourself."
             }
             Step::Help => {
-                "Says what you and your organisation's administrator can do, and lets an administrator approve MailCraft on Microsoft's page from here."
+                "Says what you and your organisation's administrator can do, and lets an administrator approve MailSolutions on Microsoft's page from here."
             }
         }
     }
@@ -303,7 +303,8 @@ impl FavoritesDriver {
 impl Session {
     /// Whether `account` signs in with Microsoft.
     pub fn is_microsoft(&self, account: Id) -> bool {
-        let microsoft = |a: &mailcraft_model::Account| a.oauth.as_ref().is_some_and(|o| o.provider == mailcraft_model::OAuthProvider::Microsoft);
+        let microsoft =
+            |a: &mailsolutions_model::Account| a.oauth.as_ref().is_some_and(|o| o.provider == mailsolutions_model::OAuthProvider::Microsoft);
         self.mailbox.account(account).is_some_and(microsoft)
     }
 
@@ -330,7 +331,7 @@ impl Session {
             named => return named,
         }
         let domain = owner.email.rsplit_once('@').map_or("", |(_, domain)| domain);
-        let personal = mailcraft_model::provider::by_domain(domain).is_some_and(|preset| preset.service == "Outlook.com");
+        let personal = mailsolutions_model::provider::by_domain(domain).is_some_and(|preset| preset.service == "Outlook.com");
         if personal { Directory::Personal } else { Directory::Unknown }
     }
 

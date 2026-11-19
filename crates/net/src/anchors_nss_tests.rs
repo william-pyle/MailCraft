@@ -83,7 +83,7 @@ fn only_nss_s_module_at_the_system_s_places_is_read() {
 
 /// The module of this machine, when it has NSS's: it trusts some roots for mail, each a
 /// certificate. (Ignored by default: what a machine has installed is not the tests' to rely on.
-/// `cargo test -p mailcraft-net anchors_nss -- --ignored --nocapture`.)
+/// `cargo test -p mailsolutions-net anchors_nss -- --ignored --nocapture`.)
 #[test]
 #[ignore]
 fn this_machine_s_nss_module_gives_roots_for_mail() {

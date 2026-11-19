@@ -12,7 +12,7 @@
 
 use std::collections::HashSet;
 
-use mailcraft_time::{Date, DateTime, Weekday, month_name};
+use mailsolutions_time::{Date, DateTime, Weekday, month_name};
 use serde::{Deserialize, Serialize};
 
 use crate::{Address, Id, Importance, Origin, Rgb};
@@ -112,7 +112,7 @@ pub const MAX_OPENED_CALENDARS: usize = 20;
 
 /// A shared mailbox open under an account whose calendar the account's server lists among the
 /// account's own calendars too (#70: a sharing invitation accepted in Outlook puts it there, under
-/// Shared Calendars), and what the owner said when MailCraft offered, once, to hide that copy:
+/// Shared Calendars), and what the owner said when MailSolutions offered, once, to hide that copy:
 /// the shared mailbox's own calendar, read at its own address, is the fuller one. Kept on this
 /// computer only; nothing on the server changes.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -411,7 +411,7 @@ impl OnlineMeeting {
         let host = rest.split(['/', '?', '#']).next().unwrap_or("");
         let plain = url.len() <= MAX_JOIN_LINK && !url.chars().any(|c| c.is_control() || c.is_whitespace() || matches!(c, '"' | '<' | '>' | '\\'));
         let named = !host.is_empty() && host.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':' | '[' | ']'));
-        let parses = || mailcraft_link::WebLink::parse(url).is_some_and(|l| l.is_https());
+        let parses = || mailsolutions_link::WebLink::parse(url).is_some_and(|l| l.is_https());
         (plain && named && parses()).then(|| format!("https://{rest}"))
     }
 

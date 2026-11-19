@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's S/MIME (RFC 8551): Digital signatures checked (#30), written from the public
+//! MailSolutions's S/MIME (RFC 8551): Digital signatures checked (#30), written from the public
 //! specifications (RFC 5652 for CMS, RFC 5280 for X.509, RFC 5754, RFC 4055 and RFC 5480 for
 //! the algorithms). No I/O: the host hands in the certificates it trusts ([`Anchors`]), the
-//! message's halves come from `mailcraft-mime`, and the result is
-//! [`mailcraft_model::digital_signature::DigitalSignature`], which OpenPGP shares.
+//! message's halves come from `mailsolutions-mime`, and the result is
+//! [`mailsolutions_model::digital_signature::DigitalSignature`], which OpenPGP shares.
 //!
 //! [`check`] reads the CMS SignedData of a detached or an opaque Digital signature, finds the
 //! signer's certificate, compares the signer's digest with the message's, checks the signature
@@ -37,7 +37,7 @@ pub use verify::{Checked, Context, MAX_CERTS, MAX_SIGNERS, MAX_VERIFICATIONS, Si
 
 /// The fingerprint and addresses of a certificate in DER, as a Digital signature's details show
 /// them: `None` when it isn't one.
-pub fn certificate_summary(der: &[u8]) -> Option<(String, Vec<String>, mailcraft_time::Timestamp)> {
+pub fn certificate_summary(der: &[u8]) -> Option<(String, Vec<String>, mailsolutions_time::Timestamp)> {
     let cert = cert::Cert::from_der(der)?;
     Some((cert.fingerprint(), cert.addresses(), cert.validity().1))
 }

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Help › Report a Problem, and its button in the title bar beside Copy Diagnostics: the owner
-//! says what went wrong, and sends it to the MailCraft team or starts it on GitHub (#956).
+//! says what went wrong, and sends it to the MailSolutions team or starts it on GitHub (#956).
 //!
 //! - **Send report** (a build that names the project's report relay): the title, what was
 //!   typed, the version, the platform, the GitHub username when one was given, and the
@@ -12,7 +12,7 @@
 //!   made, never by itself and never again by itself. Taken, the window says the reference
 //!   (`R-<n>`, not a link) and clears what was typed; not taken, it says why in words, keeps the
 //!   draft and offers Try again and Open on GitHub.
-//! - **Open on GitHub**: MailCraft posts nothing itself. The repository's new-issue page
+//! - **Open on GitHub**: MailSolutions posts nothing itself. The repository's new-issue page
 //!   (public, needs a GitHub account) is opened in the system's browser, filled in through its
 //!   address with the problem form's fields (`.github/ISSUE_TEMPLATE/problem.yml`), and the owner
 //!   reads it and submits it there. (Reports by email went in #956: they would arrive where
@@ -30,7 +30,7 @@
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 use egui::{Ui, vec2};
-use mailcraft_model::report::{Field, NotSent, ProblemReport, fit_diagnostics};
+use mailsolutions_model::report::{Field, NotSent, ProblemReport, fit_diagnostics};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -41,7 +41,7 @@ use crate::widgets::primary_button;
 /// The longest new-issue address opened: browsers and GitHub refuse or cut longer ones.
 pub(crate) const URL_MAX: usize = 8_000;
 /// Where problems are reported (the repository's own new-issue page, with its problem form).
-const NEW_ISSUE: &str = "https://github.com/UCS-Care-Group/mailcraft/issues/new";
+const NEW_ISSUE: &str = "https://github.com/william-pyle/MailSolutions/issues/new";
 const TEMPLATE: &str = "problem.yml";
 /// The most of each box that is kept (a paste of a whole log is not a description).
 const TITLE_CHARS: usize = 200;
@@ -57,7 +57,7 @@ pub(crate) fn diagnostics(app: &MailApp) -> String {
     let mut text = match &app.services.diagnostics {
         Some(report) => report(),
         None => format!(
-            "### MailCraft diagnostics\n\n- Version: {}\n- Platform: {} {}\n\nNo log is kept here.\n",
+            "### MailSolutions diagnostics\n\n- Version: {}\n- Platform: {} {}\n\nNo log is kept here.\n",
             env!("CARGO_PKG_VERSION"),
             std::env::consts::OS,
             std::env::consts::ARCH
@@ -76,7 +76,7 @@ fn line_of(diagnostics: &str, name: &str) -> Option<String> {
         v.chars()
             .take_while(|c| {
                 units = units.saturating_add(c.len_utf16());
-                units <= mailcraft_model::report::MAX_LINE
+                units <= mailsolutions_model::report::MAX_LINE
             })
             .collect()
     })
@@ -116,11 +116,11 @@ impl Typed {
 }
 
 /// The line put in the issue's Diagnostics box when a file was saved to attach there.
-const ATTACH_HERE: &str = "Drag the diagnostics file MailCraft saved for this report (mailcraft-diagnostics-….txt) into this box to attach it. Read it first: it is what the Report a Problem window showed.";
+const ATTACH_HERE: &str = "Drag the diagnostics file MailSolutions saved for this report (mailsolutions-diagnostics-….txt) into this box to attach it. Read it first: it is what the Report a Problem window showed.";
 
 /// `text` for a query string: everything but letters, digits and `-._*` as `%XX`, a space as `%20`.
 fn encode(text: &str) -> String {
-    mailcraft_link::encode_component(text)
+    mailsolutions_link::encode_component(text)
 }
 
 /// The new-issue page for `typed`, with the problem form chosen and its fields filled: the
@@ -184,7 +184,7 @@ pub(crate) fn saves_file(params: &Value) -> bool {
 
 /// The name the diagnostics file is offered under.
 pub(crate) fn file_name(app: &MailApp) -> String {
-    format!("mailcraft-diagnostics-{}.txt", app.session.today().iso())
+    format!("mailsolutions-diagnostics-{}.txt", app.session.today().iso())
 }
 
 /// `ui.reportProblem` (for scripts and the window's buttons; by hand without `what`, the window
@@ -257,9 +257,9 @@ fn on_github(app: &mut MailApp, typed: &Typed, with_diagnostics: bool, path: Opt
     if let (true, Some(ctx)) = (open, ctx) {
         ctx.open_url(egui::OpenUrl::new_tab(url));
         app.status(if with_diagnostics {
-            tl!("GitHub's page is open: attach the diagnostics file there, then submit. MailCraft sent nothing.")
+            tl!("GitHub's page is open: attach the diagnostics file there, then submit. MailSolutions sent nothing.")
         } else {
-            tl!("GitHub's page is open: check it, then submit. MailCraft sent nothing.")
+            tl!("GitHub's page is open: check it, then submit. MailSolutions sent nothing.")
         });
     }
     Ok(answer)
@@ -268,7 +268,7 @@ fn on_github(app: &mut MailApp, typed: &Typed, with_diagnostics: bool, path: Opt
 /// Write the diagnostics to `path`, whole or not at all.
 #[cfg(not(target_arch = "wasm32"))]
 fn save(path: &str, text: &str) -> Result<(), String> {
-    mailcraft_engine::store::write_atomic(std::path::Path::new(path), text.as_bytes())
+    mailsolutions_engine::store::write_atomic(std::path::Path::new(path), text.as_bytes())
         .map_err(|e| crate::i18n::fmt(tl!("The diagnostics couldn't be saved: {error}"), &[("error", &e.to_string())]))
 }
 
@@ -338,7 +338,7 @@ pub(crate) fn why_not_sent(why: NotSent) -> &'static str {
         NotSent::TooSlow => tl!("The report service didn't answer in time, so the report may have arrived. Try again later, or open it on GitHub."),
         NotSent::Garbled => {
             tl!(
-                "The report service's answer wasn't one MailCraft understands, so the report may have arrived. Try again later, or open it on GitHub."
+                "The report service's answer wasn't one MailSolutions understands, so the report may have arrived. Try again later, or open it on GitHub."
             )
         }
     }
@@ -437,7 +437,7 @@ impl Draft {
             if can_send {
                 ui.label(tl!("Say what went wrong. Nothing is sent until you press Send report, and then only what this window shows."));
             } else {
-                ui.label(tl!("Say what went wrong. MailCraft sends nothing by itself: you check the report and send it."));
+                ui.label(tl!("Say what went wrong. MailSolutions sends nothing by itself: you check the report and send it."));
                 ui.label(
                     egui::RichText::new(tl!(
                         "GitHub issues are public: don't put email addresses, names or anything from your messages in them. Describe what happened in your own words."
@@ -461,10 +461,10 @@ impl Draft {
                 ui.label(dim(tl!("Only to mention you if we make the report public on GitHub.")));
                 // The relay counts what happened and what was expected together, as UTF-16.
                 let units = self.typed.plain_body().trim().encode_utf16().count();
-                if units > mailcraft_model::report::MAX_TEXT {
+                if units > mailsolutions_model::report::MAX_TEXT {
                     let over = crate::i18n::fmt(
                         tl!("What happened and what you expected come to {n} characters together: a report takes {max}."),
-                        &[("n", &units.to_string()), ("max", &mailcraft_model::report::MAX_TEXT.to_string())],
+                        &[("n", &units.to_string()), ("max", &mailsolutions_model::report::MAX_TEXT.to_string())],
                     );
                     ui.label(egui::RichText::new(over).color(t.orange).size(11.5));
                 }
@@ -498,7 +498,7 @@ impl Draft {
         if can_send {
             ui.add_space(2.0);
             ui.label(tl!(
-                "Sent to the MailCraft team privately. If it's a real problem we may make it public on GitHub, with what you wrote and the diagnostics, so we can track it. Leave out anything private."
+                "Sent to the MailSolutions team privately. If it's a real problem we may make it public on GitHub, with what you wrote and the diagnostics, so we can track it. Leave out anything private."
             ));
         } else {
             ui.label(dim(tl!("GitHub is public and needs a GitHub account.")));
@@ -534,7 +534,8 @@ impl Draft {
             let github_tip = tl!("Opens GitHub's page in your browser, filled in: you check it and submit it there.");
             if can_send {
                 let label = if self.not_sent.is_some() { tl!("Try again") } else { tl!("Send report") };
-                let pressed = primary_button(ui, label, ready).on_hover_text(tl!("Sends the report to the MailCraft team, as this window shows it."));
+                let pressed =
+                    primary_button(ui, label, ready).on_hover_text(tl!("Sends the report to the MailSolutions team, as this window shows it."));
                 // Only the owner's own click sends: never a click a script or an agent made.
                 send = pressed.clicked() && ready && !app.driven;
                 let open = ui.add_enabled(ready, egui::Button::new(tl!("Open on GitHub")).min_size(vec2(72.0, 26.0))).on_hover_text(github_tip);
@@ -586,7 +587,7 @@ fn show_sent(ui: &mut Ui, reference: u64) -> bool {
     let sent = crate::i18n::fmt(tl!("Sent, reference R-{reference}."), &[("reference", &reference.to_string())]);
     ui.label(egui::RichText::new(sent).size(15.0).strong());
     ui.add_space(4.0);
-    ui.label(tl!("Thank you. The MailCraft team has it under this reference."));
+    ui.label(tl!("Thank you. The MailSolutions team has it under this reference."));
     ui.label(egui::RichText::new(tl!("What you wrote has been cleared from this window.")).color(t.text_dim).size(11.5));
     ui.add_space(8.0);
     let mut close = false;

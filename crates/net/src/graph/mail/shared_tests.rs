@@ -8,11 +8,11 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     DraftUp, FolderChange, GraphFetchRequest, GraphLink, GraphMailRequest, GraphMailResult, MessageChange, MessageOutcome, SEND_AS_DENIED,
     SendOutcome, SendUp, SharedRefusal,
 };
-use mailcraft_model::{Address, Body, FolderKind, Message};
+use mailsolutions_model::{Address, Body, FolderKind, Message};
 
 use super::whole_run;
 use crate::graph::pace::{Gate, Retry};
@@ -205,7 +205,7 @@ fn a_shared_mailboxs_changes_go_to_its_own_address_and_never_touch_the_owners_ma
     asked.messages = vec![
         MessageChange::Update { message: 1, id: ids[0].clone(), read: Some(true), flag: None, categories: None, importance: None },
         MessageChange::Move { message: 2, id: ids[1].clone(), to: deleted.clone(), to_folder: None },
-        MessageChange::Copy { copy: 3, id: ids[2].clone(), to: String::new(), to_folder: Some(70), marker: "mailcraft-70-3".into() },
+        MessageChange::Copy { copy: 3, id: ids[2].clone(), to: String::new(), to_folder: Some(70), marker: "mailsolutions-70-3".into() },
         MessageChange::Delete { id: ids[3].clone() },
     ];
     let pieces = run(&server, &asked);
@@ -338,15 +338,15 @@ fn a_shared_mailboxs_drafts_and_sends_are_made_in_it_and_never_in_the_owners_mai
     asked.drafts = vec![
         DraftUp {
             message: 5,
-            marker: "mailcraft-70-5".into(),
+            marker: "mailsolutions-70-5".into(),
             subject: Some("Rota".into()),
             to: Some(vec![Address::new("", "kit@example.net")]),
             ..Default::default()
         },
         DraftUp {
             message: 6,
-            marker: "mailcraft-70-6".into(),
-            of: Some(mailcraft_model::sync::DraftOf { id: ids[0].clone(), kind: mailcraft_model::sync::DraftKind::Reply }),
+            marker: "mailsolutions-70-6".into(),
+            of: Some(mailsolutions_model::sync::DraftOf { id: ids[0].clone(), kind: mailsolutions_model::sync::DraftKind::Reply }),
             ..Default::default()
         },
     ];
@@ -368,7 +368,7 @@ fn a_shared_mailboxs_drafts_and_sends_are_made_in_it_and_never_in_the_owners_mai
     // The draft sent as that draft, from there: the copy in its own Sent Items.
     let made = all.drafts.iter().find(|d| d.change.message == 5).map(|d| d.id.clone()).unwrap();
     let mut asked = request(SHARED, Vec::new());
-    let draft = DraftUp { message: 5, id: made.clone(), marker: "mailcraft-70-5".into(), ..Default::default() };
+    let draft = DraftUp { message: 5, id: made.clone(), marker: "mailsolutions-70-5".into(), ..Default::default() };
     asked.sends = vec![SendUp { message: 5, draft: Some(draft), mime: None }];
     let all = whole(run(&server, &asked));
     assert!(matches!(all.sent.as_slice(), [done] if done.outcome == SendOutcome::Sent), "{:?}", all.sent);
@@ -425,7 +425,7 @@ fn a_shared_mailbox_that_wont_let_the_owner_in_keeps_its_drafts_waiting() {
     let server = StandIn::start().unwrap();
     server.state().add_other(SHARED, true);
     let mut asked = request(SHARED, Vec::new());
-    asked.drafts = vec![DraftUp { message: 5, marker: "mailcraft-70-5".into(), subject: Some("Rota".into()), ..Default::default() }];
+    asked.drafts = vec![DraftUp { message: 5, marker: "mailsolutions-70-5".into(), subject: Some("Rota".into()), ..Default::default() }];
     server.state().fail_next.push((format!("POST /v1.0/users/{SHARED}/messages"), 403, "ErrorAccessDenied".into()));
     let all = whole(run(&server, &asked));
     assert!(all.drafts.is_empty(), "nothing is answered: it waits: {:?}", all.drafts);

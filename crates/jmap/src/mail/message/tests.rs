@@ -19,7 +19,7 @@ fn read(headers: &[(&str, &str)]) -> GraphMessage {
 }
 
 fn time(iso: &str) -> i64 {
-    mailcraft_time::iso_to_timestamp(iso, 0).unwrap()
+    mailsolutions_time::iso_to_timestamp(iso, 0).unwrap()
 }
 
 fn named(name: &str, email: &str) -> Address {

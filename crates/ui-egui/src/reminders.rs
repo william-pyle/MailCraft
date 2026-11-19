@@ -15,7 +15,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use egui::{Align2, RichText, Sense, vec2};
-use mailcraft_engine::cmd::view::{Reminder, due_reminders};
+use mailsolutions_engine::cmd::view::{Reminder, due_reminders};
 use serde_json::json;
 
 use crate::theme::{Tokens, regular, semibold};
@@ -90,7 +90,7 @@ pub(crate) struct MailRow {
     /// "Nobody has replied".
     pub(crate) no_reply: bool,
     /// `at` on this computer's clock.
-    pub(crate) local: mailcraft_time::DateTime,
+    pub(crate) local: mailsolutions_time::DateTime,
     /// Minutes since `at`; negative before it (a Snooze puts it off to a time later than `at`).
     pub(crate) minutes: i64,
 }
@@ -103,7 +103,7 @@ pub(crate) enum Action {
     Dismiss(u64, String),
     DismissAll,
     Snooze(u64),
-    Open(u64, mailcraft_time::DateTime),
+    Open(u64, mailsolutions_time::DateTime),
     Join(u64),
     Close,
 }
@@ -184,7 +184,9 @@ fn mail_rows(app: &MailApp) -> Vec<MailRow> {
         .filter_map(|id| {
             let m = mb.message(id)?;
             let f = m.follow_up?;
-            let sent = mb.folder(m.folder).is_some_and(|x| matches!(x.kind, mailcraft_model::FolderKind::Sent | mailcraft_model::FolderKind::Outbox));
+            let sent = mb
+                .folder(m.folder)
+                .is_some_and(|x| matches!(x.kind, mailsolutions_model::FolderKind::Sent | mailsolutions_model::FolderKind::Outbox));
             let who = if sent { m.to.iter().chain(&m.cc).map(|a| a.display()).collect::<Vec<_>>().join(", ") } else { m.from.display().to_string() };
             Some(MailRow {
                 id,
@@ -266,7 +268,7 @@ pub fn snooze(app: &mut MailApp, one: Option<(u64, &str)>, minutes: u64) -> usiz
 }
 
 fn viewport() -> egui::ViewportId {
-    egui::ViewportId::from_hash_of("mailcraft_reminders")
+    egui::ViewportId::from_hash_of("mailsolutions_reminders")
 }
 
 /// The window's layer where egui draws it inside the main one (in a browser).
@@ -393,7 +395,7 @@ fn publish(app: &MailApp, ctx: &egui::Context) {
         .map(|r| Row {
             reminder: r.clone(),
             // An online meeting that has a link to join by gets a Join button beside Dismiss.
-            join: app.session.mailbox.event(r.event).and_then(|e| e.join_link()).and_then(mailcraft_model::OnlineMeeting::clean_link),
+            join: app.session.mailbox.event(r.event).and_then(|e| e.join_link()).and_then(mailsolutions_model::OnlineMeeting::clean_link),
         })
         .collect();
     let twelve_hour = app.session.prefs.twelve_hour;
@@ -587,7 +589,7 @@ pub(crate) fn open_mail(app: &mut MailApp, id: u64) {
 /// form in the main window. The reminder of an item that repeats is for one occurrence of it
 /// (the one that starts at `start`), and that occurrence is what opens: nothing is asked, and
 /// what its form saves is saved for that day alone.
-pub(crate) fn open(app: &mut MailApp, event: u64, start: mailcraft_time::DateTime) {
+pub(crate) fn open(app: &mut MailApp, event: u64, start: mailsolutions_time::DateTime) {
     let Some(repeats) = app.session.mailbox.event(event).map(|e| e.recurrence.is_some()) else { return };
     let day = start.date.iso();
     // The occurrence is the one that is selected, as the calendar selects what it opens.
@@ -636,11 +638,11 @@ mod tests {
     /// occurrence the reminder is for, without asking which is meant.
     #[test]
     fn a_reminder_opens_the_occurrence_it_is_for() {
-        use mailcraft_engine::Session;
-        use mailcraft_time::{Date, DateTime};
+        use mailsolutions_engine::Session;
+        use mailsolutions_time::{Date, DateTime};
         // Wednesday 2026-10-14 16:00 UTC.
         const NOW: i64 = 1_791_993_600;
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
         app.autosave = false;
         // (The sample has its own events; this test wants only the ones it makes.)
         let ids: Vec<u64> = app.session.mailbox.events.keys().copied().collect();

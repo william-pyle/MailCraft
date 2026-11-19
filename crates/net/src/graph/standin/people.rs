@@ -10,7 +10,7 @@
 //! through it only), and an [`Access`] that says what the owner of the token may do with it.
 //! Nothing of theirs is ever answered at `/me`: a test looks at [`State::requests`].
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde_json::{Value, json};
 
 use super::{Answer, Asked, Calendar, Refusal, State, bad, refuse, stamp};

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use std::sync::atomic::Ordering;
 
-use mailcraft_engine::{Clock, Session, sample};
-use mailcraft_time::{Date, DateTime, Zone};
+use mailsolutions_engine::{Clock, Session, sample};
+use mailsolutions_time::{Date, DateTime, Zone};
 
 use crate::Core;
 use crate::fake_tests::{FakePlatform, block_on};

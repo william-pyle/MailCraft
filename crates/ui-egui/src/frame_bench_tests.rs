@@ -5,18 +5,18 @@
 //! years of mail in a few Microsoft 365 mailboxes has. Ignored by `cargo test`; run it with
 //!
 //! ```text
-//! cargo test --release -p mailcraft-ui-egui frame_bench -- --ignored --nocapture
+//! cargo test --release -p mailsolutions-ui-egui frame_bench -- --ignored --nocapture
 //! ```
 //!
 //! It prints the time of a frame while nothing happens, after a change to the mailbox (as a
 //! Send/Receive makes every minute), after a selection, a scroll, a folder change and a search:
 //! what the window spends between two frames, before anything is drawn to the screen.
-//! `MAILCRAFT_FRAME_BENCH_MESSAGES` makes it another size, and `MAILCRAFT_FRAME_BENCH_SECONDS`
+//! `MAILSOLUTIONS_FRAME_BENCH_MESSAGES` makes it another size, and `MAILSOLUTIONS_FRAME_BENCH_SECONDS`
 //! keeps it going on steady frames for that long afterwards, for a profiler to look at (with
-//! `MAILCRAFT_FRAME_BENCH_OPEN` set, with a message open in the reading pane; with
-//! `MAILCRAFT_FRAME_BENCH_CHANGES` set, with a change to the mailbox before every frame; with
-//! `MAILCRAFT_FRAME_BENCH_SELECT` set, with another message selected before every frame; with
-//! `MAILCRAFT_FRAME_BENCH_RANGE=n` set, with the first row clicked and then Shift+clicked to row
+//! `MAILSOLUTIONS_FRAME_BENCH_OPEN` set, with a message open in the reading pane; with
+//! `MAILSOLUTIONS_FRAME_BENCH_CHANGES` set, with a change to the mailbox before every frame; with
+//! `MAILSOLUTIONS_FRAME_BENCH_SELECT` set, with another message selected before every frame; with
+//! `MAILSOLUTIONS_FRAME_BENCH_RANGE=n` set, with the first row clicked and then Shift+clicked to row
 //! `n` before every frame).
 //!
 //! Measured on 2026-11-01 (8 cores, release build), `main` before the counts (e26e4ad, with this
@@ -59,7 +59,7 @@
 //! with #795's conversations by thread: see 2026-11-05 below.)
 //!
 //! A change to the mailbox, measured on 2026-11-02 before and after the messages were kept in
-//! chunks shared between the mailbox and its copies (`mailcraft_model::Messages`), the folder
+//! chunks shared between the mailbox and its copies (`mailsolutions_model::Messages`), the folder
 //! counts were brought in step with a change rather than counted again, and a change that
 //! touches nothing the list is built from left the list standing:
 //!
@@ -87,8 +87,8 @@
 //! | Of a thousand deleted                        | 340, 107    | 58, 31    |
 //! | Of every Inbox message marked read (98,000)  | 388, 127    | 115, 57   |
 //!
-//! Measured on 2026-11-05, with #795's conversations by thread (`mailcraft_model::ThreadIndex`,
-//! built in one pass over every message and kept by `mailcraft_engine::conversations`, which
+//! Measured on 2026-11-05, with #795's conversations by thread (`mailsolutions_model::ThreadIndex`,
+//! built in one pass over every message and kept by `mailsolutions_engine::conversations`, which
 //! checks it chunk by chunk after a change: a chunk the mailbox and its copy share isn't looked
 //! into, and in one they don't, a message that is the same `Arc` isn't hashed again). The
 //! conversations are built in the window's first frame over the mailbox (205–270 ms, once), and
@@ -108,8 +108,8 @@
 
 use std::time::Instant;
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Account, AccountKind, Address, Body, FlagStatus, Id, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Account, AccountKind, Address, Body, FlagStatus, Id, Mailbox, Message};
 
 use crate::{MailApp, Services};
 
@@ -149,7 +149,7 @@ fn make(messages: usize) -> Mailbox {
             kind: AccountKind::Microsoft,
             ..Default::default()
         });
-        let inbox = mb.folder_of_kind(account, mailcraft_model::FolderKind::Inbox).unwrap();
+        let inbox = mb.folder_of_kind(account, mailsolutions_model::FolderKind::Inbox).unwrap();
         inboxes.push(inbox);
         let mut own = vec![inbox];
         let mut parent = None;
@@ -215,14 +215,14 @@ fn report(what: &str, harness: &mut egui_kittest::Harness<'static, MailApp>, n: 
 #[test]
 #[ignore = "a benchmark: builds a mailbox of 326,000 messages in memory; see the module's documentation"]
 fn frame_bench() {
-    let messages = std::env::var("MAILCRAFT_FRAME_BENCH_MESSAGES").ok().and_then(|s| s.parse().ok()).unwrap_or(MESSAGES);
+    let messages = std::env::var("MAILSOLUTIONS_FRAME_BENCH_MESSAGES").ok().and_then(|s| s.parse().ok()).unwrap_or(MESSAGES);
     let making = Instant::now();
     let mb = make(messages);
     eprintln!("FRAME_BENCH made {} messages in {:.0} ms", mb.messages.len(), ms(making.elapsed()));
     let inbox = mb.inbox().unwrap();
     {
         let t = Instant::now();
-        let threads = mailcraft_model::ThreadIndex::build(mb.messages.values().map(|m| m.as_ref()));
+        let threads = mailsolutions_model::ThreadIndex::build(mb.messages.values().map(|m| m.as_ref()));
         eprintln!("FRAME_BENCH the conversations (ThreadIndex), built: {:.1} ms, {} steps", ms(t.elapsed()), threads.work());
     }
     let t = Instant::now();
@@ -270,7 +270,7 @@ fn frame_bench() {
 
     // A flag and a move, which change what the list shows (not read marks alone): the command,
     // and the frame after it.
-    let archive = harness.state().session.mailbox.folders.iter().find(|f| f.kind == mailcraft_model::FolderKind::Archive).map(|f| f.id).unwrap();
+    let archive = harness.state().session.mailbox.folders.iter().find(|f| f.kind == mailsolutions_model::FolderKind::Archive).map(|f| f.id).unwrap();
     for (i, (command, params)) in [
         ("mail.flag", serde_json::json!({"id": ids[30]})),
         ("mail.flag", serde_json::json!({"id": ids[31]})),
@@ -384,21 +384,21 @@ fn frame_bench() {
     let _ = harness.state_mut().run("mail.select", serde_json::json!({"ids": []}));
     harness.step();
 
-    if std::env::var_os("MAILCRAFT_FRAME_BENCH_OPEN").is_some() {
+    if std::env::var_os("MAILSOLUTIONS_FRAME_BENCH_OPEN").is_some() {
         let _ = harness.state_mut().execute("mail.select", serde_json::json!({"id": ids[6]}));
         harness.run_steps(2);
         report("steady with a message open, before the loop", &mut harness, 10);
     }
-    if let Some(seconds) = std::env::var("MAILCRAFT_FRAME_BENCH_SECONDS").ok().and_then(|s| s.parse::<u64>().ok()) {
+    if let Some(seconds) = std::env::var("MAILSOLUTIONS_FRAME_BENCH_SECONDS").ok().and_then(|s| s.parse::<u64>().ok()) {
         eprintln!("FRAME_BENCH looping steady frames for {seconds} s (pid {})", std::process::id());
         let until = Instant::now() + std::time::Duration::from_secs(seconds);
         let mut n = 0usize;
-        let changes = std::env::var_os("MAILCRAFT_FRAME_BENCH_CHANGES").is_some();
-        let selects = std::env::var_os("MAILCRAFT_FRAME_BENCH_SELECT").is_some();
-        let ranges = std::env::var_os("MAILCRAFT_FRAME_BENCH_RANGE").is_some();
+        let changes = std::env::var_os("MAILSOLUTIONS_FRAME_BENCH_CHANGES").is_some();
+        let selects = std::env::var_os("MAILSOLUTIONS_FRAME_BENCH_SELECT").is_some();
+        let ranges = std::env::var_os("MAILSOLUTIONS_FRAME_BENCH_RANGE").is_some();
         while Instant::now() < until {
             if changes {
-                match std::env::var("MAILCRAFT_FRAME_BENCH_CHANGES").as_deref() {
+                match std::env::var("MAILSOLUTIONS_FRAME_BENCH_CHANGES").as_deref() {
                     Ok("flag") => drop(harness.state_mut().execute("mail.toggleFlag", serde_json::json!({"id": ids[n % 5]}))),
                     // Into the Archive and back: the Inbox's list is built again each time.
                     Ok("move") => {
@@ -421,7 +421,7 @@ fn frame_bench() {
                 let _ = harness.state_mut().execute("mail.select", serde_json::json!({"id": ids[10 + n % 20]}));
             }
             if ranges {
-                let reach: usize = std::env::var("MAILCRAFT_FRAME_BENCH_RANGE").ok().and_then(|s| s.parse().ok()).unwrap_or(200);
+                let reach: usize = std::env::var("MAILSOLUTIONS_FRAME_BENCH_RANGE").ok().and_then(|s| s.parse().ok()).unwrap_or(200);
                 let from = rows.first().copied().unwrap_or_default();
                 let to = rows.get(reach).or(rows.last()).copied().unwrap_or_default();
                 let _ = harness.state_mut().run("mail.select", serde_json::json!({"id": from.0, "copy": from.1}));

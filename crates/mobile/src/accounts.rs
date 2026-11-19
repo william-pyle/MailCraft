@@ -6,7 +6,7 @@
 //! The owner signs in on Microsoft's own page in the system browser; the page comes back to the
 //! app's custom scheme and the native side gives the address it was opened with to
 //! [`Core::hand_back_redirect`], whole. Everything about it is read here, in Rust, by the OAuth
-//! strategy of `mailcraft-net` (`oauth/scheme.rs`): the scheme and the path to the letter, the
+//! strategy of `mailsolutions-net` (`oauth/scheme.rs`): the scheme and the path to the letter, the
 //! state, the fields, the sizes. The native side passes the address through and does nothing else
 //! with it. The tokens never cross the binding: the refresh token goes to the platform's
 //! credential store and nowhere else, the access token is dropped, and neither appears in an
@@ -21,12 +21,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(test)]
 use std::sync::{Mutex, PoisonError};
 
-use mailcraft_host::signin::{
+use mailsolutions_host::signin::{
     self, Checked, Ending, Endpoints, FavoritesRefusal, NetError, Page, Permission as NetPermission, Resource, Standing, Why, admin_consent_url,
     permission_endpoints,
 };
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{AccountKind, Directory};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{AccountKind, Directory};
 use serde_json::{Value, json};
 
 use crate::queue::{Queue, Shed, Weight};
@@ -70,7 +70,7 @@ pub enum SignInOutcome {
     /// Signed in: the account is in the mailbox (it was there already when the owner signed in
     /// to an account they had).
     SignedIn { account: u64, email: String, name: String },
-    /// An administrator of the organisation has to approve MailCraft first.
+    /// An administrator of the organisation has to approve MailSolutions first.
     NeedsApproval,
     /// The page came back with a no, or the owner left the page that said an administrator has
     /// to approve first (Microsoft sends the same for both).
@@ -173,7 +173,7 @@ fn not_granted(reason: &str) -> PermissionOutcome {
 impl Core {
     /// Run a sign-in on the page on a thread of its own, which waits as long as the owner takes
     /// (five minutes at most), and give what it came to. The page and the waiting are the host's
-    /// (`mailcraft_host::signin`); this only lends it a thread and an answer to wait for.
+    /// (`mailsolutions_host::signin`); this only lends it a thread and an answer to wait for.
     async fn page(&self, endpoints: Endpoints, hint: String, why: Why, cancel: Arc<AtomicBool>) -> Page {
         let armer = self.signins.host.armer();
         let landed = armer.arm();
@@ -182,7 +182,7 @@ impl Core {
         let job_reply = reply.clone();
         let job = move || signin::page(platform.as_ref(), landed, &armer, &endpoints, &hint, why, &cancel);
         // (A panic in the job is an answer, not a wait that never ends.)
-        let spawned = std::thread::Builder::new().name("mailcraft-sign-in".to_string()).spawn(move || {
+        let spawned = std::thread::Builder::new().name("mailsolutions-sign-in".to_string()).spawn(move || {
             let page = std::panic::catch_unwind(std::panic::AssertUnwindSafe(job)).unwrap_or(Page::Unable("the sign-in stopped unexpectedly"));
             job_reply.push(page);
         });
@@ -284,7 +284,7 @@ impl Core {
                 if remember && let Err(why) = signin::keep_refresh(platform.as_ref(), &for_call, &tokens.refresh) {
                     return Ok(Err(why.to_string()));
                 }
-                let undo_kept = |platform: &dyn mailcraft_host::Platform| {
+                let undo_kept = |platform: &dyn mailsolutions_host::Platform| {
                     if remember {
                         signin::restore_refresh(platform, &for_call, before.as_deref());
                     }
@@ -292,7 +292,7 @@ impl Core {
                 // (The storage cap is the mailbox's, not the account's: a new account's choice of it
                 // goes again with the account when its setup fails.)
                 let limits_before = s.mailbox.device_limits;
-                let restore_limits = |s: &mut mailcraft_engine::Session| {
+                let restore_limits = |s: &mut mailsolutions_engine::Session| {
                     if s.mailbox.device_limits != limits_before {
                         s.mailbox.device_limits = limits_before;
                         s.mailbox_changed();
@@ -361,7 +361,7 @@ impl Core {
         }
         let endpoints = match signin::client_oauth() {
             Some(o) => self.signins.at(permission_endpoints(&o, permission.into())),
-            None => return Ok(not_granted("this build of MailCraft has no Microsoft sign-in set up")),
+            None => return Ok(not_granted("this build of MailSolutions has no Microsoft sign-in set up")),
         };
         let page = self.page(endpoints, email.clone(), Why::Permission, place.cancel_flag()).await;
         let tokens = match page {
@@ -411,7 +411,7 @@ impl Core {
         let job_reply = reply.clone();
         let for_job = email.clone();
         let job = move || signin::permission_standing(refresh.as_deref(), &for_job, permission.into(), &mail, &graph);
-        let spawned = std::thread::Builder::new().name("mailcraft-permission".to_string()).spawn(move || {
+        let spawned = std::thread::Builder::new().name("mailsolutions-permission".to_string()).spawn(move || {
             let checked =
                 std::panic::catch_unwind(std::panic::AssertUnwindSafe(job)).unwrap_or(Checked { standing: Standing::Unknown, renewed: None });
             job_reply.push(checked);
@@ -452,13 +452,13 @@ impl Core {
         Ok(PermissionState::from(standing))
     }
 
-    /// The address of Microsoft's page where an administrator approves MailCraft for an
+    /// The address of Microsoft's page where an administrator approves MailSolutions for an
     /// organisation, once for everybody in it, for the owner to pass on. Nothing is opened or
     /// sent. `email` names the organisation's directory by its domain when it can; it may be empty.
     /// The address names the application, the directory and the permissions, and nothing of the owner.
     pub fn admin_approval_link(&self, email: String) -> Result<String, CoreError> {
         let o = signin::client_oauth()
-            .ok_or_else(|| CoreError::Failed { reason: "this build of MailCraft has no Microsoft sign-in set up".to_string() })?;
+            .ok_or_else(|| CoreError::Failed { reason: "this build of MailSolutions has no Microsoft sign-in set up".to_string() })?;
         admin_consent_url(&o, &signin::tenant_of(&email))
             .map_err(|_| CoreError::Failed { reason: "the address of the approval page could not be made".to_string() })
     }
@@ -508,7 +508,7 @@ impl Core {
         }
         let endpoints = match signin::client_oauth() {
             Some(o) => self.signins.at(Endpoints::for_resource(&o, Resource::GraphMail)),
-            None => return Ok(Err(failed("this build of MailCraft has no Microsoft sign-in set up"))),
+            None => return Ok(Err(failed("this build of MailSolutions has no Microsoft sign-in set up"))),
         };
         let page = self.page(endpoints, hint, Why::Account, place.cancel_flag()).await;
         // (The place is given up here, before the account is dealt with: the page is over.)

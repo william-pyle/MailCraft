@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `Date::parse_iso` takes only `YYYYMMDD` and `YYYY-MM-DD`.
 
-use mailcraft_time::Date;
+use mailsolutions_time::Date;
 
 #[test]
 fn accepts_only_the_two_layouts() {

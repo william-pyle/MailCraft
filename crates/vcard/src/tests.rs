@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Whole-crate properties: what is written reads back the same, and no text makes the reader panic.
 
-use mailcraft_model::{Contact, Labeled, PostalAddress};
-use mailcraft_time::Date;
+use mailsolutions_model::{Contact, Labeled, PostalAddress};
+use mailsolutions_time::Date;
 use proptest::prelude::*;
 
 use crate::{parse, write};

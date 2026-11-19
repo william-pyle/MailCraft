@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A run's problems, told as texts for the window and as English for everybody else (#872).
-use mailcraft_i18n::{Arg, Lang, Text, said};
+use mailsolutions_i18n::{Arg, Lang, Text, said};
 
 use super::SyncResult;
 

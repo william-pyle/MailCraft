@@ -8,8 +8,8 @@
 //! fit first loses its label and then goes behind `…` ([`plan`]).
 
 use egui::{Align2, Rect, Sense, Shape, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::{CalView, Filter, Module, Pane, PeopleSort, SortBy, TaskFilter, TaskSort};
-use mailcraft_model::{FolderKind, Id, Importance};
+use mailsolutions_engine::{CalView, Filter, Module, Pane, PeopleSort, SortBy, TaskFilter, TaskSort};
+use mailsolutions_model::{FolderKind, Id, Importance};
 use serde_json::{Value, json};
 
 use crate::theme::{Tokens, medium, paint_clipped, regular, semibold};
@@ -556,7 +556,7 @@ fn home_calendar(app: &MailApp) -> Tab {
             ];
             // Another time can be proposed for a meeting that an account's server keeps, when
             // its organizer takes proposals.
-            let kept = mailcraft_engine::cmd::remote::keeper(&app.session.mailbox, &event.origin).is_some();
+            let kept = mailsolutions_engine::cmd::remote::keeper(&app.session.mailbox, &event.origin).is_some();
             if kept && event.origin.guest && event.response_options.allow_proposals {
                 answers.push(Item::small("proposeTime", "Propose New Time", "Propose New Time", "calendar.propose", no()).at(4, 5));
             }
@@ -681,7 +681,7 @@ pub(crate) struct Look {
     /// The size all of it has: `Some(None)` the message's own.
     pub size: Option<Option<u8>>,
     /// The font and the colour all of it has, the same way.
-    pub font: Option<Option<mailcraft_model::rich::Font>>,
+    pub font: Option<Option<mailsolutions_model::rich::Font>>,
     pub color: Option<Option<String>>,
     pub highlight: Option<Option<String>>,
     pub bullets: bool,
@@ -690,17 +690,17 @@ pub(crate) struct Look {
     pub plain: bool,
 }
 
-/// How the selection of the text being edited looks ([`mailcraft_engine::Session::doc`]).
+/// How the selection of the text being edited looks ([`mailsolutions_engine::Session::doc`]).
 pub(crate) fn look_now(app: &MailApp) -> Look {
     app.session.doc().map(|(body, plain)| look(body, plain)).unwrap_or_default()
 }
 
-pub(crate) fn look(body: &mailcraft_model::RichBody, plain: bool) -> Look {
-    use mailcraft_model::rich::ListKind;
+pub(crate) fn look(body: &mailsolutions_model::RichBody, plain: bool) -> Look {
+    use mailsolutions_model::rich::ListKind;
     let sel = body.selection();
     let text = body.text();
     let (from, to) = (sel.start(), sel.end());
-    let all = |f: &dyn Fn(&mailcraft_model::rich::Style) -> bool| {
+    let all = |f: &dyn Fn(&mailsolutions_model::rich::Style) -> bool| {
         if sel.is_empty() { f(&body.typing_style()) } else { text.all(from, to, f).unwrap_or(false) }
     };
     let first = if sel.is_empty() { body.typing_style() } else { text.style_at(from + 1) };
@@ -974,7 +974,7 @@ fn send_receive(app: &MailApp) -> Tab {
 
 fn folder(app: &MailApp) -> Tab {
     // (As the folder pane lists it: by Outlook's own list where an account has one.)
-    let favorite = mailcraft_engine::cmd::folder::favorites(&app.session).contains(&app.session.view.folder);
+    let favorite = mailsolutions_engine::cmd::folder::favorites(&app.session).contains(&app.session.view.folder);
     Tab::of(vec![
         g("New", vec![Item::big("folderNew", "New\nFolder", "folder.new", no()).at(0, 1)]),
         g(
@@ -1026,7 +1026,7 @@ fn view(app: &MailApp) -> Tab {
         // where people look); what a row of its hours stands for; and whether the calendars that
         // are shown lie over one another or stand side by side.
         let scale = Item::big_menu("timeScale", "clock", "Time\nScale", "Time Scale", Menu::TimeScale).at(2, 3);
-        let over = mailcraft_engine::cmd::calendar_settings::overlaid(&app.session);
+        let over = mailsolutions_engine::cmd::calendar_settings::overlaid(&app.session);
         let overlay = Item::big("copy", "Overlay", "view.overlay", no()).checked(over).at(2, 3);
         let beside = Item::big("readingPane", "Side-by-\nSide", "view.sideBySide", no()).at(2, 3);
         tab.groups.retain(|group| !["Current View", "Messages", "Arrangement", "Search"].contains(&group.title));
@@ -1049,7 +1049,7 @@ fn view_of_any(app: &MailApp) -> Tab {
         Item::big_menu("navigationBar", "navigationBar", "Navigation\nBar", "Navigation Bar", Menu::NavigationBar).at(0, 3),
     ];
     // Gmail's categories as folders or as tabs (#911): only with a Gmail account that shows them.
-    if mailcraft_engine::gmail::offered(&app.session).is_none() {
+    if mailsolutions_engine::gmail::offered(&app.session).is_none() {
         layout.push(Item::big_menu("gmailCategories", "inbox", "Gmail\nCategories", "Gmail Categories", Menu::GmailCategories).at(0, 3));
     }
     layout.push(Item::big_menu("ribbonLayout", "ribbon", "Ribbon\nLayout", "Ribbon Layout", Menu::RibbonLayout).at(3, 4));
@@ -1095,13 +1095,13 @@ fn help() -> Tab {
                 Item::big("notes", "Feedback", "help.feedback", no()).at(0, 4),
                 Item::big("favorite", "What's\nNew", "help.whatsNew", no()).at(0, 3),
                 Item::big("search", "Search\nCommands", "ui.dialog", json!({"name": "commands"})).key("help.commands").at(0, 1),
-                Item::big("about", "About\nMailCraft", "ui.dialog", json!({"name": "about"})).key("help.about").at(0, 2),
+                Item::big("about", "About\nMailSolutions", "ui.dialog", json!({"name": "about"})).key("help.about").at(0, 2),
                 Item::big("copy", "Copy\nDiagnostics", "ui.copyDiagnostics", no()).at(0, 3),
                 Item::big("report", "Report a\nProblem", "ui.reportProblem", no()).at(0, 4),
             ],
         )],
         note: tl!(
-            "MailCraft is open source (MIT or Apache-2.0). Every button here runs a command that scripts and agents can run too: see Search Commands."
+            "MailSolutions is open source (MIT or Apache-2.0). Every button here runs a command that scripts and agents can run too: see Search Commands."
         ),
         note_width: 420.0,
     }
@@ -1128,8 +1128,12 @@ type FolderRow = (Id, String, String, usize);
 /// The folders whose name holds `query` (any part, ignoring case and accents), as indexes into
 /// `list`. Nothing typed (or nothing but marks) is all of them.
 fn folder_matches(list: &[FolderRow], query: &str) -> Vec<usize> {
-    let wanted = mailcraft_model::words::fold(&query.chars().take(FOLDER_SEARCH_MAX).collect::<String>());
-    list.iter().enumerate().filter(|(_, row)| wanted.is_empty() || mailcraft_model::words::fold(&row.1).contains(&wanted)).map(|(i, _)| i).collect()
+    let wanted = mailsolutions_model::words::fold(&query.chars().take(FOLDER_SEARCH_MAX).collect::<String>());
+    list.iter()
+        .enumerate()
+        .filter(|(_, row)| wanted.is_empty() || mailsolutions_model::words::fold(&row.1).contains(&wanted))
+        .map(|(i, _)| i)
+        .collect()
 }
 
 /// A search box and then every folder of the account in view as menu items, indented; `pick` runs
@@ -1165,7 +1169,7 @@ pub fn folder_menu(ui: &mut Ui, app: &mut MailApp, mut pick: impl FnMut(&mut Mai
     if fresh {
         edit.request_focus();
     }
-    let searching = !mailcraft_model::words::fold(&st.text).is_empty();
+    let searching = !mailsolutions_model::words::fold(&st.text).is_empty();
     let shown = folder_matches(&list, &st.text);
     // The rows the keys can choose: not the folder in view, which can't be moved to.
     let current = app.session.view.folder;
@@ -1259,7 +1263,7 @@ pub fn category_menu(
     let listed = cats.len();
     for name in carried {
         if cats.len() < listed + MAX_OFF_LIST && !cats.iter().any(|(c, _)| c.eq_ignore_ascii_case(name)) {
-            let color = accounts.iter().find_map(|a| mailbox.category_of(*a, name)).map_or(mailcraft_model::GREY_CATEGORY, |c| c.color);
+            let color = accounts.iter().find_map(|a| mailbox.category_of(*a, name)).map_or(mailsolutions_model::GREY_CATEGORY, |c| c.color);
             cats.push((name.clone(), crate::theme::c32(color)));
         }
     }
@@ -1435,7 +1439,7 @@ fn menu_contents(ui: &mut Ui, app: &mut MailApp, menu: Menu) {
                     ui,
                     app,
                     &label,
-                    plan == Some(mailcraft_engine::cmd::followup::FollowUpPlan::Days(d)),
+                    plan == Some(mailsolutions_engine::cmd::followup::FollowUpPlan::Days(d)),
                     "compose.followUp",
                     json!({"days": d}),
                 );
@@ -1456,7 +1460,7 @@ fn menu_contents(ui: &mut Ui, app: &mut MailApp, menu: Menu) {
         }
         Menu::ShowAs => {
             let shown = app.session.sel.event.and_then(|id| app.session.mailbox.event(id)).map(|e| e.show_as);
-            for s in mailcraft_model::ShowAs::ALL {
+            for s in mailsolutions_model::ShowAs::ALL {
                 mi_check(ui, app, s.label(), shown == Some(s), "calendar.showAs", json!({"value": s.code()}));
             }
         }
@@ -1614,7 +1618,7 @@ pub(crate) fn size_menu(ui: &mut Ui, app: &mut MailApp) {
 
 /// The fonts a message may ask for (`format.font`), each in a menu entry.
 pub(crate) fn font_menu(ui: &mut Ui, app: &mut MailApp) {
-    use mailcraft_model::rich::Font;
+    use mailsolutions_model::rich::Font;
     let now = look_now(app).font;
     mi_check(ui, app, "Default", now == Some(None), "format.font", json!({"value": null}));
     for f in Font::ALL {
@@ -1659,10 +1663,10 @@ pub(crate) fn color_menu(ui: &mut Ui, app: &mut MailApp) {
         }
     });
     ui.horizontal(|ui| {
-        let key = egui::Id::unique("mailcraft-custom-color");
+        let key = egui::Id::unique("mailsolutions-custom-color");
         let mut typed: String = ui.data(|d| d.get_temp(key)).unwrap_or_else(|| now.clone().flatten().unwrap_or_default());
         crate::text_menu::field(ui.add(egui::TextEdit::singleline(&mut typed).hint_text("#rrggbb").desired_width(90.0).char_limit(7)));
-        let valid = mailcraft_model::rich::safe_color(&typed);
+        let valid = mailsolutions_model::rich::safe_color(&typed);
         if ui.add_enabled(enabled && valid.is_some(), egui::Button::new(tl!("Apply"))).clicked()
             && let Some(hex) = valid
         {
@@ -2391,7 +2395,7 @@ mod plain_tests;
 #[cfg(test)]
 mod tests {
     use egui_kittest::kittest::Queryable as _;
-    use mailcraft_engine::Session;
+    use mailsolutions_engine::Session;
 
     use super::*;
     use crate::Services;
@@ -2402,7 +2406,7 @@ mod tests {
     type Window = egui_kittest::Harness<'static, MailApp>;
 
     fn app() -> MailApp {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.autosave = false;
         app
     }
@@ -2485,7 +2489,7 @@ mod tests {
     /// control the extraction missed would stay English in every language.
     #[test]
     fn every_ribbon_text_is_in_the_template() {
-        let template = mailcraft_i18n::po::parse(include_str!("../../i18n/po/messages.pot"));
+        let template = mailsolutions_i18n::po::parse(include_str!("../../i18n/po/messages.pot"));
         let known: std::collections::BTreeSet<String> = template.entries.iter().filter(|e| e.context.is_none()).map(|e| e.id.clone()).collect();
         let mut a = app();
         let mut missing = std::collections::BTreeSet::new();
@@ -2848,7 +2852,7 @@ mod tests {
         harness.state_mut().execute("view.clearSearch", json!({})).unwrap();
         harness.state_mut().execute("mail.select", json!({"id": focus})).unwrap();
         harness.run_steps(3);
-        let sender = mailcraft_model::search::keyword_value(message(&harness).from.email.trim());
+        let sender = mailsolutions_model::search::keyword_value(message(&harness).from.email.trim());
         click(&mut harness, dots);
         harness.get_by_label("From Sender").click();
         harness.run_steps(3);
@@ -3112,7 +3116,7 @@ mod tests {
         let sent = {
             let mb = &a.session.mailbox;
             let account = mb.default_account().map(|x| x.id).unwrap();
-            mb.folder_of_kind(account, mailcraft_model::FolderKind::Sent).unwrap()
+            mb.folder_of_kind(account, mailsolutions_model::FolderKind::Sent).unwrap()
         };
         let mut h = picker(a);
         assert!(h.query_by_label_contains("Drafts").is_some());

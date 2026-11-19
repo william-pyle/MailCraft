@@ -4,7 +4,7 @@
 //! before #1242; the command, `ui.json`, what the window shows, and that the accent and high
 //! contrast still apply to both.
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::{Value, json};
 
 use crate::theme::{Accent, DarkStyle, Tokens};
@@ -13,7 +13,7 @@ use crate::{MailApp, Services, UiState};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a
 }

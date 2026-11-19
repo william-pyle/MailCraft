@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Hostile DAV answers, addresses and statuses are bounded and never panic.
 #![no_main]
-use mailcraft_dav::answer::{Collections, Multistatus};
-use mailcraft_dav::href::Origin;
-use mailcraft_dav::http::HttpResponse;
-use mailcraft_dav::request::{Endpoint, Kind};
-use mailcraft_dav::status;
+use mailsolutions_dav::answer::{Collections, Multistatus};
+use mailsolutions_dav::href::Origin;
+use mailsolutions_dav::http::HttpResponse;
+use mailsolutions_dav::request::{Endpoint, Kind};
+use mailsolutions_dav::status;
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let Ok(origin) = Origin::parse("https://dav.example.org") else { return };

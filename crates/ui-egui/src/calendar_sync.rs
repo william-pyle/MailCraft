@@ -30,21 +30,21 @@
 
 use std::sync::mpsc::Receiver;
 
-use mailcraft_engine::cmd::remote;
-use mailcraft_model::Id;
-use mailcraft_model::sync::Tokens;
+use mailsolutions_engine::cmd::remote;
+use mailsolutions_model::Id;
+use mailsolutions_model::sync::Tokens;
 use serde_json::{Value, json};
 
 use crate::{CalendarCheckRequest, CalendarCheckResult, GraphRequest, GraphResult, MailApp, now_ms};
 
 // How often the calendar is asked for, how long a change waits, how long the server is left alone
 // after a job that came to nothing, the stretch asked for and what is remembered between looks are
-// the engine's ([`mailcraft_engine::sync_driver::calendar`]); this keeps the jobs on the host.
-pub(crate) use mailcraft_engine::sync_driver::consent_wait;
-use mailcraft_engine::sync_driver::{AroundRefused, CalendarCame, CalendarFacts, CalendarPlan, CalendarTaken, Start};
+// the engine's ([`mailsolutions_engine::sync_driver::calendar`]); this keeps the jobs on the host.
+pub(crate) use mailsolutions_engine::sync_driver::consent_wait;
+use mailsolutions_engine::sync_driver::{AroundRefused, CalendarCame, CalendarFacts, CalendarPlan, CalendarTaken, Start};
 
 /// The calendar's jobs on the host, in the window: the handles only. What is remembered of
-/// keeping the calendar current is in the session ([`mailcraft_engine::Session::driver`]).
+/// keeping the calendar current is in the session ([`mailsolutions_engine::Session::driver`]).
 #[derive(Default)]
 pub(crate) struct CalendarSync {
     /// The job in flight: the account, whether it carried changes, when it started
@@ -111,7 +111,7 @@ impl MailApp {
 
     /// [`calendar_tick`](Self::calendar_tick) at `now` (milliseconds), with the window in front
     /// or not. Whether a job was started. (Public for a host's tests, which have no window.)
-    /// What is due is the engine's to say ([`mailcraft_engine::Session::calendar_due`]); this
+    /// What is due is the engine's to say ([`mailsolutions_engine::Session::calendar_due`]); this
     /// starts the job on the host, and tells the owner.
     pub fn calendar_tick_at(&mut self, focused: bool, now: f64) -> bool {
         let facts = CalendarFacts { focused, backstage: self.ui.backstage, reachable: self.services.graph.is_some(), busy: self.job_busy() };
@@ -137,7 +137,7 @@ impl MailApp {
     /// it, and it never starts while another job is at work or while something waits to go up
     /// (that goes first, in a job of its own). The answer is taken in like any other
     /// ([`poll_calendar`](Self::poll_calendar)). Why not, when it can't be asked now.
-    pub(crate) fn calendar_job_around(&mut self, account: Id, day: mailcraft_time::Date) -> Result<(), String> {
+    pub(crate) fn calendar_job_around(&mut self, account: Id, day: mailsolutions_time::Date) -> Result<(), String> {
         if self.services.graph.is_none() {
             return Err(tl!("This build can't reach the account's calendar.").to_string());
         }
@@ -226,7 +226,7 @@ impl MailApp {
         };
         self.calendar.rx = None;
         // A shared mailbox's calendars (#70): their own token, and their own permission.
-        let shared = self.session.mailbox.account(account).is_some_and(mailcraft_model::Account::is_shared);
+        let shared = self.session.mailbox.account(account).is_some_and(mailsolutions_model::Account::is_shared);
         if result.consent_needed {
             log::info!("calendar, account {account}: {}", consent_wait(shared));
         }
@@ -313,7 +313,7 @@ impl MailApp {
                 mail.refresh = tokens.refresh.clone();
             }
         }
-        let now = mailcraft_time::now();
+        let now = mailsolutions_time::now();
         self.graph_tokens.insert(account, Tokens { expires_at: tokens.expires_at.clamp(now, now.saturating_add(86_400)), ..tokens });
     }
 
@@ -376,14 +376,14 @@ impl MailApp {
         let Some(owner) = account.and_then(|id| self.session.mailbox.account(id)).cloned() else {
             return Err(tl!("No account signs in with Microsoft").to_string());
         };
-        let Some(oauth) = owner.oauth.clone().filter(|o| o.provider == mailcraft_model::OAuthProvider::Microsoft) else {
+        let Some(oauth) = owner.oauth.clone().filter(|o| o.provider == mailsolutions_model::OAuthProvider::Microsoft) else {
             return Err(tl!("This account doesn't sign in with Microsoft").to_string());
         };
         if self.job_busy().blocks(Start::CalendarCheck) {
             return Err(tl!("The calendar is being updated: try again in a moment.").to_string());
         }
         let account = owner.id;
-        let access = self.graph_tokens.get(&account).filter(|t| t.fresh(mailcraft_time::now())).map(|t| t.access.clone()).unwrap_or_default();
+        let access = self.graph_tokens.get(&account).filter(|t| t.fresh(mailsolutions_time::now())).map(|t| t.access.clone()).unwrap_or_default();
         let kept = self.tokens.get(&account).map(|t| t.refresh.clone()).filter(|r| !r.is_empty());
         let refresh = kept.or_else(|| self.remembered("refresh", owner.id)).unwrap_or_default();
         if access.is_empty() && refresh.is_empty() {
@@ -478,7 +478,7 @@ impl MailApp {
                 tl!("The test appointment is gone again. Nothing else in the calendar was read or changed.").to_string()
             } else {
                 tl!(
-                    "The test appointment (\"MailCraft connection check\", a year from today) could not be deleted: please delete it in the calendar. Nothing else was read or changed."
+                    "The test appointment (\"MailSolutions connection check\", a year from today) could not be deleted: please delete it in the calendar. Nothing else was read or changed."
                 )
                 .to_string()
             });
@@ -517,8 +517,8 @@ impl MailApp {
     pub(crate) fn take_in_calendar_list(
         &mut self,
         account: Id,
-        calendars: Option<&mailcraft_model::remote::CalendarsDownload>,
-        categories: Option<&mailcraft_model::remote::CategoriesDownload>,
+        calendars: Option<&mailsolutions_model::remote::CalendarsDownload>,
+        categories: Option<&mailsolutions_model::remote::CategoriesDownload>,
         extras_missing: bool,
         errors: &mut Vec<String>,
     ) {
@@ -529,7 +529,7 @@ impl MailApp {
 
     /// The working hours the mailbox has set came with a job (for a host's tests).
     #[cfg(test)]
-    pub(crate) fn take_in_mailbox_hours(&mut self, account: Id, hours: &mailcraft_engine::cmd::calendar_settings::MailboxHours) {
+    pub(crate) fn take_in_mailbox_hours(&mut self, account: Id, hours: &mailsolutions_engine::cmd::calendar_settings::MailboxHours) {
         self.session.mailbox_hours_in(account, hours);
     }
 
@@ -556,12 +556,12 @@ pub(crate) mod testing {
     use std::collections::HashSet;
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::remote::{
+    use mailsolutions_model::remote::{
         ContactsDownload, EventChangeKind, EventOp, EventOutcome, EventResult, EventsDownload, EventsUploaded, RemoteEvent, RemoteEventKind,
     };
-    use mailcraft_model::sync::Tokens;
-    use mailcraft_model::{Id, Response};
-    use mailcraft_time::DateTime;
+    use mailsolutions_model::sync::Tokens;
+    use mailsolutions_model::{Id, Response};
+    use mailsolutions_time::DateTime;
     use serde_json::json;
 
     use crate::{GraphRequest, GraphResult, MailApp};
@@ -595,7 +595,7 @@ pub(crate) mod testing {
         /// The owner agreed to everything but the optional extra.
         pub extras_missing: bool,
         /// The working hours its mailbox has set.
-        pub hours: Option<mailcraft_engine::cmd::calendar_settings::MailboxHours>,
+        pub hours: Option<mailsolutions_engine::cmd::calendar_settings::MailboxHours>,
         /// What it says to every change instead of making it.
         pub say: Option<EventResult>,
         /// The mail it sent to other people, as a real server would on being told these
@@ -681,7 +681,7 @@ pub(crate) mod testing {
                     (outcome.online, outcome.error) = (Some(false), "the stand-in has no Teams".into());
                 } else {
                     let join_url = format!("https://teams.example.org/l/meetup-join/{}", event.id);
-                    event.online = Some(mailcraft_model::OnlineMeeting { provider, join_url: join_url.clone() });
+                    event.online = Some(mailsolutions_model::OnlineMeeting { provider, join_url: join_url.clone() });
                     (outcome.online, outcome.join_url) = (Some(true), join_url);
                 }
             };
@@ -881,7 +881,7 @@ pub(crate) mod testing {
                 out.tokens = Some(Tokens {
                     access: "graph-tok".into(),
                     refresh: "ref-2".into(),
-                    expires_at: mailcraft_time::now() + 3600,
+                    expires_at: mailsolutions_time::now() + 3600,
                     ..Default::default()
                 });
             }
@@ -947,7 +947,7 @@ pub(crate) mod testing {
             json!({"email": "avery@mail.example", "auth": "oauth2", "provider": "microsoft", "incoming": {"host": "imap.mail.example"}}),
         );
         let id = added.unwrap()["id"].as_u64().unwrap();
-        let fresh = Tokens { access: "graph-tok".into(), refresh: "ref".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+        let fresh = Tokens { access: "graph-tok".into(), refresh: "ref".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
         app.tokens.insert(id, fresh.clone());
         app.graph_tokens.insert(id, fresh);
         id
@@ -975,8 +975,8 @@ mod calendar_off_path_tests;
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use mailcraft_engine::Session;
-    use mailcraft_model::remote::{EventChangeKind, EventResult};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::remote::{EventChangeKind, EventResult};
     use serde_json::json;
 
     use super::testing::{Job, Server, event, microsoft_account, serve};
@@ -990,7 +990,7 @@ mod tests {
     /// The sample mailbox with a Microsoft account, Mail in front, and a stand-in for Graph that
     /// has one event today.
     fn app() -> (MailApp, Arc<Mutex<Server>>, Id) {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.autosave = false;
         let server = serve(&mut app);
         let account = microsoft_account(&mut app);
@@ -1206,8 +1206,8 @@ mod tests {
     }
 
     use crate::dialogs::{Dialog, Question};
-    use mailcraft_model::remote::{RemoteEvent, RemoteEventKind};
-    use mailcraft_model::{Address, Attendee, Freq, Recurrence, Response};
+    use mailsolutions_model::remote::{RemoteEvent, RemoteEventKind};
+    use mailsolutions_model::{Address, Attendee, Freq, Recurrence, Response};
 
     /// The app with the calendar in front and what the stand-in has taken in. `events` are what
     /// the stand-in has beside the one of [`app`].
@@ -1256,7 +1256,7 @@ mod tests {
         server.lock().unwrap().mail.clone()
     }
 
-    fn titled(app: &MailApp, title: &str) -> Vec<mailcraft_model::Event> {
+    fn titled(app: &MailApp, title: &str) -> Vec<mailsolutions_model::Event> {
         let mut events: Vec<_> = app.session.mailbox.events.values().filter(|e| e.title == title).map(|e| e.as_ref().clone()).collect();
         events.sort_by_key(|e| (e.start, e.id));
         events
@@ -1333,7 +1333,7 @@ mod tests {
     fn a_series_is_asked_about_and_one_day_or_all_of_it_changes_on_the_server() {
         // Monday, Wednesday and Friday at one o'clock, from Monday the 5th.
         let rule = Recurrence {
-            by_day: vec![mailcraft_time::Weekday::Mon, mailcraft_time::Weekday::Wed, mailcraft_time::Weekday::Fri],
+            by_day: vec![mailsolutions_time::Weekday::Mon, mailsolutions_time::Weekday::Wed, mailsolutions_time::Weekday::Fri],
             ..Recurrence::every(Freq::Weekly)
         };
         let series = RemoteEvent {
@@ -1347,7 +1347,7 @@ mod tests {
         let all = titled(&app, "Stand-up");
         assert_eq!((all.len(), all[0].recurrence.is_some(), all[0].exceptions.len()), (1, true, 0));
         let id = all[0].id;
-        let day = |d: u8| mailcraft_time::Date::new(2026, 10, d).unwrap();
+        let day = |d: u8| mailsolutions_time::Date::new(2026, 10, d).unwrap();
         let on: Vec<u8> = all[0].occurrences(day(11), day(17)).iter().map(|o| o.start.date.day).collect();
         assert_eq!(on, [12, 14, 16]);
 
@@ -1496,7 +1496,7 @@ mod tests {
         let Some(Dialog::Confirm { ask, .. }) = &app.dialog else { panic!("no question is being asked") };
         assert_eq!((ask.title.as_str(), ask.action.as_str(), ask.more.len()), ("Check Calendar Connection", "Check Now", 0));
         for said in [
-            "\"MailCraft connection check\"",
+            "\"MailSolutions connection check\"",
             "avery@mail.example",
             "a year from today",
             "deletes it again",
@@ -1590,10 +1590,10 @@ mod tests {
         settle(&mut app);
         assert_eq!(jobs(&server), 2);
         // Once the categories come (the owner agreed to it), nothing is missing any more.
-        let categories = mailcraft_model::remote::CategoriesDownload {
+        let categories = mailsolutions_model::remote::CategoriesDownload {
             account,
             email: "avery@mail.example".into(),
-            categories: vec![mailcraft_model::Category { name: "Project X".into(), color: mailcraft_model::Rgb(1, 2, 3) }],
+            categories: vec![mailsolutions_model::Category { name: "Project X".into(), color: mailsolutions_model::Rgb(1, 2, 3) }],
         };
         let mut errors = Vec::new();
         app.take_in_calendar_list(account, None, Some(&categories), false, &mut errors);

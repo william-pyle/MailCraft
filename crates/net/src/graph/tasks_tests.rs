@@ -5,9 +5,9 @@
 
 use std::sync::{Arc, Mutex};
 
-use mailcraft_model::remote_tasks::{TaskOp, TaskOpKind, TaskResult, TasksUpload};
-use mailcraft_model::{Importance, TaskPatch};
-use mailcraft_time::{Date, Zone};
+use mailsolutions_model::remote_tasks::{TaskOp, TaskOpKind, TaskResult, TasksUpload};
+use mailsolutions_model::{Importance, TaskPatch};
+use mailsolutions_time::{Date, Zone};
 use serde_json::{Value, json};
 
 use super::tasks::{push_tasks_at, task_body, tasks_at, valid_id};
@@ -291,7 +291,7 @@ fn a_due_date_written_in_a_zone_stays_on_its_day() {
     let entry =
         serde_json::json!({"id": "t1", "title": "x", "dueDateTime": {"dateTime": "2026-07-14T00:00:00.0000000", "timeZone": "Europe/London"}});
     let task = super::tasks::task_of(&entry, "L1", Zone::UTC).unwrap();
-    assert_eq!(task.due, mailcraft_time::Date::new(2026, 7, 14));
+    assert_eq!(task.due, mailsolutions_time::Date::new(2026, 7, 14));
 }
 
 #[test]

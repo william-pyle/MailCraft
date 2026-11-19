@@ -9,9 +9,9 @@ use std::sync::mpsc::{Sender, channel};
 use std::sync::{Arc, Mutex};
 
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
-use mailcraft_engine::io::OpenProgress;
-use mailcraft_model::{Address, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::io::OpenProgress;
+use mailsolutions_model::{Address, Mailbox, Message};
 use serde_json::{Value, json};
 
 use super::*;
@@ -25,7 +25,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-opening-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-opening-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -191,13 +191,13 @@ fn the_window_built_takes_over_the_control_channel() {
 fn closing_while_opening_writes_nothing() {
     let tmp = Temp::new("close");
     let file = tmp.0.join("mailbox.mailcraft");
-    mailcraft_engine::store::save(&file, &mailbox(4)).unwrap();
+    mailsolutions_engine::store::save(&file, &mailbox(4)).unwrap();
     let before: Vec<(PathBuf, Vec<u8>)> = everything(&tmp.0);
     let (mut app, _tx, _progress, built, _control) = waiting();
     // The stand-in tied to the real file, with a saver and changes of its own: only the window
     // knowing it is still opening keeps them from being written over the mailbox.
     app.session.path = Some(file.clone());
-    app.services.saver = Some(Box::new(mailcraft_engine::store::Saver::spawn(|| {}).unwrap()));
+    app.services.saver = Some(Box::new(mailsolutions_engine::store::Saver::spawn(|| {}).unwrap()));
     app.autosave = true;
     app.session.dirty = true;
     app.saved_rev = u64::MAX;
@@ -310,7 +310,7 @@ fn a_reading_thread_that_ends_without_a_word_is_a_mailbox_that_couldnt_be_read()
     let (app, tx, _progress, built, _control) = waiting();
     drop(tx);
     let mut h = harness(app);
-    assert!(h.query_by_label("MailCraft stopped reading it before it was done.").is_some());
+    assert!(h.query_by_label("MailSolutions stopped reading it before it was done.").is_some());
     h.get_by_label("Continue").click();
     h.run_steps(3);
     assert_eq!(*built.borrow(), Some((0, None, false)));
@@ -333,7 +333,7 @@ fn reading_host() -> Services {
         read_ahead: Some(Box::new(|path: PathBuf, progress: Arc<OpenProgress>| {
             let (tx, rx) = channel();
             std::thread::spawn(move || {
-                let _ = tx.send(mailcraft_engine::store::open_ahead(&path, &progress));
+                let _ = tx.send(mailsolutions_engine::store::open_ahead(&path, &progress));
             });
             rx
         })),
@@ -360,7 +360,7 @@ fn held_host() -> (Services, Held) {
 }
 
 fn sample_app(services: Services) -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), services);
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), services);
     app.autosave = false;
     app
 }
@@ -413,7 +413,7 @@ fn an_agent_hears_the_status_before_and_after_the_mailbox_opens() {
 fn whatever_replaces_the_mailbox_gives_up_the_one_being_read() {
     let tmp = Temp::new("replaced");
     let other = tmp.0.join("Other.mailcraft");
-    mailcraft_engine::store::save(&other, &mailbox(2)).unwrap();
+    mailsolutions_engine::store::save(&other, &mailbox(2)).unwrap();
     for (id, params) in [("file.new", json!({})), ("file.open", json!({"path": other.to_string_lossy()}))] {
         let (services, held) = held_host();
         let mut h = harness(sample_app(services));
@@ -437,7 +437,7 @@ fn whatever_replaces_the_mailbox_gives_up_the_one_being_read() {
 fn a_mailbox_is_a_recent_one_once_it_is_open_and_file_closes_then() {
     let tmp = Temp::new("recent");
     let file = tmp.0.join("Archive.mailcraft");
-    mailcraft_engine::store::save(&file, &mailbox(7)).unwrap();
+    mailsolutions_engine::store::save(&file, &mailbox(7)).unwrap();
     let (services, held) = held_host();
     let mut h = harness(sample_app(services));
     h.state_mut().ui.backstage = true;
@@ -446,7 +446,7 @@ fn a_mailbox_is_a_recent_one_once_it_is_open_and_file_closes_then() {
     assert!(h.state().ui.recent.is_empty(), "not while it is being read");
     assert!(h.state().ui.backstage);
     let (read, progress, done) = held.lock().unwrap().pop().unwrap();
-    let _ = done.send(mailcraft_engine::store::open_ahead(&read, &progress));
+    let _ = done.send(mailsolutions_engine::store::open_ahead(&read, &progress));
     h.run_steps(3);
     assert_eq!(h.state().session.path.as_deref(), Some(file.as_path()));
     assert_eq!(h.state().ui.recent, vec![path]);
@@ -457,7 +457,7 @@ fn a_mailbox_is_a_recent_one_once_it_is_open_and_file_closes_then() {
 fn the_mailbox_open_now_is_never_read_ahead_however_its_path_is_spelt() {
     let tmp = Temp::new("spelt");
     let file = tmp.0.join("mailbox.mailcraft");
-    mailcraft_engine::store::save(&file, &mailbox(4)).unwrap();
+    mailsolutions_engine::store::save(&file, &mailbox(4)).unwrap();
     let (services, held) = held_host();
     let mut app = sample_app(services);
     app.session.path = Some(file.clone());
@@ -496,7 +496,7 @@ fn cancel_drops_the_mailbox_being_read() {
 fn a_finished_read_takes_the_place_of_the_open_mailbox() {
     let tmp = Temp::new("swap");
     let file = tmp.0.join("Archive.mailcraft");
-    mailcraft_engine::store::save(&file, &mailbox(7)).unwrap();
+    mailsolutions_engine::store::save(&file, &mailbox(7)).unwrap();
     let mut h = harness(sample_app(reading_host()));
     h.state_mut().run("file.open", json!({"path": file.to_string_lossy()})).unwrap();
     for _ in 0..200 {
@@ -538,7 +538,7 @@ fn an_agent_opening_a_mailbox_is_not_put_off() {
     let (services, held) = held_host();
     let tmp = Temp::new("agent");
     let file = tmp.0.join("Other.mailcraft");
-    mailcraft_engine::store::save(&file, &mailbox(2)).unwrap();
+    mailsolutions_engine::store::save(&file, &mailbox(2)).unwrap();
     let mut app = sample_app(services);
     app.execute("file.open", json!({"path": file.to_string_lossy()})).unwrap();
     assert!(held.lock().unwrap().is_empty());
@@ -571,7 +571,7 @@ fn what_is_missing_from_the_content_folder_is_said_once_it_has_been_looked_for()
     h.run_steps(3);
     // Nothing said while the look goes on.
     assert!(h.state().status_msg.is_none());
-    tx.send(mailcraft_engine::Missing { count: 2, refs: Vec::new() }).unwrap();
+    tx.send(mailsolutions_engine::Missing { count: 2, refs: Vec::new() }).unwrap();
     h.run_steps(2);
     let said = h.state().status_msg.as_ref().map(|(m, _)| m.clone());
     assert_eq!(said.as_deref(), Some("3 bodies or attachments are missing from the mailbox's content folder, or damaged."));
@@ -580,7 +580,7 @@ fn what_is_missing_from_the_content_folder_is_said_once_it_has_been_looked_for()
     app.autosave = false;
     let (tx, rx) = channel();
     app.check_parts_later(rx, 0, true);
-    tx.send(mailcraft_engine::Missing::default()).unwrap();
+    tx.send(mailsolutions_engine::Missing::default()).unwrap();
     let mut h = harness(app);
     h.run_steps(2);
     assert!(h.state().status_msg.is_none() && h.state().later.parts.is_none());
@@ -609,14 +609,14 @@ fn the_word_index_starts_after_the_first_frames() {
 }
 
 /// A mailbox whose first message keeps its text on disk, and that text with its name.
-fn kept_text() -> (Mailbox, mailcraft_model::Id, mailcraft_model::ContentRef, Vec<u8>) {
+fn kept_text() -> (Mailbox, mailsolutions_model::Id, mailsolutions_model::ContentRef, Vec<u8>) {
     let mut mb = mailbox(3);
     let id = *mb.messages.keys().next().unwrap();
     let text = b"The figures for the quarter are in the folder.".to_vec();
-    let r = mailcraft_model::ContentRef { sha256: [7; 32], len: text.len() as u64 };
+    let r = mailsolutions_model::ContentRef { sha256: [7; 32], len: text.len() as u64 };
     let m = mb.message_mut(id).unwrap();
     m.body.text.clear();
-    m.kept = Some(Box::new(mailcraft_model::KeptBody { text: Some(r), ..Default::default() }));
+    m.kept = Some(Box::new(mailsolutions_model::KeptBody { text: Some(r), ..Default::default() }));
     (mb, id, r, text)
 }
 
@@ -629,18 +629,18 @@ fn bodies_read_after_the_window_shows_come_into_their_messages_and_their_rows() 
     let (tx, rx) = channel();
     app.check_parts_later(missing_rx, 0, true);
     app.take_bodies_later(rx);
-    tx.send(vec![mailcraft_engine::BodyRead { id, text: Some((r, text.clone())), html: None, hidden: None }]).unwrap();
+    tx.send(vec![mailsolutions_engine::BodyRead { id, text: Some((r, text.clone())), html: None, hidden: None }]).unwrap();
     let mut h = harness(app);
     h.run_steps(2);
     // Not before what is missing is known: a body found missing is never taken in after it.
     assert!(h.state().session.mailbox.message(id).unwrap().body_is_kept());
-    missing_tx.send(mailcraft_engine::Missing::default()).unwrap();
+    missing_tx.send(mailsolutions_engine::Missing::default()).unwrap();
     drop(tx);
     h.run_steps(2);
     let m = h.state().session.mailbox.message(id).unwrap();
     assert_eq!(m.body.text.as_bytes(), text.as_slice());
     assert!(!m.body_is_kept());
-    assert!(mailcraft_engine::list::preview(m, 80).starts_with("The figures for the quarter"));
+    assert!(mailsolutions_engine::list::preview(m, 80).starts_with("The figures for the quarter"));
     assert!(h.state().later.bodies.is_none());
 }
 
@@ -655,8 +655,8 @@ fn what_comes_late_for_a_mailbox_is_dropped_once_another_has_taken_its_place() {
     app.take_bodies_later(rx);
     // File › Open of another mailbox (here, one that names the same content) before the look is over.
     app.session.replace_mailbox(mb);
-    missing_tx.send(mailcraft_engine::Missing { count: 2, refs: vec![r] }).unwrap();
-    tx.send(vec![mailcraft_engine::BodyRead { id, text: Some((r, text)), html: None, hidden: None }]).unwrap();
+    missing_tx.send(mailsolutions_engine::Missing { count: 2, refs: vec![r] }).unwrap();
+    tx.send(vec![mailsolutions_engine::BodyRead { id, text: Some((r, text)), html: None, hidden: None }]).unwrap();
     let mut h = harness(app);
     h.run_steps(3);
     assert!(h.state().status_msg.is_none(), "{:?}", h.state().status_msg);
@@ -672,12 +672,12 @@ fn a_damaged_mailbox_marks_what_is_missing_without_saying_the_count() {
     app.autosave = false;
     let (tx, rx) = channel();
     app.check_parts_later(rx, 1, false);
-    tx.send(mailcraft_engine::Missing { count: 1, refs: vec![r] }).unwrap();
+    tx.send(mailsolutions_engine::Missing { count: 1, refs: vec![r] }).unwrap();
     let mut h = harness(app);
     h.run_steps(2);
     assert!(h.state().status_msg.is_none());
     let m = h.state().session.mailbox.message(id).unwrap();
-    assert!(m.kept.as_ref().unwrap().failed && m.body.text == mailcraft_engine::store_placeholder());
+    assert!(m.kept.as_ref().unwrap().failed && m.body.text == mailsolutions_engine::store_placeholder());
 }
 
 #[test]
@@ -687,18 +687,18 @@ fn imap_mail_damaged_only_in_a_body_that_comes_later_is_marked_once_it_has_come(
     // disk for now, holds U+FFFD where an s with a caron was (#650).
     let text = "Spo\u{FFFD}tovani partner, v znesku 155,81.".as_bytes().to_vec();
     let account = mb.message(id).unwrap().account;
-    mb.account_mut(account).unwrap().kind = mailcraft_model::AccountKind::Imap;
+    mb.account_mut(account).unwrap().kind = mailsolutions_model::AccountKind::Imap;
     mb.message_mut(id).unwrap().uid = 5;
     // The opening looks first: the body is not in memory yet, so there is nothing to see.
-    assert_eq!(mailcraft_engine::cmd::imap_again::mark_unreadable(&mut mb), 0);
+    assert_eq!(mailsolutions_engine::cmd::imap_again::mark_unreadable(&mut mb), 0);
     let mut app = MailApp::new(Session::at(mb, NOW, 0), Services::default());
     app.autosave = false;
     let (missing_tx, missing_rx) = channel();
     let (tx, rx) = channel();
     app.check_parts_later(missing_rx, 0, true);
     app.take_bodies_later(rx);
-    tx.send(vec![mailcraft_engine::BodyRead { id, text: Some((r, text)), html: None, hidden: None }]).unwrap();
-    missing_tx.send(mailcraft_engine::Missing::default()).unwrap();
+    tx.send(vec![mailsolutions_engine::BodyRead { id, text: Some((r, text)), html: None, hidden: None }]).unwrap();
+    missing_tx.send(mailsolutions_engine::Missing::default()).unwrap();
     drop(tx);
     let mut h = harness(app);
     h.run_steps(3);
@@ -713,7 +713,7 @@ fn imap_mail_damaged_only_in_a_body_that_comes_later_is_marked_once_it_has_come(
 fn a_message_being_written_is_asked_about_when_the_read_mailbox_takes_over() {
     let tmp = Temp::new("swap-compose");
     let file = tmp.0.join("Archive.mailcraft");
-    mailcraft_engine::store::save(&file, &mailbox(7)).unwrap();
+    mailsolutions_engine::store::save(&file, &mailbox(7)).unwrap();
     for answer in ["cancel", "discard"] {
         let (services, held) = held_host();
         let mut h = harness(sample_app(services));
@@ -754,14 +754,14 @@ fn locking_host(give: bool) -> (Services, Arc<Mutex<Vec<PathBuf>>>) {
     (services, asked)
 }
 
-/// #517: a mailbox file another MailCraft window has open is neither opened nor written over, by
+/// #517: a mailbox file another MailSolutions window has open is neither opened nor written over, by
 /// the owner or an agent; the mailbox open stays as it was.
 #[test]
 fn a_mailbox_another_window_has_open_is_refused_and_the_one_open_stays() {
     let tmp = Temp::new("elsewhere");
     let (mine, theirs) = (tmp.0.join("Mine.mailcraft"), tmp.0.join("Theirs.mailcraft"));
-    mailcraft_engine::store::save(&mine, &mailbox(3)).unwrap();
-    mailcraft_engine::store::save(&theirs, &mailbox(5)).unwrap();
+    mailsolutions_engine::store::save(&mine, &mailbox(3)).unwrap();
+    mailsolutions_engine::store::save(&theirs, &mailbox(5)).unwrap();
     let (services, asked) = locking_host(false);
     let mut app = sample_app(services);
     app.session.path = Some(mine.clone());
@@ -776,7 +776,7 @@ fn a_mailbox_another_window_has_open_is_refused_and_the_one_open_stays() {
     assert_eq!(app.execute("file.save", other).unwrap_err(), OPEN_ELSEWHERE);
     assert_eq!(app.session.path.as_deref(), Some(mine.as_path()));
     assert_eq!(app.session.mailbox.messages.len(), messages);
-    assert_eq!(mailcraft_engine::store::open(&theirs).unwrap().mailbox.messages.len(), 5, "not written over");
+    assert_eq!(mailsolutions_engine::store::open(&theirs).unwrap().mailbox.messages.len(), 5, "not written over");
     assert_eq!(asked.lock().unwrap().len(), 4);
     // The mailbox open now isn't asked for, however its path is spelt; nor is one with no file.
     let spelt = tmp.0.join(".").join("Mine.mailcraft");
@@ -789,7 +789,7 @@ fn a_mailbox_another_window_has_open_is_refused_and_the_one_open_stays() {
 fn a_mailbox_whose_lock_is_given_opens_as_before() {
     let tmp = Temp::new("given");
     let file = tmp.0.join("Archive.mailcraft");
-    mailcraft_engine::store::save(&file, &mailbox(5)).unwrap();
+    mailsolutions_engine::store::save(&file, &mailbox(5)).unwrap();
     let (services, asked) = locking_host(true);
     let mut app = sample_app(services);
     assert!(app.execute("file.open", json!({"path": file.to_string_lossy()})).is_ok());

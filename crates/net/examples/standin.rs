@@ -3,14 +3,14 @@
 //! The Graph stand-in as a server on this computer's loopback address, for host tests (a phone
 //! or an emulator reaching it through a port forward, a script, `curl`).
 //!
-//!     cargo run -p mailcraft-net --features stand-in --example standin -- --port 8780
+//!     cargo run -p mailsolutions-net --features stand-in --example standin -- --port 8780
 //!
 //! It listens on 127.0.0.1 only (there is no way to ask for another address), takes the bearer
 //! token it prints, and holds synthetic `example.org` data: an Inbox with mail, a folder, a
 //! calendar with an event, a To Do list with tasks and a few colour categories. Nothing leaves
 //! this machine. Stop it with Ctrl-C.
 
-use mailcraft_net::graph::standin::{StandIn, TOKEN};
+use mailsolutions_net::graph::standin::{StandIn, TOKEN};
 
 /// A moment in the stand-in's own clock (2026-09-21), so that what it holds is the same every run.
 const NOW: i64 = 1_790_000_000;

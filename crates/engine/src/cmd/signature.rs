@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Signatures (R4.5): making them, their pictures, and which one each account starts its
-//! messages with. The model and its caps are `mailcraft_model::signature`; what goes into a
+//! messages with. The model and its caps are `mailsolutions_model::signature`; what goes into a
 //! message is `compose.signature`.
 //!
 //! A signature is edited as a message is: `signature.open` makes it the text the editing commands
 //! (`compose.type`, `format.*`, `edit.*`, `compose.undo`) work on, and `signature.save` puts it
 //! back. While it is open, the picture and layout commands for it change the open one.
 
-use mailcraft_model::RichBody;
-use mailcraft_model::rich::{Paragraph, RichText, Run, Style};
-use mailcraft_model::signature::{Layout, Signature};
-use mailcraft_model::{AccountKind, Id, clean_name};
+use mailsolutions_model::RichBody;
+use mailsolutions_model::rich::{Paragraph, RichText, Run, Style};
+use mailsolutions_model::signature::{Layout, Signature};
+use mailsolutions_model::{AccountKind, Id, clean_name};
 use serde_json::{Value, json};
 
 use super::{bad, done, fail};
@@ -88,7 +88,7 @@ fn reopen(s: &mut Session, name: &str) {
 
 fn details(s: &mut Session, v: &Value) -> CmdResult {
     let given = v.get("details").filter(|d| d.is_object()).ok_or_else(|| bad("`details` is an object of the details"))?;
-    let mut d: mailcraft_model::signature::Details =
+    let mut d: mailsolutions_model::signature::Details =
         serde_json::from_value(given.clone()).map_err(|e| bad(format!("`details` is not the details: {e}")))?;
     let restart = p::bool(v, "restart") == Some(true);
     let open = names_open(s, v);
@@ -169,7 +169,7 @@ fn set(s: &mut Session, v: &Value) -> CmdResult {
             if html.len() > super::format::MAX_PASTE {
                 return Err(bad("`html` is too long"));
             }
-            mailcraft_mime_model::rich::from_html(html)
+            mailsolutions_mime_model::rich::from_html(html)
         }
         (None, None, Some(text)) => Signature::plain_text("", text).body().clone(),
         (None, None, None) => return Err(bad("`text`, `body` or `html` is required")),
@@ -221,7 +221,7 @@ fn remove(s: &mut Session, v: &Value) -> CmdResult {
     if s.signature_edit.as_ref().is_some_and(|e| e.signature.name.eq_ignore_ascii_case(&name)) {
         s.signature_edit = None;
     }
-    // (An account a newer MailCraft added keeps its own, as its file has them.)
+    // (An account a newer MailSolutions added keeps its own, as its file has them.)
     for a in s.mailbox.accounts.iter_mut().filter(|a| a.kind != AccountKind::Unknown) {
         // An account that had it for one kind of message has none there now; the other stays.
         let reply = a.reply_signature().to_string();
@@ -303,12 +303,12 @@ fn picture_add(s: &mut Session, v: &Value) -> CmdResult {
         let bytes = sig.picture_bytes();
         e.signature = sig;
         e.dirty = true;
-        return Ok(json!({"id": id, "bytes": bytes, "heavy": bytes > mailcraft_model::signature::HEAVY_BYTES}));
+        return Ok(json!({"id": id, "bytes": bytes, "heavy": bytes > mailsolutions_model::signature::HEAVY_BYTES}));
     }
     let at = at.unwrap_or(0);
     let sig = named(s, v)?;
     let id = sig.add_picture(file, bytes, alt, Some(at)).map_err(|e| fail(e.to_string()))?;
-    Ok(json!({"id": id, "bytes": sig.picture_bytes(), "heavy": sig.picture_bytes() > mailcraft_model::signature::HEAVY_BYTES}))
+    Ok(json!({"id": id, "bytes": sig.picture_bytes(), "heavy": sig.picture_bytes() > mailsolutions_model::signature::HEAVY_BYTES}))
 }
 
 fn picture_set(s: &mut Session, v: &Value) -> CmdResult {
@@ -375,8 +375,8 @@ fn html(s: &mut Session, v: &Value) -> CmdResult {
     // What a message being written shows of it: its words and look as rich text, or for HTML
     // with no words (a logo alone) its pictures' descriptions.
     let stand_in = html.as_deref().map(|h| {
-        let rich = mailcraft_mime_model::rich::from_html(h);
-        if rich.to_plain().trim().is_empty() { RichText::from_plain(mailcraft_html::to_text(h).trim()) } else { rich }
+        let rich = mailsolutions_mime_model::rich::from_html(h);
+        if rich.to_plain().trim().is_empty() { RichText::from_plain(mailsolutions_html::to_text(h).trim()) } else { rich }
     });
     if let Some(text) = &stand_in {
         // New words let the HTML go, so it is set again (checked above, while the pictures were there).

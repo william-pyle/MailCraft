@@ -5,10 +5,10 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::remote;
-use mailcraft_model::remote::CategoriesDownload;
-use mailcraft_model::{Category, Event, FolderKind, Id, Mailbox, Message, Rgb};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::remote;
+use mailsolutions_model::remote::CategoriesDownload;
+use mailsolutions_model::{Category, Event, FolderKind, Id, Mailbox, Message, Rgb};
 use serde_json::json;
 
 use super::Form;
@@ -110,8 +110,8 @@ fn categorize_offers_the_list_of_the_items_account() {
 fn an_events_form_offers_its_calendars_list() {
     let (mut app, a, _) = rig();
     let calendar = app.session.mailbox.alloc_id();
-    let origin = mailcraft_model::Origin { account: a, id: "C-1".into(), ..Default::default() };
-    app.session.mailbox.calendars.push(mailcraft_model::Calendar { id: calendar, name: "Team".into(), origin, ..Default::default() });
+    let origin = mailsolutions_model::Origin { account: a, id: "C-1".into(), ..Default::default() };
+    app.session.mailbox.calendars.push(mailsolutions_model::Calendar { id: calendar, name: "Team".into(), origin, ..Default::default() });
     let event = Event { calendar, title: "Review".into(), ..Default::default() };
     assert_eq!(app.session.mailbox.event_account(&event), a);
     let id = app.session.mailbox.add_event(event).unwrap();
@@ -221,8 +221,8 @@ fn a_list_that_goes_leaves_the_dialog_on_the_shared_list() {
 fn an_events_window_offers_what_the_event_has_off_its_list() {
     let (mut app, a, _) = rig();
     let calendar = app.session.mailbox.alloc_id();
-    let origin = mailcraft_model::Origin { account: a, id: "C-1".into(), ..Default::default() };
-    app.session.mailbox.calendars.push(mailcraft_model::Calendar { id: calendar, name: "Team".into(), origin, ..Default::default() });
+    let origin = mailsolutions_model::Origin { account: a, id: "C-1".into(), ..Default::default() };
+    app.session.mailbox.calendars.push(mailsolutions_model::Calendar { id: calendar, name: "Team".into(), origin, ..Default::default() });
     let event = Event { calendar, title: "Review".into(), categories: vec!["Came with it".into(), "red".into()], ..Default::default() };
     let id = app.session.mailbox.add_event(event).unwrap();
     let Some(Form::Event(f)) = Form::open("editEvent", &app, &json!({"id": id})) else { panic!("no form") };

@@ -8,8 +8,8 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Wake, Waker};
 use std::thread::Thread;
 
-use mailcraft_engine::{Session, sample};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_engine::{Session, sample};
+use mailsolutions_time::{Date, DateTime};
 
 use crate::{Core, HostError, NetworkKind, NotificationRecord, Platform, RedirectKind, SecretStore, TroubleKind};
 

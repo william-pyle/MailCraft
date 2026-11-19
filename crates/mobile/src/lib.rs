@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's binding for the phone apps (ADR 0023): the Rust core as one [`Core`] object that
+//! MailSolutions's binding for the phone apps (ADR 0023): the Rust core as one [`Core`] object that
 //! Kotlin (Android) and Swift (iOS) hold, exported through UniFFI. No UI toolkit, no web view:
 //! the apps draw mail from the display blocks of [`blocks`].
 //!

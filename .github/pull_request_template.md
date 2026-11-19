@@ -4,7 +4,7 @@ Closes #
 
 <!-- A feature in several parts: start with "Builds on #<n>" and keep this a draft until that part is merged. -->
 
-## What changes for the person using MailCraft
+## What changes for the person using MailSolutions
 
 
 ## How it was checked

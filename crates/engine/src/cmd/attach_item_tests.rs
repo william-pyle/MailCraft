@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Attach Item (a message as an `.eml`) and Contact Card (a contact as a `.vcf`).
 
-use mailcraft_model::{Address, Message};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Address, Message};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};
@@ -37,8 +37,8 @@ fn a_message_is_attached_whole_without_its_bcc() {
             bcc: vec![Address::new("Hidden", "hidden@example.org")],
             subject: "Plans".into(),
             date: 1_791_000_000,
-            body: mailcraft_model::Body { text: "The plan, attached.".into(), html: None },
-            flag: mailcraft_model::FlagStatus::Flagged,
+            body: mailsolutions_model::Body { text: "The plan, attached.".into(), html: None },
+            flag: mailsolutions_model::FlagStatus::Flagged,
             ..Default::default()
         })
         .unwrap();

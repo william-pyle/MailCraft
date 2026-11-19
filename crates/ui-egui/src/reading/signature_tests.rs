@@ -5,8 +5,8 @@
 //! OpenSSL; the text is invented.
 
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
-use mailcraft_model::Mailbox;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Mailbox;
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -27,7 +27,7 @@ fn window(messages: &[Vec<u8>], trusted: bool) -> (Window, Vec<u64>) {
     let inbox = mb.inbox().unwrap();
     let mut ids = Vec::new();
     for bytes in messages {
-        let mut m = mailcraft_mime_model::parse_fetched(bytes);
+        let mut m = mailsolutions_mime_model::parse_fetched(bytes);
         m.folder = inbox;
         ids.push(mb.add_message(m).unwrap());
     }
@@ -158,7 +158,7 @@ fn a_message_signed_only_in_part_is_never_verified() {
     assert!(says(&harness, "Part of this message is Digitally signed by alice@smime.example, and verified; the rest isn't signed."));
     assert!(!says(&harness, "Digitally signed by alice@smime.example, and verified."));
     let d = harness.state_mut().session.digital_signature(ids[0]).unwrap();
-    assert_eq!(d.verdict, mailcraft_model::digital_signature::Verdict::NotVerified);
+    assert_eq!(d.verdict, mailsolutions_model::digital_signature::Verdict::NotVerified);
 }
 
 #[test]

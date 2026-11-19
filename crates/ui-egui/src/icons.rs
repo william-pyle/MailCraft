@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's icon set, drawn in code (original artwork; no external icon assets).
+//! MailSolutions's icon set, drawn in code (original artwork; no external icon assets).
 //!
 //! Icons are designed on a 20×20 grid in one stroke: ink (`c`), an accent (`a`) on the one part
 //! that is the action or the changed state, and a few theme colours for state marks.

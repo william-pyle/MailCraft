@@ -5,7 +5,7 @@
 
 use std::io::{Read, Result, Write};
 
-use mailcraft_assuan::{Digest, GpgAgent, HashAlgorithm, Keygrip, PinentryHints, Sexp};
+use mailsolutions_assuan::{Digest, GpgAgent, HashAlgorithm, Keygrip, PinentryHints, Sexp};
 
 /// The agent's side: hands out the fuzzer's bytes and swallows what the client writes.
 struct Server<'a>(&'a [u8]);
@@ -31,10 +31,10 @@ impl Write for Server<'_> {
 }
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
-    if let Ok(sexp) = mailcraft_assuan::sexp::parse(data) {
-        let _ = mailcraft_assuan::sexp::parse(&sexp.to_canonical());
+    if let Ok(sexp) = mailsolutions_assuan::sexp::parse(data) {
+        let _ = mailsolutions_assuan::sexp::parse(&sexp.to_canonical());
     }
-    let _ = mailcraft_assuan::socket_file::parse(data);
+    let _ = mailsolutions_assuan::socket_file::parse(data);
 
     let Ok(mut agent) = GpgAgent::open(Server(data)) else { return };
     let Some(grip) = Keygrip::parse("0123456789ABCDEF0123456789ABCDEF01234567") else { return };

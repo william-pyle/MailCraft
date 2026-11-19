@@ -22,7 +22,7 @@ fn the_drag_pointer_is_never_the_four_arrow_move_cursor() {
 
 #[test]
 fn a_folder_takes_only_messages_that_are_not_in_it() {
-    let mb = mailcraft_engine::sample::mailbox(1_791_993_600, 0);
+    let mb = mailsolutions_engine::sample::mailbox(1_791_993_600, 0);
     let m = mb.messages.values().next().expect("sample has mail");
     let (id, here) = (m.id, m.folder);
     let elsewhere = mb.folders.iter().find(|f| f.id != here).expect("two folders").id;

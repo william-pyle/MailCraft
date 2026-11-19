@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_model::Directory;
-use mailcraft_model::remote::FavoritesOutcome;
+use mailsolutions_model::Directory;
+use mailsolutions_model::remote::FavoritesOutcome;
 
 use super::favorites::*;
 use super::{FAVORITES_EVERY_MS, FAVORITES_REFUSED_MS};

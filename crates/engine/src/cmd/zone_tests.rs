@@ -3,9 +3,9 @@
 //! Time zones through the engine: a mailbox from before zones were kept, a computer that is
 //! carried to another zone, invitations from elsewhere, and what a server is and is not told.
 
-use mailcraft_model::remote::{EventChangeKind, EventsDownload, RemoteEvent, RemoteEventKind};
-use mailcraft_model::{Address, Attachment, Event, FolderKind, Freq, Id, Mailbox, Message, Recurrence};
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday, Zone};
+use mailsolutions_model::remote::{EventChangeKind, EventsDownload, RemoteEvent, RemoteEventKind};
+use mailsolutions_model::{Address, Attachment, Event, FolderKind, Freq, Id, Mailbox, Message, Recurrence};
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday, Zone};
 use serde_json::{Value, json};
 
 use super::remote::{apply_events, event_upload, events_waiting};
@@ -490,7 +490,7 @@ fn a_whole_day_made_far_away_is_the_day_it_is_there() {
 
 #[test]
 fn what_was_sent_before_a_journey_is_found_on_the_server_after_it() {
-    use mailcraft_model::remote::{EventOutcome, EventResult, EventsUploaded};
+    use mailsolutions_model::remote::{EventOutcome, EventResult, EventsUploaded};
     let (old, account) = old_mailbox();
     let mut s = Session::in_zone(old, NOW, zone("America/Chicago"));
     // The move of the meeting goes to the server, and the holiday is deleted there: the server
@@ -499,7 +499,7 @@ fn what_was_sent_before_a_journey_is_found_on_the_server_after_it() {
     run(&mut s, "calendar.delete", json!({"id": day}));
     let upload = event_upload(&s, account).unwrap();
     assert_eq!(upload.ops.len(), 2);
-    let said = |op: &mailcraft_model::remote::EventOp| EventOutcome {
+    let said = |op: &mailsolutions_model::remote::EventOp| EventOutcome {
         op: op.clone(),
         result: EventResult::Done,
         remote: op.remote.clone(),
@@ -515,7 +515,8 @@ fn what_was_sent_before_a_journey_is_found_on_the_server_after_it() {
     // moments; the day that was deleted is the same day.
     s.clock.zone = Some(zone("Asia/Tokyo"));
     assert!(s.settle_zone());
-    let times = |checks: &[mailcraft_model::remote::EventCheck]| checks.iter().map(|c| (c.kind, c.remote.clone(), c.fields.time)).collect::<Vec<_>>();
+    let times =
+        |checks: &[mailsolutions_model::remote::EventCheck]| checks.iter().map(|c| (c.kind, c.remote.clone(), c.fields.time)).collect::<Vec<_>>();
     assert_eq!(times(&s.mailbox.event_checks), times(&noted));
     let gone = s.mailbox.event_checks.iter().find_map(|check| check.base.clone()).unwrap();
     assert_eq!((gone.all_day, gone.start, gone.end), (true, clock(2026, 10, 14, 0, 0), clock(2026, 10, 15, 0, 0)));

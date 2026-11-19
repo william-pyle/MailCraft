@@ -6,7 +6,7 @@
 
 #![no_main]
 
-use mailcraft_jmap::{Address, Session};
+use mailsolutions_jmap::{Address, Session};
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let Ok(base) = Address::parse("https://jmap.example.com/.well-known/jmap") else {

@@ -11,7 +11,7 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use std::time::Duration;
 
 use egui::{RichText, Ui, vec2};
-use mailcraft_engine::import_pst::{Event, Job, Progress, Staged};
+use mailsolutions_engine::import_pst::{Event, Job, Progress, Staged};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -33,7 +33,7 @@ const BUDGET_HIDDEN: Duration = Duration::from_millis(150);
 const EVENTS_NO_CLOCK: usize = 4;
 
 /// What the host is asked to do off the window's thread: read the file at `path`
-/// ([`mailcraft_engine::import_pst::read_path`]) and send what it reads. The window shows
+/// ([`mailsolutions_engine::import_pst::read_path`]) and send what it reads. The window shows
 /// `progress` and cancels through it.
 pub struct PstJob {
     pub path: String,
@@ -82,7 +82,7 @@ impl Drop for ImportPst {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn look(path: &str) -> Result<(bool, String), String> {
-    mailcraft_engine::import_pst::look(path).map(|l| (l.needs_password, l.format.to_string()))
+    mailsolutions_engine::import_pst::look(path).map(|l| (l.needs_password, l.format.to_string()))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -144,7 +144,7 @@ impl ImportPst {
     /// Folders on this computer the mail can go under (never an Outbox), by path.
     fn local_folders(app: &MailApp) -> Vec<(u64, String)> {
         let mb = &app.session.mailbox;
-        let local: Vec<u64> = mb.accounts.iter().filter(|a| a.kind == mailcraft_model::AccountKind::Local).map(|a| a.id).collect();
+        let local: Vec<u64> = mb.accounts.iter().filter(|a| a.kind == mailsolutions_model::AccountKind::Local).map(|a| a.id).collect();
         let mut out: Vec<(u64, String)> = mb
             .folders
             .iter()
@@ -160,14 +160,14 @@ impl ImportPst {
     fn start(&mut self, app: &mut MailApp) {
         let needs = matches!(self.look, Ok((true, _)));
         #[cfg(not(target_arch = "wasm32"))]
-        if needs && !mailcraft_engine::import_pst::password_opens(&self.path, &self.password) {
+        if needs && !mailsolutions_engine::import_pst::password_opens(&self.path, &self.password) {
             self.wrong_password = true;
             return;
         }
         self.wrong_password = false;
         self.progress = Arc::default();
         let places = json!({"places": self.places()});
-        let job = match mailcraft_engine::import_pst::job(&app.session, &self.path, needs.then(|| self.password.clone()), false, &places) {
+        let job = match mailsolutions_engine::import_pst::job(&app.session, &self.path, needs.then(|| self.password.clone()), false, &places) {
             Ok((job, _)) => job,
             Err(e) => {
                 self.phase = Phase::Done(Err(e.in_lang(crate::i18n::current())));
@@ -180,7 +180,7 @@ impl ImportPst {
         }
         let (tx, rx) = std::sync::mpsc::channel();
         #[cfg(not(target_arch = "wasm32"))]
-        mailcraft_engine::import_pst::read_path(&self.path, &job, &self.progress, &mut |e| tx.send(e).is_ok());
+        mailsolutions_engine::import_pst::read_path(&self.path, &job, &self.progress, &mut |e| tx.send(e).is_ok());
         #[cfg(target_arch = "wasm32")]
         let _ = (tx, job);
         self.phase = Phase::Importing(rx);
@@ -227,13 +227,13 @@ impl ImportPst {
                 Ok(e) => e,
                 Err(TryRecvError::Empty) => return,
                 Err(TryRecvError::Disconnected) => {
-                    mailcraft_engine::import_pst::end_staged(&mut app.session);
+                    mailsolutions_engine::import_pst::end_staged(&mut app.session);
                     self.phase =
                         Phase::Done(Err(tl!("The import stopped unexpectedly. What came in stays; import the file again for the rest.").to_string()));
                     return;
                 }
             };
-            let params = json!({"staged": true, "name": mailcraft_engine::import_pst::folder_name(&self.path), "places": self.places()});
+            let params = json!({"staged": true, "name": mailsolutions_engine::import_pst::folder_name(&self.path), "places": self.places()});
             match event {
                 Event::Batch(batch) => {
                     if self.failed.is_some() {
@@ -250,7 +250,7 @@ impl ImportPst {
                     app.session.staged_pst = None;
                 }
                 Event::Done(Err(e)) => {
-                    mailcraft_engine::import_pst::end_staged(&mut app.session);
+                    mailsolutions_engine::import_pst::end_staged(&mut app.session);
                     let why = self.failed.take().unwrap_or_else(|| e.in_lang(crate::i18n::current()));
                     self.phase = Phase::Done(Err(if self.batches > 0 {
                         crate::i18n::fmt(tl!("{why} What came in before stays; import the file again for the rest."), &[("why", &why)])
@@ -324,7 +324,7 @@ impl ImportPst {
         };
         ui.add_space(6.0);
         ui.label(RichText::new(tl!("Put the mail")).strong());
-        let name = mailcraft_engine::import_pst::folder_name(&self.path);
+        let name = mailsolutions_engine::import_pst::folder_name(&self.path);
         ui.radio_value(&mut self.under, None, crate::i18n::fmt(tl!("In a new folder called {name} on this computer"), &[("name", &name)]));
         let folders = Self::local_folders(app);
         ui.horizontal(|ui| {

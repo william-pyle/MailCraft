@@ -4,7 +4,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::{Folder, FolderKind, Id, Message};
+use mailsolutions_model::{Folder, FolderKind, Id, Message};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -26,7 +26,7 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("folder.move", "Move Folder", "Folder › Actions", move_folder).params(r#"{"parent": number | null, "id"?: number}"#).selection(can_move),
         CommandSpec::new("folder.delete", "Delete Folder", "Folder › Actions", delete).params(FOLDER).selection(can_delete),
         CommandSpec::new("folder.favorite", "Add to Favorites", "Folder › Favorites", favorite).params(
-            r#"{"value"?: bool (default: toggle), "id"?: number} — refused for a folder of an account whose Favorites come from its server (Outlook's list, which is changed in Outlook; `view.favorites` says which accounts those are). A shared mailbox's folders are favourites kept in MailCraft, whatever the account it is opened through has: nothing is written to any server for them"#,
+            r#"{"value"?: bool (default: toggle), "id"?: number} — refused for a folder of an account whose Favorites come from its server (Outlook's list, which is changed in Outlook; `view.favorites` says which accounts those are). A shared mailbox's folders are favourites kept in MailSolutions, whatever the account it is opened through has: nothing is written to any server for them"#,
         ),
         CommandSpec::new("view.favorites", "Favorites from Outlook", "File › Options", favorites_command).pure().params(
             r#"{"own"?: bool} — "own": true shows the Favorites that are marked here even for an account whose server has a list of its own, false the server's list where there is one (default: as it is). Answers what the folder pane lists under Favorites, in its order: {"own": bool, "favorites": [{"id", "name", "account", "path"}], "accounts": [{"account": number, "from": "server" | "mailbox", "listed": number}]}"#,
@@ -116,7 +116,7 @@ const FOLDER: &str = r#"{"id"?: number} (default: the folder in view). An `id` t
 
 /// Why `folder.favorite` refuses for an account whose Favorites are its server's.
 pub const FROM_OUTLOOK: &str =
-    "This account's Favorites come from Outlook and are changed there (File › Options can show the ones kept in MailCraft instead)";
+    "This account's Favorites come from Outlook and are changed there (File › Options can show the ones kept in MailSolutions instead)";
 
 fn can_empty(s: &Session) -> Option<&'static str> {
     if s.mailbox.count(s.view.folder) == 0 {
@@ -124,11 +124,11 @@ fn can_empty(s: &Session) -> Option<&'static str> {
     }
     // Not of a folder holding what a JMAP account's server has (M6): the next run would bring it
     // back. (The mail in it goes, and its server is told.)
-    s.mailbox.emptying_stays_on_server(s.view.folder).then_some(mailcraft_model::FOLDERS_NOT_DELETED_YET)
+    s.mailbox.emptying_stays_on_server(s.view.folder).then_some(mailsolutions_model::FOLDERS_NOT_DELETED_YET)
 }
 
 /// Why the folder in view is left as it is, when it is one of its server's own (Conversation
-/// History and the like, #756; [`mailcraft_model::Folder::server_owned`]). The reason is written
+/// History and the like, #756; [`mailsolutions_model::Folder::server_owned`]). The reason is written
 /// out here, in a `fn …(s: &Session) -> Option<&'static str>`, so `cargo xtask i18n` finds it.
 fn server_owned(s: &Session) -> Option<&'static str> {
     if s.mailbox.folder(s.view.folder).is_some_and(|f| f.server_owned()) {
@@ -143,7 +143,7 @@ fn can_rename(s: &Session) -> Option<&'static str> {
     if let r @ Some(_) = server_owned(s) {
         return r;
     }
-    s.mailbox.renaming_stays_on_server(s.view.folder).then_some(mailcraft_model::FOLDERS_STAY_YET)
+    s.mailbox.renaming_stays_on_server(s.view.folder).then_some(mailsolutions_model::FOLDERS_STAY_YET)
 }
 
 /// Not a folder holding what a JMAP account's server has (M6): its server wouldn't hear of the move.
@@ -152,7 +152,7 @@ fn can_move(s: &Session) -> Option<&'static str> {
     if let r @ Some(_) = server_owned(s) {
         return r;
     }
-    s.mailbox.folder_stays_on_server(s.view.folder).then_some(mailcraft_model::FOLDERS_STAY_YET)
+    s.mailbox.folder_stays_on_server(s.view.folder).then_some(mailsolutions_model::FOLDERS_STAY_YET)
 }
 
 /// Not a folder holding what a JMAP account's server has (M6): the next run would bring it back.
@@ -161,7 +161,7 @@ fn can_delete(s: &Session) -> Option<&'static str> {
     if let r @ Some(_) = server_owned(s) {
         return r;
     }
-    s.mailbox.folder_stays_on_server(s.view.folder).then_some(mailcraft_model::FOLDERS_NOT_DELETED_YET)
+    s.mailbox.folder_stays_on_server(s.view.folder).then_some(mailsolutions_model::FOLDERS_NOT_DELETED_YET)
 }
 
 fn target(s: &Session, v: &Value) -> Result<Id, CmdError> {
@@ -260,7 +260,7 @@ pub(crate) fn named(s: &Session, folder: &Value, account: Option<Id>) -> Result<
     }
     // (A kind the account has no folder of, and nothing of that name either.)
     match kind {
-        Some(kind) => Err(failed!("no {folder} folder", folder = mailcraft_i18n::Arg::folder(kind.default_name()))),
+        Some(kind) => Err(failed!("no {folder} folder", folder = mailsolutions_i18n::Arg::folder(kind.default_name()))),
         None => Err(failed!("no folder \"{path}\"", path = text)),
     }
 }
@@ -289,7 +289,7 @@ fn select(s: &mut Session, v: &Value) -> CmdResult {
         let account = account.or_else(|| s.mailbox.folder(s.view.folder).map(|f| f.account)).or_else(|| s.mailbox.default_account().map(|a| a.id));
         account
             .and_then(|a| s.mailbox.folder_of_kind(a, kind))
-            .ok_or_else(|| failed!("no {folder} folder", folder = mailcraft_i18n::Arg::folder(kind.default_name())))?
+            .ok_or_else(|| failed!("no {folder} folder", folder = mailsolutions_i18n::Arg::folder(kind.default_name())))?
     } else if let Some(path) = p::str(v, "path") {
         // As `folder` takes a path (#1200): the account named, else the one in view first.
         path_in(s, account, path).ok_or_else(|| failed!("no folder \"{path}\"", path))?
@@ -301,7 +301,7 @@ fn select(s: &mut Session, v: &Value) -> CmdResult {
         None | Some(Value::Null) => None,
         Some(Value::String(code)) => {
             let category =
-                mailcraft_model::GmailCategory::parse(code).ok_or_else(|| bad("`gmail` is primary, social, promotions, updates or forums"))?;
+                mailsolutions_model::GmailCategory::parse(code).ok_or_else(|| bad("`gmail` is primary, social, promotions, updates or forums"))?;
             if !crate::gmail::listed_under(s, id) {
                 return Err(fail("only the Inbox of a Gmail account whose categories are shown, and sorted by Gmail, has Gmail's categories"));
             }

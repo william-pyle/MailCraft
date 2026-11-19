@@ -3,7 +3,7 @@
 //! How far a Send/Receive has got, as numbers: what a host's line for the status bar is made of,
 //! and what the engine keeps per account while a run goes on (#120).
 
-use mailcraft_i18n::{Lang, fmt};
+use mailsolutions_i18n::{Lang, fmt};
 use serde::{Deserialize, Serialize};
 
 /// What part of a run an account is in, as the owner is told it.
@@ -211,11 +211,11 @@ mod tests {
         assert_eq!(json, r#"{"stage":"reading","folder":"Inbox","done":2,"total":4}"#);
         assert_eq!(SyncStage::Updating.phase(), SyncPhase::Folders);
         assert_eq!(SyncStage::Checking.phase().label(), "New mail");
-        let fr = mailcraft_i18n::test_support::po(&[
+        let fr = mailsolutions_i18n::test_support::po(&[
             ("Found {n} folder", "{n} dossier trouvé"),
             ("{folder}: {done} of {total}", "{folder} : {done} sur {total}"),
         ]);
-        mailcraft_i18n::test_support::with_catalogue(Lang::French, &fr, || {
+        mailsolutions_i18n::test_support::with_catalogue(Lang::French, &fr, || {
             assert_eq!(SyncStep::new(SyncStage::Listed, "", 0, 1).line_in(Lang::French), "1 dossier trouvé");
             assert_eq!(SyncStep::new(SyncStage::Reading, "Inbox", 2, 4).line_in(Lang::French), "Inbox : 2 sur 4");
             assert_eq!(SyncStep::new(SyncStage::Listed, "", 0, 2).line(), "Found 2 folders");

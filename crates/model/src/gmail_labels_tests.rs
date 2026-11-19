@@ -141,7 +141,7 @@ proptest! {
         prop_assert!(got.len() <= MAX_GMAIL_LABELS);
         for label in &got {
             prop_assert!(!label.is_empty() && label.chars().count() <= MAX_GMAIL_LABEL_LEN);
-            prop_assert!(!label.chars().any(|c| c.is_control() || mailcraft_names::is_format(c) && !mailcraft_names::is_joiner(c)));
+            prop_assert!(!label.chars().any(|c| c.is_control() || mailsolutions_names::is_format(c) && !mailsolutions_names::is_joiner(c)));
             let _ = label_leaf(label);
         }
     }

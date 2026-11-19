@@ -21,7 +21,7 @@ use std::time::Duration;
 use super::{Redirect, Refused, code_of, consent_of, same};
 use crate::NetError;
 use crate::http;
-use mailcraft_proto::ProtoError;
+use mailsolutions_proto::ProtoError;
 
 /// The path after the scheme when the caller names none: `org.example.app:/oauth2redirect`.
 pub const DEFAULT_REDIRECT_PATH: &str = "/oauth2redirect";

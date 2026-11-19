@@ -4,9 +4,9 @@
 
 use egui::accesskit::Role;
 use egui_kittest::kittest::{NodeT as _, Queryable};
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{FolderKind, GmailCategory, Id, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{FolderKind, GmailCategory, Id, Message};
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -96,7 +96,7 @@ fn a_tab_is_reached_and_chosen_with_the_keyboard() {
     harness.key_press(egui::Key::Enter);
     harness.run_steps(3);
     assert_eq!(harness.state().session.view.gmail, Some((inbox, GmailCategory::Promotions)));
-    assert_eq!(mailcraft_engine::gmail::in_view(&harness.state().session), Some(GmailCategory::Promotions));
+    assert_eq!(mailsolutions_engine::gmail::in_view(&harness.state().session), Some(GmailCategory::Promotions));
     harness.key_press(egui::Key::ArrowLeft);
     harness.run_steps(2);
     harness.key_press(egui::Key::Space);
@@ -139,7 +139,7 @@ fn the_choice_is_kept_and_offered_only_with_gmail() {
     let saved = harness.state().prefs();
     let text = serde_json::to_string(&saved).unwrap();
     assert!(text.contains("\"gmailTabs\":true"), "{text}");
-    let mut fresh = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut fresh = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     assert!(!fresh.session.view.gmail_tabs);
     fresh.apply_prefs(serde_json::from_str(&text).unwrap());
     assert!(fresh.session.view.gmail_tabs);

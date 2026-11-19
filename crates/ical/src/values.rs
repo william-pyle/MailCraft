@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Property values: dates and times, durations and escaped text.
 
-use mailcraft_time::{DAY, Date, DateTime, Timestamp};
+use mailsolutions_time::{DAY, Date, DateTime, Timestamp};
 
 /// Longest duration read, in seconds (some 10 000 years): sums of it can't overflow.
 const MAX_DURATION: i64 = 10_000 * 366 * DAY;

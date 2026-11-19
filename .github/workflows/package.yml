@@ -5,8 +5,8 @@ name: Package
 # doesn't run on its own. Everything here runs on GitHub's standard runners, so it works in any
 # public repository, a fork included.
 #
-# The current release files are mailcraft-<ver>-windows-x64.msi and
-# mailcraft-<ver>-windows-x64-portable.zip. Other target jobs are paused at the owner's request.
+# The current release files are mailsolutions-<ver>-windows-x64.msi and
+# mailsolutions-<ver>-windows-x64-portable.zip. Other target jobs are paused at the owner's request.
 #
 # Building and signing are separate jobs. A job that compiles (cargo, and every build script and
 # macro of every dependency) or runs what was compiled has no signing secret, no Azure sign-in, no
@@ -65,9 +65,9 @@ on:
       # credentials: a desktop client's id and secret ship inside the binary, so a dependency's
       # build script seeing them reveals nothing the program doesn't. Without them (a dry run),
       # Google accounts fall back to an app password.
-      MAILCRAFT_GOOGLE_CLIENT_ID:
+      MAILSOLUTIONS_GOOGLE_CLIENT_ID:
         required: false
-      MAILCRAFT_GOOGLE_CLIENT_SECRET:
+      MAILSOLUTIONS_GOOGLE_CLIENT_SECRET:
         required: false
     # The digest of each release-* artifact's list of files (packaging/ci/handoff.sh).
     outputs:
@@ -128,8 +128,8 @@ jobs:
       - name: Build
         shell: pwsh
         env:
-          MAILCRAFT_GOOGLE_CLIENT_ID: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}
-          MAILCRAFT_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_ID: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_ID }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_SECRET }}
         run: ./packaging/windows/package.ps1 -Arch ${{ matrix.arch }} -BuildOnly
       - name: Hand the programs on by digest
         id: seal
@@ -139,7 +139,7 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           mkdir -p "handoff/$TARGET/release"
-          cp "target/$TARGET/release/mailcraft.exe" "target/$TARGET/release/mailcraft-cli.exe" "handoff/$TARGET/release/"
+          cp "target/$TARGET/release/mailsolutions.exe" "target/$TARGET/release/mailsolutions-cli.exe" "handoff/$TARGET/release/"
           digest=$(bash packaging/ci/handoff.sh seal handoff "build-windows-$ARCH")
           echo "$ARCH=$digest" >>"$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -259,7 +259,7 @@ jobs:
           retention-days: 30
 
   # The signed files for real, in a job without secrets: the CLI answering, and on x64 the
-  # installer: files in place, the program listed, and nothing left after uninstalling. An ARM64
+  # installer database and packaged version resources, without installing. An ARM64
   # build can't run on this runner; .github/workflows/windows-arm64.yml runs one on ARM64.
   windows-smoke:
     name: Windows ${{ matrix.arch }} (check)
@@ -270,6 +270,9 @@ jobs:
       matrix:
         arch: [x64]
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-windows-${{ matrix.arch }}
@@ -280,27 +283,15 @@ jobs:
           $zip = (Get-Item dist/release/*-portable.zip).FullName
           $dir = Join-Path $env:RUNNER_TEMP 'portable'
           Expand-Archive -Path $zip -DestinationPath $dir -Force
-          $cli = (Get-ChildItem -Path $dir -Recurse -Filter mailcraft-cli.exe | Select-Object -First 1).FullName
-          if (-not $cli) { throw 'no mailcraft-cli.exe in the portable zip' }
-          & $cli --version
-          if ($LASTEXITCODE -ne 0) { throw "mailcraft-cli --version failed ($LASTEXITCODE)" }
-      - name: Install, check and uninstall the MSI
-        if: matrix.arch == 'x64'
+          $cli = (Get-ChildItem -Path $dir -Recurse -Filter mailsolutions-cli.exe | Select-Object -First 1).FullName
+          if (-not $cli) { throw 'no mailsolutions-cli.exe in the portable zip' }
+          $version = & $cli --version
+          if ($LASTEXITCODE -ne 0) { throw "mailsolutions-cli --version failed ($LASTEXITCODE)" }
+          if ([IO.Path]::GetFileName($zip) -notmatch '^mailsolutions-(.+)-windows-x64-portable\.zip$' -or $version -ne "mailsolutions-cli $($Matches[1])") { throw 'Portable CLI version differs from its package' }
+          Write-Output $version
+      - name: Inspect MSI identity and content without installing
         shell: pwsh
-        run: |
-          $msi = (Get-Item dist/release/*.msi).FullName
-          $p = Start-Process msiexec.exe -ArgumentList @('/i', "`"$msi`"", '/qn', '/norestart', '/l*v', "$env:RUNNER_TEMP\install.log") -Wait -PassThru
-          if ($p.ExitCode -ne 0) { Get-Content "$env:RUNNER_TEMP\install.log" -Tail 60; throw "install failed ($($p.ExitCode))" }
-          $dir = Join-Path $env:ProgramFiles 'MailCraft'
-          foreach ($f in 'mailcraft.exe', 'mailcraft-cli.exe') { if (-not (Test-Path (Join-Path $dir $f))) { throw "$f missing in $dir" } }
-          & (Join-Path $dir 'mailcraft-cli.exe') --version
-          $entry = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -eq 'MailCraft' }
-          if (-not $entry) { throw 'no installed-programs entry named MailCraft' }
-          $entry | Format-List DisplayName, DisplayVersion, Publisher, PSChildName
-          if (-not (Get-ItemProperty 'HKLM:\SOFTWARE\RegisteredApplications').MailCraft) { throw 'MailCraft is not offered as a mail program' }
-          $p = Start-Process msiexec.exe -ArgumentList @('/x', $entry.PSChildName, '/qn', '/norestart') -Wait -PassThru
-          if ($p.ExitCode -ne 0) { throw "uninstall failed ($($p.ExitCode))" }
-          if (Test-Path (Join-Path $dir 'mailcraft.exe')) { throw 'uninstall left mailcraft.exe behind' }
+        run: ./packaging/windows/verify-package.ps1 -Msi (Get-Item dist/release/*.msi).FullName
 
   # Compiles the two macOS programs for both architectures. No signing secret, no environment.
   macos-build:
@@ -319,15 +310,15 @@ jobs:
           targets: aarch64-apple-darwin, x86_64-apple-darwin
       - name: Build
         env:
-          MAILCRAFT_GOOGLE_CLIENT_ID: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}
-          MAILCRAFT_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_ID: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_ID }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_SECRET }}
         run: bash packaging/macos/package.sh --arch universal --build-only
       - name: Hand the programs on by digest
         id: seal
         run: |
           for t in aarch64-apple-darwin x86_64-apple-darwin; do
             mkdir -p "handoff/$t/release"
-            cp "target/$t/release/mailcraft" "target/$t/release/mailcraft-cli" "handoff/$t/release/"
+            cp "target/$t/release/mailsolutions" "target/$t/release/mailsolutions-cli" "handoff/$t/release/"
           done
           digest=$(bash packaging/ci/handoff.sh seal handoff build-macos)
           echo "digest=$digest" >>"$GITHUB_OUTPUT"
@@ -417,7 +408,7 @@ jobs:
           dmg=$(ls dist/release/*-macos-universal.dmg)
           mnt=$(mktemp -d)
           hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$mnt"
-          app="$mnt/MailCraft.app"
+          app="$mnt/MailSolutions.app"
           # The app as somebody gets it: the signature holds for the copy in the image too. When
           # it doesn't, say what the image attached to which file.
           if ! codesign --verify --deep --strict --verbose=4 "$app"; then
@@ -429,14 +420,14 @@ jobs:
             exit 1
           fi
           plutil -p "$app/Contents/Info.plist" | grep -E "CFBundleIdentifier|CFBundleIconFile|CFBundleShortVersionString"
-          lipo -info "$app/Contents/MacOS/MailCraft"
-          "$app/Contents/MacOS/MailCraft" --version
+          lipo -info "$app/Contents/MacOS/MailSolutions"
+          "$app/Contents/MacOS/MailSolutions" --version
           hdiutil detach "$mnt"
       - name: Run the CLI from its zip
         run: |
           dir=$(mktemp -d)
-          ditto -x -k dist/release/mailcraft-cli-*-macos-universal.zip "$dir"
-          cli=$(ls "$dir"/*/mailcraft-cli)
+          ditto -x -k dist/release/mailsolutions-cli-*-macos-universal.zip "$dir"
+          cli=$(ls "$dir"/*/mailsolutions-cli)
           codesign --verify --strict --verbose=2 "$cli"
           "$cli" --version
 
@@ -480,8 +471,8 @@ jobs:
           toolchain: 1.98.1
       - name: Build and package (AppImage, deb, rpm, tar.gz)
         env:
-          MAILCRAFT_GOOGLE_CLIENT_ID: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}
-          MAILCRAFT_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_ID: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_ID }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_SECRET }}
         run: bash packaging/linux/package.sh
       # The .deb for real: installed with its dependencies, the window started on a virtual
       # display, and removed again.
@@ -489,12 +480,12 @@ jobs:
         run: |
           dpkg-deb --info dist/release/*.deb
           sudo apt-get install -y ./dist/release/*.deb
-          mailcraft-cli --version
-          desktop-file-validate /usr/share/applications/*mailcraft.desktop
-          MAILCRAFT_NO_PREFS=1 timeout 20 xvfb-run -a mailcraft --sample >"$RUNNER_TEMP/window.log" 2>&1 || code=$?
+          mailsolutions-cli --version
+          desktop-file-validate /usr/share/applications/*mailsolutions.desktop
+          MAILSOLUTIONS_NO_PREFS=1 timeout 20 xvfb-run -a mailsolutions --sample >"$RUNNER_TEMP/window.log" 2>&1 || code=$?
           # Still running when the time was up (124) is what a window that started looks like.
           if [ "${code:-0}" != 124 ]; then cat "$RUNNER_TEMP/window.log"; echo "::error::the window did not stay up (exit ${code:-0})"; exit 1; fi
-          sudo apt-get remove -y mailcraft
+          sudo apt-get remove -y mailsolutions
       - name: Hand the release files on by digest
         id: seal
         env:
@@ -540,7 +531,7 @@ jobs:
           ARCH: ${{ matrix.arch }}
           DIST: ${{ github.workspace }}/dist/flatpak
         run: |
-          set -- dist/linux/mailcraft-*-linux-"$ARCH".tar.gz
+          set -- dist/linux/mailsolutions-*-linux-"$ARCH".tar.gz
           if [ ! -f "$1" ]; then echo "::error::no tar.gz for $ARCH in dist/linux"; exit 1; fi
           bash packaging/linux/flatpak-bundle.sh "$1"
       - name: Hand the bundle on by digest
@@ -573,12 +564,12 @@ jobs:
         # no FreeBSD tarball, and this step shows as failed.
         continue-on-error: true
         env:
-          MAILCRAFT_GOOGLE_CLIENT_ID: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}
-          MAILCRAFT_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_ID: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_ID }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_SECRET }}
         uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
         with:
           release: "15.1"
-          envs: "MAILCRAFT_GOOGLE_CLIENT_ID MAILCRAFT_GOOGLE_CLIENT_SECRET"
+          envs: "MAILSOLUTIONS_GOOGLE_CLIENT_ID MAILSOLUTIONS_GOOGLE_CLIENT_SECRET"
           usesh: true
           cpu: 4
           mem: 12288
@@ -594,9 +585,9 @@ jobs:
             set -e
             . "$HOME/.cargo/env"
             git config --global --add safe.directory "*"
-            export CARGO_TARGET_DIR=/var/tmp/mailcraft-target CARGO_BUILD_JOBS=4
+            export CARGO_TARGET_DIR=/var/tmp/mailsolutions-target CARGO_BUILD_JOBS=4
             bash packaging/freebsd/package.sh
-            rm -rf /var/tmp/mailcraft-target
+            rm -rf /var/tmp/mailsolutions-target
       - name: Hand the tarball on by digest
         id: seal
         run: |

@@ -3,14 +3,14 @@
 //! The Assuan protocol and gpg-agent, without sockets.
 //!
 //! OpenPGP private keys stay in GnuPG (on disk or on a smartcard) and are used through
-//! gpg-agent, which asks for a PIN or passphrase in its own pinentry: MailCraft never sees one.
+//! gpg-agent, which asks for a PIN or passphrase in its own pinentry: MailSolutions never sees one.
 //! This crate speaks to the agent over any `Read + Write` stream, written from the public
 //! documentation of the Assuan protocol and of gpg-agent's commands:
 //!
 //! - [`Client`]: Assuan's line framing (lines of at most [`MAX_LINE`] bytes, percent-escaping),
 //!   the server's `OK`, `ERR`, `S`, `D`, `INQUIRE` and `#` lines, answers to an inquiry (`D` …
 //!   `END`, or `CAN`), and caps on everything a server may send.
-//! - [`GpgAgent`]: the operations MailCraft needs: whether a key is there (`HAVEKEY`, `KEYINFO`,
+//! - [`GpgAgent`]: the operations MailSolutions needs: whether a key is there (`HAVEKEY`, `KEYINFO`,
 //!   `READKEY`), signing a digest (`SIGKEY`, `SETHASH`, `PKSIGN`; SHA-256, SHA-384 and SHA-512
 //!   only, never MD5 or SHA-1), decrypting a session key (`SETKEY`, `PKDECRYPT`, answering the
 //!   agent's `INQUIRE CIPHERTEXT`), and the hints (`OPTION display=…`, `ttyname`…) that let the
@@ -20,7 +20,7 @@
 //! - [`socket_file`]: the two kinds of file that may stand where the agent's socket is named: a
 //!   redirect, and (on Windows) the loopback port and nonce of Assuan's socket emulation.
 //!
-//! Finding the agent and opening the socket is the program's (`apps/mailcraft`): this crate does
+//! Finding the agent and opening the socket is the program's (`apps/mailsolutions`): this crate does
 //! no I/O of its own and builds for the browser, which never uses it.
 //!
 //! Everything the agent sends is treated as hostile: lines, data, status lines, inquiries and
@@ -66,7 +66,7 @@ pub const MAX_LINES: usize = 16 * 1024;
 pub const MAX_STATUS: usize = 256;
 /// Most inquiries one command may answer.
 pub const MAX_INQUIRIES: usize = 16;
-/// Most bytes MailCraft sends in answer to one inquiry.
+/// Most bytes MailSolutions sends in answer to one inquiry.
 pub const MAX_INQUIRY_DATA: usize = 1024 * 1024;
 
 /// What went wrong talking to gpg-agent.
@@ -118,7 +118,7 @@ pub struct ServerError {
     pub text: String,
 }
 
-/// What an [`ServerError`] means, for the errors MailCraft tells apart.
+/// What an [`ServerError`] means, for the errors MailSolutions tells apart.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorKind {
     /// The agent has no secret key for the keygrip.

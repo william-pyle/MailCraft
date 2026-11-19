@@ -3,9 +3,9 @@
 //! #276: what an IMAP server's STATUS said of a folder read whole is kept with the folder, handed
 //! back to the next run while it is good for passing the folder over, and let go of when it isn't.
 
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{FolderKind, ImapStatus};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{FolderKind, ImapStatus};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::json;
 
 use crate::*;

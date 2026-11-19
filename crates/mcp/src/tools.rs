@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! MCP tools: names, schemas and implementations on top of a [`Backend`].
 
-use mailcraft_engine::agent::{self, Access, Class, FileUse};
+use mailsolutions_engine::agent::{self, Access, Class, FileUse};
 use serde_json::{Value, json};
 
 use crate::backend::Backend;
@@ -194,7 +194,7 @@ pub fn tool_definitions() -> Value {
         tool(
             "list_commands",
             "List commands",
-            "Every MailCraft command: id, label, ribbon location, shortcut and params. Filter with `query`.",
+            "Every MailSolutions command: id, label, ribbon location, shortcut and params. Filter with `query`.",
             obj(json!({"query": s("Case-insensitive filter on id/label/location")}), &[]),
             true
         ),
@@ -291,13 +291,13 @@ pub fn tool_definitions() -> Value {
         ),
         tool(
             "status",
-            "MailCraft status",
+            "MailSolutions status",
             "Whether the mailbox is open. While the window still opens it (a large mailbox takes a few seconds at launch), every other tool is answered \"the mailbox is still opening\"; ask again in a moment.",
             obj(json!({}), &[]),
             true
         ),
-        tool("parity", "Feature parity", "MailCraft's command coverage of the mail-client feature catalog.", obj(json!({}), &[]), true),
-        tool("screenshot", "Screenshot app", "Screenshot of the whole MailCraft window (desktop app only).", obj(json!({}), &[]), true),
+        tool("parity", "Feature parity", "MailSolutions's command coverage of the mail-client feature catalog.", obj(json!({}), &[]), true),
+        tool("screenshot", "Screenshot app", "Screenshot of the whole MailSolutions window (desktop app only).", obj(json!({}), &[]), true),
         tool(
             "click",
             "Click",
@@ -364,7 +364,7 @@ pub fn exec(b: &mut dyn Backend, pol: &Policy, id: &str, params: Value) -> Resul
     let r = b.call("engine.execute", json!({"command": id, "params": params}))?;
     if let Some((files, t)) = target {
         let data = r.get("data").and_then(Value::as_str).ok_or("the command gave nothing to write")?;
-        let bytes = mailcraft_engine::cmd::base64_decode(data).map_err(|e| e.to_string())?;
+        let bytes = mailsolutions_engine::cmd::base64_decode(data).map_err(|e| e.to_string())?;
         files.write(&t, &bytes)?;
         return Ok(json!({"path": t.given, "bytes": bytes.len()}));
     }
@@ -413,7 +413,7 @@ fn pick(a: &Value, keys: &[&str]) -> Value {
 
 /// Standard base64, for handing a PNG to the client.
 fn base64(bytes: &[u8]) -> String {
-    mailcraft_engine::cmd::base64_encode(bytes)
+    mailsolutions_engine::cmd::base64_encode(bytes)
 }
 
 pub fn call_tool(b: &mut dyn Backend, pol: &Policy, name: &str, a: &Value) -> ToolResult {
@@ -425,7 +425,7 @@ pub fn call_tool(b: &mut dyn Backend, pol: &Policy, name: &str, a: &Value) -> To
         }
         if !pol.allow.contains(&Class::Input) {
             return ToolResult::error(format!(
-                "clicking and typing in the window needs the owner: {}. Only the owner can let an agent do this, by starting the server with `mailcraft-cli mcp --allow input`",
+                "clicking and typing in the window needs the owner: {}. Only the owner can let an agent do this, by starting the server with `mailsolutions-cli mcp --allow input`",
                 Class::Input.what()
             ));
         }

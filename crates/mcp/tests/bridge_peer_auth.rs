@@ -8,7 +8,7 @@ use std::net::TcpListener;
 use std::sync::mpsc::{Receiver, channel};
 use std::time::Duration;
 
-use mailcraft_mcp::{Backend, Remote};
+use mailsolutions_mcp::{Backend, Remote};
 use serde_json::{Value, json};
 
 const KEY: &str = "feedfacefeedfacefeedfacefeedfacefeedfacefeedfacefeedfacefeedface";
@@ -61,7 +61,7 @@ fn a_listener_that_cannot_prove_the_key_gets_no_key_and_no_request() {
     // Says ok with a made-up proof.
     refuses_and_sends_nothing(|_| json!({"ok": true, "result": {"proof": "00".repeat(32)}}));
     // Proves with some other key (another run's, or a guess).
-    refuses_and_sends_nothing(|n| json!({"ok": true, "result": {"proof": mailcraft_control_key::proof::proof("another-key", n)}}));
+    refuses_and_sends_nothing(|n| json!({"ok": true, "result": {"proof": mailsolutions_control_key::proof::proof("another-key", n)}}));
     // Does not know the method.
     refuses_and_sends_nothing(|_| json!({"ok": false, "error": "unauthorized"}));
     // Says ok and nothing else.
@@ -70,7 +70,7 @@ fn a_listener_that_cannot_prove_the_key_gets_no_key_and_no_request() {
 
 #[test]
 fn the_app_that_proves_the_key_is_sent_the_key_and_the_request() {
-    let (port, rx) = listener(|n| json!({"ok": true, "result": {"proof": mailcraft_control_key::proof::proof(KEY, n)}}));
+    let (port, rx) = listener(|n| json!({"ok": true, "result": {"proof": mailsolutions_control_key::proof::proof(KEY, n)}}));
     let mut r = Remote::connect_with_key(&format!("127.0.0.1:{port}"), KEY).unwrap();
     assert_eq!(r.call("mailbox.inspect", json!({})).unwrap(), json!("done"));
     let lines = seen(&rx);
@@ -84,7 +84,8 @@ fn the_app_that_proves_the_key_is_sent_the_key_and_the_request() {
 /// program gets no key and no request, and is not asked again.
 #[test]
 fn an_overlong_answer_to_the_challenge_is_no_proof() {
-    let (port, rx) = listener(|n| json!({"ok": true, "result": {"proof": mailcraft_control_key::proof::proof(KEY, n), "pad": "x".repeat(2 << 20)}}));
+    let (port, rx) =
+        listener(|n| json!({"ok": true, "result": {"proof": mailsolutions_control_key::proof::proof(KEY, n), "pad": "x".repeat(2 << 20)}}));
     let mut r = Remote::connect_with_key(&format!("127.0.0.1:{port}"), KEY).unwrap();
     let e = r.call("engine.execute", json!({"command": "mail.flag"})).unwrap_err();
     assert!(e.contains("did not prove"), "{e}");

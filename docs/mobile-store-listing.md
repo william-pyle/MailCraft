@@ -1,8 +1,8 @@
 # Android store listing and data safety
 
-> **Last reviewed:** 2026-11-13 · **Last updated:** 2026-11-13 · **Change:** major
+> **Last reviewed:** 2026-11-13 · **Last updated:** 2026-11-19 · **Change:** minor
 
-The words for MailCraft's Google Play listing: the data-safety answers, each with its reason, and
+The words for MailSolutions's Google Play listing: the data-safety answers, each with its reason, and
 the short and full descriptions. Every sentence says only what the app does as built on the open mobile pull requests, which are
 not on `main` yet (the
 privacy side is [`PRIVACY.md`](../PRIVACY.md), [The phone apps](../PRIVACY.md#the-phone-apps)).
@@ -21,7 +21,7 @@ same pull request.
 | Can the owner ask for data to be deleted? | Yes for data on the device; no for a sent report | Mail, settings and sign-ins are kept only on the phone, and uninstalling the app removes them. A report already sent is kept as an issue, and the privacy statement names no way to ask for it to be deleted yet: the owner decides whether to add one (an issue or contact link) before the form is filled in. |
 | Is the data processed ephemerally? | No | Play asks this of collected data, which is the problem report: it is kept as an issue, not discarded. The mailbox stays on the device and is not collected. |
 | Does the app follow the families policy or target children? | No | It is a mail program for adults. |
-| Account creation | None | There is no MailCraft account. Sign-in is on the provider's own page. |
+| Account creation | None | There is no MailSolutions account. Sign-in is on the provider's own page. |
 | Privacy policy link | `PRIVACY.md` in the project's repository | The address to give is decided by the owner. |
 
 Not claimed: that nothing is collected at all. The problem report is collected, so the form says
@@ -33,10 +33,10 @@ Mail, calendar, people and tasks for Microsoft accounts. Private, no tracking.
 
 ## Full description
 
-MailCraft is mail, calendar, people and tasks for your Microsoft accounts, on your phone and
+MailSolutions is mail, calendar, people and tasks for your Microsoft accounts, on your phone and
 tablet, free and open source.
 
-Sign in on Microsoft's own page. MailCraft never sees your password. Add several accounts and
+Sign in on Microsoft's own page. MailSolutions never sees your password. Add several accounts and
 read the mail of shared mailboxes you have been given access to.
 
 **Mail.** Folders, a fast message list with filters and swipe actions you choose, conversations,
@@ -59,7 +59,7 @@ are shown and can be changed on the phone.
 **Made to read.** Messages are drawn from their text and layout at your phone's width, in light
 and dark, with large text and a screen reader in mind.
 
-MailCraft is open source under the MIT or Apache 2.0 licence, written in Rust from public
+MailSolutions is open source under the MIT or Apache 2.0 licence, written in Rust from public
 specifications. The source and the privacy statement are at github.com/UCS-Care-Group/mailcraft.
 
 ## To check before the first release
@@ -78,4 +78,5 @@ specifications. The source and the privacy statement are at github.com/UCS-Care-
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-19 | minor | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-13 | major | MB4.3: first version, the Play data-safety answers and the listing texts |

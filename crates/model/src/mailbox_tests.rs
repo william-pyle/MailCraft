@@ -761,9 +761,9 @@ fn a_shared_mailbox_keeps_as_much_offline_as_its_owner() {
     assert_eq!((mb.keep_offline_of(local), mb.keep_offline_of(999_999)), (KeepOffline::All, KeepOffline::All));
 }
 
-// ---- an account a newer MailCraft added ----
+// ---- an account a newer MailSolutions added ----
 
-/// What a newer MailCraft would write: a local account, then an account of a kind this version
+/// What a newer MailSolutions would write: a local account, then an account of a kind this version
 /// doesn't know (`fromANewerVersion`, which no version has) with settings of its own, one of them in a shape this version would refuse
 /// for an account it knows, and an IMAP account; the newer account's Inbox has a message. The file
 /// and the newer account's id.

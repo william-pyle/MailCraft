@@ -4,8 +4,8 @@
 //! it, and a new message with the contact's card attached, which nothing sends. Invented people
 //! at `.example`.
 
-use mailcraft_model::{Contact, Id, Labeled};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Contact, Id, Labeled};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::agent::{Access, Class, classify};
@@ -43,7 +43,7 @@ fn forward_contact_attaches_the_card_and_sends_nothing() {
     assert_eq!(card.mime, "text/vcard");
     let text = String::from_utf8(card.data.to_vec()).unwrap();
     assert!(text.starts_with("BEGIN:VCARD") && text.contains("gil@partner.example") && text.contains("Partner Works"), "{text}");
-    let back = mailcraft_vcard::parse(&text);
+    let back = mailsolutions_vcard::parse(&text);
     assert_eq!(back.first().map(Contact::name).as_deref(), Some("Gil Hart"));
     assert_eq!(s.mailbox.messages.len(), messages);
 }

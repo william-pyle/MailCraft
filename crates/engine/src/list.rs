@@ -5,9 +5,9 @@
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use mailcraft_model::search::Query;
-use mailcraft_model::{FlagStatus, FolderKind, Id, Importance, Message, ThreadIndex, ThreadKey};
-use mailcraft_time::{Date, DateGroup, Timestamp};
+use mailsolutions_model::search::Query;
+use mailsolutions_model::{FlagStatus, FolderKind, Id, Importance, Message, ThreadIndex, ThreadKey};
+use mailsolutions_time::{Date, DateGroup, Timestamp};
 use serde::Serialize;
 
 use crate::{Filter, Scope, Session, SortBy};
@@ -85,12 +85,12 @@ pub fn when(m: &Message) -> Timestamp {
 /// It is what the message says to someone reading it: taken from the HTML when there is HTML
 /// (the opening line a sender hid for message lists included), otherwise from the text, with
 /// markup, character references, invisible padding, rules, quoted text and web addresses left out
-/// ([`mailcraft_html::preview`], [`mailcraft_html::text_preview`]). It is worked out from the
+/// ([`mailsolutions_html::preview`], [`mailsolutions_html::text_preview`]). It is worked out from the
 /// message each time and stored nowhere, so it costs a short read of the body's first words: a
 /// list that draws the same rows again and again keeps what it was given.
 pub fn preview(m: &Message, max_chars: usize) -> String {
-    let said = m.body.html.as_deref().map(|html| mailcraft_html::preview(html, max_chars)).unwrap_or_default();
-    if said.is_empty() { mailcraft_html::text_preview(&m.body.text, max_chars) } else { said }
+    let said = m.body.html.as_deref().map(|html| mailsolutions_html::preview(html, max_chars)).unwrap_or_default();
+    if said.is_empty() { mailsolutions_html::text_preview(&m.body.text, max_chars) } else { said }
 }
 
 /// A row's heading, compared with the last row's as it is: the words of a date's are written
@@ -443,7 +443,7 @@ fn sort_by_dates(shown: &mut Vec<&Message>, sort: SortBy, desc: bool) {
 /// For a list without a search, all of whose rows are of the folder in view; `index` is where
 /// each conversation's row is, by its account and its key.
 ///
-/// [`Mailbox::conversation_skips`]: mailcraft_model::Mailbox::conversation_skips
+/// [`Mailbox::conversation_skips`]: mailsolutions_model::Mailbox::conversation_skips
 fn elsewhere(
     s: &Session,
     me: &[&str],

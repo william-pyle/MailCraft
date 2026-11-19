@@ -16,7 +16,7 @@ pub(crate) struct FontsDir(pub PathBuf);
 
 impl FontsDir {
     pub(crate) fn new(name: &str) -> FontsDir {
-        let dir = std::env::temp_dir().join(format!("mailcraft-font-index-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-font-index-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         FontsDir(dir)

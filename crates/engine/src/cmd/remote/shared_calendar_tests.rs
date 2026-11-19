@@ -3,8 +3,8 @@
 //! A shared mailbox's calendars in the mailbox (#70): they are the shared mailbox's own, listed
 //! with it, read and not changed here, never reminded of, and gone with it.
 
-use mailcraft_model::remote::{CalendarsDownload, EventsDownload, RemoteCalendar, RemoteEvent};
-use mailcraft_model::{CalendarOwner, Id, Rights, ShowAs};
+use mailsolutions_model::remote::{CalendarsDownload, EventsDownload, RemoteCalendar, RemoteEvent};
+use mailsolutions_model::{CalendarOwner, Id, Rights, ShowAs};
 use serde_json::json;
 
 use super::{apply_calendars, apply_events, ensure_shared_calendars, is_own_calendar, server_calendar_id};
@@ -19,7 +19,7 @@ const SHARED: &str = "support@example.org";
 /// An owner's account that signs in with Microsoft, with its own calendars listed, and a shared
 /// mailbox opened under it. Their ids.
 fn served() -> (Session, Id, Id) {
-    let mut s = Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0);
+    let mut s = Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0);
     let owner = s.run("account.add", &json!({"email": OWNER, "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     let all = vec![RemoteCalendar {
         id: "own-main".into(),
@@ -61,7 +61,7 @@ fn download(account: Id, email: &str, calendar: &str, events: Vec<RemoteEvent>) 
     }
 }
 
-fn calendar_named(s: &Session, account: Id, name: &str) -> mailcraft_model::Calendar {
+fn calendar_named(s: &Session, account: Id, name: &str) -> mailsolutions_model::Calendar {
     s.mailbox.calendars.iter().find(|c| c.origin.account == account && c.name == name).cloned().unwrap_or_else(|| panic!("no {name}"))
 }
 
@@ -167,7 +167,7 @@ fn editable() -> (Session, Id, Id) {
 
 #[test]
 fn with_edit_rights_a_shared_mailboxs_calendar_is_written_to_as_the_owners_own_is() {
-    use mailcraft_model::remote::EventChangeKind;
+    use mailsolutions_model::remote::EventChangeKind;
     let (mut s, owner, shared) = editable();
     let stand_up = s.mailbox.events.values().find(|e| e.title == "Stand-up").map(|e| e.id).unwrap();
     let main = s.mailbox.event(stand_up).map(|e| e.calendar).unwrap();
@@ -212,11 +212,11 @@ fn when_the_rights_shrink_what_waits_is_held_and_told_not_dropped_and_goes_if_th
 
 #[test]
 fn a_meeting_in_a_shared_mailbox_is_answered_through_its_calendar_for_its_account() {
-    use mailcraft_model::remote::EventChangeKind;
+    use mailsolutions_model::remote::EventChangeKind;
     let (mut s, owner, shared) = editable();
     let invited = RemoteEvent {
-        organizer: Some(mailcraft_model::Address::new("Bo", "bo@example.org")),
-        attendees: vec![mailcraft_model::Attendee { address: mailcraft_model::Address::new("Support", SHARED), ..Default::default() }],
+        organizer: Some(mailsolutions_model::Address::new("Bo", "bo@example.org")),
+        attendees: vec![mailsolutions_model::Attendee { address: mailsolutions_model::Address::new("Support", SHARED), ..Default::default() }],
         is_organizer: Some(false),
         uid: "uid-planning".into(),
         ..event("e-3", "Planning", NOW + 10_800)
@@ -315,7 +315,7 @@ fn removing_the_shared_mailbox_removes_its_calendars_and_events_from_this_comput
 /// A meeting request in the Inbox of `account`, for the meeting `uid` on Thursday the 15th from
 /// two to three, from Bo, to the shared mailbox.
 fn request_in(s: &mut Session, account: Id, uid: &str) -> Id {
-    use mailcraft_model::{Address, Attachment, FolderKind, Message};
+    use mailsolutions_model::{Address, Attachment, FolderKind, Message};
     let ics = format!(
         "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nUID:{uid}\r\nSUMMARY:Planning\r\n\
          DTSTART:20261015T140000Z\r\nDTEND:20261015T150000Z\r\nORGANIZER;CN=Bo Marsh:mailto:bo@example.org\r\n\
@@ -336,13 +336,13 @@ fn request_in(s: &mut Session, account: Id, uid: &str) -> Id {
 
 #[test]
 fn a_meeting_request_in_a_shared_mailboxs_inbox_is_answered_in_its_calendar_and_from_its_account() {
-    use mailcraft_model::remote::EventChangeKind;
+    use mailsolutions_model::remote::EventChangeKind;
     let (mut s, owner, shared) = editable();
-    let start = mailcraft_time::DateTime::new(mailcraft_time::Date::new(2026, 10, 15).unwrap(), 14, 0, 0).unwrap().to_timestamp(0);
+    let start = mailsolutions_time::DateTime::new(mailsolutions_time::Date::new(2026, 10, 15).unwrap(), 14, 0, 0).unwrap().to_timestamp(0);
     // The server has put the meeting on the shared mailbox's calendar, as it does.
     let theirs = RemoteEvent {
-        organizer: Some(mailcraft_model::Address::new("Bo Marsh", "bo@example.org")),
-        attendees: vec![mailcraft_model::Attendee { address: mailcraft_model::Address::new("Support", SHARED), ..Default::default() }],
+        organizer: Some(mailsolutions_model::Address::new("Bo Marsh", "bo@example.org")),
+        attendees: vec![mailsolutions_model::Attendee { address: mailsolutions_model::Address::new("Support", SHARED), ..Default::default() }],
         is_organizer: Some(false),
         uid: "uid-plan".into(),
         title: "Planning".into(),
@@ -377,8 +377,11 @@ fn any_change_to_a_meeting_in_a_shared_mailbox_waits_for_sending_from_it() {
     let (mut s, _, shared) = editable();
     let start = NOW + 10_800;
     let meeting = RemoteEvent {
-        organizer: Some(mailcraft_model::Address::new("Support", SHARED)),
-        attendees: vec![mailcraft_model::Attendee { address: mailcraft_model::Address::new("Bo Marsh", "bo@example.org"), ..Default::default() }],
+        organizer: Some(mailsolutions_model::Address::new("Support", SHARED)),
+        attendees: vec![mailsolutions_model::Attendee {
+            address: mailsolutions_model::Address::new("Bo Marsh", "bo@example.org"),
+            ..Default::default()
+        }],
         is_organizer: Some(true),
         ..event("e-3", "Planning", start)
     };
@@ -395,5 +398,5 @@ fn any_change_to_a_meeting_in_a_shared_mailbox_waits_for_sending_from_it() {
     s.mailbox.event_changes.clear();
     s.run("calendar.delete", &json!({"id": planning, "send": true})).unwrap();
     let upload = crate::cmd::remote::event_upload(&s, shared).unwrap();
-    assert!(!upload.ops.is_empty() && upload.ops.iter().all(mailcraft_model::remote::EventOp::mails_others), "{upload:?}");
+    assert!(!upload.ops.is_empty() && upload.ops.iter().all(mailsolutions_model::remote::EventOp::mails_others), "{upload:?}");
 }

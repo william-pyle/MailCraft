@@ -15,9 +15,9 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::sync::{SyncPhase, SyncStage, SyncStep, Timings};
-use mailcraft_model::time::Timestamp;
-use mailcraft_model::{AccountKind, Id, Mailbox};
+use mailsolutions_model::sync::{SyncPhase, SyncStage, SyncStep, Timings};
+use mailsolutions_model::time::Timestamp;
+use mailsolutions_model::{AccountKind, Id, Mailbox};
 use serde_json::{Value, json};
 
 use super::graph_down;
@@ -500,8 +500,8 @@ fn progress(s: &mut Session, _: &Value) -> CmdResult {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::sync::{FolderDelta, FolderListing, GraphFolder, GraphMailResult, GraphProgress, MessagePage, SyncResult};
-    use mailcraft_model::{FolderKind, Message};
+    use mailsolutions_model::sync::{FolderDelta, FolderListing, GraphFolder, GraphMailResult, GraphProgress, MessagePage, SyncResult};
+    use mailsolutions_model::{FolderKind, Message};
     use serde_json::json;
 
     use super::*;
@@ -825,7 +825,7 @@ mod tests {
     /// new run starts them again; `sync.progress` says them as numbers and nothing else.
     #[test]
     fn the_pieces_time_and_requests_add_up_on_the_row_and_start_again_with_a_run() {
-        use mailcraft_model::sync::{SyncPhase, Timings};
+        use mailsolutions_model::sync::{SyncPhase, Timings};
         let (mut s, imap, ms) = session();
         let timed = |phase, millis, requests, skipped| {
             let mut t = Timings::default();
@@ -870,7 +870,7 @@ mod tests {
     /// stay with the row while the account waits for its run, which adds to them.
     #[test]
     fn an_inbox_pass_does_not_end_the_account_and_its_numbers_stay_for_the_run_after_it() {
-        use mailcraft_model::sync::{SyncPhase, Timings};
+        use mailsolutions_model::sync::{SyncPhase, Timings};
         let (mut s, imap, ms) = session();
         let timed = |phase, millis, requests| {
             let mut t = Timings::default();
@@ -904,7 +904,7 @@ mod tests {
     /// #276: an account the owner skipped keeps its row skipped, with the pass it still had.
     #[test]
     fn a_skipped_account_keeps_its_pass_on_a_skipped_row() {
-        use mailcraft_model::sync::{SyncPhase, Timings};
+        use mailsolutions_model::sync::{SyncPhase, Timings};
         let (mut s, imap, ms) = session();
         s.sync_progress.begin(&[imap, ms]);
         assert!(s.sync_progress.skip(ms));

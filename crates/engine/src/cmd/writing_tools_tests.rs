@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Insert › Date & Time and Review › Word Count in the message being written (#507).
 
-use mailcraft_i18n::Lang;
-use mailcraft_model::RichText;
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_i18n::Lang;
+use mailsolutions_model::RichText;
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use super::writing_tools::{DATE_TIME_FORMATS, count, date_time_choices, date_time_text};

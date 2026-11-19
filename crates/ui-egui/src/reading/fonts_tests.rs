@@ -39,7 +39,7 @@ fn pass<R>(ctx: &egui::Context, f: impl FnOnce(&egui::Context) -> R) -> R {
 /// The families the text of `html` is laid out in, in a pass of `ctx`, in order.
 fn families(ctx: &egui::Context, html: &str) -> Vec<FontFamily> {
     pass(ctx, |ctx| {
-        let blocks = mailcraft_html::parse(html);
+        let blocks = mailsolutions_html::parse(html);
         let pictures = Pictures::of(ctx);
         let mut pictures = pictures.lock().unwrap();
         let mut laid = Laid::new(600.0);
@@ -228,7 +228,7 @@ fn bold_text_in_the_fixed_width_font_without_its_bold_face_keeps_the_regular_fac
     ctx.set_fonts(crate::theme::font_definitions_with(&system));
     ctx.run_ui(egui::RawInput::default(), |_| {}).drop_without_applying_deltas();
     Store::use_index(&ctx, dir.index());
-    let courier = mailcraft_model::rich::Font::parse("Courier New").unwrap();
+    let courier = mailsolutions_model::rich::Font::parse("Courier New").unwrap();
     let html = "<p style=\"font-family:'Courier New', Courier, monospace\"><b>+--+</b> |  |</p>";
     families(&ctx, html);
     pass(&ctx, |_| {});

@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's data model: everything a mailbox holds, and the primitives that edit it.
+//! MailSolutions's data model: everything a mailbox holds, and the primitives that edit it.
 //!
 //! A [`Mailbox`] owns accounts, folders, messages, contacts, calendars, events, tasks, categories,
 //! rules and signatures. Items are `Arc`-shared, so a clone of the mailbox (an undo snapshot) is
-//! cheap. Nothing here does I/O: file formats live in `mailcraft-mime`, `-ical` and `-vcard`,
-//! servers in `mailcraft-proto`.
+//! cheap. Nothing here does I/O: file formats live in `mailsolutions-mime`, `-ical` and `-vcard`,
+//! servers in `mailsolutions-proto`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 mod address;
@@ -81,7 +81,7 @@ pub use mailbox::{
     MailIdentity, Mailbox, OAuth, OAuthProvider, ONLY_SERVER_FOLDERS, PALETTE, Pending, PendingFollowUp, Queued, Security, Server, ServerFavorites,
     ServerFolder, Settled, Snooze, preset_category_color,
 };
-pub use mailcraft_time as time;
+pub use mailsolutions_time as time;
 pub use message::{
     Answers, Attachment, Body, ContentRef, FlagStatus, Importance, KeptBody, MAX_HIDDEN_TEXT, MAX_ORIGINAL, MAX_ORIGINALS, Message, NOT_DOWNLOADED,
     NOT_DOWNLOADED_NOTE, ORIGINAL_PATIENCE, ORIGINAL_TRIES, Original, PREVIEW_CHARS, RETURNED_LISTINGS, normalize_subject, size_label, size_label_in,
@@ -156,12 +156,12 @@ pub(crate) mod b64 {
     use serde::{Deserialize as _, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(v: &Arc<Vec<u8>>, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_str(&mailcraft_charset::base64::STANDARD.encode(v.as_slice()))
+        s.serialize_str(&mailsolutions_charset::base64::STANDARD.encode(v.as_slice()))
     }
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Arc<Vec<u8>>, D::Error> {
         let text = String::deserialize(d)?;
-        mailcraft_charset::base64::STANDARD.decode(text.trim()).map(Arc::new).map_err(serde::de::Error::custom)
+        mailsolutions_charset::base64::STANDARD.decode(text.trim()).map(Arc::new).map_err(serde::de::Error::custom)
     }
 }
 

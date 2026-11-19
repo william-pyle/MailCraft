@@ -6,8 +6,8 @@
 
 use std::sync::Arc;
 
-use mailcraft_model::{Address, Attachment, FolderKind, Id, Message};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Address, Attachment, FolderKind, Id, Message};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use super::compose::QUOTE_MARK;
@@ -51,7 +51,7 @@ fn newsletter(s: &mut Session) -> Id {
         to: vec![Address::new("Avery Quinn", "avery@lumen.example")],
         subject: "October <arrivals>".into(),
         date: 1_791_000_000,
-        body: mailcraft_model::Body { text: "October\n\nFive new arrivals".into(), html: Some(NEWSLETTER.into()) },
+        body: mailsolutions_model::Body { text: "October\n\nFive new arrivals".into(), html: Some(NEWSLETTER.into()) },
         attachments: vec![logo, menu],
         ..Default::default()
     };
@@ -102,7 +102,7 @@ fn a_reply_carries_the_original_html_with_its_look() {
     assert_eq!(m.attachments.iter().map(|a| (a.name.as_str(), a.inline)).collect::<Vec<_>>(), [("logo.png", true)]);
     assert!(!m.has_attachments());
     // On the wire, the picture is beside the HTML that shows it.
-    let bytes = mailcraft_mime_model::write(&m, &mailcraft_mime_model::WriteOptions::default());
+    let bytes = mailsolutions_mime_model::write(&m, &mailsolutions_mime_model::WriteOptions::default());
     let wire = String::from_utf8_lossy(&bytes);
     assert!(wire.contains("multipart/related") && wire.contains("Content-ID: <logo@news.example>"), "{wire}");
     assert!(s.mailbox.message(id).unwrap().answered);
@@ -148,7 +148,7 @@ fn a_reply_carries_nothing_that_runs_tracks_or_was_hidden() {
 fn a_draft_carrying_an_original_as_it_came_reopens_without_its_scripts() {
     let mut s = session();
     let id = newsletter(&mut s);
-    // A draft from an older MailCraft, or from anywhere: the original below the mark as it came.
+    // A draft from an older MailSolutions, or from anywhere: the original below the mark as it came.
     let drafts = s.mailbox.folder_of_kind(s.mailbox.accounts[0].id, FolderKind::Drafts).unwrap();
     let mut draft = s.mailbox.message(id).unwrap().clone();
     draft.folder = drafts;
@@ -167,7 +167,7 @@ fn the_quoted_original_reads_through_the_html_reader() {
     let id = newsletter(&mut s);
     run(&mut s, "mail.reply", json!({"id": id}));
     let q = compose(&s).quote.clone().unwrap();
-    let text = mailcraft_html::to_text(&q.html);
+    let text = mailsolutions_html::to_text(&q.html);
     assert!(text.contains("From:") && text.contains("Five new arrivals"), "{text}");
 }
 
@@ -261,7 +261,7 @@ fn originals_of_any_shape_are_carried_without_panicking() {
         assert!(q.html.starts_with(QUOTE_MARK), "{html:?}");
         let sent = run(&mut s, "compose.send", json!({}))["id"].as_u64().unwrap();
         let m = Arc::new(s.mailbox.message(sent).unwrap().clone());
-        let bytes = mailcraft_mime_model::write(&m, &mailcraft_mime_model::WriteOptions::default());
+        let bytes = mailsolutions_mime_model::write(&m, &mailsolutions_mime_model::WriteOptions::default());
         let head_end = bytes.windows(4).position(|w| w == b"\r\n\r\n").unwrap();
         assert!(!String::from_utf8_lossy(&bytes[..head_end]).to_ascii_lowercase().contains("\r\nbcc:"), "{html:?}");
     }
@@ -269,7 +269,7 @@ fn originals_of_any_shape_are_carried_without_panicking() {
 
 #[test]
 fn a_reply_quotes_in_the_interface_language_and_its_draft_reopens_in_any() {
-    use mailcraft_i18n::{Lang, test_support};
+    use mailsolutions_i18n::{Lang, test_support};
     let fr = test_support::po(&[
         ("-----Original Message-----", "-----Message d'origine-----"),
         ("From:", "De\u{202f}:"),
@@ -301,7 +301,7 @@ fn a_reply_quotes_in_the_interface_language_and_its_draft_reopens_in_any() {
 
 #[test]
 fn a_draft_quoted_in_any_shipped_language_reopens_with_its_quote() {
-    use mailcraft_i18n::Lang;
+    use mailsolutions_i18n::Lang;
     let markers = [
         (Lang::French, "-----Message d'origine-----", "De\u{202f}: "),
         (Lang::German, "-----Ursprüngliche Nachricht-----", "Von: "),

@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Importance, response options, Teams meetings, proposing another time, forwarding, and moving
 //! an appointment between the calendars of one account, against a server written out by hand (as
-//! `mailcraft-net` brings it from Microsoft Graph). Invented people at `example.org`.
+//! `mailsolutions-net` brings it from Microsoft Graph). Invented people at `example.org`.
 
-use mailcraft_model::remote::{
+use mailsolutions_model::remote::{
     CalendarsDownload, EventChangeKind, EventFields, EventOp, EventOutcome, EventResult, EventsDownload, EventsUpload, EventsUploaded,
     RemoteCalendar, RemoteEvent, RemoteProposal,
 };
-use mailcraft_model::{
+use mailsolutions_model::{
     Address, Attachment, Attendee, Event, FolderKind, Freq, Id, Importance, Message, OnlineMeeting, OnlineProvider, Recurrence, Response,
     ResponseOptions,
 };
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use serde_json::{Value, json};
 
 use crate::cmd::remote::{apply_calendars, apply_event_outcomes, apply_events, event_upload, events_waiting};
@@ -162,7 +162,7 @@ fn a_mailbox_file_from_before_reads_as_it_was_and_writes_nothing_new() {
     // An event as it was written before any of this was kept: none of it is in the file.
     let lunch = json!({"id": 7, "calendar": 2, "title": "Lunch", "location": "Canteen", "allDay": false, "showAs": "tentative", "private": true});
     let event: Event = serde_json::from_value(lunch.clone()).unwrap();
-    assert_eq!((event.title.as_str(), event.show_as, event.private), ("Lunch", mailcraft_model::ShowAs::Tentative, true));
+    assert_eq!((event.title.as_str(), event.show_as, event.private), ("Lunch", mailsolutions_model::ShowAs::Tentative, true));
     assert_eq!(
         (event.importance, event.response_options, &event.online, event.proposals.len(), event.has_attachments),
         (Importance::Normal, ResponseOptions { request_responses: true, allow_proposals: true }, &None, 0, false)
@@ -182,7 +182,7 @@ fn a_mailbox_file_from_before_reads_as_it_was_and_writes_nothing_new() {
         !file.contains("responseOptions") && !file.contains("onlineProviders") && !file.contains("\"replaces\""),
         "nothing new in a mailbox that has none of it"
     );
-    assert!(serde_json::from_str::<mailcraft_model::Mailbox>(&file).unwrap() == s.mailbox);
+    assert!(serde_json::from_str::<mailsolutions_model::Mailbox>(&file).unwrap() == s.mailbox);
     // What is said, comes back.
     let said = Event {
         importance: Importance::High,
@@ -519,13 +519,13 @@ fn another_time_is_proposed_only_on_the_owners_word() {
 
     // One occurrence of somebody else's series: the proposal is for that day.
     let weekly = RemoteEvent {
-        kind: mailcraft_model::remote::RemoteEventKind::SeriesMaster,
+        kind: mailsolutions_model::remote::RemoteEventKind::SeriesMaster,
         recurrence: Some(Recurrence::every(Freq::Weekly)),
         series_day: Date::new(2026, 10, 5),
         ..their_meeting("s-1", "Stand-up", at(5, 9, 0))
     };
     let occurrence = |day: u8| RemoteEvent {
-        kind: mailcraft_model::remote::RemoteEventKind::Occurrence,
+        kind: mailsolutions_model::remote::RemoteEventKind::Occurrence,
         series: "s-1".into(),
         original: Some(at(day, 9, 0)),
         ..their_meeting(&format!("s-1@{day}"), "Stand-up", at(day, 9, 0))
@@ -646,7 +646,7 @@ fn another_time_is_proposed_from_the_invitation_in_the_mail() {
     }
     // The meeting is on the calendar at the time its organizer has it, tentatively.
     let here = s.mailbox.events.values().find(|e| e.uid == "uid-9").unwrap();
-    assert_eq!((here.start, here.show_as), (clock(15, 13, 0), mailcraft_model::ShowAs::Tentative));
+    assert_eq!((here.start, here.show_as), (clock(15, 13, 0), mailsolutions_model::ShowAs::Tentative));
     // An invitation that says the organizer takes no proposals.
     let closed = mail(&mut s, account, "REQUEST", "uid-10", "X-MICROSOFT-DISALLOW-COUNTER:TRUE\r\n");
     assert_eq!(run(&mut s, "calendar.invitation", json!({"message": closed}))["canPropose"], false);
@@ -1063,13 +1063,13 @@ fn what_would_not_arrive_whole_is_not_moved() {
     let (mut s, account, _, side) = session();
     let local = s.mailbox.calendars.iter().find(|c| c.origin.is_local()).map(|c| c.id).unwrap();
     let weekly = RemoteEvent {
-        kind: mailcraft_model::remote::RemoteEventKind::SeriesMaster,
+        kind: mailsolutions_model::remote::RemoteEventKind::SeriesMaster,
         recurrence: Some(Recurrence::every(Freq::Weekly)),
         series_day: Date::new(2026, 10, 5),
         ..remote("s-1", "Gym", at(5, 18, 0))
     };
     let changed = RemoteEvent {
-        kind: mailcraft_model::remote::RemoteEventKind::Exception,
+        kind: mailsolutions_model::remote::RemoteEventKind::Exception,
         series: "s-1".into(),
         original: Some(at(12, 18, 0)),
         ..remote("x-1", "Gym (late)", at(12, 19, 0))
@@ -1120,12 +1120,12 @@ fn what_would_not_arrive_whole_is_not_moved() {
     // The owner's yes to mail doesn't make a meeting movable.
     assert!(refused(&mut s, "calendar.edit", json!({"id": planning, "calendar": side, "send": true})).starts_with("A meeting can't be moved"));
     // Into a calendar the account may only read; and one that is still on its way.
-    s.mailbox.calendars.iter_mut().find(|c| c.id == side).unwrap().rights = mailcraft_model::Rights::Read;
+    s.mailbox.calendars.iter_mut().find(|c| c.id == side).unwrap().rights = mailsolutions_model::Rights::Read;
     assert_eq!(
         refused(&mut s, "calendar.edit", json!({"id": dentist, "calendar": side})),
         "The calendar \"Side\" can only be read: its owner hasn't let this account change it."
     );
-    s.mailbox.calendars.iter_mut().find(|c| c.id == side).unwrap().rights = mailcraft_model::Rights::Edit;
+    s.mailbox.calendars.iter_mut().find(|c| c.id == side).unwrap().rights = mailsolutions_model::Rights::Edit;
     run(&mut s, "calendar.edit", json!({"id": dentist, "title": "Eye test, again"}));
     let waiting = "This item is still on its way to the account's server. Move it once it is there (in a moment).";
     assert_eq!(refused(&mut s, "calendar.edit", json!({"id": dentist, "calendar": side})), waiting);
@@ -1144,7 +1144,7 @@ fn a_hostile_file_cannot_make_the_server_write_to_anybody() {
     let (mut s, account, _, _) = session();
     serve(&mut s, account, "", vec![their_meeting("g-1", "Board", at(15, 13, 0)), own_meeting("m-1", "Planning", at(12, 13, 0))]);
     let (board, planning) = (event_called(&s, "g-1"), event_called(&s, "m-1"));
-    let note = |kind: EventChangeKind, event: &Event| mailcraft_model::remote::EventChange {
+    let note = |kind: EventChangeKind, event: &Event| mailsolutions_model::remote::EventChange {
         account,
         kind,
         event: event.id,
@@ -1154,11 +1154,11 @@ fn a_hostile_file_cannot_make_the_server_write_to_anybody() {
         comment: "x".into(),
         ..Default::default()
     };
-    let time = mailcraft_model::remote::EventTime { start: at(16, 13, 0), end: at(16, 14, 0), all_day: false };
+    let time = mailsolutions_model::remote::EventTime { start: at(16, 13, 0), end: at(16, 14, 0), all_day: false };
     let people = vec![Address::new("Eve", "eve@example.org")];
     s.mailbox.event_changes = vec![
-        mailcraft_model::remote::EventChange { to: people.clone(), ..note(EventChangeKind::Forward, &planning) },
-        mailcraft_model::remote::EventChange { response: Response::Tentative, proposed: Some(time), ..note(EventChangeKind::Respond, &board) },
+        mailsolutions_model::remote::EventChange { to: people.clone(), ..note(EventChangeKind::Forward, &planning) },
+        mailsolutions_model::remote::EventChange { response: Response::Tentative, proposed: Some(time), ..note(EventChangeKind::Respond, &board) },
     ];
     assert!(ops(&s, account).is_empty());
     assert_eq!(events_waiting(&s, account).total, 0);

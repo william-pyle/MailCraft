@@ -34,9 +34,9 @@ use std::sync::Arc;
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 use egui::{Color32, Sense, Stroke, Ui, vec2};
-pub use mailcraft_model::auth_results::vouched;
-use mailcraft_model::auth_results::{domain, sender};
-use mailcraft_model::{Id, Message};
+pub use mailsolutions_model::auth_results::vouched;
+use mailsolutions_model::auth_results::{domain, sender};
+use mailsolutions_model::{Id, Message};
 use serde_json::{Value, json};
 
 use super::Place;
@@ -486,7 +486,7 @@ pub fn line(app: &mut MailApp, ui: &mut Ui, m: &Message, doc: &Doc, access: Acce
                 }
                 let label = crate::i18n::fmt(tl!("Always download pictures from {sender}"), &[("sender", &short(&from, 60))]);
                 let why = crate::i18n::fmt(
-                    tl!("Your mail server didn't confirm that this message came from {sender}, so MailCraft won't remember them: a sender's address can be faked."),
+                    tl!("Your mail server didn't confirm that this message came from {sender}, so MailSolutions won't remember them: a sender's address can be faked."),
                     &[("sender", &short(&from, 60))],
                 );
                 // Not registered with `app.hit`: there is nothing to click. Greyed, with a few
@@ -527,7 +527,7 @@ pub fn line(app: &mut MailApp, ui: &mut Ui, m: &Message, doc: &Doc, access: Acce
 /// A number of bytes for the owner to read: `340 KB`, `12.4 MB`.
 fn size_label(bytes: u64) -> String {
     // (In KB at least.)
-    mailcraft_model::size_label_in(crate::i18n::current(), bytes.max(1024))
+    mailsolutions_model::size_label_in(crate::i18n::current(), bytes.max(1024))
 }
 
 /// The rows of File › Options: the switch for all mail, the senders and the domains that are

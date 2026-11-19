@@ -36,6 +36,6 @@ fn plain_messages_and_html_that_hides_nothing_have_none() {
 #[test]
 fn hidden_text_is_capped_and_a_hostile_message_reads() {
     let m = parse(&html_message(&format!("<div style='display:none'>{}</div><p>x</p>", "word ".repeat(200_000))));
-    assert!(m.hidden_text.len() <= mailcraft_html::MAX_HIDDEN_TEXT);
+    assert!(m.hidden_text.len() <= mailsolutions_html::MAX_HIDDEN_TEXT);
     assert_eq!(m.body.text, "x");
 }

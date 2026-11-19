@@ -3,16 +3,16 @@
 //! An agent and the owner share one window (#620): the agent names the messages it acts on, and
 //! reading doesn't move the owner's folder, search or selection.
 
-use mailcraft_engine::Session;
-use mailcraft_engine::agent::Class;
-use mailcraft_engine::model::FolderKind;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::agent::Class;
+use mailsolutions_engine::model::FolderKind;
 use serde_json::json;
 
 use crate::Headless;
 use crate::tools::{Policy, call_tool};
 
 fn sample() -> Session {
-    Session::new(mailcraft_engine::sample::mailbox(1_791_993_600, 0))
+    Session::new(mailsolutions_engine::sample::mailbox(1_791_993_600, 0))
 }
 
 fn failed(h: &mut Headless, pol: &Policy, command: &str, params: serde_json::Value) -> Option<String> {

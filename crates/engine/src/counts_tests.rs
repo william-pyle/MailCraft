@@ -55,7 +55,7 @@ fn the_counts_are_shared_until_the_mailbox_changes_and_then_counted_again() {
 #[test]
 fn the_list_built_from_a_folders_own_messages_is_the_list_a_walk_over_every_message_builds() {
     let mb = crate::sample::mailbox(NOW, 0);
-    let sent = mb.folders.iter().find(|f| f.kind == mailcraft_model::FolderKind::Sent).map(|f| f.id).unwrap();
+    let sent = mb.folders.iter().find(|f| f.kind == mailsolutions_model::FolderKind::Sent).map(|f| f.id).unwrap();
     let steps = [
         ("view.filter", json!({"value": "all"})),
         ("view.conversations", json!({"value": true})),
@@ -166,7 +166,7 @@ fn counts_from_an_earlier_revision_are_not_carried_through_read_marks() {
     let id = rows.iter().find(|r| r.unread > 0 && r.members.len() == 1).map(|r| r.id).unwrap();
     drop(rows);
     // Counts of nothing, left from the revision before the one the list was built under.
-    let stale = Arc::new(FolderCounts::of(&mailcraft_model::Mailbox::default()));
+    let stale = Arc::new(FolderCounts::of(&mailsolutions_model::Mailbox::default()));
     s.counts_cache = Some(((s.rev().wrapping_sub(1), s.mailbox.messages.len()), stale));
     // Opening the message marks it read, and is no step of the history.
     s.run("mail.select", &json!({"id": id})).unwrap();
@@ -259,7 +259,7 @@ fn counts_brought_in_step_with_a_change_are_those_counted_again() {
     let mut s = Session::at(crate::sample::mailbox(NOW, 0), NOW, 0);
     let inbox = s.mailbox.inbox().unwrap();
     let account = s.mailbox.folder(inbox).unwrap().account;
-    let archive = s.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Archive).unwrap();
+    let archive = s.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Archive).unwrap();
     let ids: Vec<_> = s.mailbox.messages_in(inbox).map(|m| m.id).take(6).collect();
     assert!(ids.len() >= 6, "the sample's Inbox has mail");
     let check = |s: &mut Session, what: &str| {
@@ -310,7 +310,7 @@ fn counts_of_a_mailbox_changed_outside_a_command_are_counted_again_after_the_nex
         let mut s = Session::at(crate::sample::mailbox(NOW, 0), NOW, 0);
         let inbox = s.mailbox.inbox().unwrap();
         let account = s.mailbox.folder(inbox).unwrap().account;
-        let archive = s.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Archive).unwrap();
+        let archive = s.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Archive).unwrap();
         let id = s.mailbox.messages_in(inbox).find(|m| !m.read).map(|m| m.id).unwrap();
         let mut m = (**s.mailbox.messages.get(&id).unwrap()).clone();
         m.subject = "Arrived".into();

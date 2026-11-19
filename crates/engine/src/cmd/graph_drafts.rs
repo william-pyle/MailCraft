@@ -4,13 +4,13 @@
 //!
 //! A draft saved here ([`ServerDraft::pending`]) goes up with the next run: what differs from what
 //! the server last had of it ([`ServerDraft::synced`]), field by field, its attachments when they
-//! changed, everything for one the server hasn't got yet (made with MailCraft's marker, as an
+//! changed, everything for one the server hasn't got yet (made with MailSolutions's marker, as an
 //! answer or a forward when it was begun as one to a message the server has). What comes back is
 //! taken in by the draft's id here and its marker: the server's id, what went up, its change key.
 //! A draft saved again while its run was under way stays pending for the next one.
 
-use mailcraft_model::sync::{AttachmentUp, AttachmentsUp, DraftBody, DraftDone, DraftState, DraftUp, ServerDraft, ServerMessage, fingerprint};
-use mailcraft_model::{FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::sync::{AttachmentUp, AttachmentsUp, DraftBody, DraftDone, DraftState, DraftUp, ServerDraft, ServerMessage, fingerprint};
+use mailsolutions_model::{FolderKind, Id, Mailbox, Message};
 
 use crate::Session;
 
@@ -112,12 +112,12 @@ pub fn draft_up_whole(m: &Message) -> Option<DraftUp> {
 
 /// A marker for a draft: a value used once, of the draft's id here and `seed`.
 pub fn marker(id: Id, seed: u64) -> String {
-    format!("mailcraft-draft-{id:x}-{seed:x}")
+    format!("mailsolutions-draft-{id:x}-{seed:x}")
 }
 
 /// Take in what became of one draft. Whether anything changed here; a line for the owner, when
 /// the server wouldn't take it.
-pub fn draft_done(mb: &mut Mailbox, account: Id, done: &DraftDone, lang: mailcraft_i18n::Lang, said: &mut Vec<String>) -> bool {
+pub fn draft_done(mb: &mut Mailbox, account: Id, done: &DraftDone, lang: mailsolutions_i18n::Lang, said: &mut Vec<String>) -> bool {
     let change = &done.change;
     let Some(m) = mb.message(change.message).filter(|m| m.account == account) else { return false };
     let Some(sd) = m.server_draft.clone().filter(|sd| sd.marker == change.marker) else { return false };
@@ -142,7 +142,7 @@ pub fn draft_done(mb: &mut Mailbox, account: Id, done: &DraftDone, lang: mailcra
             sd.pending = false;
             let why = if status == 403 { lang.t("this account may not save it") } else { lang.t("it can't take it") };
             let line = lang.t("Couldn't save the draft '{subject}' on the server: the server says {why}.");
-            said.push(mailcraft_i18n::fmt(line, &[("subject", &subject), ("why", why)]));
+            said.push(mailsolutions_i18n::fmt(line, &[("subject", &subject), ("why", why)]));
         }
         return true;
     }
@@ -248,8 +248,8 @@ pub fn keep_twice(mb: &mut Mailbox, here: Id, there: Option<Message>) -> Option<
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::Mailbox;
-    use mailcraft_model::sync::ServerMessage;
+    use mailsolutions_model::Mailbox;
+    use mailsolutions_model::sync::ServerMessage;
     use serde_json::json;
 
     use crate::Session;

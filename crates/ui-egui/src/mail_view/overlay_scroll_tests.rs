@@ -3,7 +3,7 @@
 //! The message list where scroll bars float over what they scroll, as a Mac's do: no lane, no
 //! arrows, rows to the list's right edge.
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::*;
@@ -16,13 +16,13 @@ type Window = egui_kittest::Harness<'static, MailApp>;
 
 /// The sample mailbox with 60 more messages in the Inbox, so that the list scrolls.
 fn app(overlay: bool) -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     app.overlay_scroll_bars = overlay;
     let inbox = app.session.view.folder;
     for i in 0..60u32 {
-        let from = mailcraft_model::Address::new(format!("Sender {i}"), format!("s{i}@example.org"));
+        let from = mailsolutions_model::Address::new(format!("Sender {i}"), format!("s{i}@example.org"));
         let m = Message {
             folder: inbox,
             subject: format!("Message {i}"),
@@ -120,6 +120,6 @@ fn quick_actions_make_room_only_for_a_floating_scrollbar() {
 /// Off a Mac, the choice is the lane's unless a test asks for the other.
 #[test]
 fn only_a_mac_floats_its_scroll_bars_by_default() {
-    let app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     assert_eq!(app.overlay_scroll_bars, cfg!(target_os = "macos"));
 }

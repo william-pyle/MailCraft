@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rules kept on a Microsoft account's server (#566): which rules go there, what is told to the
 //! server, what it made of it, and its rules merged. The server's side is written out by hand, as
-//! `mailcraft-net` brings it.
+//! `mailsolutions-net` brings it.
 
-use mailcraft_model::remote_rules::{RemoteRule, RuleOpKind, RuleOutcome, RuleResult, RulesDownload, RulesUploaded};
-use mailcraft_model::{Action, Address, Condition, FolderKind, Id, Keep, Message, Rule, ServerFolder};
+use mailsolutions_model::remote_rules::{RemoteRule, RuleOpKind, RuleOutcome, RuleResult, RulesDownload, RulesUploaded};
+use mailsolutions_model::{Action, Address, Condition, FolderKind, Id, Keep, Message, Rule, ServerFolder};
 use serde_json::{Value, json};
 
 use super::rules_remote::{apply_rule_changes, apply_rules, mark_sent, merge_rules, not_sent, rule_upload};
@@ -22,7 +22,7 @@ fn session() -> (Session, Id, Id, Id) {
     let account = added["id"].as_u64().unwrap();
     let here = s.run("account.add", &json!({"email": "me@example.org"})).unwrap();
     let local = here["id"].as_u64().unwrap();
-    assert_eq!(s.mailbox.account(local).unwrap().kind, mailcraft_model::AccountKind::Local);
+    assert_eq!(s.mailbox.account(local).unwrap().kind, mailsolutions_model::AccountKind::Local);
     let inbox = s.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
     s.mailbox.folder_mut(inbox).unwrap().server = Some(ServerFolder { id: "in".into(), name: "Inbox".into(), ..Default::default() });
     let made = run(&mut s, "folder.new", json!({"name": "Newsletters", "parent": inbox}));
@@ -170,7 +170,7 @@ fn a_rule_of_the_server_that_stops_the_rest_stops_this_computers_too() {
     assert_eq!(rule(&s, flag).keep, Keep::Here);
     let m = arriving(&mut s, account, "billing@example.org", "Invoice 12");
     assert!(s.mailbox.apply_rules(m).is_empty());
-    assert_eq!(s.mailbox.message(m).unwrap().flag, mailcraft_model::FlagStatus::None);
+    assert_eq!(s.mailbox.message(m).unwrap().flag, mailsolutions_model::FlagStatus::None);
     let other = arriving(&mut s, account, "billing@example.org", "Receipt");
     assert!(s.mailbox.apply_rules(other).is_empty());
 }
@@ -668,13 +668,13 @@ fn a_switch_the_server_wasnt_told_of_yet_doesnt_decide_whether_later_rules_run()
     run(&mut s, "rules.enable", json!({"id": id, "value": false}));
     let m = arriving(&mut s, account, "billing@example.org", "Invoice 12");
     assert!(s.mailbox.apply_rules(m).is_empty());
-    assert_eq!(s.mailbox.message(m).unwrap().flag, mailcraft_model::FlagStatus::None);
+    assert_eq!(s.mailbox.message(m).unwrap().flag, mailsolutions_model::FlagStatus::None);
     // Told, and on here again, still off there: the server didn't, and they run.
     all_taken(&mut s, account);
     run(&mut s, "rules.enable", json!({"id": id, "value": true}));
     let m = arriving(&mut s, account, "billing@example.org", "Invoice 13");
     assert_eq!(s.mailbox.apply_rules(m), ["Flag"]);
-    assert_eq!(s.mailbox.message(m).unwrap().flag, mailcraft_model::FlagStatus::Flagged);
+    assert_eq!(s.mailbox.message(m).unwrap().flag, mailsolutions_model::FlagStatus::Flagged);
 }
 
 #[test]
@@ -888,7 +888,7 @@ fn a_lost_answer_doesnt_make_a_rule_twice_and_a_rule_deleted_while_made_is_delet
     let (mut s, account, _, news) = session();
     let id = news_rule(&mut s, account, news);
     // Its creation goes out (the window marks it as the job starts) and no answer comes: the
-    // connection dropped, or MailCraft was closed. It isn't sent again until the server's rules
+    // connection dropped, or MailSolutions was closed. It isn't sent again until the server's rules
     // have been read whole, a download that isn't whole changing nothing of that.
     let upload = rule_upload(&s.mailbox, account).unwrap();
     mark_sent(&mut s, &upload);
@@ -948,7 +948,7 @@ fn what_is_for_another_account_or_hostile_changes_nothing_it_shouldnt() {
     let merged = merge_rules(&mut s.mailbox, &download(account, hostile)).unwrap();
     assert_eq!((merged.added, merged.skipped), (2, 3));
     let long = s.mailbox.rules.iter().find(|r| r.name.starts_with('n')).unwrap();
-    assert!(long.name.chars().count() <= mailcraft_model::MAX_NAME);
+    assert!(long.name.chars().count() <= mailsolutions_model::MAX_NAME);
     assert_eq!(long.conditions.len(), 1);
     assert!(matches!(&long.conditions[0], Condition::SubjectContains(t) if t.chars().count() <= 200));
     assert!(long.actions.is_empty());
@@ -1081,7 +1081,7 @@ fn a_rule_that_looks_for_a_name_stays_on_this_computer_and_reads_names() {
 
 #[test]
 fn always_move_messages_from_a_sender_of_a_shared_mailbox_makes_no_rule() {
-    use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult};
+    use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult};
     let (mut s, account, _, news) = session();
     let shared = run(&mut s, "account.addSharedMailbox", json!({"address": "team@example.org"}))["id"].as_u64().unwrap();
     let folder = |id: &str, name: &str, kind| GraphFolder { id: id.into(), name: name.into(), kind, ..Default::default() };

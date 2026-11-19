@@ -4,8 +4,8 @@
 //! many unread, and how much space they take, with the totals adding up, the sizes not known here
 //! counted apart, and a tangled or huge folder tree walked with a bound.
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{Body, Folder, FolderCounts, FolderKind, Id, Mailbox, Message, NOT_DOWNLOADED, ServerFolder};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{Body, Folder, FolderCounts, FolderKind, Id, Mailbox, Message, NOT_DOWNLOADED, ServerFolder};
 use serde_json::{Value, json};
 
 use super::folder::known_size;

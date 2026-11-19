@@ -4,8 +4,8 @@
 //! (`sendMail`), and Exchange files its copy in Sent Items with `isDraft` still true. What is in
 //! Sent Items was sent: the list never shows it as [Draft].
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{AccountKind, Address, FolderKind, Mailbox, ServerFolder};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{AccountKind, Address, FolderKind, Mailbox, ServerFolder};
 
 use super::*;
 
@@ -72,7 +72,7 @@ fn a_draft_changed_here_and_sent_elsewhere_keeps_the_sent_copy_as_sent() {
     {
         let m = mb.message_mut(here).unwrap();
         m.subject = "Quarterly figures, revised".into();
-        m.server_draft = Some(mailcraft_model::sync::ServerDraft { pending: true, ..Default::default() });
+        m.server_draft = Some(mailsolutions_model::sync::ServerDraft { pending: true, ..Default::default() });
     }
     let mut sent = page("FS", "AAkD1", Some(false));
     sent.messages[0].server.change_key = "CK2".into();
@@ -91,7 +91,7 @@ fn a_draft_changed_here_and_sent_elsewhere_keeps_the_sent_copy_as_sent() {
     let mut index = ServerIndex::default();
     take_page(&mut mb, &mut index, account, &page("FD", "AAkD2", Some(true)), &mut Down::default());
     let here = only_in(&mb, account, "FD").id;
-    mb.message_mut(here).unwrap().server_draft = Some(mailcraft_model::sync::ServerDraft { pending: true, ..Default::default() });
+    mb.message_mut(here).unwrap().server_draft = Some(mailsolutions_model::sync::ServerDraft { pending: true, ..Default::default() });
     let mut moved = page("FS", "AAkD2", Some(true));
     moved.messages[0].server.change_key = "CK2".into();
     take_page(&mut mb, &mut index, account, &moved, &mut Down::default());
@@ -179,7 +179,7 @@ fn a_draft_written_here_and_moved_into_sent_items_stays_a_draft_when_the_mailbox
     let id = only_in(&mb, account, "FD").id;
     {
         let m = mb.message_mut(id).unwrap();
-        m.server_draft = Some(mailcraft_model::sync::ServerDraft { marker: "mailcraft-draft-1-1".into(), ..Default::default() });
+        m.server_draft = Some(mailsolutions_model::sync::ServerDraft { marker: "mailsolutions-draft-1-1".into(), ..Default::default() });
     }
     mb.move_message(id, sent).unwrap();
     take_page(&mut mb, &mut index, account, &page("FS", "AAkD1", Some(true)), &mut Down::default());
@@ -278,7 +278,7 @@ fn a_draft_sent_here_and_still_listed_in_drafts_stays_queued_in_the_outbox() {
         (m.folder, m.draft, m.unfetched) = (outbox, false, false);
         m.subject = "Quarterly figures, final".into();
         m.to = vec![Address::new("Kit", "kit@example.org"), Address::new("Lee", "lee@example.org")];
-        m.server_draft = Some(mailcraft_model::sync::ServerDraft { pending: true, marker: "mc-1".into(), ..Default::default() });
+        m.server_draft = Some(mailsolutions_model::sync::ServerDraft { pending: true, marker: "mc-1".into(), ..Default::default() });
     }
     for key in ["CK1", "CK2"] {
         let mut listed = page("FD", "AAkD1", Some(true));
@@ -314,11 +314,15 @@ fn a_draft_sent_here_is_never_a_draft_again_while_the_server_files_it() {
         // As compose leaves it when the owner sends it.
         let m = mb.message_mut(id).unwrap();
         (m.folder, m.draft, m.unfetched) = (outbox, false, false);
-        m.server_draft = Some(mailcraft_model::sync::ServerDraft { pending: true, marker: "mc-1".into(), ..Default::default() });
+        m.server_draft = Some(mailsolutions_model::sync::ServerDraft { pending: true, marker: "mc-1".into(), ..Default::default() });
     }
-    let done =
-        mailcraft_model::sync::SendDone { message: id, outcome: mailcraft_model::sync::SendOutcome::Sent, draft: None, draft_left: String::new() };
-    super::super::graph_send::send_done(&mut mb, account, &done, mailcraft_i18n::Lang::English, &mut Vec::new());
+    let done = mailsolutions_model::sync::SendDone {
+        message: id,
+        outcome: mailsolutions_model::sync::SendOutcome::Sent,
+        draft: None,
+        draft_left: String::new(),
+    };
+    super::super::graph_send::send_done(&mut mb, account, &done, mailsolutions_i18n::Lang::English, &mut Vec::new());
     let in_sent = |mb: &Mailbox| mb.messages_in(sent).map(|m| (m.id, m.draft)).collect::<Vec<_>>();
     assert_eq!(in_sent(&mb), vec![(id, false)], "the message sent is in Sent Items at once");
     assert_eq!(mb.messages_in(outbox).count(), 0);
@@ -353,7 +357,7 @@ fn moves(mb: &Mailbox) -> usize {
     let account = mb.accounts[0].id;
     let s = crate::Session::at(mb.clone(), 1_800_000_000, 0);
     let (changes, _) = super::super::graph_up::message_changes(&s, account, 100);
-    changes.iter().filter(|c| matches!(c, mailcraft_model::sync::MessageChange::Move { .. })).count()
+    changes.iter().filter(|c| matches!(c, mailsolutions_model::sync::MessageChange::Move { .. })).count()
 }
 
 /// #1160 review: a draft sent here that the server has listed in Sent Items already, then listed
@@ -374,11 +378,15 @@ fn a_draft_sent_here_and_listed_in_sent_items_is_not_taken_back_to_drafts_by_a_l
     {
         let m = mb.message_mut(id).unwrap();
         (m.folder, m.draft, m.unfetched) = (outbox, false, false);
-        m.server_draft = Some(mailcraft_model::sync::ServerDraft { pending: true, marker: "mc-1".into(), ..Default::default() });
+        m.server_draft = Some(mailsolutions_model::sync::ServerDraft { pending: true, marker: "mc-1".into(), ..Default::default() });
     }
-    let done =
-        mailcraft_model::sync::SendDone { message: id, outcome: mailcraft_model::sync::SendOutcome::Sent, draft: None, draft_left: String::new() };
-    super::super::graph_send::send_done(&mut mb, account, &done, mailcraft_i18n::Lang::English, &mut Vec::new());
+    let done = mailsolutions_model::sync::SendDone {
+        message: id,
+        outcome: mailsolutions_model::sync::SendOutcome::Sent,
+        draft: None,
+        draft_left: String::new(),
+    };
+    super::super::graph_send::send_done(&mut mb, account, &done, mailsolutions_i18n::Lang::English, &mut Vec::new());
     assert!(mb.message(id).unwrap().sent_here);
     let in_sent = |mb: &Mailbox| mb.messages_in(sent).map(|m| (m.id, m.draft)).collect::<Vec<_>>();
     // Sent Items lists it first, a draft by Exchange's word.

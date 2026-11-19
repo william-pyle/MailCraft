@@ -87,9 +87,9 @@ fn other_keys_and_other_modifiers_pass_through() {
 #[test]
 fn a_window_of_its_own_turns_the_keys_into_a_paste_when_the_window_layer_does_not() {
     use crate::{MailApp, Services};
-    use mailcraft_engine::Session;
+    use mailsolutions_engine::Session;
     let paste = |on: bool| {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(0, 0), 0, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(0, 0), 0, 0), Services::default());
         app.services.clipboard = Some(Box::new(Board { text: Some("hello"), picture: false }));
         app.services.clipboard_keys = on;
         let ctx = egui::Context::default();

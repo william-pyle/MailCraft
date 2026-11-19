@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use crate::Session;
@@ -511,7 +511,7 @@ fn an_account_list_of_categories_the_step_lacks_is_taken_away_and_asked_about() 
     let account = s.mailbox.message(m).unwrap().account;
     s.run("mail.flag", &json!({"ids": [m]})).unwrap();
     assert!(!s.mailbox.account_categories.contains_key(&account));
-    let fresh = mailcraft_model::Category { name: "Fresh".into(), color: mailcraft_model::GREY_CATEGORY };
+    let fresh = mailsolutions_model::Category { name: "Fresh".into(), color: mailsolutions_model::GREY_CATEGORY };
     s.mailbox.account_categories.insert(account, vec![fresh]);
     assert!(s.undo_removes_items(false));
     assert!(asks_delete(&s, "edit.undo"));

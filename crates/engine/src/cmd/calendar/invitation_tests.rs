@@ -4,9 +4,9 @@
 //! (a local calendar) or from the account that keeps it (a server): what a message says of the
 //! organizer is the sender's word.
 
-use mailcraft_model::remote::{EventsDownload, RemoteEvent};
-use mailcraft_model::{Address, Attachment, Attendee, FolderKind, Id, Message};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::remote::{EventsDownload, RemoteEvent};
+use mailsolutions_model::{Address, Attachment, Attendee, FolderKind, Id, Message};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use serde_json::{Value, json};
 
 use crate::{CmdError, Session, cmd::remote};
@@ -177,7 +177,7 @@ fn a_stranger_neither_calls_off_nor_answers_a_meeting_a_server_keeps() {
     assert_eq!(run(&mut s, "calendar.removeCancelled", json!({"message": cancel}))["removed"].as_u64(), Some(event));
 }
 
-/// #755: a session without the window's settings (`mailcraft-cli run`, headless `mcp`) keeps an
+/// #755: a session without the window's settings (`mailsolutions-cli run`, headless `mcp`) keeps an
 /// answered request where it is; a saved choice, on or off, is read back as it was, and
 /// preferences saved without the option leave it off. (A new install's window turns it on:
 /// `ui-egui`'s `reading/tests/invitation.rs`.)

@@ -7,9 +7,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use mailcraft_host::graph::{GraphRequest, GraphResult};
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{FolderKind, Message, ServerFolder};
+use mailsolutions_host::graph::{GraphRequest, GraphResult};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{FolderKind, Message, ServerFolder};
 
 use crate::fake_tests::block_on;
 use crate::sync_tests::{Runner, signed_in, stand_in};
@@ -33,7 +33,7 @@ fn a_round_called_off_has_the_mailbox_kept_within_the_limits() {
     // A phone with a month's window; the first round ends and the trimming it asked for is done.
     block_on(core.call(move |s| {
         s.run("account.edit", &serde_json::json!({"id": account, "keepOffline": "1m"}))?;
-        s.run("account.deviceLimits", &serde_json::json!({"storage": mailcraft_model::PHONE_STORAGE}))?;
+        s.run("account.deviceLimits", &serde_json::json!({"storage": mailsolutions_model::PHONE_STORAGE}))?;
         Ok(())
     }))
     .unwrap();

@@ -103,7 +103,7 @@ pub(crate) struct Captured {
 const PENDING_PASSES: u64 = 30;
 
 fn asked() -> Id {
-    Id::unique("mailcraft-text-menu")
+    Id::unique("mailsolutions-text-menu")
 }
 
 fn pending() -> Id {

@@ -8,7 +8,7 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 
 /// How often a run under way is looked at for something the owner did meanwhile.
 pub const RUN_LOOK_MS: f64 = 3_000.0;
@@ -200,7 +200,7 @@ pub fn waiting_to_go(s: &crate::Session, account: Id) -> usize {
     let outbox = if s.shared_send_waits(account) {
         0
     } else {
-        mb.folder_of_kind(account, mailcraft_model::FolderKind::Outbox)
+        mb.folder_of_kind(account, mailsolutions_model::FolderKind::Outbox)
             .map_or(0, |f| mb.messages_in(f).filter(|m| m.held.is_empty() && !m.waits_until(now)).count())
     };
     outbox + crate::cmd::account::unpushed(s, account)

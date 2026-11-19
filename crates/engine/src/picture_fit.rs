@@ -12,7 +12,7 @@
 use std::io::Cursor;
 
 use image::{ImageDecoder as _, ImageEncoder as _, ImageFormat};
-use mailcraft_model::pictures::{MAX_PICTURE_BYTES, MAX_SHOWN_WIDTH};
+use mailsolutions_model::pictures::{MAX_PICTURE_BYTES, MAX_SHOWN_WIDTH};
 
 /// Most bytes of a picture that are read to be made smaller; more is left for the caps to refuse.
 const MAX_SOURCE_BYTES: usize = 32 * 1024 * 1024;

@@ -10,8 +10,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use egui::{RichText, Ui, vec2};
-use mailcraft_engine::cmd::people_merge::{self, Group, LISTS, Pick};
-use mailcraft_model::{Contact, Id};
+use mailsolutions_engine::cmd::people_merge::{self, Group, LISTS, Pick};
+use mailsolutions_model::{Contact, Id};
 use serde_json::{Value, json};
 
 use crate::MailApp;

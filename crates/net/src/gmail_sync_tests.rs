@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Gmail's inbox categories read with Gmail's own search (#911), against the fake server.
 
-use mailcraft_model::GmailCategory;
-use mailcraft_model::sync::{GmailMove, GmailSorted, MAX_GMAIL_MOVES};
+use mailsolutions_model::GmailCategory;
+use mailsolutions_model::sync::{GmailMove, GmailSorted, MAX_GMAIL_MOVES};
 
 use super::*;
 use crate::fake::GMAIL_IDS;
@@ -233,7 +233,7 @@ fn no_request_goes_to_gmails_api_without_moves_or_a_google_sign_in() {
 #[test]
 fn switched_off_a_request_with_moves_sends_nothing_to_gmails_api() {
     // The build's switch, which this crate holds to whatever a request asks.
-    const { assert!(!mailcraft_model::gmail::GMAIL_CATEGORY_MOVES, "ships switched off until Google's review") };
+    const { assert!(!mailsolutions_model::gmail::GMAIL_CATEGORY_MOVES, "ships switched off until Google's review") };
     let imap = Fake::imap(google_world());
     let api = crate::gmail::standin::StandIn::start().unwrap();
     api.state().add(GMAIL_IDS + 2, &["INBOX", "CATEGORY_SOCIAL"]);

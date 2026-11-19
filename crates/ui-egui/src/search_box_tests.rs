@@ -173,7 +173,7 @@ fn typed_in_people() -> Window {
 fn the_box_swaps_searches_with_what_comes_in_front_while_typing() {
     let mut h = typed_in_people();
     chord(&mut h, Key::Num1);
-    assert_eq!(h.state().session.view.module, mailcraft_engine::Module::Mail);
+    assert_eq!(h.state().session.view.module, mailsolutions_engine::Module::Mail);
     assert_eq!(in_the_box(&h), "budget", "Mail's search");
     testing::text(&mut h, "s");
     assert_eq!(search(&h), "budgets");
@@ -262,7 +262,7 @@ fn search_keys_in_people_search_the_contacts() {
         h.run_steps(3);
         press(&mut h);
         h.run_steps(3);
-        assert_eq!(h.state().session.view.module, mailcraft_engine::Module::People);
+        assert_eq!(h.state().session.view.module, mailsolutions_engine::Module::People);
         assert!(has_the_keyboard(&h), "the search box was not given the keyboard");
         testing::text(&mut h, "harbor");
         assert_eq!(h.state().session.view.people_search, "harbor");

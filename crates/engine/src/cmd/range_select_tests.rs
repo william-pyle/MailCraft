@@ -6,8 +6,8 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::Id;
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::Id;
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};

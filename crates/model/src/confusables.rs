@@ -4,7 +4,7 @@
 //! the same, after the idea of the skeleton in Unicode Technical Standard #39 (Unicode Security
 //! Mechanisms, section 4). Two domains with the same skeleton read the same to the eye.
 //!
-//! The table is MailCraft's own and small, written for what turns up in lookalike addresses:
+//! The table is MailSolutions's own and small, written for what turns up in lookalike addresses:
 //! the Cyrillic and Greek letters drawn like Latin ones, Latin letters with an accent or a
 //! dotless form, full-width Latin, the digits `0` and `1` for `o` and `l`, and the pairs of
 //! letters that pass for one (`rn` for `m`, `vv` for `w`, `cl` for `d`). Characters that draw

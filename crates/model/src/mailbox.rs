@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! The mailbox: everything MailCraft keeps, with the primitives that edit it.
+//! The mailbox: everything MailSolutions keeps, with the primitives that edit it.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
@@ -224,7 +224,7 @@ pub struct ImapStatus {
     pub unseen: u32,
     /// How many of the folder's newest messages were to be had here (0: all of them).
     pub limit: u32,
-    /// When the reading this was kept with ended ([`mailcraft_time::Timestamp`]); set when it is
+    /// When the reading this was kept with ended ([`mailsolutions_time::Timestamp`]); set when it is
     /// taken in, 0 in what a run says.
     pub at: i64,
 }
@@ -327,10 +327,10 @@ pub enum AccountKind {
     /// Its server is [`Account::ews`]; the password is given by whoever holds the connection and
     /// is never written anywhere.
     Exchange,
-    /// A kind this version doesn't know: an account that a newer MailCraft added, in a file that
+    /// A kind this version doesn't know: an account that a newer MailSolutions added, in a file that
     /// one wrote (or one whose kind can't be read at all). Only what says which account it is
     /// is read of it; the whole of it is kept as the file had it and written back so
-    /// ([`Account::as_written`]), so that the newer MailCraft finds it as it left it. It is never
+    /// ([`Account::as_written`]), so that the newer MailSolutions finds it as it left it. It is never
     /// kept in step, sent from or changed here: whatever it is, this version doesn't know how.
     #[serde(other)]
     Unknown,
@@ -430,7 +430,7 @@ pub struct Account {
     pub opened_calendars: Vec<crate::OpenedCalendar>,
     /// For a Microsoft account: the shared mailboxes open under it whose calendar its server lists
     /// among its own calendars as well, and whether that copy is hidden ([`crate::ListedTwice`],
-    /// #70), at most [`MAX_SHARED`]. An entry says the owner was asked: MailCraft offers once.
+    /// #70), at most [`MAX_SHARED`]. An entry says the owner was asked: MailSolutions offers once.
     /// Empty for every other account, and in a file from before there were any.
     #[serde(skip_serializing_if = "Vec::is_empty", deserialize_with = "crate::sync::lenient_list")]
     pub listed_twice: Vec<crate::ListedTwice>,
@@ -847,7 +847,7 @@ pub enum Queued {
     /// (R3 spec S16, S21). `id` is the source's server id, `to` the destination folder's;
     /// `copy` is the copy made here, which takes the server's copy's id once the server has
     /// made it (so that the copy coming down by delta isn't a second one). `marker` is the value,
-    /// used once, of MailCraft's invisible extended property the source is given before the
+    /// used once, of MailSolutions's invisible extended property the source is given before the
     /// copy is asked for: a copy whose answer was lost is looked for by it in `to` before the
     /// copy is asked for again.
     #[serde(rename_all = "camelCase")]
@@ -873,7 +873,7 @@ pub enum Queued {
     /// The message `message` was moved or copied here into a folder of `account` from another
     /// mailbox of the same owner's (#70), from another account or from a folder on this computer
     /// (#451): the server of `account` is to make it, from the whole message, carrying
-    /// MailCraft's marker of the value `marker` (by which a make whose answer was lost is found).
+    /// MailSolutions's marker of the value `marker` (by which a make whose answer was lost is found).
     /// Of a move, the original goes from its own server once this copy is there
     /// ([`Message::moving_out`] for a Microsoft account's, a [`Pending::Move`] out of the
     /// account for an IMAP account's). `copy`: it was copied, and the message it was copied from
@@ -1336,12 +1336,12 @@ pub const IMPORTED: &str = "Imported";
 /// ([`Mailbox::stays_out_of`]): a move goes up as a move between two of the server's mailboxes, and
 /// there is none for it to go to. The next run would bring the message back where it was.
 pub const ONLY_SERVER_FOLDERS: &str =
-    "MailCraft moves a JMAP account's mail only between the folders its server has: the next Send/Receive would bring it back";
+    "MailSolutions moves a JMAP account's mail only between the folders its server has: the next Send/Receive would bring it back";
 
 /// Why a folder holding what a JMAP account's server has isn't deleted, nor Deleted Items emptied
 /// of one ([`Mailbox::folder_stays_on_server`]): the server isn't told of folders yet, and the
 /// next run would bring it back.
-pub const FOLDERS_NOT_DELETED_YET: &str = "MailCraft doesn't delete a JMAP account's folders yet: the next Send/Receive would bring them back";
+pub const FOLDERS_NOT_DELETED_YET: &str = "MailSolutions doesn't delete a JMAP account's folders yet: the next Send/Receive would bring them back";
 
 /// What a message moved into an IMAP or a JMAP account's Outbox says of why it isn't sent
 /// ([`Message::held`]): only mail queued with Send leaves through the Outbox (#607, #1074).
@@ -1370,7 +1370,7 @@ fn hold_if_put_in_outbox(m: &mut Message, into_outbox: bool) {
 /// Why a JMAP account's folders keep their names and places ([`Mailbox::folder_stays_on_server`]):
 /// a rename or a move reaches the server only once the engine sends changes, and until then it
 /// would stay on this computer alone.
-pub const FOLDERS_STAY_YET: &str = "MailCraft doesn't rename or move a JMAP account's folders yet: its server wouldn't be told";
+pub const FOLDERS_STAY_YET: &str = "MailSolutions doesn't rename or move a JMAP account's folders yet: its server wouldn't be told";
 
 fn not_found(what: &'static str, id: Id) -> ModelError {
     ModelError::NotFound(what, id)
@@ -2476,7 +2476,7 @@ impl Mailbox {
         self.is_imap_outbox(folder) || self.folder(folder).is_some_and(jmap)
     }
 
-    /// Whether a draft saved in `account` is kept on its server, field by field, with MailCraft's
+    /// Whether a draft saved in `account` is kept on its server, field by field, with MailSolutions's
     /// marker: a Microsoft account's, and an Exchange server account's (#252).
     pub fn keeps_drafts_on_server(&self, account: Id) -> bool {
         self.account(account).is_some_and(|a| matches!(a.kind, AccountKind::Microsoft | AccountKind::Exchange))
@@ -2610,7 +2610,7 @@ impl Mailbox {
         // Keyed by the system's random bits, which each `RandomState` steps on from.
         let mut unknown = std::collections::hash_map::RandomState::new().build_hasher();
         unknown.write_u64(n);
-        format!("mailcraft-place-{id:x}-{n:x}-{source:016x}-{:016x}", unknown.finish())
+        format!("mailsolutions-place-{id:x}-{n:x}-{source:016x}-{:016x}", unknown.finish())
     }
 
     /// `id` is no longer to be made on any server for where it lay (it goes into account `to`
@@ -2872,7 +2872,7 @@ impl Mailbox {
             let to = self.folder(folder).and_then(|f| f.server.as_ref()).map(|s| s.id.clone()).unwrap_or_default();
             // Of the source's id: copies of different messages never share a marker.
             let source = crate::sync::fingerprint(server.id.as_bytes());
-            let marker = format!("mailcraft-{nonce:x}-{new:x}-{source:016x}");
+            let marker = format!("mailsolutions-{nonce:x}-{new:x}-{source:016x}");
             self.queued.push(Queued::CopyMessage { account: from_account, id: server.id, to, copy: new, marker });
         }
         Ok(new)

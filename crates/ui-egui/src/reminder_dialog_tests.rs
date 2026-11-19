@@ -3,8 +3,8 @@
 //! Add Reminder (#948): what the dialog asks and runs, and the reminders window with a message's
 //! reminder in it.
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Address, FlagStatus, FolderKind, Id, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Address, FlagStatus, FolderKind, Id, Mailbox, Message};
 use serde_json::json;
 
 use super::{AddReminder, Outcome, Target};

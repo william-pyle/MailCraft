@@ -14,18 +14,18 @@ mod proof_tests;
 mod tests;
 
 /// The app's settings folder (preferences, logs, key files): macOS
-/// `~/Library/Application Support/MailCraft`, Windows `%APPDATA%\MailCraft`, otherwise
-/// `$XDG_CONFIG_HOME/mailcraft` or `~/.config/mailcraft`.
+/// `~/Library/Application Support/MailSolutions`, Windows `%APPDATA%\MailSolutions`, otherwise
+/// `$XDG_CONFIG_HOME/mailsolutions` or `~/.config/mailsolutions`.
 pub fn settings_dir() -> Option<PathBuf> {
     if cfg!(target_os = "macos") {
-        std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support/MailCraft"))
+        std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support/MailSolutions"))
     } else if cfg!(windows) {
-        std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("MailCraft"))
+        std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("MailSolutions"))
     } else {
         std::env::var_os("XDG_CONFIG_HOME")
             .map(PathBuf::from)
             .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
-            .map(|c| c.join("mailcraft"))
+            .map(|c| c.join("mailsolutions"))
     }
 }
 

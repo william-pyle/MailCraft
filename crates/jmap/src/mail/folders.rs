@@ -10,7 +10,7 @@
 //!   top. Parents come before the mailboxes in them. A mailbox that is its own ancestor is cut loose at
 //!   the first place the walk meets it again, and one that would lie deeper than [`MAX_DEPTH`] levels
 //!   goes to the top, so the tree is finite whatever the server says, and nothing here recurses on it.
-//! - **Names** are cleaned (no control characters, trimmed, [`mailcraft_model::MAX_NAME`] characters at
+//! - **Names** are cleaned (no control characters, trimmed, [`mailsolutions_model::MAX_NAME`] characters at
 //!   most). A mailbox with no id that can be used, or no name left, is passed over, and then the listing
 //!   is not complete: nothing is removed here for being missing from it.
 //! - **A list with no mailbox in it** (none, or only views) is not complete either: an account always has
@@ -22,8 +22,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::sync::{FolderListing, GraphFolder, MAX_LISTED_FOLDERS};
-use mailcraft_model::{FolderKind, clean_name};
+use mailsolutions_model::sync::{FolderListing, GraphFolder, MAX_LISTED_FOLDERS};
+use mailsolutions_model::{FolderKind, clean_name};
 use serde_json::Value;
 
 use crate::Id;

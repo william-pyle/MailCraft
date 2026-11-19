@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! An Exchange server account (#252, E6), as the engine works out what a host should read and
-//! takes in what it brings back, with results made by hand. (Against `mailcraft-ews`'s stand-in:
-//! `apps/mailcraft/src/ews_mail_flow.rs`.)
+//! takes in what it brings back, with results made by hand. (Against `mailsolutions-ews`'s stand-in:
+//! `apps/mailsolutions/src/ews_mail_flow.rs`.)
 
-use mailcraft_model::sync::{EwsFolderDeltas, EwsMessagePage, GraphFetched, GraphFolder, GraphMessage, ReadState, ServerMessage};
-use mailcraft_model::{Address, FlagStatus, Message};
+use mailsolutions_model::sync::{EwsFolderDeltas, EwsMessagePage, GraphFetched, GraphFolder, GraphMessage, ReadState, ServerMessage};
+use mailsolutions_model::{Address, FlagStatus, Message};
 use serde_json::json;
 
 use super::*;
@@ -323,7 +323,7 @@ fn an_account_keeps_no_more_sync_state_in_all_than_is_taken_in() {
         let id = s.mailbox.folder_by_server(account, &format!("X{n}")).unwrap();
         // (Each state is within its own size; together they are past the account's.)
         if let Some(server) = s.mailbox.folder_mut(id).unwrap().server.as_mut() {
-            server.sync_state = "s".repeat(mailcraft_model::sync::MAX_EWS_STATE);
+            server.sync_state = "s".repeat(mailsolutions_model::sync::MAX_EWS_STATE);
         }
     }
     let before = s.mailbox.clone();
@@ -519,8 +519,8 @@ fn kept(sizes: &[usize], hierarchy: &str) -> (Session, Id) {
 
 #[test]
 fn an_account_keeps_exactly_the_most_sync_state_and_not_a_byte_more() {
-    let one = mailcraft_model::sync::MAX_EWS_STATE;
-    let cap = mailcraft_model::sync::MAX_EWS_STATE_BYTES;
+    let one = mailsolutions_model::sync::MAX_EWS_STATE;
+    let cap = mailsolutions_model::sync::MAX_EWS_STATE_BYTES;
     assert_eq!(cap, 32 * one);
     // 32 MiB exactly (32 folders at 1 MiB): a piece is taken in; 32 MiB and a byte (a 33rd folder
     // with a state of one byte): it is refused.
@@ -536,7 +536,7 @@ fn an_account_keeps_exactly_the_most_sync_state_and_not_a_byte_more() {
 
 #[test]
 fn the_new_states_of_a_result_are_counted_with_the_ones_kept() {
-    let one = mailcraft_model::sync::MAX_EWS_STATE;
+    let one = mailsolutions_model::sync::MAX_EWS_STATE;
     // 31 folders at 1 MiB, one at 1 MiB less 10 bytes: 10 bytes under the most.
     let mut sizes = vec![one; 31];
     sizes.push(one - 10);
@@ -565,7 +565,7 @@ fn the_new_states_of_a_result_are_counted_with_the_ones_kept() {
 
 #[test]
 fn the_folder_lists_state_is_counted_too() {
-    let one = mailcraft_model::sync::MAX_EWS_STATE;
+    let one = mailsolutions_model::sync::MAX_EWS_STATE;
     // 31 folders at 1 MiB and one at 1 MiB - 1, and a folder list at "H" (a byte): the most exactly.
     let mut sizes = vec![one; 31];
     sizes.push(one - 1);

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft engine: the session and its commands.
+//! MailSolutions engine: the session and its commands.
 //!
 //! **Everything is a command.** Each user-visible action is a [`CommandSpec`] with a stable id
 //! (`mail.reply`, `calendar.new`), a label, the ribbon/menu location, a default shortcut, a
@@ -8,14 +8,14 @@
 //! JSON control channel and the MCP server all call [`Session::run`].
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
-/// A text with values (`mailcraft_i18n::Text`): `said!("no folder named {name}", name)`, or
+/// A text with values (`mailsolutions_i18n::Text`): `said!("no folder named {name}", name)`, or
 /// `said!("{name} is larger than {mb} MB", name, mb = MAX >> 20)`. The template is a literal, so
-/// `cargo xtask i18n` finds it; a value that is interface text itself is `mailcraft_i18n::Arg::words(…)`.
+/// `cargo xtask i18n` finds it; a value that is interface text itself is `mailsolutions_i18n::Arg::words(…)`.
 macro_rules! said {
-    (@arg $k:ident) => { mailcraft_i18n::ToArg::to_arg(&$k) };
-    (@arg $k:ident = $v:expr) => { mailcraft_i18n::ToArg::to_arg(&$v) };
+    (@arg $k:ident) => { mailsolutions_i18n::ToArg::to_arg(&$k) };
+    (@arg $k:ident = $v:expr) => { mailsolutions_i18n::ToArg::to_arg(&$v) };
     ($t:literal $(, $k:ident $(= $v:expr)?)* $(,)?) => {
-        mailcraft_i18n::Text::new($t, vec![$((stringify!($k), said!(@arg $k $(= $v)?))),*])
+        mailsolutions_i18n::Text::new($t, vec![$((stringify!($k), said!(@arg $k $(= $v)?))),*])
     };
 }
 
@@ -76,10 +76,10 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-pub use mailcraft_html as html;
-pub use mailcraft_mime_model as mime;
-pub use mailcraft_model as model;
-pub use mailcraft_time as time;
+pub use mailsolutions_html as html;
+pub use mailsolutions_mime_model as mime;
+pub use mailsolutions_model as model;
+pub use mailsolutions_time as time;
 pub use session::{
     BodyFormat, BodyLater, BodyRead, CalView, Clock, Compose, ComposeMode, Doc, Drawn, Filter, InsertedSignature, Missing, Module, Pane, Part,
     PeopleSort, Prefs, Quote, Scope, Selection, Session, SignatureEdit, SortBy, Stays, TaskFilter, TaskSort, ViewState, WordIndex,
@@ -107,13 +107,13 @@ pub enum CmdError {
     Failed(String),
     /// A text with values in it ([`failed!`]): its template is looked up, then filled.
     #[error("{0}")]
-    Said(mailcraft_i18n::Text),
+    Said(mailsolutions_i18n::Text),
 }
 
 impl CmdError {
     /// What the window says of it in `lang`, without the "bad parameters:" / "not available:"
     /// that the English starts with for an agent.
-    pub fn in_lang(&self, lang: mailcraft_i18n::Lang) -> String {
+    pub fn in_lang(&self, lang: mailsolutions_i18n::Lang) -> String {
         match self {
             CmdError::Unknown(_) => self.to_string(),
             CmdError::Params(s) | CmdError::Disabled(s) | CmdError::Failed(s) => lang.t(s).to_string(),
@@ -122,8 +122,8 @@ impl CmdError {
     }
 }
 
-impl From<mailcraft_model::ModelError> for CmdError {
-    fn from(e: mailcraft_model::ModelError) -> Self {
+impl From<mailsolutions_model::ModelError> for CmdError {
+    fn from(e: mailsolutions_model::ModelError) -> Self {
         CmdError::Failed(e.to_string())
     }
 }
@@ -272,8 +272,8 @@ pub fn agent_fields(v: &mut Value, id: &str) {
 
 /// Parameter helpers.
 pub mod p {
-    use mailcraft_model::Id;
-    use mailcraft_time::{Date, DateTime};
+    use mailsolutions_model::Id;
+    use mailsolutions_time::{Date, DateTime};
     use serde_json::Value;
 
     use crate::CmdError;
@@ -397,7 +397,7 @@ pub mod p {
         match v.get(k) {
             None | Some(Value::Null) => Ok(None),
             Some(Value::String(s)) if s.trim().is_empty() => Ok(None),
-            Some(Value::String(s)) => mailcraft_time::parse_iso(s).map(|(t, _)| Some(t)).ok_or_else(bad),
+            Some(Value::String(s)) => mailsolutions_time::parse_iso(s).map(|(t, _)| Some(t)).ok_or_else(bad),
             Some(_) => Err(bad()),
         }
     }

@@ -14,7 +14,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn session() -> Session {
-    Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0)
+    Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0)
 }
 
 fn app() -> MailApp {
@@ -85,12 +85,12 @@ fn the_owner_says_where_a_new_rule_is_kept() {
 
 #[test]
 fn always_move_messages_from_this_sender_fills_the_new_rule_in() {
-    use mailcraft_model::{Address, Message};
+    use mailsolutions_model::{Address, Message};
     let mut s = session();
     let noor = s.run("account.add", &json!({"email": "noor@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     let inbox = s.mailbox.folder_of_kind(noor, FolderKind::Inbox).unwrap();
     let (to, _) = folder_choices(&s.mailbox, noor).into_iter().find(|(id, _)| *id != inbox).unwrap();
-    s.mailbox.folder_mut(to).unwrap().server = Some(mailcraft_model::ServerFolder { id: "news".into(), ..Default::default() });
+    s.mailbox.folder_mut(to).unwrap().server = Some(mailsolutions_model::ServerFolder { id: "news".into(), ..Default::default() });
     let from = Address::new("Weekly Digest", "digest@news.example");
     let m = s.mailbox.add_message(Message { folder: inbox, from, subject: "This week".into(), ..Default::default() }).unwrap();
     s.sel.messages = vec![m];
@@ -128,7 +128,7 @@ fn always_move_messages_from_this_sender_adds_the_rule_only_when_asked_then_runs
     let m = mb.messages_in(inbox).find(|m| !m.from.email.is_empty()).map(|m| m.id).unwrap();
     let sender = mb.message(m).unwrap().from.email.clone();
     let account = mb.message(m).unwrap().account;
-    let to = mb.folder_of_kind(account, mailcraft_model::FolderKind::Archive).unwrap();
+    let to = mb.folder_of_kind(account, mailsolutions_model::FolderKind::Archive).unwrap();
     let before = mb.rules.len();
     a.session.sel.messages = vec![m];
     a.execute("ui.dialog", json!({"name": "rules", "folder": to})).unwrap();
@@ -139,8 +139,8 @@ fn always_move_messages_from_this_sender_adds_the_rule_only_when_asked_then_runs
     h.run_steps(4);
     let mb = &h.state().session.mailbox;
     let rule = mb.rules.last().unwrap();
-    assert_eq!(rule.conditions, [mailcraft_model::Condition::FromContains(sender)]);
-    assert_eq!(rule.actions, [mailcraft_model::Action::MoveTo(to)]);
+    assert_eq!(rule.conditions, [mailsolutions_model::Condition::FromContains(sender)]);
+    assert_eq!(rule.actions, [mailsolutions_model::Action::MoveTo(to)]);
     // Then the rules ran over the Inbox, as the menu said: the message is there now.
     assert_eq!(mb.message(m).unwrap().folder, to);
     assert_eq!(h.state().dialog.as_ref().map(Dialog::name), Some("rules"));

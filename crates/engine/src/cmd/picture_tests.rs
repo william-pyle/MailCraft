@@ -3,9 +3,9 @@
 //! Pictures in the text of a message being written (#547): put in with Insert › Pictures, deleted
 //! like a letter, sent as inline parts the HTML refers to, kept in drafts.
 
-use mailcraft_model::pictures::FIRST_ID;
-use mailcraft_model::rich::OBJECT;
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::pictures::FIRST_ID;
+use mailsolutions_model::rich::OBJECT;
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Compose, Session, sample};
@@ -30,7 +30,7 @@ fn png_bytes(extra: usize) -> Vec<u8> {
 }
 
 fn b64(bytes: &[u8]) -> String {
-    mailcraft_charset::base64::STANDARD.encode(bytes)
+    mailsolutions_charset::base64::STANDARD.encode(bytes)
 }
 
 /// A new message to somebody, with `Hello world` in it and no signature.
@@ -188,7 +188,7 @@ fn a_screenshot_sized_picture_is_scaled_to_1920_wide_and_fits() {
     let p = &compose(&s).pictures[0];
     assert_eq!(size_of(&p.data), (1920, 1280));
     assert!(
-        p.data.len() <= mailcraft_model::pictures::MAX_PICTURE_BYTES && p.mime == "image/png" && p.name == "Screenshot 1.png",
+        p.data.len() <= mailsolutions_model::pictures::MAX_PICTURE_BYTES && p.mime == "image/png" && p.name == "Screenshot 1.png",
         "{} {}",
         p.data.len(),
         p.name
@@ -204,7 +204,7 @@ fn a_picture_over_the_cap_is_saved_again_smaller_until_it_fits() {
     run(&mut s, "insert.picture", json!({"data": b64(&big), "file": "noise.png"}));
     let p = &compose(&s).pictures[0];
     let (w, _) = size_of(&p.data);
-    assert!(w <= 1920 && p.data.len() <= mailcraft_model::pictures::MAX_PICTURE_BYTES, "{w} {}", p.data.len());
+    assert!(w <= 1920 && p.data.len() <= mailsolutions_model::pictures::MAX_PICTURE_BYTES, "{w} {}", p.data.len());
     assert!(p.name.starts_with("noise.") && p.name.ends_with(if p.mime == "image/jpeg" { ".jpg" } else { ".png" }), "{} {}", p.name, p.mime);
     // Within the caps and the width it is left alone, byte for byte.
     let small = real_png(300, 200, false);
@@ -255,7 +255,7 @@ fn a_picture_goes_out_as_an_inline_part_the_html_refers_to_by_content_id() {
     let id = run(&mut s, "compose.send", json!({}))["id"].as_u64().unwrap();
     let m = s.mailbox.message(id).unwrap().clone();
     let pic = m.attachments.iter().find(|a| a.content_id.starts_with("pic-")).expect("the picture goes with the message");
-    assert!(pic.inline && pic.mime == "image/png" && pic.content_id.ends_with("@mailcraft.invalid"));
+    assert!(pic.inline && pic.mime == "image/png" && pic.content_id.ends_with("@mailsolutions.invalid"));
     assert!(!pic.content_id.contains(char::is_whitespace) && !pic.name.contains(['\r', '\n']));
     let html = m.body.html.clone().unwrap();
     assert!(html.contains(&format!("cid:{}", pic.content_id)) && html.contains("Sales &quot;Q3&quot;"), "{html}");
@@ -264,12 +264,12 @@ fn a_picture_goes_out_as_an_inline_part_the_html_refers_to_by_content_id() {
     assert!(m.body.text.starts_with("Hello[Sales \"Q3\"] world"), "{:?}", m.body.text);
     assert!(!m.body.text.contains(OBJECT));
     // On the wire: multipart/related, the cid matching, no header made of the name.
-    let bytes = mailcraft_mime_model::write(&m, &mailcraft_mime_model::WriteOptions::default());
+    let bytes = mailsolutions_mime_model::write(&m, &mailsolutions_mime_model::WriteOptions::default());
     let wire = String::from_utf8_lossy(&bytes).to_string();
     assert!(wire.contains("multipart/related"), "{wire}");
     assert!(wire.contains(&format!("Content-ID: <{}>", pic.content_id)));
     assert!(!wire.lines().any(|l| l.starts_with("Bcc:") && l.contains("evil")), "{wire}");
-    let back = mailcraft_mime_model::parse(&bytes);
+    let back = mailsolutions_mime_model::parse(&bytes);
     let read = back.attachments.iter().find(|a| a.content_id == pic.content_id).expect("the picture reads back");
     assert_eq!(read.data, pic.data);
     assert!(back.body.html.unwrap().contains(&format!("cid:{}", pic.content_id)));
@@ -328,16 +328,17 @@ fn a_draft_keeps_its_pictures_and_opens_with_them() {
 
 #[test]
 fn a_draft_written_by_hand_cannot_bring_in_what_a_picture_may_not_be() {
-    use mailcraft_model::{Attachment, Body};
+    use mailsolutions_model::{Attachment, Body};
     let mut s = session();
-    let drafts = s.mailbox.folder_of_kind(s.mailbox.default_account().unwrap().id, mailcraft_model::FolderKind::Drafts).unwrap();
+    let drafts = s.mailbox.folder_of_kind(s.mailbox.default_account().unwrap().id, mailsolutions_model::FolderKind::Drafts).unwrap();
     let evil = Attachment {
-        content_id: "pic-1048576.x@mailcraft.invalid".into(),
+        content_id: "pic-1048576.x@mailsolutions.invalid".into(),
         inline: true,
         ..Attachment::new("a.png", "image/png", b"<html><script>alert(1)</script>".to_vec())
     };
-    let other = Attachment { content_id: "pic-5.x@mailcraft.invalid".into(), inline: true, ..Attachment::new("b.png", "image/png", png_bytes(8)) };
-    let m = mailcraft_model::Message {
+    let other =
+        Attachment { content_id: "pic-5.x@mailsolutions.invalid".into(), inline: true, ..Attachment::new("b.png", "image/png", png_bytes(8)) };
+    let m = mailsolutions_model::Message {
         account: s.mailbox.default_account().unwrap().id,
         folder: drafts,
         draft: true,
@@ -415,6 +416,6 @@ fn a_microsoft_account_sends_the_picture_up_as_an_inline_attachment() {
     let up = super::graph_send::sends(&s, account).into_iter().find(|up| up.message == id).expect("queued to send");
     let m = up.draft.is_none().then_some(up.mime).flatten().map(|m| *m).unwrap_or_else(|| s.mailbox.message(id).unwrap().clone());
     assert!(m.attachments.iter().any(|a| a.inline && a.content_id.starts_with("pic-")));
-    let wire = String::from_utf8_lossy(&mailcraft_mime_model::write(&m, &mailcraft_mime_model::WriteOptions::default())).to_string();
+    let wire = String::from_utf8_lossy(&mailsolutions_mime_model::write(&m, &mailsolutions_mime_model::WriteOptions::default())).to_string();
     assert!(wire.contains("multipart/related") && wire.contains("Content-ID: <pic-"), "{wire}");
 }

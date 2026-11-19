@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A Microsoft account's folders, as the engine works out what goes to Graph and takes in what
-//! comes back. (Against the Graph stand-in itself: `apps/mailcraft-cli/tests/graph_folders.rs`.)
+//! comes back. (Against the Graph stand-in itself: `apps/mailsolutions-cli/tests/graph_folders.rs`.)
 
-use mailcraft_model::sync::FolderChangeDone;
-use mailcraft_model::{Message, OAuthProvider};
+use mailsolutions_model::sync::FolderChangeDone;
+use mailsolutions_model::{Message, OAuthProvider};
 use serde_json::json;
 
 use super::*;
@@ -211,7 +211,7 @@ fn what_is_changed_here_goes_up_as_the_difference_from_the_server() {
     assert!(s.mailbox.folder(ab).is_none());
     let request = graph_mail_request(&s, account).unwrap();
     // With what the owner had of it (AU3-H7): its name and its own server id.
-    let shown = mailcraft_model::sync::Shown::of("A\\B", ["ab"], []);
+    let shown = mailsolutions_model::sync::Shown::of("A\\B", ["ab"], []);
     assert_eq!(request.changes, [FolderChange::Delete { id: "ab".into(), shown }]);
     let gone = FolderChangeDone { change: request.changes[0].clone(), outcome: ChangeOutcome::Gone };
     take(&mut s, account, GraphMailResult { changes: vec![gone], email: ACCOUNT_EMAIL.into(), ..Default::default() });
@@ -301,7 +301,7 @@ fn a_mailbox_file_of_0_2_1_opens_as_it_was() {
     // Written by 0.2.1 itself (an IMAP account, a Microsoft account on IMAP, a folder, a
     // message), with what its Send/Receive and the Favorites' choice add as 0.2.1 writes them.
     let bytes = include_bytes!("../../testdata/mailbox-0.2.1.mailcraft");
-    let dir = std::env::temp_dir().join(format!("mailcraft-r31-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-r31-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let open = |name: &str, bytes: &[u8]| {
         let path = dir.join(name);
@@ -337,7 +337,7 @@ fn a_mailbox_file_of_0_2_1_opens_as_it_was() {
 /// stays when a delta brings the message again.
 #[test]
 fn answered_and_forwarded_set_here_survive_a_delta() {
-    use mailcraft_model::sync::{GraphMessage, MessagePage, ServerMessage};
+    use mailsolutions_model::sync::{GraphMessage, MessagePage, ServerMessage};
     let (mut s, account) = session();
     take(&mut s, account, listed(server(), true));
     let page = |read: bool| {

@@ -3,7 +3,7 @@
 //! Title bar (Quick Access Toolbar, search, account) and status bar.
 
 use egui::{Align2, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::{Module, Pane, Scope};
+use mailsolutions_engine::{Module, Pane, Scope};
 use serde_json::json;
 
 use crate::theme::{Tokens, TypeRung, medium, regular, semibold, text_width};
@@ -30,7 +30,7 @@ fn qat_button(ui: &mut Ui, app: &mut MailApp, icon: &str, tip: &str, id: &str) -
 /// as Help › Copy Diagnostics.
 fn diagnostics_pill(ui: &mut Ui, app: &mut MailApp, h: f32) {
     let tip = tl!(
-        "Copy the version, the platform and the end of MailCraft's own record, to paste into a problem report. No message, address, password or token is in it, and nothing is sent."
+        "Copy the version, the platform and the end of MailSolutions's own record, to paste into a problem report. No message, address, password or token is in it, and nothing is sent."
     );
     pill(ui, app, h, "copy", tl!("Copy Diagnostics"), tip, "ui.copyDiagnostics");
 }
@@ -38,7 +38,7 @@ fn diagnostics_pill(ui: &mut Ui, app: &mut MailApp, h: f32) {
 /// "Report a Problem", beside Copy Diagnostics: the same command as Help › Report a Problem,
 /// which opens its window ([`crate::report_problem`]).
 fn report_pill(ui: &mut Ui, app: &mut MailApp, h: f32) {
-    let tip = tl!("Tell MailCraft's makers what went wrong, on GitHub or by email. You check the report and send it yourself.");
+    let tip = tl!("Tell MailSolutions's makers what went wrong, on GitHub or by email. You check the report and send it yourself.");
     pill(ui, app, h, "report", tl!("Report a Problem"), tip, "ui.reportProblem");
 }
 
@@ -343,7 +343,7 @@ pub fn title_bar(app: &mut MailApp, ui: &mut Ui) {
             let mut right_start = full.max.x;
             ui.horizontal_centered(|ui| {
                 ui.spacing_mut().item_spacing = vec2(2.0, 0.0);
-                // MailCraft's mark, then the Quick Access Toolbar: Send/Receive, Undo, Redo.
+                // MailSolutions's mark, then the Quick Access Toolbar: Send/Receive, Undo, Redo.
                 let (mark, _) = ui.allocate_exact_size(vec2(22.0, 22.0), Sense::hover());
                 if let Some(icon) = title_icon(ui.ctx()) {
                     ui.painter().image(icon.id(), mark, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
@@ -457,13 +457,13 @@ pub fn status_bar(app: &mut MailApp, ui: &mut Ui) {
                 let st = |ui: &mut Ui, s: &str, color: egui::Color32| st_most(ui, s, color, f32::INFINITY);
                 match app.session.view.module {
                     Module::Mail => {
-                        let shown = mailcraft_engine::list::listed(&app.session.rows());
+                        let shown = mailsolutions_engine::list::listed(&app.session.rows());
                         let folder = app.session.view.folder;
                         st(ui, &tln!(shown, "{n} item", "{n} items"), t.text_dim);
                         // (Counted once per change, not at every frame: `Session::folder_counts`.)
                         // Of the Gmail category in view, when one is (#911).
                         let counts = app.session.folder_counts();
-                        let unread = match mailcraft_engine::gmail::in_view(&app.session) {
+                        let unread = match mailsolutions_engine::gmail::in_view(&app.session) {
                             Some(category) => counts.gmail(folder, category).unread,
                             None => counts.unread(folder),
                         };
@@ -480,8 +480,8 @@ pub fn status_bar(app: &mut MailApp, ui: &mut Ui) {
                         }
                     }
                     Module::Calendar => {
-                        let (from, to) = mailcraft_engine::cmd::view::calendar_range(&app.session);
-                        let count = mailcraft_engine::cmd::calendar::occurrences(&app.session, from, to).len();
+                        let (from, to) = mailsolutions_engine::cmd::view::calendar_range(&app.session);
+                        let count = mailsolutions_engine::cmd::calendar::occurrences(&app.session, from, to).len();
                         st(ui, &tln!(count, "{n} event in view", "{n} events in view"), t.text_dim);
                     }
                     Module::People => {
@@ -489,7 +489,7 @@ pub fn status_bar(app: &mut MailApp, ui: &mut Ui) {
                         st(ui, &tln!(shown, "{n} contact", "{n} contacts"), t.text_dim);
                     }
                     Module::Tasks => {
-                        let shown = mailcraft_engine::cmd::tasks::shown_account(&app.session);
+                        let shown = mailsolutions_engine::cmd::tasks::shown_account(&app.session);
                         let open = app.session.mailbox.tasks.values().filter(|x| !x.is_complete() && shown.shows(&x.origin)).count();
                         st(ui, &tln!(open, "{n} open task", "{n} open tasks"), t.text_dim);
                     }
@@ -607,7 +607,7 @@ pub fn status_bar(app: &mut MailApp, ui: &mut Ui) {
                                 let _ = app.run("ui.dialog", json!({"name": "syncProgress"}));
                             }
                         }
-                    } else if app.session.mailbox.accounts.iter().all(|a| a.kind == mailcraft_model::AccountKind::Local) {
+                    } else if app.session.mailbox.accounts.iter().all(|a| a.kind == mailsolutions_model::AccountKind::Local) {
                         st(ui, tl!("This mailbox is on this device only"), t.text_dim)
                             .on_hover_text(tl!("Add a mail server account in File › Add Account to send and receive."));
                     }
@@ -672,7 +672,7 @@ fn progress_bar(ui: &mut Ui, t: &Tokens, label: &str, fraction: f32, key: &str) 
 /// far it got goes when it is done.
 fn indexing_bar(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     let key = "status_index_bar";
-    let mailcraft_engine::WordIndex::Building { done, total } = app.session.word_index() else {
+    let mailsolutions_engine::WordIndex::Building { done, total } = app.session.word_index() else {
         ui.ctx().data_mut(|d| d.remove::<f32>(egui::Id::unique(key)));
         return;
     };
@@ -715,12 +715,12 @@ pub fn pane_title(ui: &mut Ui, title: &str, detail: &str) {
     }
 }
 
-/// The app icon itself, the same picture the system shows for MailCraft, for the title bar: made
+/// The app icon itself, the same picture the system shows for MailSolutions, for the title bar: made
 /// once and kept in the context. `None` when it can't be read (the title bar then shows no mark).
 fn title_icon(ctx: &egui::Context) -> Option<egui::TextureHandle> {
     /// The 64 px icon every build ships (`assets/app-icon`, attributed in `ATTRIBUTION.md`).
-    const PNG: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/64x64/apps/io.github.billsecond.mailcraft.png");
-    let id = egui::Id::unique("mailcraft-title-icon");
+    const PNG: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/64x64/apps/io.github.billsecond.mailsolutions.png");
+    let id = egui::Id::unique("mailsolutions-title-icon");
     if let Some(texture) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(id)) {
         return Some(texture);
     }
@@ -728,7 +728,7 @@ fn title_icon(ctx: &egui::Context) -> Option<egui::TextureHandle> {
     let size = [usize::try_from(rgba.width()).ok()?, usize::try_from(rgba.height()).ok()?];
     // Drawn at 22 points: mipmaps keep it smooth at 100 % as well as on a sharper screen.
     let options = egui::TextureOptions { mipmap_mode: Some(egui::TextureFilter::Linear), ..egui::TextureOptions::LINEAR };
-    let texture = ctx.load_texture("mailcraft-title-icon", egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()), options);
+    let texture = ctx.load_texture("mailsolutions-title-icon", egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()), options);
     ctx.data_mut(|d| d.insert_temp(id, texture.clone()));
     Some(texture)
 }

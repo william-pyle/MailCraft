@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Send later and Undo Send (#950). Invented people and servers.
 
-use mailcraft_model::{FolderKind, Id, Mailbox};
+use mailsolutions_model::{FolderKind, Id, Mailbox};
 use serde_json::json;
 
 use super::*;
@@ -156,7 +156,7 @@ fn a_delayed_message_survives_a_restart_and_goes_late_at_the_next_run() {
     let mut back = Session::at(opened.mailbox, T0 + 30, 0);
     assert_eq!(back.mailbox.message(id).unwrap().send_at, Some(T0 + 600));
     assert!(to_send(&back, a).is_empty(), "still waiting after the restart");
-    // MailCraft wasn't running at the time: the next run takes it, and the status bar says late.
+    // MailSolutions wasn't running at the time: the next run takes it, and the status bar says late.
     assert_eq!(back.send_later_note().unwrap(), SendLaterNote { next: Some(T0 + 600), waiting: 1, late: 0, late_account: None });
     at(&mut back, T0 + 600 + 3 * 3600);
     assert_eq!(to_send(&back, a), vec![id]);
@@ -434,7 +434,7 @@ fn apply_sync_sends_nothing_that_waits() {
     // A run that brings nothing back leaves a delayed message where it is.
     let (mut s, a) = imap();
     let id = send_after(&mut s, a, "Stays", 600);
-    let result = mailcraft_model::sync::SyncResult { account: a, ..Default::default() };
+    let result = mailsolutions_model::sync::SyncResult { account: a, ..Default::default() };
     apply_sync(&mut s, result).unwrap();
     assert_eq!(s.mailbox.message(id).unwrap().send_at, Some(T0 + 600));
 }
@@ -443,7 +443,7 @@ fn apply_sync_sends_nothing_that_waits() {
 /// requests until its time: Microsoft Graph, an Exchange server, JMAP (and IMAP above).
 #[test]
 fn a_delayed_message_is_in_no_kind_of_runs_request_before_its_time() {
-    use mailcraft_model::{Account, AccountKind, JmapServer};
+    use mailsolutions_model::{Account, AccountKind, JmapServer};
     let mut s = Session::at(Mailbox::with_local_account("", ""), T0, 0);
     let microsoft = s.run("account.add", &json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     let exchange = s

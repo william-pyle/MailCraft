@@ -7,7 +7,7 @@
 //! whoever, and a sender can write any of them. So only the topmost one is read, and only when
 //! the server of the account the message is in wrote it ([`from_own_server`]); on Exchange
 //! Online, which writes more of its own above it, the one with its id above the hop at which it
-//! took the mail in from the internet ([`exchange_online_results`]). MailCraft makes
+//! took the mail in from the internet ([`exchange_online_results`]). MailSolutions makes
 //! no checks of its own (no DNS, no DKIM, no SPF): a server that says nothing says nothing.
 //!
 //! Two answers come of it:
@@ -31,14 +31,14 @@ const MAX_HEADER_CHARS: usize = 4_000;
 /// The header Exchange writes on every message it delivers, saying whether the sender signed in
 /// inside the organisation (`Internal`) or came from outside (`Anonymous`).
 pub const AUTH_AS: &str = "X-MS-Exchange-Organization-AuthAs";
-/// Most [`AUTH_AS`] headers a message keeps (`mailcraft_mime` keeps them apart from its cap on
+/// Most [`AUTH_AS`] headers a message keeps (`mailsolutions_mime` keeps them apart from its cap on
 /// headers, so that a message padded with others can't push Exchange's own out): one with this
 /// many may have had more.
 pub const MAX_AUTH_AS: usize = 16;
 /// Forget `m`'s [`AUTH_AS`] stamps and its `Authentication-Results` (and
-/// `ARC-Authentication-Results`) as it goes onto another account's server by MailCraft's own
+/// `ARC-Authentication-Results`) as it goes onto another account's server by MailSolutions's own
 /// hand: they are the word of the server it came from, or a sender's own where no server removed
-/// them, and no receiving server stamps a copy MailCraft puts there itself, so the copy would be
+/// them, and no receiving server stamps a copy MailSolutions puts there itself, so the copy would be
 /// vouched for by them ([`internal`], [`vouched`]).
 pub fn forget_stamps(m: &mut Message) {
     m.remove_header(AUTH_AS);
@@ -53,7 +53,7 @@ const EXCHANGE_ONLINE_ID: &str = "mx.microsoft.com";
 /// The names, under this, of the hosts at which Exchange Online takes mail in from the internet.
 const EXCHANGE_ONLINE_EDGE: &str = ".mail.protection.outlook.com";
 /// The header Exchange writes on every message it delivers, saying whether it came in from
-/// outside (`Incoming`) or was sent inside the organisation (`Originating`). `mailcraft_mime`
+/// outside (`Incoming`) or was sent inside the organisation (`Originating`). `mailsolutions_mime`
 /// keeps it apart from its cap on headers, as it does [`AUTH_AS`], at most [`MAX_AUTH_AS`] of them.
 pub const DIRECTIONALITY: &str = "X-MS-Exchange-Organization-MessageDirectionality";
 

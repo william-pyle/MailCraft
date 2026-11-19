@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft HTML for mail.
+//! MailSolutions HTML for mail.
 //!
 //! Mail HTML is hostile: it comes from strangers, it is often broken, and it may try to run
 //! scripts or load trackers. This crate never renders it. [`parse`] turns it into display
@@ -547,10 +547,10 @@ pub fn images(blocks: &[Block]) -> Vec<&Block> {
 /// break inside a URL is an old trick to hide the scheme) or a character that changes how text
 /// looks without being seen (a right-to-left override or isolate, a zero-width mark, a byte-order
 /// mark: what is shown of the address would not be where it goes), and any address longer than
-/// [`mailcraft_link::MAX_LINK`] bytes, whatever its scheme.
+/// [`mailsolutions_link::MAX_LINK`] bytes, whatever its scheme.
 pub fn is_safe_url(url: &str) -> bool {
     let url = url.trim_matches(' ');
-    if url.len() > mailcraft_link::MAX_LINK || url.chars().any(|c| c.is_control() || is_format(c)) {
+    if url.len() > mailsolutions_link::MAX_LINK || url.chars().any(|c| c.is_control() || is_format(c)) {
         return false;
     }
     let Some((scheme, rest)) = url.split_once(':') else { return false };
@@ -560,13 +560,13 @@ pub fn is_safe_url(url: &str) -> bool {
     // A web address the parser rejects, or that has no host, would be taken by the system's
     // opener for a relative file path (and become a `file:` address): it is no link.
     if scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https") {
-        return mailcraft_link::WebLink::parse(url).is_some();
+        return mailsolutions_link::WebLink::parse(url).is_some();
     }
     true
 }
 
-/// Unicode's format characters (general category Cf): the one list, in `mailcraft-names` (#454).
-pub use mailcraft_names::is_format;
+/// Unicode's format characters (general category Cf): the one list, in `mailsolutions-names` (#454).
+pub use mailsolutions_names::is_format;
 
 /// Whether a picture's address points into the message itself: an attached picture (`cid:`), or
 /// one written into it (`data:`). Any other picture would have to be fetched.

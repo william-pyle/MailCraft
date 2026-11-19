@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Digital signatures checked where a message is read (#30): from the bytes a Digitally signed
-//! message came as ([`mailcraft_model::Message::original`]), against the certificates the host
+//! message came as ([`mailsolutions_model::Message::original`]), against the certificates the host
 //! trusts ([`Session::set_trust_anchors`]: the system's certification authorities on the
 //! desktop, none in the browser, whose signers are then "not verified"). The result is worked
 //! out when it is first asked for and kept in memory, never written, and worked out again when
@@ -9,14 +9,14 @@
 //! authorities handed in). Nothing is sent anywhere for it, and revocation isn't checked (#30 R7).
 //!
 //! What an opaque signed message holds is its text and files already, read with it
-//! (`mailcraft_mime_model::parse`); the file it came as is the Digital signature, told here by its bytes
+//! (`mailsolutions_mime_model::parse`); the file it came as is the Digital signature, told here by its bytes
 //! ([`Session::digital_signature_part`]).
 //!
 //! A signer's certificate that rests on a trusted authority, is valid now and is for the sender
-//! is kept for the sender's address ([`mailcraft_model::Mailbox::public_keys`], #30 R9), at the
+//! is kept for the sender's address ([`mailsolutions_model::Mailbox::public_keys`], #30 R9), at the
 //! next command: what the check learns is no step of the history (and an undo leaves it).
 //!
-//! OpenPGP (PGP/MIME and inline, `mailcraft-openpgp`) is checked against the keys kept for the
+//! OpenPGP (PGP/MIME and inline, `mailsolutions-openpgp`) is checked against the keys kept for the
 //! sender's address, the OpenPGP keys on the cards of the contacts with that address, and the
 //! keys the message carries (attached, or in its `Autocrypt:` header). There is no web of trust
 //! (#30 R6): a key is verified for an address only when the owner marked it so in the window
@@ -29,10 +29,10 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use mailcraft_model::digital_signature::{Coverage, DigitalSignature, MAX_SIGNER_ADDRESSES, SignatureFormat, Signer, Verdict, Why, signer_text};
-use mailcraft_model::public_keys::{MAX_KEY_BYTES, PublicKey};
-use mailcraft_model::{Id, KeyKind, Message};
-use mailcraft_openpgp as pgp;
+use mailsolutions_model::digital_signature::{Coverage, DigitalSignature, MAX_SIGNER_ADDRESSES, SignatureFormat, Signer, Verdict, Why, signer_text};
+use mailsolutions_model::public_keys::{MAX_KEY_BYTES, PublicKey};
+use mailsolutions_model::{Id, KeyKind, Message};
+use mailsolutions_openpgp as pgp;
 
 use crate::{Part, Session};
 
@@ -51,7 +51,7 @@ const READ_AGAIN_BYTES: u64 = 64 * 1024 * 1024;
 #[derive(Default)]
 pub(crate) struct SignatureChecks {
     /// The certificates the host trusts.
-    anchors: Arc<mailcraft_smime::Anchors>,
+    anchors: Arc<mailsolutions_smime::Anchors>,
     /// What was found of each message, with what it was worked out from ([`Basis`]).
     kept: HashMap<Id, (Basis, Found)>,
     /// Whether the host has handed in its authorities yet (`None`: not yet).
@@ -192,7 +192,7 @@ const MAX_CONTACT_KEYS: usize = 16;
 pub const MAX_GNUPG_VALID: usize = 20_000;
 
 /// The keys (with bytes, of a format checked here) on the cards of the contacts with `address`.
-fn contact_keys<'a>(session: &'a Session, address: &'a str) -> impl Iterator<Item = &'a mailcraft_model::ContactKey> + 'a {
+fn contact_keys<'a>(session: &'a Session, address: &'a str) -> impl Iterator<Item = &'a mailsolutions_model::ContactKey> + 'a {
     let wanted = !address.is_empty();
     session
         .mailbox
@@ -378,7 +378,7 @@ impl Session {
         I: IntoIterator<Item = B>,
         B: AsRef<[u8]>,
     {
-        self.signatures.anchors = Arc::new(mailcraft_smime::Anchors::new(ders));
+        self.signatures.anchors = Arc::new(mailsolutions_smime::Anchors::new(ders));
         self.signatures.anchors_read = Some(!self.signatures.anchors.is_empty());
         self.signatures.kept.clear();
     }
@@ -501,15 +501,15 @@ impl Session {
                 Found::default()
             };
         };
-        match mailcraft_mime::signed_parts(&bytes) {
-            Some(parts) if parts.kind != mailcraft_mime::SignedKind::PgpDetached => self.check_smime(m, parts),
+        match mailsolutions_mime::signed_parts(&bytes) {
+            Some(parts) if parts.kind != mailsolutions_mime::SignedKind::PgpDetached => self.check_smime(m, parts),
             parts => self.check_openpgp(m, &bytes, parts.as_ref()),
         }
     }
 
     /// The OpenPGP Digital signature of `m`, whose bytes are `bytes` (PGP/MIME when `parts` says
     /// so, else perhaps inline).
-    fn check_openpgp(&mut self, m: &Message, bytes: &[u8], parts: Option<&mailcraft_mime::SignedParts>) -> Found {
+    fn check_openpgp(&mut self, m: &Message, bytes: &[u8], parts: Option<&mailsolutions_mime::SignedParts>) -> Found {
         let address = m.from.email.trim().to_lowercase();
         let from = one_from_field(bytes);
         let mut ring = pgp::KeyRing::new();
@@ -582,11 +582,13 @@ impl Session {
     }
 
     /// The S/MIME Digital signature of `m`, of the halves `parts`.
-    fn check_smime(&mut self, m: &Message, parts: mailcraft_mime::SignedParts) -> Found {
+    fn check_smime(&mut self, m: &Message, parts: mailsolutions_mime::SignedParts) -> Found {
         let signed = match parts.kind {
-            mailcraft_mime::SignedKind::SmimeDetached => mailcraft_smime::Signed::Detached { content: &parts.content, signature: &parts.signature },
-            mailcraft_mime::SignedKind::SmimeOpaque => mailcraft_smime::Signed::Opaque(&parts.signature),
-            mailcraft_mime::SignedKind::PgpDetached => return Found::default(),
+            mailsolutions_mime::SignedKind::SmimeDetached => {
+                mailsolutions_smime::Signed::Detached { content: &parts.content, signature: &parts.signature }
+            }
+            mailsolutions_mime::SignedKind::SmimeOpaque => mailsolutions_smime::Signed::Opaque(&parts.signature),
+            mailsolutions_mime::SignedKind::PgpDetached => return Found::default(),
         };
         let address = m.from.email.trim().to_lowercase();
         let mut known: Vec<Arc<Vec<u8>>> =
@@ -598,8 +600,8 @@ impl Session {
         // (A message from several people is nobody's alone: its signer's address never matches.)
         let from = if parts.one_from { m.from.email.trim() } else { "" };
         let coverage = if parts.whole { Coverage::Whole } else { Coverage::Part };
-        let context = mailcraft_smime::Context { anchors: &self.signatures.anchors, from, now, known: &known, coverage };
-        let Some(mut checked) = mailcraft_smime::check(signed, &context) else { return Found::default() };
+        let context = mailsolutions_smime::Context { anchors: &self.signatures.anchors, from, now, known: &known, coverage };
+        let Some(mut checked) = mailsolutions_smime::check(signed, &context) else { return Found::default() };
         // No authority to trust here at all: said as that (none could be read, or they haven't
         // been yet), not as an issuer this computer doesn't trust.
         if checked.signature.why == Some(Why::UnknownIssuer) && self.signatures.anchors.is_empty() {
@@ -657,18 +659,18 @@ impl Session {
                 self.signatures.to_read_again.pop();
                 continue;
             };
-            let size = m.original.as_ref().map_or(0, mailcraft_model::Original::size);
+            let size = m.original.as_ref().map_or(0, mailsolutions_model::Original::size);
             if spent > 0 && spent.saturating_add(size) > budget {
                 break;
             }
             spent = spent.saturating_add(size);
             self.signatures.to_read_again.pop();
             let Ok(bytes) = self.content(id, Part::Original) else { continue };
-            if !mailcraft_mime::signed_parts(&bytes).is_some_and(|p| p.kind == mailcraft_mime::SignedKind::SmimeOpaque) {
+            if !mailsolutions_mime::signed_parts(&bytes).is_some_and(|p| p.kind == mailsolutions_mime::SignedKind::SmimeOpaque) {
                 continue;
             }
-            let read = mailcraft_mime_model::parse(&bytes);
-            let files: Vec<mailcraft_model::Attachment> = read.attachments.into_iter().skip(1).collect();
+            let read = mailsolutions_mime_model::parse(&bytes);
+            let files: Vec<mailsolutions_model::Attachment> = read.attachments.into_iter().skip(1).collect();
             if read.body.text.trim().is_empty() && read.body.html.is_none() && files.is_empty() {
                 continue;
             }

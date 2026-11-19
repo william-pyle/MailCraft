@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Downloads merged into the sample mailbox. The server's side is written out by hand, as
-//! `mailcraft-net` brings it from Microsoft Graph.
+//! `mailsolutions-net` brings it from Microsoft Graph.
 
-use mailcraft_model::remote::{
+use mailsolutions_model::remote::{
     ContactsDownload, EventChange, EventChangeKind, EventFields, EventOp, EventOutcome, EventReminder, EventRepeat, EventResult, EventTime,
     EventWall, EventsDownload, EventsUpload, EventsUploaded, RemoteContact, RemoteEvent, RemoteEventKind,
 };
-use mailcraft_model::{Address, Attendee, Contact, Event, Freq, Id, Labeled, Origin, Recurrence, Response, ShowAs};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::{Address, Attendee, Contact, Event, Freq, Id, Labeled, Origin, Recurrence, Response, ShowAs};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use proptest::prelude::*;
 use serde_json::{Value, json};
 
@@ -723,9 +723,9 @@ fn the_mailboxs_own_calendar_goes_or_says_where_it_lives() {
     // A mailbox whose own calendar is empty: beside the server's it is gone, and there is one
     // "Calendar" where there would have been two.
     let now = at(2026, 10, 14, 16, 0);
-    let mut s = Session::at(mailcraft_model::Mailbox::with_local_account("Ada", "ada@example.org"), now, -240);
+    let mut s = Session::at(mailsolutions_model::Mailbox::with_local_account("Ada", "ada@example.org"), now, -240);
     let account = s.mailbox.accounts[0].id;
-    s.mailbox.account_mut(account).unwrap().kind = mailcraft_model::AccountKind::Imap;
+    s.mailbox.account_mut(account).unwrap().kind = mailsolutions_model::AccountKind::Imap;
     assert_eq!(s.mailbox.calendars.iter().map(|c| c.name.as_str()).collect::<Vec<_>>(), ["Calendar"]);
     let download =
         EventsDownload { email: "ada@example.org".into(), ..october(account, vec![remote("e-1", "Stand-up", at(2026, 10, 12, 13, 0), 30)]) };
@@ -1337,16 +1337,16 @@ fn hostile_answers_and_notes_change_nothing_they_should_not() {
     run(&mut s, "calendar.move", json!({"id": first, "start": "2026-10-16T09:00"}));
     let json = serde_json::to_string(&s.mailbox).unwrap();
     assert!(json.contains(r#""eventChanges":[{"account":"#), "{:.300}", json);
-    let read: mailcraft_model::Mailbox = serde_json::from_str(&json).unwrap();
+    let read: mailsolutions_model::Mailbox = serde_json::from_str(&json).unwrap();
     assert_eq!(read.event_changes, s.mailbox.event_changes);
     assert!(!serde_json::to_string(&snapshot_without_changes(&s)).unwrap().contains("eventChanges"));
-    let odd: mailcraft_model::Mailbox =
+    let odd: mailsolutions_model::Mailbox =
         serde_json::from_str(r#"{"eventChanges": [7, {"kind": "explode"}, {"account": 3, "kind": "delete", "remote": "x"}]}"#).unwrap();
     assert_eq!(odd.event_changes.len(), 1);
 }
 
 /// The mailbox as it is, with nothing waiting for a server.
-fn snapshot_without_changes(s: &Session) -> mailcraft_model::Mailbox {
+fn snapshot_without_changes(s: &Session) -> mailsolutions_model::Mailbox {
     let mut mailbox = s.mailbox.clone();
     mailbox.event_changes.clear();
     mailbox
@@ -1555,7 +1555,7 @@ fn forgetting_an_account_keeps_a_calendar_of_the_mailboxs_own_for_what_was_made_
     apply_events(&mut s, &theirs).unwrap();
     s.mailbox.calendars.retain(|c| !c.origin.is_local());
     s.mailbox.calendars.sort_by_key(|c| c.origin.account != other);
-    let theirs: Vec<mailcraft_model::Calendar> = s.mailbox.calendars.iter().filter(|c| c.origin.account == other).cloned().collect();
+    let theirs: Vec<mailsolutions_model::Calendar> = s.mailbox.calendars.iter().filter(|c| c.origin.account == other).cloned().collect();
     let server = s.mailbox.calendars.iter().find(|c| c.origin.account == account).map(|c| c.id).unwrap();
     let made = run(&mut s, "calendar.new", json!({"title": "Lunch", "start": "2026-10-16T12:00", "calendar": server}))["id"].as_u64().unwrap();
 
@@ -1753,7 +1753,7 @@ fn instance(of: &str, title: &str, start: Timestamp, minutes: i64) -> RemoteEven
 /// hour, from Monday the 5th of October. With it: its occurrences on `days` of October.
 fn standup(days: &[u8]) -> Vec<RemoteEvent> {
     let rule = Recurrence {
-        by_day: vec![mailcraft_time::Weekday::Mon, mailcraft_time::Weekday::Wed, mailcraft_time::Weekday::Fri],
+        by_day: vec![mailsolutions_time::Weekday::Mon, mailsolutions_time::Weekday::Wed, mailsolutions_time::Weekday::Fri],
         ..Recurrence::every(Freq::Weekly)
     };
     let mut events: Vec<RemoteEvent> = days.iter().map(|d| instance("s-1", "Stand-up", at(2026, 10, *d, 13, 0), 30)).collect();
@@ -1868,14 +1868,17 @@ fn a_series_made_elsewhere_keeps_its_days_of_the_week_here() {
     // Made in Tokyo for Tuesday mornings at nine (midnight UTC), which is Monday evening at
     // eight in a zone four hours behind UTC.
     let (mut s, account) = session();
-    let rule = Recurrence { by_day: vec![mailcraft_time::Weekday::Tue], until: Some(day(10, 27)), ..Recurrence::every(Freq::Weekly) };
+    let rule = Recurrence { by_day: vec![mailsolutions_time::Weekday::Tue], until: Some(day(10, 27)), ..Recurrence::every(Freq::Weekly) };
     let tokyo = RemoteEvent { series_day: Some(day(10, 6)), ..master("s-t", "Tokyo call", at(2026, 10, 6, 0, 0), 60, rule) };
     let mut events: Vec<RemoteEvent> = [6u8, 13, 20, 27].iter().map(|d| instance("s-t", "Tokyo call", at(2026, 10, *d, 0, 0), 60)).collect();
     events.push(tokyo);
     apply_events(&mut s, &october(account, events)).unwrap();
     let series = event_called(&s, account, "s-t");
     let here = series.recurrence.clone().unwrap();
-    assert_eq!((here.by_day.clone(), here.until, series.start), (vec![mailcraft_time::Weekday::Mon], Some(day(10, 26)), clock(2026, 10, 5, 20, 0)));
+    assert_eq!(
+        (here.by_day.clone(), here.until, series.start),
+        (vec![mailsolutions_time::Weekday::Mon], Some(day(10, 26)), clock(2026, 10, 5, 20, 0))
+    );
     assert_eq!((series.exceptions.len(), from_server(&s, account).len()), (0, 1));
     assert_eq!(shown(&s, "Tokyo call"), [(5, 20), (12, 20), (19, 20), (26, 20)]);
 }
@@ -1966,7 +1969,7 @@ fn one_day_of_a_series_or_all_of_it_is_changed_on_the_server() {
         json!({"id": series.id, "recurrence": {"freq": "weekly", "byDay": ["tue"], "count": 4}, "start": "2026-10-06T09:30"}),
     );
     let fields = ops(&s, account)[0].fields.clone();
-    let rule = Recurrence { by_day: vec![mailcraft_time::Weekday::Tue], count: Some(4), ..Recurrence::every(Freq::Weekly) };
+    let rule = Recurrence { by_day: vec![mailsolutions_time::Weekday::Tue], count: Some(4), ..Recurrence::every(Freq::Weekly) };
     assert_eq!(fields.repeat, Some(EventRepeat { rule: Some(rule), first: day(10, 6) }));
     assert!(fields.time.is_some() && fields.wall.is_some());
     push_done(&mut s, account);
@@ -2235,7 +2238,7 @@ fn a_mailbox_from_before_series_and_meetings_went_to_the_server_is_taken_as_it_i
     }
 
     // It loads, and is the mailbox it was.
-    let loaded: mailcraft_model::Mailbox = serde_json::from_str(&saved).unwrap();
+    let loaded: mailsolutions_model::Mailbox = serde_json::from_str(&saved).unwrap();
     assert!(loaded == s.mailbox);
     let mut s = Session::at(loaded, at(2026, 10, 14, 16, 0), -240);
     assert!(s.mailbox.clone().repair().is_empty());
@@ -2293,15 +2296,15 @@ fn mail_with_calendar(s: &mut Session, account: Id, method: &str, uid: &str) -> 
          ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:ada@example.org\r\n\
          ATTENDEE;PARTSTAT=ACCEPTED:mailto:cy@example.org\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
     );
-    let inbox = s.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Inbox).unwrap();
-    let message = mailcraft_model::Message {
+    let inbox = s.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Inbox).unwrap();
+    let message = mailsolutions_model::Message {
         account,
         folder: inbox,
         message_id: format!("{uid}.{method}@example.org"),
         from: Address::new("Bo Marsh", "bo@example.org"),
         to: vec![Address::new("Ada", "ada@example.org")],
         subject: "Design review".into(),
-        attachments: vec![mailcraft_model::Attachment::new("invite.ics", "text/calendar", ics.into_bytes())],
+        attachments: vec![mailsolutions_model::Attachment::new("invite.ics", "text/calendar", ics.into_bytes())],
         ..Default::default()
     };
     s.mailbox.add_message(message).unwrap()
@@ -2309,8 +2312,8 @@ fn mail_with_calendar(s: &mut Session, account: Id, method: &str, uid: &str) -> 
 
 /// What waits in the account's Outbox: who each message is to, its subject, and its calendar part.
 fn outbox(s: &Session, account: Id) -> Vec<(String, String, String)> {
-    let folder = s.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Outbox).unwrap();
-    let part = |m: &mailcraft_model::Message| m.attachments.first().map(|a| String::from_utf8_lossy(&a.data).into_owned()).unwrap_or_default();
+    let folder = s.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Outbox).unwrap();
+    let part = |m: &mailsolutions_model::Message| m.attachments.first().map(|a| String::from_utf8_lossy(&a.data).into_owned()).unwrap_or_default();
     s.mailbox.messages_in(folder).map(|m| (m.to.iter().map(|a| a.email.clone()).collect::<Vec<_>>().join(","), m.subject.clone(), part(m))).collect()
 }
 
@@ -2394,7 +2397,7 @@ fn an_invitation_in_the_mail_is_read_and_answered_on_this_computer() {
     assert_eq!(refused(&mut s, "calendar.invitation", json!({"message": plain})), "This message carries no invitation.");
     let noise = mail_with_calendar(&mut s, account, "REQUEST", "x");
     s.mailbox.message_mut(noise).unwrap().attachments[0] =
-        mailcraft_model::Attachment::new("invite.ics", "text/calendar", vec![0xFF, 0x00, b'B', b'E', b'G']);
+        mailsolutions_model::Attachment::new("invite.ics", "text/calendar", vec![0xFF, 0x00, b'B', b'E', b'G']);
     assert_eq!(
         refused(&mut s, "calendar.respond", json!({"message": noise, "response": "accept", "send": true})),
         "This message carries no invitation."
@@ -2427,8 +2430,8 @@ fn an_invitation_in_the_mail_is_answered_through_the_servers_copy() {
 
 #[test]
 fn every_calendar_of_the_account_is_a_calendar_here() {
-    use mailcraft_model::Rgb;
-    use mailcraft_model::remote::{CalendarsDownload, CategoriesDownload, RemoteCalendar};
+    use mailsolutions_model::Rgb;
+    use mailsolutions_model::remote::{CalendarsDownload, CategoriesDownload, RemoteCalendar};
     let (mut s, account, first, _, main) = served();
     let list = |calendars: Vec<RemoteCalendar>, complete: bool| CalendarsDownload {
         account,
@@ -2441,7 +2444,7 @@ fn every_calendar_of_the_account_is_a_calendar_here() {
     let all = vec![
         RemoteCalendar { main: true, color: Some(Rgb(1, 2, 3)), ..entry("cal-main", "Calendar", "My Calendars") },
         RemoteCalendar { color: Some(Rgb(4, 5, 6)), ..entry("cal-team", "Team", "My Calendars") },
-        RemoteCalendar { rights: mailcraft_model::Rights::Read, ..entry("cal-holidays", "Holidays\r\nin Wonderland", "Other Calendars") },
+        RemoteCalendar { rights: mailsolutions_model::Rights::Read, ..entry("cal-holidays", "Holidays\r\nin Wonderland", "Other Calendars") },
         // Said twice, or with no name the server could call it by: passed over.
         entry("cal-team", "Team again", ""),
         entry("two words", "Odd", ""),
@@ -2484,7 +2487,7 @@ fn every_calendar_of_the_account_is_a_calendar_here() {
     assert_eq!(shown(&s), ticks[..3]);
     run(&mut s, "calendar.showCalendar", json!({"id": main, "value": true}));
     // An account with one calendar has that one, ticked.
-    let mut alone = Session::at(mailcraft_model::Mailbox::with_local_account("Bo", "bo@example.org"), at(2026, 10, 14, 16, 0), 0);
+    let mut alone = Session::at(mailsolutions_model::Mailbox::with_local_account("Bo", "bo@example.org"), at(2026, 10, 14, 16, 0), 0);
     let only = alone.mailbox.accounts.first().map(|a| a.id).unwrap();
     let one = CalendarsDownload {
         account: only,
@@ -2563,9 +2566,9 @@ fn every_calendar_of_the_account_is_a_calendar_here() {
         account,
         email: "ada@example.org".into(),
         categories: vec![
-            mailcraft_model::Category { name: "RED Category".into(), color: Rgb(9, 9, 9) },
-            mailcraft_model::Category { name: "Project X\r\n".into(), color: Rgb(7, 7, 7) },
-            mailcraft_model::Category { name: " ".into(), color: Rgb(1, 1, 1) },
+            mailsolutions_model::Category { name: "RED Category".into(), color: Rgb(9, 9, 9) },
+            mailsolutions_model::Category { name: "Project X\r\n".into(), color: Rgb(7, 7, 7) },
+            mailsolutions_model::Category { name: " ".into(), color: Rgb(1, 1, 1) },
         ],
     };
     assert_eq!(super::apply_categories(&mut s, &categories).unwrap()["changed"], 2);
@@ -2615,7 +2618,7 @@ fn categories_travel_with_an_event_both_ways() {
 
 #[test]
 fn free_and_busy_times_are_asked_for_and_merged() {
-    use mailcraft_model::remote::BusyTime;
+    use mailsolutions_model::remote::BusyTime;
     let (mut s, _) = session();
     let asked = json!({"people": "Bo <bo@example.org>; cy@example.org; BO@example.org", "from": "2026-10-15T08:00", "to": "2026-10-15T18:00"});
     // What a host is to ask: who, and the stretch as instants (eight in the morning here is noon UTC).
@@ -2826,7 +2829,7 @@ fn what_was_made_or_deleted_is_looked_for_on_the_server_too() {
     push_done(&mut s, account);
     let json = serde_json::to_string(&s.mailbox).unwrap();
     assert!(json.contains(r#""eventChecks":[{"account":"#), "{:.200}", json);
-    assert_eq!(serde_json::from_str::<mailcraft_model::Mailbox>(&json).unwrap().event_checks, s.mailbox.event_checks);
+    assert_eq!(serde_json::from_str::<mailsolutions_model::Mailbox>(&json).unwrap().event_checks, s.mailbox.event_checks);
     s.mailbox.event_checks.clear();
     assert!(!serde_json::to_string(&s.mailbox).unwrap().contains("eventChecks"));
 }
@@ -2886,7 +2889,7 @@ fn a_change_that_cannot_be_sent_is_given_up_with_a_word_and_put_back() {
 
 #[test]
 fn an_event_of_another_calendar_is_sent_through_that_calendar() {
-    use mailcraft_model::remote::{CalendarsDownload, RemoteCalendar};
+    use mailsolutions_model::remote::{CalendarsDownload, RemoteCalendar};
     let (mut s, account, first, _, _) = served();
     let entry = |id: &str, name: &str, main: bool| RemoteCalendar { id: id.into(), name: name.into(), main, ..Default::default() };
     let list = CalendarsDownload {

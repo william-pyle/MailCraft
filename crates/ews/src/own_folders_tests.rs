@@ -7,7 +7,7 @@
 
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::sync::{ChangeOutcome, EwsMailRequest, EwsMailResult, FolderChange};
+use mailsolutions_model::sync::{ChangeOutcome, EwsMailRequest, EwsMailResult, FolderChange};
 
 use crate::standin::{AUTHORIZATION, StandIn, block_on};
 use crate::*;
@@ -210,7 +210,7 @@ fn a_deletion_the_server_refuses_has_the_folder_list_read_afresh() {
     // (The Inbox is no folder of [`OWN`]: the deletion is asked, and the server refuses it. What
     // it holds, the owner's folder, was shown, AU3-H7.)
     let inbox = standin.state().folder_id("inbox").unwrap();
-    let shown = mailcraft_model::sync::Shown::of("Inbox", [inbox.as_str(), mine.as_str()], []);
+    let shown = mailsolutions_model::sync::Shown::of("Inbox", [inbox.as_str(), mine.as_str()], []);
     let result = run(
         &standin,
         &EwsMailRequest { hierarchy: first.hierarchy.clone(), changes: vec![FolderChange::Delete { id: inbox.clone(), shown }], ..request() },

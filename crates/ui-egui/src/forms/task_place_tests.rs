@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The Account list in the task window (#632).
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Category, Id, Rgb};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Category, Id, Rgb};
 use serde_json::{Value, json};
 
 use super::task::TaskForm;
@@ -11,7 +11,7 @@ use super::task::TaskForm;
 const NOW: i64 = 1_791_993_600;
 
 fn session() -> (Session, Id, Id) {
-    let mut s = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0);
+    let mut s = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0);
     let add = |s: &mut Session, email: &str| {
         s.run("account.add", &json!({"email": email, "incoming": {"host": "outlook.example.org"}, "auth": "oauth2"})).unwrap()["id"].as_u64().unwrap()
     };

@@ -1,30 +1,30 @@
 [package]
-name = "mailcraft-ui-egui"
+name = "mailsolutions-ui-egui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "MailCraft egui front end (Outlook-style ribbon UI); swappable: nothing below depends on it"
+description = "MailSolutions egui front end (Outlook-style ribbon UI); swappable: nothing below depends on it"
 
 [lints]
 workspace = true
 
 [dependencies]
-mailcraft-time = { workspace = true }
-mailcraft-i18n = { workspace = true }
-mailcraft-model = { workspace = true }
-mailcraft-html = { workspace = true }
-mailcraft-engine = { workspace = true }
-mailcraft-host = { workspace = true }
+mailsolutions-time = { workspace = true }
+mailsolutions-i18n = { workspace = true }
+mailsolutions-model = { workspace = true }
+mailsolutions-html = { workspace = true }
+mailsolutions-engine = { workspace = true }
+mailsolutions-host = { workspace = true }
 # The emoji faces, behind a feature of their own since egui 0.37 (#832).
 egui = { workspace = true, features = ["monochrome_emoji_fonts"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 # The host a link really goes to, for its tip.
-mailcraft-link = { workspace = true }
+mailsolutions-link = { workspace = true }
 # A subject shown in a title: one line, nothing that hides or turns text (View Source).
-mailcraft-names = { workspace = true }
+mailsolutions-names = { workspace = true }
 # Window screenshots for the control channel are saved as PNG.
 image = { workspace = true }
 # A font is opened as egui will open it before egui is given it (`theme::is_face`): a system's
@@ -52,9 +52,9 @@ tempfile = { workspace = true }
 toml = "1"
 egui_kittest = { workspace = true, features = ["wgpu", "snapshot"] }
 # Messages as they come, for the reading pane's tests.
-mailcraft-mime-model = { workspace = true }
+mailsolutions-mime-model = { workspace = true }
 # Errors as the host says them (#872): a real check and Send/Receive against a server on this
 # machine, for the tests that show them in the interface's language.
-mailcraft-net = { workspace = true }
+mailsolutions-net = { workspace = true }
 # Synthetic .pst files for Import a .pst File's tests (the writer is a dev-only feature).
-mailcraft-pst = { workspace = true, features = ["test-writer"] }
+mailsolutions-pst = { workspace = true, features = ["test-writer"] }

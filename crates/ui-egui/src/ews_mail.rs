@@ -34,9 +34,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::TryRecvError;
 
-use mailcraft_engine::cmd::ews_mail::apply_ews_mail;
-use mailcraft_model::Id;
-use mailcraft_model::sync::{EwsFetchRequest, EwsMailRequest, SyncPhase};
+use mailsolutions_engine::cmd::ews_mail::apply_ews_mail;
+use mailsolutions_model::Id;
+use mailsolutions_model::sync::{EwsFetchRequest, EwsMailRequest, SyncPhase};
 use serde_json::{Value, json};
 
 use crate::{MailApp, MailRun, dialogs};

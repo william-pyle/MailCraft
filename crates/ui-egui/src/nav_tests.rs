@@ -3,7 +3,7 @@
 //! The folder pane: what it lists, its counts and its chevrons.
 
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 use super::*;
 use crate::Services;
@@ -25,10 +25,10 @@ fn folders_are_named_in_the_interface_language_by_their_kind() {
     assert_eq!(named_by(&folder("Sent Items", FolderKind::Sent, "")), Some(Named::Kind(FolderKind::Sent)));
     assert_eq!(named_by(&folder("Old mail", FolderKind::Archive, "")), None);
     assert_eq!(named_by(&folder("Sent Mail", FolderKind::Sent, "[Gmail]/Sent Mail")), Some(Named::Kind(FolderKind::Sent)));
-    assert_eq!(named_by(&folder(mailcraft_model::IMPORTED, FolderKind::Custom, "")), Some(Named::Imported));
+    assert_eq!(named_by(&folder(mailsolutions_model::IMPORTED, FolderKind::Custom, "")), Some(Named::Imported));
     assert_eq!(named_by(&folder("Imported", FolderKind::Custom, "Imported")), None);
     assert_eq!(named_by(&folder("Projects", FolderKind::Custom, "")), None);
-    assert_eq!(mailcraft_model::IMPORTED, "Imported", "the text `folder_name` translates");
+    assert_eq!(mailsolutions_model::IMPORTED, "Imported", "the text `folder_name` translates");
     // (The tests' window is in English: every folder by its own name.)
     assert_eq!(folder_name(&folder("Sent Mail", FolderKind::Sent, "[Gmail]/Sent Mail")), "Sent Mail");
     // A tangled tree still ends.
@@ -104,7 +104,7 @@ fn folders_are_listed_leading_four_then_by_name() {
     assert_eq!(listed(&[inbox]).iter().filter(|(_, depth, _)| *depth > 0).count(), 0);
 
     // Another account's folders are its own, in the same order.
-    let other = mb.add_account(mailcraft_model::Account { name: "studio".into(), ..Default::default() });
+    let other = mb.add_account(mailsolutions_model::Account { name: "studio".into(), ..Default::default() });
     mb.add_folder(other, None, "aardvark").unwrap();
     assert_eq!(names(&ordered(&mb, other, None)).iter().take(5).collect::<Vec<_>>(), ["Inbox", "Drafts", "Sent Items", "Deleted Items", "aardvark"]);
     assert_eq!(ordered(&mb, account, None).len(), 13);
@@ -155,7 +155,7 @@ fn counts_are_unread_or_a_total_in_brackets() {
     assert_eq!(Count::of(FolderKind::Deleted, 5, 5), Count::Nothing);
 
     // The counts behind them, against the mailbox's own counting.
-    let mut s = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0);
+    let mut s = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0);
     let counts = s.folder_counts();
     let mb = &s.mailbox;
     assert!(mb.folders.iter().any(|f| mb.unread_count(f.id) > 0));
@@ -166,7 +166,7 @@ fn counts_are_unread_or_a_total_in_brackets() {
 }
 
 pub(crate) fn window() -> egui_kittest::Harness<'static, MailApp> {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let mut harness =
         egui_kittest::Harness::builder().with_accessibility_check(false).allow_missing_glyphs().with_size(egui::vec2(1280.0, 800.0)).build_ui_state(
@@ -198,11 +198,11 @@ fn click(harness: &mut egui_kittest::Harness<'static, MailApp>, pos: Pos2) {
 /// mailbox; under each account's own heading they stay plain Inbox.
 #[test]
 fn two_accounts_inboxes_among_the_favorites_are_told_apart() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let mb = &mut app.session.mailbox;
     let first = mb.inbox().unwrap();
-    let work = mb.add_account(mailcraft_model::Account { name: "Work".into(), email: "me@work.example".into(), ..Default::default() });
+    let work = mb.add_account(mailsolutions_model::Account { name: "Work".into(), email: "me@work.example".into(), ..Default::default() });
     let second = mb.folder_of_kind(work, FolderKind::Inbox).unwrap();
     for id in [first, second] {
         app.execute("folder.favorite", serde_json::json!({"id": id, "value": true})).unwrap();
@@ -544,8 +544,8 @@ fn an_accounts_menu_moves_it_up_and_down() {
 /// read out with its unread count, the arrow keys go from one to the next, and Enter shows it.
 #[test]
 fn gmail_categories_are_reached_and_chosen_with_the_keyboard() {
-    use mailcraft_model::sync::{FolderDelta, SyncResult};
-    use mailcraft_model::{GmailCategory, Message};
+    use mailsolutions_model::sync::{FolderDelta, SyncResult};
+    use mailsolutions_model::{GmailCategory, Message};
     let mut harness = window();
     let app = harness.state_mut();
     let servers = serde_json::json!({"email": "ada@mail.example", "incoming": {"host": "imap.gmail.com"}, "outgoing": {"host": "smtp.gmail.com"}});
@@ -567,5 +567,5 @@ fn gmail_categories_are_reached_and_chosen_with_the_keyboard() {
     harness.key_press(egui::Key::Enter);
     harness.run_steps(3);
     assert_eq!(harness.state().session.view.gmail, Some((inbox, GmailCategory::Promotions)));
-    assert_eq!(mailcraft_engine::gmail::in_view(&harness.state().session), Some(GmailCategory::Promotions));
+    assert_eq!(mailsolutions_engine::gmail::in_view(&harness.state().session), Some(GmailCategory::Promotions));
 }

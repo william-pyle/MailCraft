@@ -7,7 +7,7 @@
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::FileDialogRequest;
@@ -19,7 +19,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// A message being written, with a file dialog that answers `picked` at once.
 fn writing(picked: Option<Vec<String>>) -> (MailApp, Arc<Mutex<Vec<FileDialogRequest>>>) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     let asked = Arc::new(Mutex::new(Vec::new()));
     let seen = asked.clone();
     app.services.file_dialog = Some(Box::new(move |request| {
@@ -37,7 +37,7 @@ struct Files(std::path::PathBuf);
 
 impl Files {
     fn new(test: &str, names: &[&str]) -> (Self, Vec<String>) {
-        let dir = std::env::temp_dir().join(format!("mailcraft-attach-many-{test}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-attach-many-{test}-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let paths = names
             .iter()
@@ -144,7 +144,7 @@ type Opened = Arc<Mutex<Option<(String, Option<u64>, u64)>>>;
 
 /// A browser whose picker answers through `picked`, and what it was last opened for.
 fn browser() -> (MailApp, crate::Inbox, Opened) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     let inbox: crate::Inbox = Arc::new(Mutex::new(Vec::new()));
     app.services.picked = Some(inbox.clone());
     app.services.inbox = Some(Arc::new(Mutex::new(Vec::new())));
@@ -352,7 +352,7 @@ fn two_picks_for_one_message_arriving_together_are_two_batches() {
 #[test]
 fn several_files_picked_go_to_the_message_that_asked_whatever_is_current_by_then() {
     let (_files, paths) = Files::new("asked", &["minutes.txt", "budget.csv"]);
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     // A dialog the test answers when it likes, as the owner would.
     let senders: Arc<Mutex<Vec<mpsc::Sender<Option<Vec<String>>>>>> = Arc::default();
     let keep = senders.clone();

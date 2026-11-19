@@ -32,7 +32,7 @@ impl Class {
     }
 }
 
-/// The layering table. Names are package names without the `mailcraft-`
+/// The layering table. Names are package names without the `mailsolutions-`
 /// prefix.
 pub const TABLE: &[(&str, Class)] = &[
     ("time", Class::Layer(0)),
@@ -75,7 +75,7 @@ pub const TABLE: &[(&str, Class)] = &[
     ("mobile", Class::Layer(6)),
     ("testkit", Class::Testkit),
     // apps and tooling
-    ("mailcraft", Class::Exempt),
+    ("mailsolutions", Class::Exempt),
     ("cli", Class::Exempt),
     ("web", Class::Exempt),
     ("xtask", Class::Exempt),
@@ -108,7 +108,7 @@ pub const APP_ONLY_CRATES: &[&str] = &["dispatch2"];
 pub const UI_MIN_LAYER: u8 = 6;
 
 pub fn short_name(pkg: &str) -> &str {
-    pkg.strip_prefix("mailcraft-").unwrap_or(pkg)
+    pkg.strip_prefix("mailsolutions-").unwrap_or(pkg)
 }
 
 pub fn classify(pkg: &str) -> Option<Class> {
@@ -167,7 +167,7 @@ impl std::fmt::Display for Violation {
                 write!(f, "{krate}: standalone crate must not depend on workspace crate {dep}")
             }
             Violation::TestkitAsNormalDep { krate } => {
-                write!(f, "{krate}: mailcraft-testkit may only be a dev-dependency")
+                write!(f, "{krate}: mailsolutions-testkit may only be a dev-dependency")
             }
             Violation::UiBelowL6 { krate, dep, layer } => {
                 write!(f, "{krate} (L{layer}) depends on UI crate `{dep}`; UI toolkits are only allowed in L6+")

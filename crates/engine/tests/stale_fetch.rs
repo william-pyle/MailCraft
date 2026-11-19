@@ -5,13 +5,13 @@
 //! queued to be sent is dropped, for Exchange (EWS), Microsoft Graph and JMAP accounts alike, so
 //! that it never puts back what the owner took out. Every message here is invented.
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::{ews_mail, graph_mail, graph_send, jmap_mail};
-use mailcraft_model::sync::{
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::{ews_mail, graph_mail, graph_send, jmap_mail};
+use mailsolutions_model::sync::{
     EwsFolderDeltas, EwsMailResult, EwsMessagePage, FolderListing, GraphFetchResult, GraphFetched, GraphFolder, GraphMailResult, GraphMessage,
     JmapMailResult, MessagePage, ServerMessage,
 };
-use mailcraft_model::{Address, FolderKind, Id};
+use mailsolutions_model::{Address, FolderKind, Id};
 use serde_json::json;
 
 const ME: &str = "ada@example.org";

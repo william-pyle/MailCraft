@@ -4,7 +4,7 @@
 //! from its start (`cat` → `category:`), the mailbox's categories after `category:`, what `is:`
 //! and `has:` take, and people after `from:`, `to:` and `cc:`, each by name with the address
 //! beside it, from the contacts and the mail on this computer
-//! ([`mailcraft_engine::cmd::view::search_suggestions`] says what). The arrow keys
+//! ([`mailsolutions_engine::cmd::view::search_suggestions`] says what). The arrow keys
 //! choose; Enter takes the one chosen, Tab that one or the first, a click the one under it. Until
 //! an arrow key is pressed nothing is chosen, so Enter does what it did. The list is egui's popup:
 //! Escape closes it and leaves the search (and a message being written open); the next Escape
@@ -13,7 +13,7 @@
 //! without it.
 
 use egui::{Context, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_model::search::Suggestion;
+use mailsolutions_model::search::Suggestion;
 
 use crate::theme::{Tokens, c32, paint_clipped, regular};
 
@@ -37,11 +37,11 @@ pub(crate) struct Suggesting {
     /// [`Session::openings`]: the people that mail arriving, or another mailbox, brings are
     /// offered without a key being pressed). A take is only of items for the search as it is now.
     ///
-    /// [`Session::rev`]: mailcraft_engine::Session::rev
-    /// [`Session::openings`]: mailcraft_engine::Session::openings
+    /// [`Session::rev`]: mailsolutions_engine::Session::rev
+    /// [`Session::openings`]: mailsolutions_engine::Session::openings
     pub for_text: String,
     for_cursor: usize,
-    for_categories: Vec<mailcraft_model::Category>,
+    for_categories: Vec<mailsolutions_model::Category>,
     for_mailbox: (u64, u64),
 }
 
@@ -170,7 +170,7 @@ impl Suggesting {
     }
 
     /// What to offer next frame, for `text` with the cursor at character `cursor`.
-    pub fn offer(&mut self, text: &str, cursor: usize, session: &mailcraft_engine::Session) {
+    pub fn offer(&mut self, text: &str, cursor: usize, session: &mailsolutions_engine::Session) {
         self.moved |= (self.for_text.as_str(), self.for_cursor) != (text, cursor);
         let mailbox = (session.rev(), session.openings());
         if (self.for_text.as_str(), self.for_cursor, self.for_mailbox) == (text, cursor, mailbox)
@@ -179,7 +179,7 @@ impl Suggesting {
             return;
         }
         let byte = text.char_indices().nth(cursor).map_or(text.len(), |(b, _)| b);
-        let items = mailcraft_engine::cmd::view::search_suggestions(session, text, byte);
+        let items = mailsolutions_engine::cmd::view::search_suggestions(session, text, byte);
         if items != self.items {
             self.selected = None;
         }

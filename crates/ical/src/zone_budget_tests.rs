@@ -5,7 +5,7 @@
 
 use std::time::{Duration, Instant};
 
-use mailcraft_time::Zone;
+use mailsolutions_time::Zone;
 
 use crate::{IcsFile, parse};
 

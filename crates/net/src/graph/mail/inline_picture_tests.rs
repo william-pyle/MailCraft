@@ -8,17 +8,17 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     AttachmentUp, AttachmentsUp, DraftBody, DraftUp, GraphMailRequest, GraphMailResult, SendOutcome, SendUp, SyncedAttachment,
 };
-use mailcraft_model::{Address, Importance};
+use mailsolutions_model::{Address, Importance};
 
 use super::whole_run;
 use crate::graph::pace::{Gate, Retry};
 use crate::graph::standin::{StandIn, TOKEN};
 
 const QUICK: Retry = Retry { tries: 4, first_wait: Duration::from_millis(5), longest_wait: Duration::from_secs(60) };
-const CID: &str = "pic-1048576.m1@mailcraft.invalid";
+const CID: &str = "pic-1048576.m1@mailsolutions.invalid";
 
 fn run(server: &StandIn, drafts: Vec<DraftUp>, sends: Vec<SendUp>) -> GraphMailResult {
     let request = GraphMailRequest { account: 3, email: "owner@example.org".into(), drafts, sends, ..Default::default() };
@@ -47,7 +47,7 @@ fn draft(id: &str, here: Vec<AttachmentUp>, synced: Vec<SyncedAttachment>) -> Dr
     DraftUp {
         message: 5,
         id: id.into(),
-        marker: "mailcraft-draft-5".into(),
+        marker: "mailsolutions-draft-5".into(),
         subject: Some("Chart".into()),
         body: Some(DraftBody { html: true, content: html, hash: 9 }),
         to: Some(vec![Address::new("", "kit@example.net")]),

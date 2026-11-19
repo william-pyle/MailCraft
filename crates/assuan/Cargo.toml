@@ -1,5 +1,5 @@
 [package]
-name = "mailcraft-assuan"
+name = "mailsolutions-assuan"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

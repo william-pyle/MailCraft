@@ -5,7 +5,7 @@
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_model::remote::{ContactsDownload, RemoteContact};
+use mailsolutions_model::remote::{ContactsDownload, RemoteContact};
 use serde_json::json;
 
 use super::*;
@@ -19,7 +19,7 @@ fn add(w: &mut Harness<'_, MailApp>, email: &str) -> Id {
 fn from_server(w: &mut Harness<'_, MailApp>, account: Id, email: &str, name: &str) -> Id {
     let contact = RemoteContact { id: "w1".into(), display_name: name.into(), ..Default::default() };
     let download = ContactsDownload { account, email: email.into(), complete: true, contacts: vec![contact] };
-    mailcraft_engine::cmd::remote::apply_contacts(&mut w.state_mut().session, &download).unwrap();
+    mailsolutions_engine::cmd::remote::apply_contacts(&mut w.state_mut().session, &download).unwrap();
     w.state().session.mailbox.contacts.values().find(|c| c.display_name == name).unwrap().id
 }
 
@@ -168,7 +168,8 @@ fn the_choice_is_remembered_with_the_other_view_choices() {
 fn one_accounts_contacts_are_remembered_for_that_account_only() {
     let app = |email: &str| {
         let now = 1_791_993_600;
-        let mut a = MailApp::new(mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(now, 0), now, 0), crate::Services::default());
+        let mut a =
+            MailApp::new(mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(now, 0), now, 0), crate::Services::default());
         let params = json!({"email": email, "incoming": {"host": "outlook.example.org"}, "auth": "oauth2"});
         let id = a.execute("account.add", params).unwrap()["id"].as_u64().unwrap();
         (a, id)

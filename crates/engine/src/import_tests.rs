@@ -3,8 +3,8 @@
 //! What a file brought in may and may not do: replace a meeting only for its organizer, and
 //! never put mail in a send queue.
 
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use serde_json::json;
 
 use crate::Session;
@@ -98,7 +98,7 @@ fn an_import_never_puts_mail_in_a_send_queue() {
 /// A mailbox with an account that signs in with Microsoft and whose calendar has come down once:
 /// the empty calendar the mailbox was made with is gone, and the server's is the only one.
 fn served() -> (Session, Id, Id) {
-    let mut s = Session::at(mailcraft_model::Mailbox::with_local_account("", ""), now(), 0);
+    let mut s = Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), now(), 0);
     let added = s.run("account.add", &json!({"email": "ada@example.org", "incoming": {"host": "outlook.example.org"}, "auth": "oauth2"})).unwrap();
     let account = added["id"].as_u64().unwrap();
     let start = now().saturating_add(3600);
@@ -149,7 +149,7 @@ fn an_appointment_an_earlier_import_left_in_a_server_calendar_comes_back_to_this
     let start = s.local_now();
     let stray = s
         .mailbox
-        .add_event(mailcraft_model::Event {
+        .add_event(mailsolutions_model::Event {
             title: "Grocery delivery".into(),
             calendar: server,
             start,

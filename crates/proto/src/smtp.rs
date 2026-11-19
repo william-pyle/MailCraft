@@ -4,11 +4,11 @@
 
 use std::io::{Read, Write};
 
-use mailcraft_charset::base64::STANDARD;
+use mailsolutions_charset::base64::STANDARD;
 
 use crate::line::Wire;
 use crate::{ProtoError, Secrets, for_trace, tidy, xoauth2};
-use mailcraft_i18n::{Arg, Text, said};
+use mailsolutions_i18n::{Arg, Text, said};
 
 /// Most lines one reply may have.
 const MAX_REPLY_LINES: usize = 256;
@@ -230,7 +230,7 @@ impl<S: Read + Write> Smtp<S> {
             let reply = self.command(&format!("RCPT TO:<{rcpt}>"))?;
             if reply.class() != 2 {
                 let refused = match self.refused(&reply) {
-                    // (The address, then what the server said of it: no words of MailCraft's to say.)
+                    // (The address, then what the server said of it: no words of MailSolutions's to say.)
                     ProtoError::Rejected(text) => {
                         ProtoError::Rejected(Text::new("{rcpt}: {text}", vec![("rcpt", Arg::Plain(rcpt.to_string())), ("text", Arg::said(text))]))
                     }

@@ -5,8 +5,8 @@
 //! row counts what opens under it. Closed, Delete and Move on the row take the messages it stands
 //! for in the folder in view, and nothing of it in another folder (#485), as in Outlook.
 
-use mailcraft_model::{Account, AccountKind, FolderKind, Id, Message};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Account, AccountKind, FolderKind, Id, Message};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::list::Row;

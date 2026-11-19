@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Google's OAuth credentials never enter MailCraft files or diagnostics. All credentials and
+//! Google's OAuth credentials never enter MailSolutions files or diagnostics. All credentials and
 //! messages in this audit are synthetic, on fake accounts with .example/example.org addresses.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{SyncRequest, Tokens};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{SyncRequest, Tokens};
 use serde_json::json;
 
 use super::*;
@@ -20,7 +20,7 @@ impl SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.0.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, value: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, value: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().insert(key.to_string(), value.to_string());
         Ok(())
     }
@@ -30,7 +30,7 @@ impl SecretStore for Store {
 }
 
 fn app(store: &Store) -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     app.services.secrets = Some(Arc::new(store.clone()));
@@ -56,7 +56,7 @@ fn tokens(email: &str, name: &str) -> Tokens {
         email: email.into(),
         access: format!("audit-access-{name}-unique"),
         refresh: format!("audit-refresh-{name}-unique"),
-        expires_at: mailcraft_time::now() + 3600,
+        expires_at: mailsolutions_time::now() + 3600,
         ..Default::default()
     }
 }
@@ -108,10 +108,10 @@ fn google_security_tokens_never_enter_mailbox_ui_files_diagnostics_or_debug() {
     assert_eq!(store.get(&key).as_deref(), Some(given.refresh.as_str()));
 
     // Save a synthetic sample mailbox to a test-only file and inspect the actual persisted bytes.
-    let folder = std::env::temp_dir().join(format!("mailcraft-google-oauth-security-{}", std::process::id()));
+    let folder = std::env::temp_dir().join(format!("mailsolutions-google-oauth-security-{}", std::process::id()));
     std::fs::create_dir_all(&folder).unwrap();
     let path = folder.join("synthetic.mailcraft");
-    mailcraft_engine::store::save(&path, &a.session.mailbox).unwrap();
+    mailsolutions_engine::store::save(&path, &a.session.mailbox).unwrap();
     let on_disk = std::fs::read(&path).unwrap();
     for private in [&given.access, &given.refresh, &request.password] {
         assert!(!on_disk.windows(private.len()).any(|part| part == private.as_bytes()), "mailbox file contained an owner credential");
@@ -356,7 +356,7 @@ fn google_security_unrelated_account_edits_accept_pending_sign_in_and_sync() {
 
 #[test]
 fn google_security_credential_edits_reject_identityless_pending_refresh() {
-    use mailcraft_model::{Account, AccountKind, OAuthProvider, Security};
+    use mailsolutions_model::{Account, AccountKind, OAuthProvider, Security};
 
     let edits: &[(&str, fn(&mut Account))] = &[
         ("address", |a| a.email = "other@example.org".into()),
@@ -501,8 +501,8 @@ impl SecretStore for RejectStore {
     fn get(&self, _: &str) -> Option<String> {
         None
     }
-    fn set(&self, _: &str, _: &str) -> Result<(), mailcraft_host::SecretError> {
-        Err(mailcraft_host::SecretError::Refused)
+    fn set(&self, _: &str, _: &str) -> Result<(), mailsolutions_host::SecretError> {
+        Err(mailsolutions_host::SecretError::Refused)
     }
     fn delete(&self, _: &str) {}
 }
@@ -563,7 +563,7 @@ impl SecretStore for RecordingStore {
         self.calls.lock().unwrap().push("get");
         self.store.get(key)
     }
-    fn set(&self, key: &str, value: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, value: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.calls.lock().unwrap().push("set");
         self.store.set(key, value)
     }
@@ -599,7 +599,7 @@ fn google_security_microsoft_command_skips_google_by_default() {
     let requests = requests.lock().unwrap();
     assert_eq!(requests.len(), 1);
     assert_eq!(requests[0].account, microsoft);
-    assert_eq!(requests[0].oauth.provider, mailcraft_model::OAuthProvider::Microsoft);
+    assert_eq!(requests[0].oauth.provider, mailsolutions_model::OAuthProvider::Microsoft);
     assert!(requests[0].graph);
     assert!(requests[0].google_client_secret.is_empty());
 }
@@ -676,7 +676,7 @@ fn google_security_microsoft_command_accepts_explicit_microsoft_accounts() {
         let requests = requests.lock().unwrap();
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].account, microsoft);
-        assert_eq!(requests[0].oauth.provider, mailcraft_model::OAuthProvider::Microsoft);
+        assert_eq!(requests[0].oauth.provider, mailsolutions_model::OAuthProvider::Microsoft);
         assert_eq!(requests[0].email, "microsoft@example.org");
         assert!(requests[0].graph);
         assert_eq!(requests[0].mail_write, graph_mail);

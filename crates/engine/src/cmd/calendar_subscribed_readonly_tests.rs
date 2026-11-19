@@ -5,7 +5,7 @@
 //! the ways in that are not a command's params (a file, an invitation, an undo, an account that
 //! goes) and what the review of the first version found.
 
-use mailcraft_model::{Address, Attachment, FolderKind, Id, Message};
+use mailsolutions_model::{Address, Attachment, FolderKind, Id, Message};
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -190,10 +190,10 @@ fn the_account_that_goes_does_not_send_its_events_into_a_subscribed_calendar() {
     // A calendar of that account's with an appointment the owner made, and no calendar of the
     // mailbox's own but the subscribed one: the only home the appointment could be given.
     let served = s.mailbox.alloc_id();
-    let origin = mailcraft_model::Origin { account, id: "main".into(), ..Default::default() };
+    let origin = mailsolutions_model::Origin { account, id: "main".into(), ..Default::default() };
     s.mailbox.calendars.retain(|c| c.is_subscribed());
-    s.mailbox.calendars.push(mailcraft_model::Calendar { id: served, name: "Calendar".into(), origin, visible: true, ..Default::default() });
-    let made = mailcraft_model::Event { title: "Dentist".into(), calendar: served, ..Default::default() };
+    s.mailbox.calendars.push(mailsolutions_model::Calendar { id: served, name: "Calendar".into(), origin, visible: true, ..Default::default() });
+    let made = mailsolutions_model::Event { title: "Dentist".into(), calendar: served, ..Default::default() };
     let made = s.mailbox.add_event(made).unwrap();
     let before = held(&s);
     s.run("account.remove", &json!({"id": account})).unwrap();
@@ -222,7 +222,7 @@ fn what_a_feed_says_is_one_line_without_control_or_bidirectional_characters() {
                 SUMMARY:Match\u{85}\u{202e}gnp.exe\u{0}\r\nLOCATION:Pitch\u{9c}\u{2066}1\r\nCATEGORIES:Home\u{202e},Cup\u{1b}\r\n\
                 DESCRIPTION:Line one\\nLine\u{202e} two\u{1b}[2J\r\nDTSTART:20261114T150000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
     came(&mut s, calendar, text);
-    let bad = |t: &str| t.chars().any(|c| c.is_control() && c != '\n' && c != '\t' || mailcraft_names::is_format(c));
+    let bad = |t: &str| t.chars().any(|c| c.is_control() && c != '\n' && c != '\t' || mailsolutions_names::is_format(c));
     let e = s.mailbox.events.values().find(|e| e.calendar == calendar).unwrap();
     for t in [&e.title, &e.location, &e.uid, &e.description].into_iter().chain(e.categories.iter()) {
         assert!(!bad(t), "{t:?}");

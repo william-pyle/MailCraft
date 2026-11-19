@@ -5,7 +5,7 @@
 //!
 //! The engine asks nothing of any server. `calendar.subscribe` checks the address as text and
 //! makes the calendar; `sync.subscriptionRequest` says which calendars are due a look; a host
-//! with sockets (`mailcraft-net`'s `subscription::fetch`) does the looking, and
+//! with sockets (`mailsolutions-net`'s `subscription::fetch`) does the looking, and
 //! `sync.applySubscription` takes in what it brought: the file's text, "unchanged" or why there
 //! was nothing. The address may hold a secret (the private addresses calendar services hand out
 //! carry a token in the path), so it never stays here: the window keeps it, in the system's
@@ -22,12 +22,12 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::remote::MAX_KEY;
-use mailcraft_model::subscription::{
+use mailsolutions_model::remote::MAX_KEY;
+use mailsolutions_model::subscription::{
     self, Failure, GROUP, MAX_EVENTS, MAX_EVENTS_TOTAL, MAX_INTERVAL, MAX_SUBSCRIBED, MAX_TEXT, MIN_INTERVAL, Subscription, SubscriptionAsk,
     SubscriptionOutcome, check_address,
 };
-use mailcraft_model::{Calendar, Event, Id, Rights, clean_name};
+use mailsolutions_model::{Calendar, Event, Id, Rights, clean_name};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -40,7 +40,7 @@ const MAX_NOTE: usize = 100_000;
 const MAX_CATEGORIES: usize = 50;
 /// How much of a file is looked at for its header (its name).
 const HEAD: usize = 64 * 1024;
-/// Most events and to-dos `mailcraft_ical` reads from one file.
+/// Most events and to-dos `mailsolutions_ical` reads from one file.
 const READER_LIMIT: usize = 20_000;
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -62,7 +62,7 @@ pub fn specs() -> Vec<CommandSpec> {
             .params(r#"{"all"?: bool (true: every subscribed calendar, due or not)} — what a host is to look at: {"requests": [{"calendar", "host", "etag", "lastModified"}]}, one per subscribed calendar that is due. The addresses are not here: the window holds them"#),
         CommandSpec::new("sync.applySubscription", "Apply Subscribed Calendar", "Send / Receive", apply)
             .pure()
-            .params(r#"{"calendar": number, "outcome": {"kind": "changed", "text": string (the .ics file, at most 8 MB), "etag"?: string, "lastModified"?: string} | {"kind": "notModified"} | {"kind": "failed", "failure": string (a code: address, notPublic, redirects, status:404, tooLarge, timedOut, packed, network)}} — what a look at the web brought, as a host did it (`mailcraft-net`'s `subscription::fetch`). A file replaces the calendar's events (at most 20,000 each, 100,000 in all: the rest are left out and File › Info says so); anything else leaves them as they were. Answers {"calendar", "changed": bool, "events": number, "added", "updated", "removed", "capped": bool, "failure": string | null}"#),
+            .params(r#"{"calendar": number, "outcome": {"kind": "changed", "text": string (the .ics file, at most 8 MB), "etag"?: string, "lastModified"?: string} | {"kind": "notModified"} | {"kind": "failed", "failure": string (a code: address, notPublic, redirects, status:404, tooLarge, timedOut, packed, network)}} — what a look at the web brought, as a host did it (`mailsolutions-net`'s `subscription::fetch`). A file replaces the calendar's events (at most 20,000 each, 100,000 in all: the rest are left out and File › Info says so); anything else leaves them as they were. Answers {"calendar", "changed": bool, "events": number, "added", "updated", "removed", "capped": bool, "failure": string | null}"#),
     ]
 }
 
@@ -105,7 +105,7 @@ fn subscribe(s: &mut Session, v: &Value) -> CmdResult {
         return Err(fail("there are too many calendars"));
     }
     let color = match p::str(v, "color") {
-        Some(color) => mailcraft_model::Rgb::parse(color).ok_or_else(|| bad("`color` looks like #2E8B57"))?,
+        Some(color) => mailsolutions_model::Rgb::parse(color).ok_or_else(|| bad("`color` looks like #2E8B57"))?,
         None => super::calendar::next_color(&s.mailbox),
     };
     let named = p::str(v, "name").and_then(clean_name);
@@ -239,7 +239,7 @@ fn calendar_name(text: &str) -> Option<String> {
                 out.push(c);
             }
         }
-        return mailcraft_names::incoming(&out, 255);
+        return mailsolutions_names::incoming(&out, 255);
     }
     None
 }
@@ -257,14 +257,18 @@ fn tidy(mut e: Event, calendar: Id) -> Event {
     // A feed is anybody's: one line without control or bidirectional characters (CR, LF, NUL,
     // ESC, the C1 controls, the overrides that make a title read backwards) where a line is
     // wanted, and a note keeps its line breaks and nothing else of the sort.
-    let line = |text: &str| mailcraft_names::incoming(text, MAX_LINE).unwrap_or_default();
+    let line = |text: &str| mailsolutions_names::incoming(text, MAX_LINE).unwrap_or_default();
     e.title = line(&e.title);
     e.location = line(&e.location);
-    e.description =
-        e.description.chars().filter(|c| matches!(c, '\n' | '\t') || !(c.is_control() || mailcraft_names::is_format(*c))).take(MAX_NOTE).collect();
-    e.uid = e.uid.chars().filter(|c| !c.is_control() && !mailcraft_names::is_format(*c)).take(MAX_KEY).collect();
+    e.description = e
+        .description
+        .chars()
+        .filter(|c| matches!(c, '\n' | '\t') || !(c.is_control() || mailsolutions_names::is_format(*c)))
+        .take(MAX_NOTE)
+        .collect();
+    e.uid = e.uid.chars().filter(|c| !c.is_control() && !mailsolutions_names::is_format(*c)).take(MAX_KEY).collect();
     e.categories.truncate(MAX_CATEGORIES);
-    e.categories = e.categories.iter().filter_map(|c| mailcraft_names::incoming(c, MAX_LINE)).collect();
+    e.categories = e.categories.iter().filter_map(|c| mailsolutions_names::incoming(c, MAX_LINE)).collect();
     e.calendar = calendar;
     e.id = 0;
     e.attendees.clear();
@@ -330,7 +334,7 @@ fn failed_look(s: &mut Session, id: Id, failure: Failure, now: i64) -> CmdResult
 /// Make the calendar's events the file's: wholesale, each kept under its key so that an event that
 /// is the same keeps its id.
 fn replace(s: &mut Session, id: Id, text: &str, etag: &str, last_modified: &str, now: i64) -> CmdResult {
-    let file = mailcraft_ical::parse_events(text, &super::remote::offset_of(s), MAX_EVENTS + 1);
+    let file = mailsolutions_ical::parse_events(text, &super::remote::offset_of(s), MAX_EVENTS + 1);
     // (The reader stops at its own limit of events and to-dos, and doesn't say that it did: a file
     // that fills it is counted again, for how many events it has.)
     let mut capped = file.events.len() > MAX_EVENTS

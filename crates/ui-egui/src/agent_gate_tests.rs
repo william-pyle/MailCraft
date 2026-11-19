@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The buttons of an agent's question (#566).
 
-use mailcraft_engine::agent::Class;
+use mailsolutions_engine::agent::Class;
 
 use crate::agent_gate::verbs;
 

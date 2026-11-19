@@ -6,7 +6,7 @@
 
 use std::sync::mpsc;
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::FileDialogRequest;
@@ -17,7 +17,7 @@ const NOW: i64 = 1_791_993_600;
 
 #[test]
 fn save_message_as_suggests_the_name_of_the_message_it_saves() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     let (tx, asked) = mpsc::channel();
     app.services.file_dialog = Some(Box::new(move |request| {
         let _ = tx.send(request);
@@ -29,13 +29,13 @@ fn save_message_as_suggests_the_name_of_the_message_it_saves() {
     app.run("mail.select", json!({"id": selected})).unwrap();
 
     app.run("file.exportMessage", json!({"id": saved})).unwrap();
-    let want = mailcraft_engine::opening::export_name(&subject, "eml");
+    let want = mailsolutions_engine::opening::export_name(&subject, "eml");
     assert_eq!(asked.try_recv().unwrap(), FileDialogRequest::Save { name: want });
 
     // Named by nothing, it is the selected message's.
     app.file_dialog = None;
     app.run("file.exportMessage", json!({})).unwrap();
-    let want = mailcraft_engine::opening::export_name(&other, "eml");
+    let want = mailsolutions_engine::opening::export_name(&other, "eml");
     assert_eq!(asked.try_recv().unwrap(), FileDialogRequest::Save { name: want });
 
     // With no subject, or none a file name can keep, it is `message.eml`, as Forward as Attachment
@@ -52,10 +52,10 @@ fn save_message_as_suggests_the_name_of_the_message_it_saves() {
 /// dialog keeps it as typed), but never over a file the dialog didn't ask about.
 #[test]
 fn a_name_typed_without_an_extension_is_saved_with_the_suggested_one() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-export-ext-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-export-ext-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let typed = dir.join("v6").to_string_lossy().into_owned();
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     let answer = typed.clone();
     app.services.file_dialog = Some(Box::new(move |_| {
         let (tx, rx) = mpsc::channel();

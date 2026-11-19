@@ -8,9 +8,9 @@ use std::rc::Rc;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 
-use mailcraft_engine::Session;
-use mailcraft_model::FolderKind;
-use mailcraft_model::sync::{SyncRequest, SyncResult};
+use mailsolutions_engine::Session;
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::sync::{SyncRequest, SyncResult};
 use serde_json::json;
 
 use super::*;
@@ -22,7 +22,7 @@ const NOW: i64 = 1_791_993_600;
 /// A window with an IMAP account whose host counts the runs it is asked for (and never answers),
 /// and whose picture, sender-image and mail-exchanger hosts count theirs.
 fn window() -> (MailApp, u64, Rc<Cell<usize>>) {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     let asked = Rc::new(Cell::new(0));
     let runs = asked.clone();
@@ -111,7 +111,7 @@ fn work_offline_is_not_undone_and_is_kept_with_the_window_settings() {
 fn help_answers_the_projects_pages_and_feedback_opens_report_a_problem() {
     let (mut a, _, _) = window();
     let help = a.run("help.help", json!({})).unwrap();
-    assert!(help["url"].as_str().unwrap().starts_with(mailcraft_engine::cmd::help::REPOSITORY));
+    assert!(help["url"].as_str().unwrap().starts_with(mailsolutions_engine::cmd::help::REPOSITORY));
     let news = a.run("help.whatsNew", json!({})).unwrap();
     assert!(news["url"].as_str().unwrap().ends_with(&format!("/releases/tag/v{}", env!("CARGO_PKG_VERSION"))));
     a.run("help.feedback", json!({})).unwrap();
@@ -129,7 +129,7 @@ fn file_account_shows_the_about_page() {
 
 #[test]
 fn the_window_and_the_engine_say_the_same_words() {
-    assert_eq!(said(), mailcraft_engine::cmd::send_receive::OFFLINE);
+    assert_eq!(said(), mailsolutions_engine::cmd::send_receive::OFFLINE);
 }
 
 #[test]

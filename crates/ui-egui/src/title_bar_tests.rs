@@ -15,7 +15,7 @@ fn the_title_row_is_compact_and_the_tabs_follow_it() {
         let _ = h.state_mut().execute("ui.dismissReminder", json!({"all": true}));
         h.state_mut().execute("ui.theme", json!({"value": theme})).unwrap();
         h.run_steps(4);
-        if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+        if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
             h.render().unwrap().save(std::path::Path::new(&dir).join(format!("title-row-{theme}.png"))).unwrap();
         }
         assert!(h.state().search_box_shown, "the search box is in the row");

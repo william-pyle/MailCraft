@@ -4,7 +4,7 @@
 //! `/users/{address}/…` with the owner's token and never to `/me`, against the stand-in
 //! ([`standin`]). Nothing here leaves this machine; every address is invented.
 
-use mailcraft_time::Date;
+use mailsolutions_time::Date;
 
 use super::standin::{CalendarAccess, StandIn, TOKEN};
 use super::*;
@@ -27,7 +27,7 @@ fn fields(title: &str, start: Timestamp) -> EventFields {
         time: hour(start),
         show_as: Some(ShowAs::Busy),
         private: Some(false),
-        reminder: Some(mailcraft_model::remote::EventReminder { on: true, minutes: 15 }),
+        reminder: Some(mailsolutions_model::remote::EventReminder { on: true, minutes: 15 }),
         ..Default::default()
     }
 }

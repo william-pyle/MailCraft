@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use crate::files::base64_lite::encode;
 use egui::PointerButton;
 use egui_kittest::kittest::Queryable;
-use mailcraft_model::digital_signature::SignatureFormat;
+use mailsolutions_model::digital_signature::SignatureFormat;
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -94,7 +94,7 @@ impl SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.0.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().insert(key.into(), secret.into());
         Ok(())
     }
@@ -194,7 +194,7 @@ fn driven_frames(w: &mut Window) {
 fn agent_clicks(w: &mut Window, kind: &str, id: u64) {
     let (req, _rx) = ControlRequest::new("ui.click", json!({"kind": kind, "id": id}));
     let ctx = w.ctx.clone();
-    let _ = crate::control::handle(w.state_mut(), &ctx, &req.from_agent(vec![mailcraft_engine::agent::Class::Input]));
+    let _ = crate::control::handle(w.state_mut(), &ctx, &req.from_agent(vec![mailsolutions_engine::agent::Class::Input]));
     driven_frames(w);
 }
 
@@ -387,7 +387,7 @@ fn no_key_is_kept_past_what_the_page_lists() {
 #[test]
 fn a_key_picked_for_a_contacts_card_goes_to_the_form_that_asked() {
     let mut w = testing::window("view.people");
-    let key = || mailcraft_engine::cmd::keys::card_key_from(CAROL_PUBLIC.as_bytes()).unwrap();
+    let key = || mailsolutions_engine::cmd::keys::card_key_from(CAROL_PUBLIC.as_bytes()).unwrap();
     let on_card = |w: &mut Window| match &mut w.state_mut().dialog {
         Some(Dialog::Form(crate::forms::Form::Contact(f))) => f.clone().add_key(key()).is_err(),
         _ => panic!("no contact form"),

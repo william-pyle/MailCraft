@@ -6,8 +6,8 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::sync::ServerMessage;
-use mailcraft_model::{AccountKind, FlagStatus, ServerFolder};
+use mailsolutions_model::sync::ServerMessage;
+use mailsolutions_model::{AccountKind, FlagStatus, ServerFolder};
 
 use super::*;
 

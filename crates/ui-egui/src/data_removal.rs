@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! File › Info › Remove MailCraft's data from this computer (#177): everything MailCraft keeps
+//! File › Info › Remove MailSolutions's data from this computer (#177): everything MailSolutions keeps
 //! here, gone, for an installed or a portable copy alike.
 //!
 //! - **The command does the work, the dialog only asks.** `ui.removeAllData` removes the data;
@@ -14,12 +14,12 @@
 //!   removes nothing outside the ones it resolves itself), and only then forgets the sign-ins
 //!   the system's credential store keeps for every account here (through
 //!   [`Services::secrets`]).
-//! - **A failure is a line in a report, never a panic**, and the rest still goes. MailCraft quits
+//! - **A failure is a line in a report, never a panic**, and the rest still goes. MailSolutions quits
 //!   once the report is read, or at once when there is nothing to report.
 //! - Removing one account is `account.remove` (the same files, for that account alone).
-//! - **Beside it, Open MailCraft's data folder** (#460, `ui.openDataFolder`): the host shows a
+//! - **Beside it, Open MailSolutions's data folder** (#460, `ui.openDataFolder`): the host shows a
 //!   folder in the system's file manager ([`DataFolder`]): the folder of the mailbox open now when
-//!   the owner keeps it outside MailCraft's own folder (File › Open, `--mailbox`), else the
+//!   the owner keeps it outside MailSolutions's own folder (File › Open, `--mailbox`), else the
 //!   settings folder the host resolved, which holds the mailbox and the settings. Decided when it
 //!   is pressed, never from a param; an agent may never run it (it starts another program on the
 //!   owner's screen, as opening an attachment does).
@@ -50,14 +50,14 @@ pub enum Why {
     Io(String),
     /// A link: it is removed itself and never followed.
     IsLink,
-    /// Not a folder MailCraft keeps its data in: nothing in it is touched.
+    /// Not a folder MailSolutions keeps its data in: nothing in it is touched.
     NotOurs,
     NotFolder,
     TooDeep,
     TooMany,
     /// A path that was not inside the folder being cleared.
     Outside,
-    /// A mailbox the owner keeps outside MailCraft's own folder (the file, its content folder
+    /// A mailbox the owner keeps outside MailSolutions's own folder (the file, its content folder
     /// and its word index): theirs.
     KeptByOwner,
     /// Not removed because the mailbox file of its folder could not be: a mailbox without its
@@ -70,13 +70,13 @@ impl Why {
         match self {
             Why::Io(e) => e.clone(),
             Why::IsLink => tl!("is a link: not followed, and nothing in it was removed").to_string(),
-            Why::NotOurs => tl!("isn't a folder MailCraft keeps its data in: left alone").to_string(),
+            Why::NotOurs => tl!("isn't a folder MailSolutions keeps its data in: left alone").to_string(),
             Why::NotFolder => tl!("isn't a folder: left alone").to_string(),
             Why::TooDeep => tl!("is nested too deep: left alone").to_string(),
             Why::TooMany => tl!("has too many files: the rest was not removed").to_string(),
             Why::Outside => tl!("is outside the folder being cleared: left alone").to_string(),
             Why::KeptByOwner => {
-                tl!("is part of a mailbox you opened from outside MailCraft's own folder: it is yours and was not touched").to_string()
+                tl!("is part of a mailbox you opened from outside MailSolutions's own folder: it is yours and was not touched").to_string()
             }
             Why::MailboxStays => tl!("was kept because the mailbox file beside it could not be removed: remove them together").to_string(),
         }
@@ -87,7 +87,7 @@ fn line((path, why): &(String, Why)) -> String {
     format!("{path}: {}", why.text())
 }
 
-/// The host's way of removing what MailCraft keeps on this computer ([`Services::data_wipe`]).
+/// The host's way of removing what MailSolutions keeps on this computer ([`Services::data_wipe`]).
 pub trait DataWipe {
     /// Remove the settings folder (the mailbox and its content, the preferences, the logs, the
     /// downloaded pictures) and the folder opened attachments are written to, and nothing else.
@@ -96,7 +96,7 @@ pub trait DataWipe {
     fn erase(&self, mailbox: Option<&std::path::Path>) -> WipeReport;
 }
 
-/// The folder MailCraft keeps its settings (and, unless the owner keeps it elsewhere, the
+/// The folder MailSolutions keeps its settings (and, unless the owner keeps it elsewhere, the
 /// mailbox) in, and the host's way of showing a folder in the system's file manager
 /// ([`Services::data_folder`], #460).
 pub struct DataFolder {
@@ -125,7 +125,7 @@ impl FolderTrouble {
     }
 }
 
-/// Which folder Open MailCraft's data folder shows now.
+/// Which folder Open MailSolutions's data folder shows now.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Shown {
     /// The settings folder, which holds the mailbox too (or there is no mailbox file).
@@ -146,19 +146,19 @@ impl Shown {
 const IDLE_WAIT: std::time::Duration = if cfg!(test) { std::time::Duration::from_millis(100) } else { std::time::Duration::from_secs(5) };
 
 impl MailApp {
-    /// `ui.removeAllData`: remove all of MailCraft's data from this computer, then quit.
+    /// `ui.removeAllData`: remove all of MailSolutions's data from this computer, then quit.
     pub(crate) fn remove_all_data(&mut self) -> Result<Value, String> {
         if self.data_removed {
-            return Err(tl!("MailCraft's data has been removed already").to_string());
+            return Err(tl!("MailSolutions's data has been removed already").to_string());
         }
         if self.services.data_wipe.is_none() {
-            return Err(tl!("Removing MailCraft's data isn't available here").to_string());
+            return Err(tl!("Removing MailSolutions's data isn't available here").to_string());
         }
         // A save still running would write the mailbox back after (or while) it is removed: the
         // saver is waited for, and when it is not idle by then nothing has been touched.
         if let Some(saver) = &self.services.saver {
             saver.flush();
-            let waited = mailcraft_time::Stopwatch::start();
+            let waited = mailsolutions_time::Stopwatch::start();
             while saver.progress().is_some() {
                 // (The browser can't sleep, #1337: there a save still running is said at once.)
                 if cfg!(target_arch = "wasm32") || waited.so_far() >= IDLE_WAIT {
@@ -177,7 +177,7 @@ impl MailApp {
         self.session.close_all_composing();
         let Some(host) = self.services.data_wipe.as_ref() else { return Err(String::new()) };
         let mut report = host.erase(mailbox.as_deref());
-        // Only now the sign-ins the system remembers: every entry MailCraft noted putting there,
+        // Only now the sign-ins the system remembers: every entry MailSolutions noted putting there,
         // whichever mailbox it was for, and those of the accounts here. What stays is listed.
         // (The private keys imported in File › Options › Security too, #30.)
         let keys = crate::security::forget_imported(self);
@@ -195,16 +195,16 @@ impl MailApp {
             report.failed.push((tl!("The system's credential store").to_string(), Why::Io(crate::store_trouble_notice(trouble))));
         }
         if !report.failed.is_empty() || !report.left.is_empty() {
-            self.dialog = Some(Dialog::Report { name: "dataRemoval", title: tl!("Remove MailCraft's Data").to_string(), lines: lines(&report) });
+            self.dialog = Some(Dialog::Report { name: "dataRemoval", title: tl!("Remove MailSolutions's Data").to_string(), lines: lines(&report) });
         }
         let said = |list: &[(String, Why)]| list.iter().map(line).collect::<Vec<_>>();
         Ok(json!({"removed": report.removed, "failed": said(&report.failed), "left": said(&report.left)}))
     }
 
-    /// The folder Open MailCraft's data folder shows now: the open mailbox's own folder when it
+    /// The folder Open MailSolutions's data folder shows now: the open mailbox's own folder when it
     /// is kept outside the settings folder, else the settings folder. `None` without a host.
     ///
-    /// A mailbox named relative to where MailCraft was started (`--mailbox work.mailcraft`) is
+    /// A mailbox named relative to where MailSolutions was started (`--mailbox work.mailcraft`) is
     /// made whole first (by the path alone). Whether it is inside the settings folder is asked
     /// of the paths as they are (one with `..` in it is elsewhere), and with `resolve` also of
     /// them as they really are (`..`, links, `\\?\` and letter case on Windows): inside by
@@ -229,10 +229,10 @@ impl MailApp {
         })
     }
 
-    /// `ui.openDataFolder`: show the folder MailCraft keeps its data in, in the file manager.
+    /// `ui.openDataFolder`: show the folder MailSolutions keeps its data in, in the file manager.
     pub(crate) fn open_data_folder(&mut self) -> Result<Value, String> {
         if self.data_removed {
-            return Err(tl!("MailCraft's data has been removed already").to_string());
+            return Err(tl!("MailSolutions's data has been removed already").to_string());
         }
         let (Some(folder), Some(shown)) = (&self.services.data_folder, self.data_folder_shown(true)) else {
             return Err(tl!("There is no data folder to open here").to_string());
@@ -246,7 +246,7 @@ impl MailApp {
         Ok(json!({"opened": which}))
     }
 
-    /// Once the data is gone and nothing is left to read, MailCraft goes.
+    /// Once the data is gone and nothing is left to read, MailSolutions goes.
     pub(crate) fn data_removal_tick(&mut self) {
         if self.data_removed && self.dialog.is_none() {
             self.quit_requested = true;
@@ -267,9 +267,9 @@ fn lines(report: &WipeReport) -> Vec<String> {
     }
     // By outcome: a folder that was left (a link, a locked file) is still there.
     if report.failed.is_empty() {
-        lines.push(tl!("Everything else is gone. MailCraft quits when you close this.").to_string());
+        lines.push(tl!("Everything else is gone. MailSolutions quits when you close this.").to_string());
     } else {
-        lines.push(tl!("Some of it is still there, as listed above. MailCraft quits when you close this.").to_string());
+        lines.push(tl!("Some of it is still there, as listed above. MailSolutions quits when you close this.").to_string());
     }
     lines
 }
@@ -277,13 +277,13 @@ fn lines(report: &WipeReport) -> Vec<String> {
 /// What the owner is asked before the data goes.
 pub(crate) fn question() -> Question {
     Question::new(
-        tl!("Remove MailCraft's Data"),
+        tl!("Remove MailSolutions's Data"),
         format!(
             "{}\n\n{}\n\n{}",
             tl!(
-                "This removes everything MailCraft keeps on this computer: every account's mail, attachments, contacts, calendar and settings, the sign-ins remembered in the system's credential store, downloaded pictures, opened attachments and logs."
+                "This removes everything MailSolutions keeps on this computer: every account's mail, attachments, contacts, calendar and settings, the sign-ins remembered in the system's credential store, downloaded pictures, opened attachments and logs."
             ),
-            tl!("It is the same for an installed and a portable copy. MailCraft quits afterwards."),
+            tl!("It is the same for an installed and a portable copy. MailSolutions quits afterwards."),
             tl!("Mail on the servers is not touched. This can't be undone."),
         ),
         tl!("Remove Everything"),
@@ -300,7 +300,7 @@ pub(crate) fn section(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     ui.label(egui::RichText::new(tl!("Data on this computer")).font(crate::theme::semibold(14.0)).color(t.accent_text));
     ui.label(
         egui::RichText::new(tl!(
-            "Take everything MailCraft keeps here with you when you are done: for a shared or work computer, or before deleting a portable copy."
+            "Take everything MailSolutions keeps here with you when you are done: for a shared or work computer, or before deleting a portable copy."
         ))
         .color(t.text_dim),
     );
@@ -309,14 +309,14 @@ pub(crate) fn section(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
             let path = shown.path().to_string_lossy().to_string();
             let (label, tip) = match &shown {
                 Shown::Settings(_) => (
-                    tl!("Open MailCraft's data folder"),
+                    tl!("Open MailSolutions's data folder"),
                     crate::i18n::fmt(tl!("Shows {path}, which holds the mailbox and the settings, in your file manager."), &[("path", &path)]),
                 ),
                 Shown::Mailbox(_) => (
                     tl!("Open the mailbox's folder"),
                     crate::i18n::fmt(
                         tl!(
-                            "Shows {path}, which holds the mailbox open now, in your file manager. MailCraft's settings are in a folder of their own."
+                            "Shows {path}, which holds the mailbox open now, in your file manager. MailSolutions's settings are in a folder of their own."
                         ),
                         &[("path", &path)],
                     ),
@@ -327,7 +327,7 @@ pub(crate) fn section(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
             }
         }
         if app.services.data_wipe.is_some()
-            && ui.button(tl!("Remove MailCraft's data from this computer…")).on_hover_text(tl!("Mail on the servers is not touched.")).clicked()
+            && ui.button(tl!("Remove MailSolutions's data from this computer…")).on_hover_text(tl!("Mail on the servers is not touched.")).clicked()
         {
             let _ = app.run("ui.removeAllData", json!({}));
         }

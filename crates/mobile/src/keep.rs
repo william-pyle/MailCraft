@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The phone's mailbox on disk: the same file and content folder the desktop keeps
-//! (`mailcraft_engine::store`: an append-only log, content beside it, atomic writes, the same
+//! (`mailsolutions_engine::store`: an append-only log, content beside it, atomic writes, the same
 //! budgets), in a private directory the app names. Everything here runs on the session's thread,
 //! which is the mailbox's one writer, so a save always sees a whole state.
 //!
@@ -20,8 +20,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
-use mailcraft_engine::Session;
-use mailcraft_model::Mailbox;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Mailbox;
 
 use crate::CoreError;
 use crate::events::{Event, EventSink, StorageNotice};
@@ -63,7 +63,7 @@ impl Keep {
         if !dir.is_absolute() {
             return Err(bad("it is not an absolute path"));
         }
-        mailcraft_engine::store::create_private_dir_all(&dir).map_err(|_| bad("it can't be made"))?;
+        mailsolutions_engine::store::create_private_dir_all(&dir).map_err(|_| bad("it can't be made"))?;
         if !fs::metadata(&dir).is_ok_and(|m| m.is_dir()) {
             return Err(bad("it is not a folder"));
         }
@@ -94,7 +94,7 @@ impl Keep {
                 return Mailbox::with_local_account("", "");
             }
         }
-        let opened = catch_unwind(AssertUnwindSafe(|| mailcraft_engine::store::open(&self.path)))
+        let opened = catch_unwind(AssertUnwindSafe(|| mailsolutions_engine::store::open(&self.path)))
             .unwrap_or_else(|_| Err("the file crashed the reader".to_string()));
         match opened {
             Ok(o) => {
@@ -162,7 +162,7 @@ impl Keep {
                 return Ok(());
             }
         }
-        let saved = catch_unwind(AssertUnwindSafe(|| mailcraft_engine::store::save(&self.path, &session.mailbox)))
+        let saved = catch_unwind(AssertUnwindSafe(|| mailsolutions_engine::store::save(&self.path, &session.mailbox)))
             .unwrap_or_else(|_| Err("saving crashed; the last good file is kept".to_string()));
         saved?;
         let mut st = self.lock();
@@ -212,8 +212,8 @@ impl Keep {
             }
             Err(_) => failed += 1,
         }
-        mailcraft_engine::store::forget_ahead(&self.path);
-        mailcraft_engine::store::clear_cache();
+        mailsolutions_engine::store::forget_ahead(&self.path);
+        mailsolutions_engine::store::clear_cache();
         if failed > 0 { Err(format!("{failed} files of the phone's mail couldn't be removed")) } else { Ok(()) }
     }
 

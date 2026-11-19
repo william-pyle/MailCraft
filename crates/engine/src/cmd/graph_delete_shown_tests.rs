@@ -4,8 +4,8 @@
 //! holds more there keeps it (AU3-H7): the folder comes back and the owner is told how much is new.
 //! Every name and id is invented.
 
-use mailcraft_model::Message;
-use mailcraft_model::sync::{FolderChangeDone, ServerMessage, Shown};
+use mailsolutions_model::Message;
+use mailsolutions_model::sync::{FolderChangeDone, ServerMessage, Shown};
 use serde_json::json;
 
 use super::*;

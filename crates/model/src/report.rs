@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A problem report sent from Help › Report a Problem to the project's report relay (#956):
 //! what it holds, the relay's rules for each part, and the ways it can fail to go. Plain data:
-//! the window fills it, a host with sockets (`mailcraft_net::report`) sends it, and only the
+//! the window fills it, a host with sockets (`mailsolutions_net::report`) sends it, and only the
 //! owner's own click on Send report ever does.
 //!
 //! A report holds the title, what happened, the version, the platform, a GitHub username when

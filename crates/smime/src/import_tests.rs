@@ -44,7 +44,7 @@ fn a_private_key_in_any_form_is_told() {
         let pem = format!("-----BEGIN {label}-----\nAAAA\n-----END {label}-----\n");
         assert!(holds_private_key(pem.as_bytes()), "{label}");
     }
-    assert!(holds_private_key(&mailcraft_charset::base64::STANDARD.decode(MODERN).unwrap()), "a PKCS #12 file");
+    assert!(holds_private_key(&mailsolutions_charset::base64::STANDARD.decode(MODERN).unwrap()), "a PKCS #12 file");
     // PKCS #8: version 0, an algorithm, the key in an OCTET STRING.
     let pkcs8 = [0x30, 0x0b, 0x02, 0x01, 0x00, 0x30, 0x03, 0x06, 0x01, 0x2a, 0x04, 0x01, 0x00];
     assert!(holds_private_key(&pkcs8));

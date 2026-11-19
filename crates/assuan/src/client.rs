@@ -160,7 +160,7 @@ impl<S: Read + Write> Client<S> {
         self.broken = true;
         let mut response = Response::default();
         let mut inquiries = 0usize;
-        // An inquiry MailCraft refused itself because its answer was too big: said when the
+        // An inquiry MailSolutions refused itself because its answer was too big: said when the
         // server has ended the command.
         let mut refused: Option<Error> = None;
         for _ in 0..MAX_LINES {

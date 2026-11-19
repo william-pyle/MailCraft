@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft iCalendar: events and to-dos as RFC 5545 text (`.ics` files, meeting invitations).
+//! MailSolutions iCalendar: events and to-dos as RFC 5545 text (`.ics` files, meeting invitations).
 //!
 //! [`parse`] reads `VEVENT`s and `VTODO`s, [`write()`] writes them, and [`parse_rrule`] and
-//! [`format_rrule`] turn a recurrence rule into the model's [`Recurrence`](mailcraft_model::Recurrence)
+//! [`format_rrule`] turn a recurrence rule into the model's [`Recurrence`](mailsolutions_model::Recurrence)
 //! and back.
 //!
 //! The model keeps event times as wall-clock times in the zone the calendar is shown in, so the
@@ -35,8 +35,8 @@ mod zone_budget_tests;
 mod zone_tests;
 mod zones;
 
-use mailcraft_model::{Event, Task};
-use mailcraft_time::Timestamp;
+use mailsolutions_model::{Event, Task};
+use mailsolutions_time::Timestamp;
 
 pub use read::{parse, parse_events};
 pub use rrule::{format_rrule, parse_rrule};

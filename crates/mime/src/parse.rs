@@ -74,7 +74,7 @@ pub(crate) fn parse_opening(bytes: &[u8], opaque_limit: usize) -> Message {
     let mut walk = Walk { opaque_limit, ..Walk::default() };
     walk.part(&headers, body, 0, Parent::None);
     // The HTML is read once: its text (when there is no plain part to use) and the words it hides.
-    let (html_text, hidden) = walk.html.as_deref().map(mailcraft_html::text_and_hidden).unzip();
+    let (html_text, hidden) = walk.html.as_deref().map(mailsolutions_html::text_and_hidden).unzip();
     message.hidden_text = hidden.unwrap_or_default();
     message.body.text = match (walk.text, html_text) {
         (Some(text), Some(html)) if text.trim().is_empty() => html,
@@ -128,7 +128,7 @@ fn read_headers(headers: &Headers, m: &mut Message) {
                 m.answered |= value.contains('A');
             }
             "x-mailcraft-flag" => complete |= value.trim().eq_ignore_ascii_case("complete"),
-            // MailCraft's own note of the file a message was opened from: never a sender's.
+            // MailSolutions's own note of the file a message was opened from: never a sender's.
             "x-mailcraft-opened-file-sha256" => {}
             // Nor of where in a .pst file a message was (#815).
             "x-mailcraft-pst-item" => {}
@@ -164,7 +164,7 @@ fn read_headers(headers: &Headers, m: &mut Message) {
     if complete {
         m.flag = FlagStatus::Complete;
     }
-    if let Some((timestamp, _)) = headers.get("date").and_then(mailcraft_time::parse_rfc5322) {
+    if let Some((timestamp, _)) = headers.get("date").and_then(mailsolutions_time::parse_rfc5322) {
         m.date = timestamp;
     }
     if let Some(from) = headers.get("from").and_then(|v| address::parse_list(v).into_iter().next()) {
@@ -307,7 +307,7 @@ impl Walk {
             && depth < MAX_DEPTH
             && self.opaque < MAX_OPAQUE
             && data.len() <= self.opaque_limit.saturating_sub(self.opaque_bytes);
-        let signed = openable.then(|| mailcraft_ber::signed_content(&data)).flatten();
+        let signed = openable.then(|| mailsolutions_ber::signed_content(&data)).flatten();
         if let Some(content) = &signed {
             self.opaque = self.opaque.saturating_add(1);
             self.opaque_bytes = self.opaque_bytes.saturating_add(content.len());
@@ -327,7 +327,7 @@ impl Walk {
             Some(_) if text.trim().is_empty() => {}
             Some(body) => {
                 if let Some(html) = &mut self.html {
-                    html.push_str(&mailcraft_html::from_text(&text));
+                    html.push_str(&mailsolutions_html::from_text(&text));
                 }
                 if !body.is_empty() {
                     body.push_str(if body.ends_with('\n') { "\n" } else { "\n\n" });

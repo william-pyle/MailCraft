@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `Platform` as the native side implements it (Kotlin on Android, Swift on iOS), mirroring
-//! [`mailcraft_host::Platform`]. The core holds the platform; the platform never holds the core
+//! [`mailsolutions_host::Platform`]. The core holds the platform; the platform never holds the core
 //! (it is handed what it needs by the calls it gets), so there is no cycle for the native side to
 //! leak.
 //!
@@ -10,7 +10,7 @@
 
 use std::sync::Arc;
 
-use mailcraft_host::{NetworkState, Notification, NotificationKind, Redirect, SecretError, SecretStore as HostSecretStore, StoreTrouble};
+use mailsolutions_host::{NetworkState, Notification, NotificationKind, Redirect, SecretError, SecretStore as HostSecretStore, StoreTrouble};
 
 use crate::HostError;
 
@@ -102,7 +102,7 @@ pub trait Platform: Send + Sync {
     fn network(&self) -> Result<NetworkKind, HostError>;
 }
 
-/// [`mailcraft_host::Platform`] over the native side. A native call that fails (it threw, or
+/// [`mailsolutions_host::Platform`] over the native side. A native call that fails (it threw, or
 /// answered in a way UniFFI can't read) is an error here and never a panic.
 pub(crate) struct Native {
     pub(crate) inner: Arc<dyn Platform>,
@@ -157,7 +157,7 @@ fn record(n: &Notification) -> NotificationRecord {
     NotificationRecord { key: n.key, topic, title: n.title.clone(), body: n.body.clone() }
 }
 
-impl mailcraft_host::Platform for Native {
+impl mailsolutions_host::Platform for Native {
     fn secrets(&self) -> Option<Arc<dyn HostSecretStore>> {
         let inner = self.inner.secrets().ok().flatten()?;
         Some(Arc::new(NativeSecrets { inner }) as Arc<dyn HostSecretStore>)
@@ -170,27 +170,27 @@ impl mailcraft_host::Platform for Native {
         }
     }
 
-    fn open_sign_in_page(&self, url: &str) -> Result<(), mailcraft_host::PlatformError> {
+    fn open_sign_in_page(&self, url: &str) -> Result<(), mailsolutions_host::PlatformError> {
         self.inner.open_sign_in_page(url.to_string()).map_err(Into::into)
     }
 
-    fn notify(&self, notification: &Notification) -> Result<(), mailcraft_host::PlatformError> {
+    fn notify(&self, notification: &Notification) -> Result<(), mailsolutions_host::PlatformError> {
         self.inner.notify(record(notification)).map_err(Into::into)
     }
 
-    fn schedule_reminder(&self, at: mailcraft_time::Timestamp, notification: &Notification) -> Result<(), mailcraft_host::PlatformError> {
+    fn schedule_reminder(&self, at: mailsolutions_time::Timestamp, notification: &Notification) -> Result<(), mailsolutions_host::PlatformError> {
         self.inner.schedule_reminder(at, record(notification)).map_err(Into::into)
     }
 
-    fn open_file(&self, name: &str, bytes: &[u8]) -> Result<(), mailcraft_host::PlatformError> {
+    fn open_file(&self, name: &str, bytes: &[u8]) -> Result<(), mailsolutions_host::PlatformError> {
         self.inner.open_file(name.to_string(), bytes.to_vec()).map_err(Into::into)
     }
 
-    fn open_link(&self, url: &str) -> Result<(), mailcraft_host::PlatformError> {
+    fn open_link(&self, url: &str) -> Result<(), mailsolutions_host::PlatformError> {
         self.inner.open_link(url.to_string()).map_err(Into::into)
     }
 
-    fn now(&self) -> mailcraft_time::Timestamp {
+    fn now(&self) -> mailsolutions_time::Timestamp {
         match self.inner.now() {
             Ok(t) => t,
             Err(_) => {
@@ -199,7 +199,7 @@ impl mailcraft_host::Platform for Native {
         }
     }
 
-    fn utc_offset_minutes(&self, at: mailcraft_time::Timestamp) -> i32 {
+    fn utc_offset_minutes(&self, at: mailsolutions_time::Timestamp) -> i32 {
         self.inner.utc_offset_minutes(at).unwrap_or(0)
     }
 

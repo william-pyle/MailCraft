@@ -41,7 +41,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream, ToSocketAddrs}
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use mailcraft_proto::ProtoError;
+use mailsolutions_proto::ProtoError;
 use rustls::pki_types::ServerName;
 use rustls::{ClientConfig, ClientConnection, StreamOwned};
 
@@ -66,7 +66,7 @@ const MAX_LOOKED_UP: usize = 16;
 /// What every request says of its sender: nothing about this machine or its owner. In the
 /// browsers' form, because web firewalls (ModSecurity's rules among them) refuse a request whose
 /// sender doesn't read like one, most often with 406 (#46).
-const USER_AGENT: &str = "Mozilla/5.0 (compatible; MailCraft)";
+const USER_AGENT: &str = "Mozilla/5.0 (compatible; MailSolutions)";
 /// The kinds of picture asked for. Servers that keep a picture in several kinds send a newer
 /// one (WebP, AVIF) only to those who name it, so naming none of them gets the plain kinds.
 /// Anything else is taken last rather than refused with 406 (#46): what comes is checked to be
@@ -886,7 +886,7 @@ pub fn unsubscribe(url: &str) -> Result<(), String> {
 
 /// [`unsubscribe`], with the reach and the limits said (and so to a test's plain `http` server).
 fn unsubscribe_with(url: &str, reach: &Reach<'_>, limits: &Limits) -> Result<(), String> {
-    let at = address(url).map_err(|_| "its address isn't one MailCraft sends to".to_string())?;
+    let at = address(url).map_err(|_| "its address isn't one MailSolutions sends to".to_string())?;
     let deadline = Instant::now() + limits.patience;
     match ask(&at, reach, limits, limits.max_bytes, deadline, Some("List-Unsubscribe=One-Click")) {
         Ok(answer) if (200..300).contains(&answer.status) => Ok(()),
@@ -972,7 +972,7 @@ mod tests {
             headers,
             [
                 ("host", format!("127.0.0.1:{}", server.port).as_str()),
-                ("user-agent", "Mozilla/5.0 (compatible; MailCraft)"),
+                ("user-agent", "Mozilla/5.0 (compatible; MailSolutions)"),
                 ("accept", "image/png, image/jpeg, image/gif, image/*;q=0.5, */*;q=0.1"),
                 ("accept-encoding", "identity"),
                 ("connection", "close"),

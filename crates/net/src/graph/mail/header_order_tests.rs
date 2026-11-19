@@ -8,12 +8,12 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use mailcraft_model::auth_results::vouched;
-use mailcraft_model::sync::{GraphFetchRequest, ServerMessage};
-use mailcraft_model::{Account, AccountKind};
+use mailsolutions_model::auth_results::vouched;
+use mailsolutions_model::sync::{GraphFetchRequest, ServerMessage};
+use mailsolutions_model::{Account, AccountKind};
 
-use mailcraft_model::sync::{FolderState, SyncRequest};
-use mailcraft_model::{FolderKind, Security, Server};
+use mailsolutions_model::sync::{FolderState, SyncRequest};
+use mailsolutions_model::{FolderKind, Security, Server};
 
 use crate::fake::{Fake, FakeMailbox, FakeMessage, ImapWorld};
 use crate::graph::pace::{Gate, Retry};
@@ -49,7 +49,7 @@ fn a_message_fetched_whole_keeps_its_headers_in_the_servers_order() {
     let got = super::fetch::fetch_messages_with(&server.url(), TOKEN, &request, Arc::new(Gate::new()), QUICK, &AtomicBool::new(false));
     let fetched = got.fetched.first().unwrap();
     // What the engine does with what comes.
-    let mut m = mailcraft_mime_model::parse(&fetched.mime);
+    let mut m = mailsolutions_mime_model::parse(&fetched.mime);
     m.server = Some(ServerMessage { id, folder: inbox, ..Default::default() });
     assert_eq!(path(&m.all_headers()), PATH);
     let account = Account { kind: AccountKind::Microsoft, email: "owner@example.org".into(), ..Default::default() };

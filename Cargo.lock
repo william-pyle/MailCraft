@@ -1090,9 +1090,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 
 [[package]]
-name = "contactcraft-store"
-version = "1.2.0"
-source = "git+https://github.com/william-pyle/ContactCraft?tag=v1.2.0#ca1a15fcb95069808b85599967a47282f5414de5"
+name = "contactsolutions-store"
+version = "1.3.0"
+source = "git+https://github.com/william-pyle/ContactSolutions?tag=v1.3.0#17245278eef33d2be5fd57f227dadcd6b941bcf3"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -3175,14 +3175,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
-name = "mailcraft"
-version = "0.13.2"
+name = "mailsolutions"
+version = "0.14.0"
 dependencies = [
  "apple-native-keyring-store",
  "arboard",
  "base64 0.23.1",
  "block2 0.6.2",
- "contactcraft-store",
+ "contactsolutions-store",
  "cryptoki",
  "dispatch2",
  "eframe",
@@ -3193,20 +3193,20 @@ dependencies = [
  "keyring-core",
  "ksni",
  "log",
- "mailcraft-assuan",
- "mailcraft-charset",
- "mailcraft-control-key",
- "mailcraft-engine",
- "mailcraft-ews",
- "mailcraft-host",
- "mailcraft-jmap",
- "mailcraft-link",
- "mailcraft-model",
- "mailcraft-names",
- "mailcraft-net",
- "mailcraft-proto",
- "mailcraft-time",
- "mailcraft-ui-egui",
+ "mailsolutions-assuan",
+ "mailsolutions-charset",
+ "mailsolutions-control-key",
+ "mailsolutions-engine",
+ "mailsolutions-ews",
+ "mailsolutions-host",
+ "mailsolutions-jmap",
+ "mailsolutions-link",
+ "mailsolutions-model",
+ "mailsolutions-names",
+ "mailsolutions-net",
+ "mailsolutions-proto",
+ "mailsolutions-time",
+ "mailsolutions-ui-egui",
  "muda",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",
@@ -3218,6 +3218,7 @@ dependencies = [
  "ring",
  "rsa 0.10.0",
  "security-framework",
+ "serde",
  "serde_json",
  "sha2 0.11.1",
  "sysinfo",
@@ -3236,20 +3237,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-assuan"
-version = "0.13.2"
+name = "mailsolutions-assuan"
+version = "0.14.0"
 dependencies = [
  "proptest",
  "thiserror 2.0.21",
 ]
 
 [[package]]
-name = "mailcraft-ber"
-version = "0.13.2"
+name = "mailsolutions-ber"
+version = "0.14.0"
 
 [[package]]
-name = "mailcraft-charset"
-version = "0.13.2"
+name = "mailsolutions-charset"
+version = "0.14.0"
 dependencies = [
  "base64 0.23.1",
  "encoding_rs",
@@ -3257,60 +3258,60 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-cli"
-version = "0.13.2"
+name = "mailsolutions-cli"
+version = "0.14.0"
 dependencies = [
- "mailcraft-charset",
- "mailcraft-engine",
- "mailcraft-jmap",
- "mailcraft-mcp",
- "mailcraft-model",
- "mailcraft-net",
- "mailcraft-pst",
- "mailcraft-time",
+ "mailsolutions-charset",
+ "mailsolutions-engine",
+ "mailsolutions-jmap",
+ "mailsolutions-mcp",
+ "mailsolutions-model",
+ "mailsolutions-net",
+ "mailsolutions-pst",
+ "mailsolutions-time",
  "serde_json",
 ]
 
 [[package]]
-name = "mailcraft-control-key"
-version = "0.13.2"
+name = "mailsolutions-control-key"
+version = "0.14.0"
 dependencies = [
  "ring",
 ]
 
 [[package]]
-name = "mailcraft-dav"
-version = "0.13.2"
+name = "mailsolutions-dav"
+version = "0.14.0"
 dependencies = [
- "mailcraft-ical",
- "mailcraft-model",
- "mailcraft-time",
- "mailcraft-vcard",
+ "mailsolutions-ical",
+ "mailsolutions-model",
+ "mailsolutions-time",
+ "mailsolutions-vcard",
  "proptest",
  "quick-xml 0.42.0",
 ]
 
 [[package]]
-name = "mailcraft-engine"
-version = "0.13.2"
+name = "mailsolutions-engine"
+version = "0.14.0"
 dependencies = [
  "image",
  "libc",
  "log",
- "mailcraft-charset",
- "mailcraft-engine",
- "mailcraft-html",
- "mailcraft-i18n",
- "mailcraft-ical",
- "mailcraft-mime",
- "mailcraft-mime-model",
- "mailcraft-model",
- "mailcraft-names",
- "mailcraft-openpgp",
- "mailcraft-pst",
- "mailcraft-smime",
- "mailcraft-time",
- "mailcraft-vcard",
+ "mailsolutions-charset",
+ "mailsolutions-engine",
+ "mailsolutions-html",
+ "mailsolutions-i18n",
+ "mailsolutions-ical",
+ "mailsolutions-mime",
+ "mailsolutions-mime-model",
+ "mailsolutions-model",
+ "mailsolutions-names",
+ "mailsolutions-openpgp",
+ "mailsolutions-pst",
+ "mailsolutions-smime",
+ "mailsolutions-time",
+ "mailsolutions-vcard",
  "proptest",
  "ring",
  "serde",
@@ -3321,14 +3322,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-ews"
-version = "0.13.2"
+name = "mailsolutions-ews"
+version = "0.14.0"
 dependencies = [
  "hmac 0.13.0",
  "log",
- "mailcraft-mime-model",
- "mailcraft-model",
- "mailcraft-time",
+ "mailsolutions-mime-model",
+ "mailsolutions-model",
+ "mailsolutions-time",
  "md-5 0.11.0",
  "md4",
  "proptest",
@@ -3336,62 +3337,62 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-host"
-version = "0.13.2"
+name = "mailsolutions-host"
+version = "0.14.0"
 dependencies = [
  "log",
- "mailcraft-engine",
- "mailcraft-i18n",
- "mailcraft-model",
- "mailcraft-net",
- "mailcraft-time",
+ "mailsolutions-engine",
+ "mailsolutions-i18n",
+ "mailsolutions-model",
+ "mailsolutions-net",
+ "mailsolutions-time",
 ]
 
 [[package]]
-name = "mailcraft-html"
-version = "0.13.2"
+name = "mailsolutions-html"
+version = "0.14.0"
 dependencies = [
- "mailcraft-link",
- "mailcraft-names",
+ "mailsolutions-link",
+ "mailsolutions-names",
  "proptest",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "mailcraft-i18n"
-version = "0.13.2"
+name = "mailsolutions-i18n"
+version = "0.14.0"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
-name = "mailcraft-ical"
-version = "0.13.2"
+name = "mailsolutions-ical"
+version = "0.14.0"
 dependencies = [
- "mailcraft-model",
- "mailcraft-time",
+ "mailsolutions-model",
+ "mailsolutions-time",
  "proptest",
 ]
 
 [[package]]
-name = "mailcraft-jmap"
-version = "0.13.2"
+name = "mailsolutions-jmap"
+version = "0.14.0"
 dependencies = [
  "log",
- "mailcraft-charset",
- "mailcraft-jmap-types",
- "mailcraft-mime-model",
- "mailcraft-model",
- "mailcraft-time",
+ "mailsolutions-charset",
+ "mailsolutions-jmap-types",
+ "mailsolutions-mime-model",
+ "mailsolutions-model",
+ "mailsolutions-time",
  "proptest",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "mailcraft-jmap-types"
-version = "0.13.2"
+name = "mailsolutions-jmap-types"
+version = "0.14.0"
 dependencies = [
  "proptest",
  "serde",
@@ -3399,64 +3400,64 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-link"
-version = "0.13.2"
+name = "mailsolutions-link"
+version = "0.14.0"
 dependencies = [
- "mailcraft-names",
+ "mailsolutions-names",
  "proptest",
 ]
 
 [[package]]
-name = "mailcraft-mcp"
-version = "0.13.2"
+name = "mailsolutions-mcp"
+version = "0.14.0"
 dependencies = [
  "log",
- "mailcraft-control-key",
- "mailcraft-engine",
+ "mailsolutions-control-key",
+ "mailsolutions-engine",
  "serde_json",
 ]
 
 [[package]]
-name = "mailcraft-mime"
-version = "0.13.2"
+name = "mailsolutions-mime"
+version = "0.14.0"
 dependencies = [
- "mailcraft-ber",
- "mailcraft-charset",
- "mailcraft-html",
- "mailcraft-time",
+ "mailsolutions-ber",
+ "mailsolutions-charset",
+ "mailsolutions-html",
+ "mailsolutions-time",
  "proptest",
  "serde_json",
  "thiserror 2.0.21",
 ]
 
 [[package]]
-name = "mailcraft-mime-model"
-version = "0.13.2"
+name = "mailsolutions-mime-model"
+version = "0.14.0"
 dependencies = [
- "mailcraft-html",
- "mailcraft-mime",
- "mailcraft-model",
- "mailcraft-time",
+ "mailsolutions-html",
+ "mailsolutions-mime",
+ "mailsolutions-model",
+ "mailsolutions-time",
  "proptest",
  "serde_json",
 ]
 
 [[package]]
-name = "mailcraft-mobile"
-version = "0.13.2"
+name = "mailsolutions-mobile"
+version = "0.14.0"
 dependencies = [
  "jni",
  "log",
- "mailcraft-charset",
- "mailcraft-engine",
- "mailcraft-host",
- "mailcraft-html",
- "mailcraft-i18n",
- "mailcraft-link",
- "mailcraft-model",
- "mailcraft-names",
- "mailcraft-net",
- "mailcraft-time",
+ "mailsolutions-charset",
+ "mailsolutions-engine",
+ "mailsolutions-host",
+ "mailsolutions-html",
+ "mailsolutions-i18n",
+ "mailsolutions-link",
+ "mailsolutions-model",
+ "mailsolutions-names",
+ "mailsolutions-net",
+ "mailsolutions-time",
  "rustls-platform-verifier",
  "serde",
  "serde_json",
@@ -3464,14 +3465,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-model"
-version = "0.13.2"
+name = "mailsolutions-model"
+version = "0.14.0"
 dependencies = [
- "mailcraft-charset",
- "mailcraft-i18n",
- "mailcraft-link",
- "mailcraft-names",
- "mailcraft-time",
+ "mailsolutions-charset",
+ "mailsolutions-i18n",
+ "mailsolutions-link",
+ "mailsolutions-names",
+ "mailsolutions-time",
  "proptest",
  "serde",
  "serde_json",
@@ -3479,26 +3480,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-names"
-version = "0.13.2"
+name = "mailsolutions-names"
+version = "0.14.0"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
-name = "mailcraft-net"
-version = "0.13.2"
+name = "mailsolutions-net"
+version = "0.14.0"
 dependencies = [
  "cryptoki",
  "flate2",
  "log",
- "mailcraft-charset",
- "mailcraft-i18n",
- "mailcraft-mime",
- "mailcraft-mime-model",
- "mailcraft-model",
- "mailcraft-proto",
- "mailcraft-time",
+ "mailsolutions-charset",
+ "mailsolutions-i18n",
+ "mailsolutions-mime",
+ "mailsolutions-mime-model",
+ "mailsolutions-model",
+ "mailsolutions-proto",
+ "mailsolutions-time",
  "proptest",
  "quick-xml 0.42.0",
  "rcgen",
@@ -3511,11 +3512,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-openpgp"
-version = "0.13.2"
+name = "mailsolutions-openpgp"
+version = "0.14.0"
 dependencies = [
  "ed25519-dalek",
- "mailcraft-names",
+ "mailsolutions-names",
  "pgp",
  "proptest",
  "rand 0.8.8",
@@ -3527,26 +3528,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-proto"
-version = "0.13.2"
+name = "mailsolutions-proto"
+version = "0.14.0"
 dependencies = [
  "log",
- "mailcraft-charset",
- "mailcraft-i18n",
+ "mailsolutions-charset",
+ "mailsolutions-i18n",
  "proptest",
 ]
 
 [[package]]
-name = "mailcraft-pst"
-version = "0.13.2"
+name = "mailsolutions-pst"
+version = "0.14.0"
 dependencies = [
- "mailcraft-charset",
+ "mailsolutions-charset",
  "proptest",
 ]
 
 [[package]]
-name = "mailcraft-smime"
-version = "0.13.2"
+name = "mailsolutions-smime"
+version = "0.14.0"
 dependencies = [
  "aes 0.9.4",
  "cbc",
@@ -3555,10 +3556,10 @@ dependencies = [
  "der 0.8.3",
  "des 0.9.0",
  "hmac 0.13.0",
- "mailcraft-ber",
- "mailcraft-charset",
- "mailcraft-model",
- "mailcraft-time",
+ "mailsolutions-ber",
+ "mailsolutions-charset",
+ "mailsolutions-model",
+ "mailsolutions-time",
  "p256 0.14.0",
  "p384 0.14.0",
  "pbkdf2",
@@ -3576,8 +3577,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-time"
-version = "0.13.2"
+name = "mailsolutions-time"
+version = "0.14.0"
 dependencies = [
  "jiff",
  "js-sys",
@@ -3586,8 +3587,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-ui-egui"
-version = "0.13.2"
+name = "mailsolutions-ui-egui"
+version = "0.14.0"
 dependencies = [
  "egui",
  "egui_kittest",
@@ -3595,17 +3596,17 @@ dependencies = [
  "image",
  "js-sys",
  "log",
- "mailcraft-engine",
- "mailcraft-host",
- "mailcraft-html",
- "mailcraft-i18n",
- "mailcraft-link",
- "mailcraft-mime-model",
- "mailcraft-model",
- "mailcraft-names",
- "mailcraft-net",
- "mailcraft-pst",
- "mailcraft-time",
+ "mailsolutions-engine",
+ "mailsolutions-host",
+ "mailsolutions-html",
+ "mailsolutions-i18n",
+ "mailsolutions-link",
+ "mailsolutions-mime-model",
+ "mailsolutions-model",
+ "mailsolutions-names",
+ "mailsolutions-net",
+ "mailsolutions-pst",
+ "mailsolutions-time",
  "serde",
  "serde_json",
  "skrifa 0.49.0",
@@ -3615,31 +3616,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailcraft-vcard"
-version = "0.13.2"
+name = "mailsolutions-vcard"
+version = "0.14.0"
 dependencies = [
- "mailcraft-charset",
- "mailcraft-model",
- "mailcraft-names",
- "mailcraft-time",
+ "mailsolutions-charset",
+ "mailsolutions-model",
+ "mailsolutions-names",
+ "mailsolutions-time",
  "proptest",
 ]
 
 [[package]]
-name = "mailcraft-web"
-version = "0.13.2"
+name = "mailsolutions-web"
+version = "0.14.0"
 dependencies = [
  "eframe",
  "egui",
  "js-sys",
  "log",
- "mailcraft-engine",
- "mailcraft-html",
- "mailcraft-jmap",
- "mailcraft-link",
- "mailcraft-model",
- "mailcraft-time",
- "mailcraft-ui-egui",
+ "mailsolutions-engine",
+ "mailsolutions-html",
+ "mailsolutions-jmap",
+ "mailsolutions-link",
+ "mailsolutions-model",
+ "mailsolutions-time",
+ "mailsolutions-ui-egui",
  "rfd",
  "serde_json",
  "wasm-bindgen",
@@ -7685,11 +7686,11 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.13.2"
+version = "0.14.0"
 dependencies = [
  "image",
- "mailcraft-charset",
- "mailcraft-i18n",
+ "mailsolutions-charset",
+ "mailsolutions-i18n",
  "resvg",
  "ring",
  "serde_json",

@@ -10,9 +10,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_i18n::Text;
-use mailcraft_model::Id;
-use mailcraft_model::remote_rules::{RulesDownload, RulesUploaded};
+use mailsolutions_i18n::Text;
+use mailsolutions_model::Id;
+use mailsolutions_model::remote_rules::{RulesDownload, RulesUploaded};
 
 use super::{Busy, JobBook, Pacing, Permission, SETTLING_TRIES, Start};
 use crate::Session;
@@ -197,7 +197,7 @@ impl Session {
     /// A rules job for `account` answered. `started`: when it began; `given`: the
     /// [`fingerprint`](super::fingerprint) of the refresh token it was given; `lang`: the words a
     /// refusal that is kept is said in. Say what went wrong, in order.
-    pub fn rules_answered(&mut self, account: Id, started: f64, given: u64, lang: mailcraft_i18n::Lang, came: &RulesCame<'_>) -> Vec<Text> {
+    pub fn rules_answered(&mut self, account: Id, started: f64, given: u64, lang: mailsolutions_i18n::Lang, came: &RulesCame<'_>) -> Vec<Text> {
         // An answer for an account removed meanwhile changes nothing (else its question would be
         // left standing first in the queue, and nobody could answer it).
         if self.mailbox.account(account).is_none() {

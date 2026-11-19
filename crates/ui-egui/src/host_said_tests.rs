@@ -1,18 +1,18 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! What the host says went wrong with a mail server is shown in the interface's language where
-//! the words are MailCraft's, and as the server said it where they are the server's (#872). The
-//! errors here are the host's own: a real check and a real Send/Receive (`mailcraft-net`)
+//! the words are MailSolutions's, and as the server said it where they are the server's (#872). The
+//! errors here are the host's own: a real check and a real Send/Receive (`mailsolutions-net`)
 //! against a small IMAP server on this machine.
 
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_i18n::{Lang, Text};
-use mailcraft_model::sync::{SyncRequest, SyncResult};
-use mailcraft_model::{Account, Security, Server};
+use mailsolutions_engine::Session;
+use mailsolutions_i18n::{Lang, Text};
+use mailsolutions_model::sync::{SyncRequest, SyncResult};
+use mailsolutions_model::{Account, Security, Server};
 use serde_json::json;
 
 use crate::i18n::{RestoreLanguage, set_current};
@@ -75,24 +75,24 @@ fn account_at(port: u16) -> Account {
 /// What the host's check of an account says of a server that announces `LOGINDISABLED`.
 pub(crate) fn no_password_here() -> Text {
     let port = imap_server("IMAP4rev1 LOGINDISABLED", "never asked");
-    mailcraft_net::test_account(&account_at(port), "invented-password").unwrap_err().said()
+    mailsolutions_net::test_account(&account_at(port), "invented-password").unwrap_err().said()
 }
 
 /// What the host's check of an account says of a server that refuses the sign-in with `reason`.
 pub(crate) fn refused_with(reason: &'static str) -> Text {
     let port = imap_server("IMAP4rev1", reason);
-    mailcraft_net::test_account(&account_at(port), "invented-password").unwrap_err().said()
+    mailsolutions_net::test_account(&account_at(port), "invented-password").unwrap_err().said()
 }
 
 /// What a Send/Receive of the account on this port comes back with.
 fn synced(port: u16) -> SyncResult {
-    mailcraft_net::sync(&SyncRequest { account: account_at(port), password: "invented-password".into(), ..Default::default() })
+    mailsolutions_net::sync(&SyncRequest { account: account_at(port), password: "invented-password".into(), ..Default::default() })
 }
 
 /// A window with an IMAP account, and a Send/Receive of it under way: what it is handed comes
 /// down the pipe.
 fn imap_run() -> (MailApp, u64, Pipe) {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     let pipe = Pipe::default();
     let feed = pipe.clone();
@@ -174,7 +174,7 @@ fn the_check_of_an_account_says_why_in_german() {
 fn a_long_line_is_kept_cut_short() {
     let (mut a, id, pipe) = imap_run();
     let mut result = SyncResult::default();
-    result.problem(mailcraft_i18n::said!("Couldn't open \"{name}\"", name = "x".repeat(70_000)));
+    result.problem(mailsolutions_i18n::said!("Couldn't open \"{name}\"", name = "x".repeat(70_000)));
     finish(&mut a, id, &pipe, result);
     let lines = a.account_problem_lines(id);
     assert_eq!(lines.len(), 1);
@@ -191,7 +191,7 @@ fn a_long_line_is_still_said_in_the_interface_s_language() {
     set_current(Lang::German);
     let (mut a, id, pipe) = imap_run();
     let mut result = SyncResult::default();
-    result.problem(mailcraft_i18n::said!("Couldn't open \"{name}\"", name = "x".repeat(70_000)));
+    result.problem(mailsolutions_i18n::said!("Couldn't open \"{name}\"", name = "x".repeat(70_000)));
     finish(&mut a, id, &pipe, result);
     let lines = a.account_problem_lines(id);
     assert_eq!(lines.len(), 1);

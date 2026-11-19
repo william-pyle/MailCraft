@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! People: contacts.
 
-use mailcraft_model::{AccountChoice, Address, Contact, Id, Labeled, Mailbox, PostalAddress, clean_name};
-use mailcraft_time::Date;
+use mailsolutions_model::{AccountChoice, Address, Contact, Id, Labeled, Mailbox, PostalAddress, clean_name};
+use mailsolutions_time::Date;
 use serde_json::{Value, json};
 
 use super::tasks::kept_at;
@@ -267,7 +267,7 @@ pub fn sorted_of(s: &Session, query: &str, account: AccountChoice) -> Vec<Id> {
         .contacts
         .values()
         .map(|c| c.as_ref())
-        .filter(|c| c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts)
+        .filter(|c| c.contactsolutions_id.is_empty() != s.prefs.contactsolutions_contacts)
         .filter(|c| account.shows(&c.origin))
         .filter(|c| c.matches(query))
         .collect();
@@ -450,8 +450,8 @@ fn forward(s: &mut Session, v: &Value) -> CmdResult {
     p::only(v, &["id", "discard"])?;
     let id = named(s, v)?;
     let c = s.mailbox.contact(id).cloned().ok_or_else(|| fail("the contact is gone"))?;
-    let card = mailcraft_vcard::write(&[&c]);
-    let subject = mailcraft_names::shown(&c.name(), 200);
+    let card = mailsolutions_vcard::write(&[&c]);
+    let subject = mailsolutions_names::shown(&c.name(), 200);
     let compose = s.run("mail.new", &json!({"subject": subject}))?["compose"].clone();
     s.run(
         "compose.attach",

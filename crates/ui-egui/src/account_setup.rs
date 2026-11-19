@@ -15,7 +15,7 @@
 //! functions that say which command a page runs need no window.
 //!
 //! A sign-in on Microsoft's page may end on a page of Microsoft's that says the organisation
-//! has to approve MailCraft first, and nothing may come back from it. The owner is never left
+//! has to approve MailSolutions first, and nothing may come back from it. The owner is never left
 //! with a page that only waits: what to do next is said while the browser has the sign-in, on
 //! a page of its own, and whenever a sign-in ends without having signed anybody in (`help`).
 
@@ -26,8 +26,8 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use std::time::Duration;
 
 use egui::{Align, Align2, Layout, Margin, Rect, Response, RichText, Role, Sense, Stroke, StrokeKind, TextEdit, Ui, WidgetInfo, pos2, vec2};
-use mailcraft_model::provider::{Discovered, Via};
-use mailcraft_model::{Account, AccountKind, Directory, Id, KeepOffline, OAuth, OAuthProvider, Rgb, Security, Server, is_within, provider};
+use mailsolutions_model::provider::{Discovered, Via};
+use mailsolutions_model::{Account, AccountKind, Directory, Id, KeepOffline, OAuth, OAuthProvider, Rgb, Security, Server, is_within, provider};
 use serde_json::{Map, Value, json};
 
 use crate::approval::SignInEnd;
@@ -66,7 +66,7 @@ pub enum Page {
     ApplicationId,
     /// The owner is on the provider's page in the browser, or that came to nothing.
     SignIn,
-    /// The organisation has to approve MailCraft before its people can sign in: why, and what
+    /// The organisation has to approve MailSolutions before its people can sign in: why, and what
     /// to do next. Also the whole dialog for an account that exists and was refused for it.
     Approval,
     /// The owner signed in on the provider's page as somebody other than the address typed:
@@ -200,7 +200,7 @@ pub enum Action {
     GoogleReconnect,
     /// Start over for one more account.
     Another,
-    /// Show what to do when the organisation has to approve MailCraft first.
+    /// Show what to do when the organisation has to approve MailSolutions first.
     Approval,
     /// "I'm an administrator": open Microsoft's approval page in the browser.
     Administrator,
@@ -284,7 +284,7 @@ pub fn address(text: &str) -> Option<(&str, &str)> {
     ok.then_some((text, domain))
 }
 
-/// What `mailcraft-proto`'s IMAP LOGIN says, in English, when the server announces LOGINDISABLED
+/// What `mailsolutions-proto`'s IMAP LOGIN says, in English, when the server announces LOGINDISABLED
 /// (RFC 3501 §6.2.3): no password on this connection, an app password included. (The window
 /// says it in its own language from the text the host hands over, #872; this is only to know it
 /// by.)
@@ -497,7 +497,7 @@ pub struct AccountSetup {
     /// Autodiscover answer is awaited, and for IMAP when the owner says it isn't Exchange.
     discovered: Option<Discovered>,
     /// Whether the servers took the password, once the host knows.
-    check: Option<Receiver<Result<(), mailcraft_i18n::Text>>>,
+    check: Option<Receiver<Result<(), mailsolutions_i18n::Text>>>,
     /// The owner is in the browser, signing in for this wizard.
     waiting: bool,
     /// This is a reconnect of an existing Google OAuth account, not an app-password conversion.
@@ -506,13 +506,13 @@ pub struct AccountSetup {
     mail_only: bool,
     /// How the last sign-in ended, when it ended without signing anybody in.
     ended: Option<SignInEnd>,
-    /// The page that says what to do when the organisation has to approve MailCraft first.
+    /// The page that says what to do when the organisation has to approve MailSolutions first.
     approval: help::Approval,
-    /// An administrator approved MailCraft from this wizard: the sign-in that follows says so.
+    /// An administrator approved MailSolutions from this wizard: the sign-in that follows says so.
     approved: bool,
     /// What a sign-in as somebody other than the address typed brought back, while the owner
     /// says what to do about it. Kept in memory only, and gone with the dialog.
-    someone_else: Option<mailcraft_model::sync::Tokens>,
+    someone_else: Option<mailsolutions_model::sync::Tokens>,
     /// The account the approval page is about, when it is one that exists (0: the one that is
     /// being set up), and its organisation's directory, when that is known.
     existing: Id,
@@ -542,7 +542,7 @@ pub struct AccountSetup {
     /// The settings are of a shared mailbox (#70): only its name in the folder pane and its
     /// colour are its own, kept on this computer (#1385); its owner's sign-in reads it.
     shared: Option<String>,
-    /// The settings are of an account a newer MailCraft added: nothing of it can be changed
+    /// The settings are of an account a newer MailSolutions added: nothing of it can be changed
     /// here, and the page says why.
     newer: bool,
     /// The window's context, once a frame has run: what the password field left in its memory
@@ -554,7 +554,7 @@ pub struct AccountSetup {
     /// What the Exchange server pages keep (#252).
     exchange: exchange::Exchange,
     /// The settings are of an Exchange server account: where it connects is shown, not changed.
-    ews: Option<mailcraft_model::EwsServer>,
+    ews: Option<mailsolutions_model::EwsServer>,
 }
 
 impl Drop for AccountSetup {
@@ -671,7 +671,7 @@ impl AccountSetup {
     /// #1385).
     pub fn open(app: &MailApp, p: &Value) -> Option<AccountSetup> {
         match p.get("id").and_then(Value::as_u64).filter(|id| *id != 0) {
-            // What to do when its organisation has to approve MailCraft first, for an account
+            // What to do when its organisation has to approve MailSolutions first, for an account
             // that exists and signs in with Microsoft (`ui.approvalHelp`).
             Some(id) if p.get("page").and_then(Value::as_str) == Some("approval") => AccountSetup::approval_for(app, id),
             // The certificate of an Exchange server account's server, asked about again (#252).
@@ -909,9 +909,10 @@ impl AccountSetup {
         if incoming.port().is_none() || outgoing.port().is_none() {
             return Some(tl!("A port is a number from 1 to 65535").to_string());
         }
-        if !incoming.host.trim().is_empty() && mailcraft_model::pop::looks_like_pop(&incoming.host, incoming.port().unwrap_or(0)) {
+        if !incoming.host.trim().is_empty() && mailsolutions_model::pop::looks_like_pop(&incoming.host, incoming.port().unwrap_or(0)) {
             return Some(
-                tl!("MailCraft doesn't support POP yet. Use your provider's IMAP server instead (usually imap.<your domain>, port 993).").to_string(),
+                tl!("MailSolutions doesn't support POP yet. Use your provider's IMAP server instead (usually imap.<your domain>, port 993).")
+                    .to_string(),
             );
         }
         if self.edit.is_some() {
@@ -1136,7 +1137,7 @@ impl AccountSetup {
                     self.error = tl!("Google sign-in is not configured for this build. Use an app password instead.").to_string();
                 } else {
                     self.forget_password();
-                    self.oauth = Some(OAuth { provider: mailcraft_model::OAuthProvider::Google, ..Default::default() });
+                    self.oauth = Some(OAuth { provider: mailsolutions_model::OAuthProvider::Google, ..Default::default() });
                     self.proceed(app);
                 }
             }
@@ -1437,7 +1438,7 @@ impl AccountSetup {
 
     /// Convert only after the user explicitly chose Google sign-in and the sign-in identified
     /// the SAME existing account. Until this point the app password has not been changed.
-    fn convert_existing_google(&mut self, app: &mut MailApp, tokens: mailcraft_model::sync::Tokens) {
+    fn convert_existing_google(&mut self, app: &mut MailApp, tokens: mailsolutions_model::sync::Tokens) {
         let Some(id) = self.edit.as_ref().map(|edit| edit.id) else { return };
         let Some(existing) = app.session.mailbox.account(id).cloned() else {
             self.oauth = None;
@@ -1477,7 +1478,7 @@ impl AccountSetup {
 
     /// Reauthorize an existing Google OAuth account without changing its account ID,
     /// mail, folders, server settings, or sign-in method.
-    fn reconnect_existing_google(&mut self, app: &mut MailApp, tokens: mailcraft_model::sync::Tokens) {
+    fn reconnect_existing_google(&mut self, app: &mut MailApp, tokens: mailsolutions_model::sync::Tokens) {
         let Some(id) = self.edit.as_ref().map(|edit| edit.id) else { return };
         let valid = app.session.mailbox.account(id).is_some_and(|account| {
             account.oauth.as_ref().is_some_and(|oauth| oauth.provider == OAuthProvider::Google)
@@ -1501,7 +1502,7 @@ impl AccountSetup {
     /// Add the account the owner just signed in to, with the tokens that brought back. One that
     /// signed in as somebody other than the address typed is not added: the owner is asked
     /// whether to sign in again, set up that account, or confirm a personal custom-domain alias.
-    fn add_signed_in(&mut self, app: &mut MailApp, tokens: mailcraft_model::sync::Tokens) {
+    fn add_signed_in(&mut self, app: &mut MailApp, tokens: mailsolutions_model::sync::Tokens) {
         if tokens.someone_else(self.email.trim(), "") {
             self.someone_else = Some(tokens);
             self.go(Page::SomeoneElse);
@@ -1511,7 +1512,7 @@ impl AccountSetup {
     }
 
     /// Add the identity already checked against the address, or explicitly confirmed as its alias.
-    fn add_confirmed_signed_in(&mut self, app: &mut MailApp, tokens: mailcraft_model::sync::Tokens) {
+    fn add_confirmed_signed_in(&mut self, app: &mut MailApp, tokens: mailsolutions_model::sync::Tokens) {
         // Which kind of Microsoft account it is: the directory the sign-in named says; without
         // that, whose servers the address was found to use (work or school mail, or Outlook.com).
         self.directory = match Directory::of_tenant(&tokens.tenant) {
@@ -1523,7 +1524,7 @@ impl AccountSetup {
             Some((command, mut params)) => {
                 // A Microsoft account is kept in step through Microsoft Graph, without mail servers
                 // (R3), unless the owner asked for mail only (that is IMAP's, until R3.8).
-                if !self.mail_only && self.oauth.as_ref().is_some_and(|o| o.provider == mailcraft_model::OAuthProvider::Microsoft) {
+                if !self.mail_only && self.oauth.as_ref().is_some_and(|o| o.provider == mailsolutions_model::OAuthProvider::Microsoft) {
                     params["kind"] = json!("microsoft");
                 }
                 app.execute(command, params)
@@ -1813,7 +1814,7 @@ impl AccountSetup {
         let answer = match self.check.as_ref().map(Receiver::try_recv) {
             Some(Err(TryRecvError::Empty)) => return,
             Some(Ok(answer)) => answer,
-            Some(Err(TryRecvError::Disconnected)) | None => Err(mailcraft_i18n::Text::verbatim(tl!("Checking the account stopped unexpectedly"))),
+            Some(Err(TryRecvError::Disconnected)) | None => Err(mailsolutions_i18n::Text::verbatim(tl!("Checking the account stopped unexpectedly"))),
         };
         self.check = None;
         match answer {
@@ -1987,7 +1988,7 @@ impl AccountSetup {
         let t = pass.t;
         page(ui, &t, |ui| {
             heading(ui, tl!("Add an account"), &t);
-            note(ui, tl!("Type your address. MailCraft finds your mail servers and how you sign in."), t.text_dim);
+            note(ui, tl!("Type your address. MailSolutions finds your mail servers and how you sign in."), t.text_dim);
             if field(ui, pass, "email", tl!("Email address"), &mut self.email, tl!("you@example.org"), LINE).changed() {
                 self.error.clear();
             }
@@ -2046,7 +2047,7 @@ impl AccountSetup {
             note(
                 ui,
                 tl!(
-                    "Microsoft only lets a registered application show its sign-in page, and this build of MailCraft has no registration of its own yet."
+                    "Microsoft only lets a registered application show its sign-in page, and this build of MailSolutions has no registration of its own yet."
                 ),
                 t.text,
             );
@@ -2061,7 +2062,7 @@ impl AccountSetup {
             {
                 self.error.clear();
             }
-            note(ui, tl!("It is an identifier, not a secret. MailCraft keeps it in its settings (File › Options)."), t.text_dim);
+            note(ui, tl!("It is an identifier, not a secret. MailSolutions keeps it in its settings (File › Options)."), t.text_dim);
             error(ui, &self.error);
         });
         let ready = !self.client_id.trim().is_empty();
@@ -2145,7 +2146,7 @@ impl AccountSetup {
                 note(
                     ui,
                     tl!(
-                        "MailCraft doesn't know the settings for this address. The servers below are only a guess made from its domain: check them with your provider or administrator before you connect."
+                        "MailSolutions doesn't know the settings for this address. The servers below are only a guess made from its domain: check them with your provider or administrator before you connect."
                     ),
                     t.orange,
                 );
@@ -2165,7 +2166,7 @@ impl AccountSetup {
                 note(ui, tl!(&self.note), t.text);
             }
             if oauth_first {
-                note(ui, tl!("Sign in securely with Google in your browser. Your Google password is never entered in MailCraft."), t.text);
+                note(ui, tl!("Sign in securely with Google in your browser. Your Google password is never entered in MailSolutions."), t.text);
                 if self.google_testers_only {
                     note(ui, google_testers_note(), t.orange);
                 } else {
@@ -2409,7 +2410,7 @@ impl AccountSetup {
                 } else if !unchanged {
                     note(ui, tl!("Save or discard changes here before switching sign-in methods."), t.orange);
                 } else if !configured {
-                    note(ui, tl!("MailCraft's Google Desktop registration is not yet configured for this build."), t.orange);
+                    note(ui, tl!("MailSolutions's Google Desktop registration is not yet configured for this build."), t.orange);
                 }
             }
             let address = shown(self.email.trim(), 120);
@@ -2525,7 +2526,7 @@ impl AccountSetup {
         if cancel { Some(Action::Back) } else { (save || pass.submit).then_some(Action::Go) }
     }
 
-    /// The settings of an account a newer MailCraft added: what it is, and nothing to change (its
+    /// The settings of an account a newer MailSolutions added: what it is, and nothing to change (its
     /// settings go back into the mailbox file as that version wrote them).
     fn newer_page(&mut self, ui: &mut Ui, pass: &Pass) -> Option<Action> {
         let t = pass.t;
@@ -2534,7 +2535,7 @@ impl AccountSetup {
             note(
                 ui,
                 tl!(
-                    "This account was added by a newer version of MailCraft. This version keeps it as it is and doesn't send or receive with it: use the newer version for that, and to change its settings."
+                    "This account was added by a newer version of MailSolutions. This version keeps it as it is and doesn't send or receive with it: use the newer version for that, and to change its settings."
                 ),
                 t.text_dim,
             );
@@ -2572,7 +2573,7 @@ fn kept_where(app: &MailApp) -> &'static str {
     if app.ui.remember_sign_in && app.services.secrets.is_some() && app.secrets_trouble.is_none() {
         tl!("Once it has worked, your system's credential store keeps it for next time. It is never written to the mailbox.")
     } else {
-        tl!("MailCraft keeps it in memory until you close the app. It is never written to disk.")
+        tl!("MailSolutions keeps it in memory until you close the app. It is never written to disk.")
     }
 }
 
@@ -2606,7 +2607,7 @@ fn page(ui: &mut Ui, t: &Tokens, add: impl FnOnce(&mut Ui)) {
             let center = pos2(r.min.x + 18.0, r.center().y);
             ui.painter().circle_filled(center, 18.0, t.accent);
             icons::paint(ui.painter(), Rect::from_center_size(center, vec2(20.0, 20.0)), "mail", t.on_accent, t.on_accent);
-            ui.painter().text(pos2(r.min.x + 46.0, r.center().y), Align2::LEFT_CENTER, "MailCraft", semibold(17.0), t.text);
+            ui.painter().text(pos2(r.min.x + 46.0, r.center().y), Align2::LEFT_CENTER, "MailSolutions", semibold(17.0), t.text);
             ui.add_space(10.0);
             add(ui);
         });
@@ -2718,7 +2719,7 @@ fn indented(ui: &mut Ui, add: impl FnOnce(&mut Ui)) {
 const GOOGLE_APP_PASSWORDS: &str = "https://myaccount.google.com/apppasswords";
 
 fn google_testers_note() -> &'static str {
-    tl!("Google sign-in is open only to invited testers while Google reviews MailCraft.")
+    tl!("Google sign-in is open only to invited testers while Google reviews MailSolutions.")
 }
 
 /// Whether `host` is Google's mail server (Gmail, Google Workspace).
@@ -2819,8 +2820,8 @@ mod tests {
     use egui::accesskit::Role;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable as _;
-    use mailcraft_engine::Session;
-    use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens as SignedIn};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens as SignedIn};
 
     use super::*;
     use crate::dialogs::Dialog;
@@ -2865,7 +2866,7 @@ mod tests {
 
     /// The app over the sample mailbox, or over the empty one of a first run.
     fn app(sample: bool) -> MailApp {
-        let mailbox = if sample { mailcraft_engine::sample::mailbox(NOW, 0) } else { mailcraft_model::Mailbox::with_local_account("", "") };
+        let mailbox = if sample { mailsolutions_engine::sample::mailbox(NOW, 0) } else { mailsolutions_model::Mailbox::with_local_account("", "") };
         let mut app = MailApp::new(Session::at(mailbox, NOW, 0), Services::default());
         // Nothing happens by itself: what a test sees synchronised, it or the wizard asked for.
         app.autosave = false;
@@ -2923,7 +2924,7 @@ mod tests {
         SignedIn {
             access: "tok-1".into(),
             refresh: "ref-1".into(),
-            expires_at: mailcraft_time::now() + 3600,
+            expires_at: mailsolutions_time::now() + 3600,
             name: name.into(),
             email: "noor@example.org".into(),
             tenant: String::new(),
@@ -2933,16 +2934,16 @@ mod tests {
     /// A host that tries accounts on their servers: it answers `answer`, or keeps trying. The log
     /// is the accounts it was handed, each with its secret.
     fn checks(app: &mut MailApp, answer: Option<Result<(), &str>>) -> Log<(Account, String)> {
-        let answer = answer.map(|a| a.map_err(mailcraft_i18n::Text::verbatim));
+        let answer = answer.map(|a| a.map_err(mailsolutions_i18n::Text::verbatim));
         checks_said(app, answer)
     }
 
     /// [`checks`] with the answer as the host says it: a text for the window to say in its
     /// language.
-    fn checks_said(app: &mut MailApp, answer: Option<Result<(), mailcraft_i18n::Text>>) -> Log<(Account, String)> {
+    fn checks_said(app: &mut MailApp, answer: Option<Result<(), mailsolutions_i18n::Text>>) -> Log<(Account, String)> {
         let asked: Log<(Account, String)> = Default::default();
         let log = asked.clone();
-        let silent: Log<mpsc::Sender<Result<(), mailcraft_i18n::Text>>> = Default::default();
+        let silent: Log<mpsc::Sender<Result<(), mailsolutions_i18n::Text>>> = Default::default();
         app.services.test_account = Some(Box::new(move |account, secret| {
             log.lock().unwrap().push((account, secret));
             let (tx, rx) = mpsc::channel();
@@ -3358,7 +3359,7 @@ mod tests {
         let asked = lookups(&mut a, Some(Ok(vec![MICROSOFT_MX])));
         let signed = sign_ins(&mut a, Some(Ok(signed_in("Noor Haddad"))));
         let synced = syncs(&mut a);
-        let jobs: Log<Option<mailcraft_model::sync::GraphMailRequest>> = Default::default();
+        let jobs: Log<Option<mailsolutions_model::sync::GraphMailRequest>> = Default::default();
         let log = jobs.clone();
         a.services.graph = Some(Box::new(move |req: crate::GraphRequest| {
             log.lock().unwrap().push(req.mail.clone());
@@ -3413,7 +3414,7 @@ mod tests {
             rx
         }));
         let imap = syncs(&mut a);
-        let jobs: Log<(String, String, Option<mailcraft_model::sync::GraphMailRequest>)> = Default::default();
+        let jobs: Log<(String, String, Option<mailsolutions_model::sync::GraphMailRequest>)> = Default::default();
         let log = jobs.clone();
         a.services.graph = Some(Box::new(move |req: crate::GraphRequest| {
             log.lock().unwrap().push((req.access.clone(), req.refresh.clone(), req.mail.clone()));
@@ -3509,7 +3510,7 @@ mod tests {
         lookups(&mut a, Some(Ok(vec![MICROSOFT_MX])));
         sign_ins(&mut a, Some(Ok(signed_in_as("admin@example.org"))));
         let synced = syncs(&mut a);
-        let jobs: Log<Option<mailcraft_model::sync::GraphMailRequest>> = Default::default();
+        let jobs: Log<Option<mailsolutions_model::sync::GraphMailRequest>> = Default::default();
         let log = jobs.clone();
         a.services.graph = Some(Box::new(move |req: crate::GraphRequest| {
             log.lock().unwrap().push(req.mail.clone());
@@ -4097,7 +4098,7 @@ mod tests {
         assert_eq!((account.incoming.as_ref(), account.outgoing.as_ref()), (None, None));
     }
 
-    /// The settings of an account a newer MailCraft added say what it is and offer nothing to
+    /// The settings of an account a newer MailSolutions added say what it is and offer nothing to
     /// change: Close, or Enter, shuts them, and nothing is run.
     #[test]
     fn the_settings_of_an_account_a_newer_version_added_say_so_and_change_nothing() {
@@ -4108,7 +4109,7 @@ mod tests {
         let before = a.session.mailbox.accounts.clone();
         let mut h = open(a, json!({"id": id}));
         assert_eq!((page(&h), wizard(&h).map(|w| w.title())), (Some(Page::Settings), Some("Account Settings".to_string())));
-        assert!(says(&h, "This account was added by a newer version of MailCraft") && says(&h, "this version tells no mail server"));
+        assert!(says(&h, "This account was added by a newer version of MailSolutions") && says(&h, "this version tells no mail server"));
         assert!(!says(&h, "User name") && !says(&h, "Incoming mail (IMAP)") && h.query_by_role(Role::PasswordInput).is_none());
         assert!(wizard(&h).and_then(AccountSetup::edit_command).is_none());
         click(&mut h, "Close");

@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use mailcraft_model::sync::{GraphSearchRequest, GraphSearchResult, SharedRefusal};
+use mailsolutions_model::sync::{GraphSearchRequest, GraphSearchResult, SharedRefusal};
 use proptest::prelude::*;
 use serde_json::json;
 
@@ -91,10 +91,13 @@ fn an_address_is_searched_on_the_server_as_it_is_here() {
         assert_eq!(param.as_deref(), Some(sent), "{query}");
         // What the server finds, once what is checked here has looked at it, is what a search
         // here finds; and with nothing left to check, by itself.
-        let parsed = mailcraft_model::search::Query::parse(query);
+        let parsed = mailsolutions_model::search::Query::parse(query);
         let local = parsed.for_server().local;
-        let message =
-            |from: &str| mailcraft_model::Message { from: mailcraft_model::Address::new("", from), subject: from.into(), ..Default::default() };
+        let message = |from: &str| mailsolutions_model::Message {
+            from: mailsolutions_model::Address::new("", from),
+            subject: from.into(),
+            ..Default::default()
+        };
         let mut by_here: Vec<&str> = senders.into_iter().filter(|from| parsed.matches(&message(from), 0)).collect();
         by_here.sort();
         let mut by_server: Vec<&str> = subjects(&found);

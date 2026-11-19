@@ -7,7 +7,7 @@
 //! this computer until the owner moves it to an account's server.
 //!
 //! **Where it is kept.** A rule of a Microsoft account can be kept on its server ([`Keep::Server`]),
-//! which runs it whether MailCraft is open or not, and shows it in Outlook on the web and on the
+//! which runs it whether MailSolutions is open or not, and shows it in Outlook on the web and on the
 //! phone. Once the server has it ([`Rule::server`]) it never runs here on arriving mail: the
 //! server has run it already. Until then it runs here, as every rule kept on this computer does.
 //! A rule made in Outlook or on the web is the server's too; one with parts this version doesn't
@@ -103,10 +103,10 @@ impl Action {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Keep {
-    /// On this computer: it runs while MailCraft is open.
+    /// On this computer: it runs while MailSolutions is open.
     #[default]
     Here,
-    /// On its account's server, which runs it whether MailCraft is open or not. Until the server
+    /// On its account's server, which runs it whether MailSolutions is open or not. Until the server
     /// has it ([`Rule::server`]), it runs here.
     Server,
 }

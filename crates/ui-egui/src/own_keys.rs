@@ -10,13 +10,13 @@
 //! in a [`Passphrase`] for that one call (overwritten when it is let go of, never shown by
 //! `Debug`), and the file's bytes likewise; neither is kept, logged or put in a command's params.
 //!
-//! What MailCraft keeps of an imported key in the window's settings (`ui.json`, which is this
+//! What MailSolutions keeps of an imported key in the window's settings (`ui.json`, which is this
 //! computer's, as the credential store holding the key is) is [`ImportedKey`]: its format,
 //! fingerprint, name, addresses, end date and the name it is kept under in the credential store,
 //! never the key or a passphrase. The browser build has no such host: nothing of this is offered
 //! there, and checking Digital signatures works as everywhere.
 
-use mailcraft_model::digital_signature::SignatureFormat;
+use mailsolutions_model::digital_signature::SignatureFormat;
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
 
@@ -217,7 +217,7 @@ pub enum OwnKeysJob {
 pub enum Imported {
     /// Into the system's own store (Windows, macOS): the system holds it, and lists it.
     System,
-    /// Kept by MailCraft in the credential store; for an OpenPGP key, its public half too
+    /// Kept by MailSolutions in the credential store; for an OpenPGP key, its public half too
     /// (binary packets), to keep for the owner's own addresses so that their own Digital
     /// signatures check.
     Kept { key: ImportedKey, public: Option<Vec<u8>> },

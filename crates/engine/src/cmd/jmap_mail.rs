@@ -4,7 +4,7 @@
 //!
 //! As for IMAP and Microsoft Graph, the engine never talks to a server: [`jmap_mail_request`]
 //! (`sync.jmapRequest`) says what a run should send up and read, a host that can reach the server does it
-//! (`mailcraft_jmap::sync_mail`, over `fetch` in the browser), and [`apply_jmap_mail`]
+//! (`mailsolutions_jmap::sync_mail`, over `fetch` in the browser), and [`apply_jmap_mail`]
 //! (`sync.applyJmap`) takes in what it brought back, piece by piece. The same goes for messages
 //! fetched whole: [`jmap_fetch_request`] (`sync.jmapFetchRequest`) and [`apply_jmap_fetch`]
 //! (`sync.applyJmapFetch`). All four are the host's side of a synchronisation, never an agent's.
@@ -16,7 +16,7 @@
 //! became of the changes and of the mail sent comes back with the run, in a piece of its own or
 //! with the listing, and is taken in before anything read. The changes of folders (a rename, a
 //! move, a deletion) and what is written in a draft don't go up yet
-//! ([`mailcraft_model::Mailbox::folder_stays_on_server`]).
+//! ([`mailsolutions_model::Mailbox::folder_stays_on_server`]).
 //!
 //! **What comes back is hostile** (a host may hand over anything): every list and string of a
 //! result is held to a size before it is taken in, ids are held to the JMAP alphabet (RFC 8620
@@ -26,7 +26,7 @@
 //! **Taking in** goes the way of a Graph run, by server id, with the same pieces: the listing
 //! makes and updates the folders ([`super::graph_mail`]); each window is a page of a folder's
 //! messages ([`super::graph_down::take_page`]), and a window that holds all of its mailbox is
-//! a complete listing of it ([`mailcraft_model::sync::MessagePage::afresh`]); at the end of a run
+//! a complete listing of it ([`mailsolutions_model::sync::MessagePage::afresh`]); at the end of a run
 //! that went well, what the complete windows of that run left out is gone ([`jmap_down::sweep`]).
 //! A mark the server changed comes down, but for one changed here since the server last said
 //! (three ways, as for Graph; a flag by its `$flagged` bit alone, since the server keeps no due
@@ -36,10 +36,10 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     GraphFetchResult, JmapFetchRequest, JmapMailRequest, JmapMailResult, JmapOutcome, JmapScope, MAX_JMAP_WINDOW, SendOutcome, SyncPhase,
 };
-use mailcraft_model::{AccountKind, FolderKind, Id, JmapServer, Mailbox};
+use mailsolutions_model::{AccountKind, FolderKind, Id, JmapServer, Mailbox};
 use serde_json::{Value, json};
 
 use super::graph_down::{self, Down};
@@ -80,7 +80,7 @@ fn named_account(s: &Session, v: &Value) -> Result<Id, CmdError> {
 
 /// The account `account` and its server, when it is a JMAP account whose session address may be
 /// used ([`JmapServer::check_session`]: a mailbox file can say anything).
-fn jmap_account(mb: &Mailbox, account: Id) -> Result<(&mailcraft_model::Account, &JmapServer), CmdError> {
+fn jmap_account(mb: &Mailbox, account: Id) -> Result<(&mailsolutions_model::Account, &JmapServer), CmdError> {
     let a = mb.account(account).ok_or_else(|| failed!("no account with id {id}", id = account))?;
     if a.kind != AccountKind::Jmap {
         return Err(failed!("{name} isn't kept in step over JMAP", name = a.name));
@@ -267,7 +267,7 @@ fn apply_jmap_news(s: &mut Session, result: JmapMailResult) -> CmdResult {
     let mut told = Told::default();
     let mut waits_changed = false;
     let moves_last =
-        |moves: bool| result.changes.iter().filter(move |done| matches!(done.change, mailcraft_model::sync::JmapChange::Move { .. }) == moves);
+        |moves: bool| result.changes.iter().filter(move |done| matches!(done.change, mailsolutions_model::sync::JmapChange::Move { .. }) == moves);
     for done in moves_last(false).chain(moves_last(true)) {
         match jmap_up::change_done(&mut s.mailbox, account, done, &mut told) {
             Became::Made => taken.pushed += 1,
@@ -338,7 +338,7 @@ fn apply_jmap_news(s: &mut Session, result: JmapMailResult) -> CmdResult {
     errors.extend(refused.iter().cloned());
     s.graph_said.extend(refused);
     if result.auth_refused {
-        errors.insert(0, mailcraft_i18n::fmt(lang.t("The server turned down the sign-in for {name}: sign in again"), &[("name", &name)]));
+        errors.insert(0, mailsolutions_i18n::fmt(lang.t("The server turned down the sign-in for {name}: sign in again"), &[("name", &name)]));
     }
     // Send/Receive Progress: where the run is, what it brought, what went wrong.
     let step = match (&result.progress, &result.listing, result.sent.is_empty()) {

@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Switching a Microsoft account kept in step by IMAP over to Microsoft Graph (R3.7), as the
 //! engine does it. (From end to end, against the fake IMAP server and the Graph stand-in:
-//! `apps/mailcraft-cli/tests/graph_switch.rs`.)
+//! `apps/mailsolutions-cli/tests/graph_switch.rs`.)
 
-use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, RemoteFlags};
-use mailcraft_model::{FlagStatus, Pending, Server};
+use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, RemoteFlags};
+use mailsolutions_model::{FlagStatus, Pending, Server};
 use serde_json::json;
 
 use super::*;
@@ -15,7 +15,7 @@ const OWNER: &str = "owner@contoso.example";
 
 /// A directory of the test's own, made empty.
 fn scratch(name: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("mailcraft-r37-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-r37-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -63,7 +63,7 @@ fn mailbox() -> (Session, Ids) {
         kind: AccountKind::Imap,
         incoming: server("outlook.office365.com"),
         outgoing: server("smtp.office365.com"),
-        oauth: Some(mailcraft_model::OAuth::default()),
+        oauth: Some(mailsolutions_model::OAuth::default()),
         ..Default::default()
     });
     let inbox = mb.folder_of_kind(account, FolderKind::Inbox).unwrap();

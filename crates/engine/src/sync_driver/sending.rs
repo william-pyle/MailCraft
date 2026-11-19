@@ -19,7 +19,7 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 
 use crate::Session;
 use crate::cmd::graph_send;
@@ -197,7 +197,7 @@ impl Session {
     /// though that run starts by itself.
     pub fn shared_send_pressed_in(&mut self, message: Id) -> Pressed {
         let Some(account) = self.mailbox.message(message).map(|m| m.account) else { return Pressed::Nothing };
-        if !self.mailbox.account(account).is_some_and(mailcraft_model::Account::is_shared) {
+        if !self.mailbox.account(account).is_some_and(mailsolutions_model::Account::is_shared) {
             return Pressed::Nothing;
         }
         if self.driver.sending.waits.contains(&account) {

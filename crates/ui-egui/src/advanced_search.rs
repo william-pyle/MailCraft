@@ -13,9 +13,9 @@
 //! when File or a dialog opens, and when another mailbox is opened.
 
 use egui::{Area, Frame, Id, LayerId, Order, Rect, Response, Stroke, StrokeKind, Ui, pos2, vec2};
-use mailcraft_engine::{Module, Scope};
-use mailcraft_model::Importance;
-use mailcraft_model::search::{Advanced, Reading, full_date};
+use mailsolutions_engine::{Module, Scope};
+use mailsolutions_model::Importance;
+use mailsolutions_model::search::{Advanced, Reading, full_date};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
@@ -77,7 +77,7 @@ impl Filter {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Day {
     None,
-    Date(mailcraft_time::Date),
+    Date(mailsolutions_time::Date),
     NotADate,
 }
 
@@ -100,7 +100,7 @@ pub(crate) struct Panel {
     pub(crate) scope: Scope,
     /// The filters of Add filters shown for this opening because the box holds them, ticked or not.
     held: Filters,
-    /// The mailbox it was opened on ([`mailcraft_engine::Session::openings`]).
+    /// The mailbox it was opened on ([`mailsolutions_engine::Session::openings`]).
     openings: u64,
     /// Where the search looked when it was opened.
     looked: Scope,

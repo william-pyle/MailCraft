@@ -10,83 +10,83 @@ use DepKind::*;
 #[test]
 fn clean_downward_graph_passes() {
     let g = [
-        c("mailcraft-time", &[("kurbo", Normal, false)]),
-        c("mailcraft-model", &[("mailcraft-time", Normal, true)]),
-        c("mailcraft-engine", &[("mailcraft-model", Normal, true), ("mailcraft-testkit", Dev, true)]),
-        c("mailcraft-ui-egui", &[("mailcraft-engine", Normal, true), ("egui", Normal, false)]),
-        c("mailcraft-cli", &[("mailcraft-ui-egui", Normal, true)]),
+        c("mailsolutions-time", &[("kurbo", Normal, false)]),
+        c("mailsolutions-model", &[("mailsolutions-time", Normal, true)]),
+        c("mailsolutions-engine", &[("mailsolutions-model", Normal, true), ("mailsolutions-testkit", Dev, true)]),
+        c("mailsolutions-ui-egui", &[("mailsolutions-engine", Normal, true), ("egui", Normal, false)]),
+        c("mailsolutions-cli", &[("mailsolutions-ui-egui", Normal, true)]),
     ];
     assert!(check(&g).is_empty(), "{:?}", check(&g));
 }
 
 #[test]
 fn upward_dependency_flagged() {
-    let v = check(&[c("mailcraft-model", &[("mailcraft-engine", Normal, true)])]);
+    let v = check(&[c("mailsolutions-model", &[("mailsolutions-engine", Normal, true)])]);
     assert!(matches!(v[..], [Violation::Upward { from: 1, to: 4, .. }]));
 }
 
 #[test]
 fn sideways_dependency_flagged() {
-    let v = check(&[c("mailcraft-mime", &[("mailcraft-ical", Normal, true)])]);
+    let v = check(&[c("mailsolutions-mime", &[("mailsolutions-ical", Normal, true)])]);
     assert!(matches!(v[..], [Violation::Upward { from: 2, to: 2, .. }]));
 }
 
 #[test]
 fn l0_foundation_chain_allowed_one_way() {
-    assert!(check(&[c("mailcraft-model", &[("mailcraft-time", Normal, true)])]).is_empty());
-    let v = check(&[c("mailcraft-time", &[("mailcraft-model", Normal, true)])]);
+    assert!(check(&[c("mailsolutions-model", &[("mailsolutions-time", Normal, true)])]).is_empty());
+    let v = check(&[c("mailsolutions-time", &[("mailsolutions-model", Normal, true)])]);
     assert!(matches!(v[..], [Violation::Upward { from: 0, to: 1, .. }]));
 }
 
 #[test]
 fn self_dev_dependency_ignored() {
-    assert!(check(&[c("mailcraft-model", &[("mailcraft-model", Dev, true)])]).is_empty());
+    assert!(check(&[c("mailsolutions-model", &[("mailsolutions-model", Dev, true)])]).is_empty());
 }
 
 #[test]
 fn upward_dev_dependency_flagged() {
-    let v = check(&[c("mailcraft-time", &[("mailcraft-model", Dev, true)])]);
+    let v = check(&[c("mailsolutions-time", &[("mailsolutions-model", Dev, true)])]);
     assert!(matches!(v[..], [Violation::Upward { kind: Dev, .. }]));
 }
 
 #[test]
 fn ui_crates_below_l6_flagged() {
     for dep in ["egui", "eframe", "winit", "egui_kittest", "rfd", "bevy_ecs", "bevy"] {
-        let v = check(&[c("mailcraft-engine", &[(dep, Normal, false)])]);
+        let v = check(&[c("mailsolutions-engine", &[(dep, Normal, false)])]);
         assert!(matches!(v[..], [Violation::UiBelowL6 { layer: 4, .. }]), "{dep}");
     }
-    assert!(check(&[c("mailcraft-engine", &[("egui_extras_not", Normal, false)])]).is_empty());
-    assert!(!check(&[c("mailcraft-mcp", &[("winit", Normal, false)])]).is_empty());
+    assert!(check(&[c("mailsolutions-engine", &[("egui_extras_not", Normal, false)])]).is_empty());
+    assert!(!check(&[c("mailsolutions-mcp", &[("winit", Normal, false)])]).is_empty());
 }
 
 #[test]
 fn unregistered_crate_is_error() {
-    let v = check(&[c("mailcraft-mystery", &[])]);
-    assert!(matches!(&v[..], [Violation::Unregistered { krate }] if krate == "mailcraft-mystery"));
+    let v = check(&[c("mailsolutions-mystery", &[])]);
+    assert!(matches!(&v[..], [Violation::Unregistered { krate }] if krate == "mailsolutions-mystery"));
     assert!(v[0].to_string().contains("register"));
 }
 
 #[test]
 fn testkit_only_as_dev_dependency() {
-    let v = check(&[c("mailcraft-proto", &[("mailcraft-testkit", Normal, true)])]);
+    let v = check(&[c("mailsolutions-proto", &[("mailsolutions-testkit", Normal, true)])]);
     assert!(matches!(v[..], [Violation::TestkitAsNormalDep { .. }]));
-    assert!(check(&[c("mailcraft-proto", &[("mailcraft-testkit", Dev, true)])]).is_empty());
+    assert!(check(&[c("mailsolutions-proto", &[("mailsolutions-testkit", Dev, true)])]).is_empty());
     // testkit itself may use anything up to L5 but not L6 crates.
-    assert!(check(&[c("mailcraft-testkit", &[("mailcraft-engine", Normal, true)])]).is_empty());
-    assert!(!check(&[c("mailcraft-testkit", &[("mailcraft-ui-egui", Normal, true)])]).is_empty());
+    assert!(check(&[c("mailsolutions-testkit", &[("mailsolutions-engine", Normal, true)])]).is_empty());
+    assert!(!check(&[c("mailsolutions-testkit", &[("mailsolutions-ui-egui", Normal, true)])]).is_empty());
 }
 
 #[test]
 fn apps_and_xtask_exempt() {
-    for app in ["mailcraft", "mailcraft-cli", "mailcraft-web", "xtask"] {
-        assert!(check(&[c(app, &[("egui", Normal, false), ("mailcraft-ui-egui", Normal, true)])]).is_empty());
+    for app in ["mailsolutions", "mailsolutions-cli", "mailsolutions-web", "xtask"] {
+        assert!(check(&[c(app, &[("egui", Normal, false), ("mailsolutions-ui-egui", Normal, true)])]).is_empty());
     }
 }
 
 #[test]
 fn dispatch2_is_for_the_apps_alone() {
-    assert!(check(&[c("mailcraft", &[("dispatch2", Normal, false)])]).is_empty());
-    for krate in ["mailcraft-ui-egui", "mailcraft-engine", "mailcraft-time"] {
+    assert!(check(&[c("mailsolutions", &[("dispatch2", Normal, false)])]).is_empty());
+    for krate in ["mailsolutions-ui-egui", "mailsolutions-engine", "mailsolutions-time"] {
         let v = check(&[c(krate, &[("dispatch2", Normal, false)])]);
         assert!(matches!(&v[..], [Violation::AppOnly { dep, .. }] if dep == "dispatch2"), "{krate}: {v:?}");
     }
@@ -94,49 +94,53 @@ fn dispatch2_is_for_the_apps_alone() {
 
 #[test]
 fn the_jmap_client_sits_at_layer_3() {
-    assert_eq!(classify("mailcraft-jmap"), Some(Class::Layer(3)));
+    assert_eq!(classify("mailsolutions-jmap"), Some(Class::Layer(3)));
     // It may use what is below it...
-    let below =
-        [("mailcraft-time", Normal, true), ("mailcraft-model", Normal, true), ("mailcraft-mime", Normal, true), ("serde_json", Normal, false)];
-    assert!(check(&[c("mailcraft-jmap", &below)]).is_empty());
+    let below = [
+        ("mailsolutions-time", Normal, true),
+        ("mailsolutions-model", Normal, true),
+        ("mailsolutions-mime", Normal, true),
+        ("serde_json", Normal, false),
+    ];
+    assert!(check(&[c("mailsolutions-jmap", &below)]).is_empty());
     // ... and nothing at its own layer or above it, in the code or in the tests.
     for (dep, kind, to) in
-        [("mailcraft-net", Normal, 3), ("mailcraft-proto", Normal, 3), ("mailcraft-engine", Dev, 4), ("mailcraft-ui-egui", Normal, 6)]
+        [("mailsolutions-net", Normal, 3), ("mailsolutions-proto", Normal, 3), ("mailsolutions-engine", Dev, 4), ("mailsolutions-ui-egui", Normal, 6)]
     {
-        let v = check(&[c("mailcraft-jmap", &[(dep, kind, true)])]);
+        let v = check(&[c("mailsolutions-jmap", &[(dep, kind, true)])]);
         assert!(matches!(v[..], [Violation::Upward { from: 3, to: t, .. }] if t == to), "{dep}: {v:?}");
     }
     // The engine and the front end may use it.
-    assert!(check(&[c("mailcraft-engine", &[("mailcraft-jmap", Normal, true)])]).is_empty());
-    assert!(check(&[c("mailcraft-ui-egui", &[("mailcraft-jmap", Normal, true)])]).is_empty());
+    assert!(check(&[c("mailsolutions-engine", &[("mailsolutions-jmap", Normal, true)])]).is_empty());
+    assert!(check(&[c("mailsolutions-ui-egui", &[("mailsolutions-jmap", Normal, true)])]).is_empty());
 }
 
 #[test]
 fn the_ews_client_sits_at_layer_3() {
-    assert_eq!(classify("mailcraft-ews"), Some(Class::Layer(3)));
+    assert_eq!(classify("mailsolutions-ews"), Some(Class::Layer(3)));
     // It may use what is below it...
-    let below = [("mailcraft-model", Normal, true), ("mailcraft-mime", Normal, true), ("quick-xml", Normal, false)];
-    assert!(check(&[c("mailcraft-ews", &below)]).is_empty());
+    let below = [("mailsolutions-model", Normal, true), ("mailsolutions-mime", Normal, true), ("quick-xml", Normal, false)];
+    assert!(check(&[c("mailsolutions-ews", &below)]).is_empty());
     // ... and nothing at its own layer or above it, in the code or in the tests.
     for (dep, kind, to) in
-        [("mailcraft-net", Normal, 3), ("mailcraft-jmap", Normal, 3), ("mailcraft-engine", Dev, 4), ("mailcraft-ui-egui", Normal, 6)]
+        [("mailsolutions-net", Normal, 3), ("mailsolutions-jmap", Normal, 3), ("mailsolutions-engine", Dev, 4), ("mailsolutions-ui-egui", Normal, 6)]
     {
-        let v = check(&[c("mailcraft-ews", &[(dep, kind, true)])]);
+        let v = check(&[c("mailsolutions-ews", &[(dep, kind, true)])]);
         assert!(matches!(v[..], [Violation::Upward { from: 3, to: t, .. }] if t == to), "{dep}: {v:?}");
     }
     // The engine may use it.
-    assert!(check(&[c("mailcraft-engine", &[("mailcraft-ews", Normal, true)])]).is_empty());
+    assert!(check(&[c("mailsolutions-engine", &[("mailsolutions-ews", Normal, true)])]).is_empty());
 }
 
 #[test]
 fn link_uses_names_and_not_the_other_way() {
-    assert_eq!(classify("mailcraft-link"), Some(Class::Layer(0)));
-    assert!(check(&[c("mailcraft-link", &[("mailcraft-names", Normal, true)])]).is_empty());
+    assert_eq!(classify("mailsolutions-link"), Some(Class::Layer(0)));
+    assert!(check(&[c("mailsolutions-link", &[("mailsolutions-names", Normal, true)])]).is_empty());
     // `names` stays standalone: it may use no workspace crate.
-    let v = check(&[c("mailcraft-names", &[("mailcraft-link", Normal, true)])]);
-    assert!(matches!(&v[..], [Violation::StandaloneHasWorkspaceDep { dep, .. }] if dep == "mailcraft-link"), "{v:?}");
+    let v = check(&[c("mailsolutions-names", &[("mailsolutions-link", Normal, true)])]);
+    assert!(matches!(&v[..], [Violation::StandaloneHasWorkspaceDep { dep, .. }] if dep == "mailsolutions-link"), "{v:?}");
     // The order is for these two alone: another crate at layer 0 may not use `link`.
-    let v = check(&[c("mailcraft-time", &[("mailcraft-link", Normal, true)])]);
+    let v = check(&[c("mailsolutions-time", &[("mailsolutions-link", Normal, true)])]);
     assert!(matches!(v[..], [Violation::Upward { from: 0, to: 0, .. }]), "{v:?}");
 }
 
@@ -144,17 +148,17 @@ fn link_uses_names_and_not_the_other_way() {
 fn metadata_parsing() {
     let meta: Value = serde_json::from_str(
         r#"{"packages":[
-            {"name":"mailcraft-model","dependencies":[
-                {"name":"mailcraft-time","kind":null,"path":"/x/crates/time"},
+            {"name":"mailsolutions-model","dependencies":[
+                {"name":"mailsolutions-time","kind":null,"path":"/x/crates/time"},
                 {"name":"serde","kind":null},
                 {"name":"proptest","kind":"dev"}]},
-            {"name":"mailcraft-time","dependencies":[]}
+            {"name":"mailsolutions-time","dependencies":[]}
         ]}"#,
     )
     .unwrap();
     let g = from_metadata(&meta).unwrap();
     assert_eq!(g.len(), 2);
-    let doc = g.iter().find(|c| c.name == "mailcraft-model").unwrap();
+    let doc = g.iter().find(|c| c.name == "mailsolutions-model").unwrap();
     assert!(doc.deps[0].workspace && !doc.deps[1].workspace);
     assert_eq!(doc.deps[2].kind, Dev);
     assert!(check(&g).is_empty());
@@ -162,11 +166,11 @@ fn metadata_parsing() {
 
 #[test]
 fn the_mailbox_adapter_uses_the_reader_and_not_the_other_way() {
-    assert_eq!(classify("mailcraft-mime-model"), Some(Class::Layer(2)));
-    assert!(check(&[c("mailcraft-mime-model", &[("mailcraft-mime", Normal, true), ("mailcraft-model", Normal, true)])]).is_empty());
-    let v = check(&[c("mailcraft-mime", &[("mailcraft-mime-model", Normal, true)])]);
+    assert_eq!(classify("mailsolutions-mime-model"), Some(Class::Layer(2)));
+    assert!(check(&[c("mailsolutions-mime-model", &[("mailsolutions-mime", Normal, true), ("mailsolutions-model", Normal, true)])]).is_empty());
+    let v = check(&[c("mailsolutions-mime", &[("mailsolutions-mime-model", Normal, true)])]);
     assert!(matches!(v[..], [Violation::Upward { from: 2, to: 2, .. }]), "{v:?}");
     // `ber` stands on its own.
-    let v = check(&[c("mailcraft-ber", &[("mailcraft-time", Normal, true)])]);
+    let v = check(&[c("mailsolutions-ber", &[("mailsolutions-time", Normal, true)])]);
     assert!(matches!(&v[..], [Violation::StandaloneHasWorkspaceDep { .. }]), "{v:?}");
 }

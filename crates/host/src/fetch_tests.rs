@@ -8,12 +8,12 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use mailcraft_engine::Session;
-use mailcraft_engine::sync_driver::ClientIds;
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{AccountKind, Mailbox, OAuth, OAuthProvider};
-use mailcraft_net::NetError;
-use mailcraft_net::oauth::GraphTokens;
+use mailsolutions_engine::Session;
+use mailsolutions_engine::sync_driver::ClientIds;
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{AccountKind, Mailbox, OAuth, OAuthProvider};
+use mailsolutions_net::NetError;
+use mailsolutions_net::oauth::GraphTokens;
 
 use crate::fetch::{Access, with_access_renewing};
 use crate::secrets::{SecretError, SecretStore, secret_key};

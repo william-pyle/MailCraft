@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Gmail's labels of messages, read with their flags (#1153), against the fake server.
 
-use mailcraft_model::sync::GmailLabels;
+use mailsolutions_model::sync::GmailLabels;
 
 use super::*;
 
@@ -23,7 +23,7 @@ fn of(uid: u32, labels: &[&str]) -> GmailLabels {
     GmailLabels { uid, labels: labels.iter().map(|l| l.to_string()).collect() }
 }
 
-fn new_labels(delta: &mailcraft_model::sync::FolderDelta) -> Vec<(u32, Vec<String>)> {
+fn new_labels(delta: &mailsolutions_model::sync::FolderDelta) -> Vec<(u32, Vec<String>)> {
     delta.new.iter().map(|m| (m.uid, m.gmail_labels.clone())).collect()
 }
 
@@ -70,7 +70,7 @@ fn hostile_labels_are_cleaned_and_capped() {
     assert_eq!(result.errors, Vec::<String>::new());
     let inbox = new_labels(delta(&result, "INBOX"));
     let one = inbox.iter().find(|(uid, _)| *uid == 1).map(|(_, l)| l.clone()).unwrap_or_default();
-    assert_eq!(one.len(), mailcraft_model::gmail::MAX_GMAIL_LABELS);
+    assert_eq!(one.len(), mailsolutions_model::gmail::MAX_GMAIL_LABELS);
     assert_eq!(one.get(..2), Some(&["ab".to_string(), "xy".to_string()][..]));
     assert_eq!(inbox.iter().find(|(uid, _)| *uid == 2).map(|(_, l)| l.clone()), Some(vec!["ok".to_string()]));
 }

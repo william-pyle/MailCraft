@@ -8,7 +8,7 @@
 //! `/me/…` for the owner's), from the whole message the engine sends ([`PlaceUp`]), one at a
 //! time, after the changes of messages:
 //!
-//! 1. **Looked for** in the destination folder by MailCraft's marker (a make in an earlier run
+//! 1. **Looked for** in the destination folder by MailSolutions's marker (a make in an earlier run
 //!    whose answer was lost). One found whole is the copy; one found less than whole is deleted
 //!    and made again.
 //! 2. **Made** with `POST …/mailFolders/{id}/messages`, its fields as JSON and, among its extended
@@ -31,9 +31,9 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::sync::{MAX_PLACES, MessageOutcome, PlaceDone, PlaceUp};
-use mailcraft_model::{Address, Importance};
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_model::sync::{MAX_PLACES, MessageOutcome, PlaceDone, PlaceUp};
+use mailsolutions_model::{Address, Importance};
+use mailsolutions_time::{DateTime, Timestamp};
 use serde_json::{Map, Value, json};
 
 use super::super::pace::Kind;

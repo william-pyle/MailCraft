@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Downloading a new version of MailCraft, for a copy that updates itself, and making sure it is
+//! Downloading a new version of MailSolutions, for a copy that updates itself, and making sure it is
 //! the project's own before anything is done with it. Nothing is installed here.
 //!
 //! A release is believed only by its own signature: `SHA256SUMS.txt.sig` is an ed25519
@@ -22,7 +22,7 @@ use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use mailcraft_model::update::{Asset, Release, is_file_name};
+use mailsolutions_model::update::{Asset, Release, is_file_name};
 use ring::signature::{ED25519, UnparsedPublicKey};
 
 use crate::NetError;
@@ -120,7 +120,7 @@ pub fn release_keys() -> Vec<[u8; 32]> {
 pub fn keys_of(texts: &[&str]) -> Vec<[u8; 32]> {
     texts
         .iter()
-        .filter_map(|text| mailcraft_charset::base64::STANDARD.decode(text.trim()).ok())
+        .filter_map(|text| mailsolutions_charset::base64::STANDARD.decode(text.trim()).ok())
         .filter_map(|bytes| <[u8; 32]>::try_from(bytes.as_slice()).ok())
         .collect()
 }
@@ -131,7 +131,7 @@ pub fn parse_signature(bytes: &[u8]) -> Option<[u8; 64]> {
         return None;
     }
     let text = std::str::from_utf8(bytes).ok()?.trim();
-    let decoded = mailcraft_charset::base64::STANDARD.decode(text).ok()?;
+    let decoded = mailsolutions_charset::base64::STANDARD.decode(text).ok()?;
     <[u8; 64]>::try_from(decoded.as_slice()).ok()
 }
 
@@ -178,7 +178,7 @@ pub fn verify(sums: &[u8], signature: &[u8], keys: &[[u8; 32]]) -> Result<Sums, 
     let signature = parse_signature(signature).ok_or_else(|| refused("the release's signature isn't one"))?;
     let signed = keys.iter().any(|key| UnparsedPublicKey::new(&ED25519, key).verify(sums, &signature).is_ok());
     if !signed {
-        return Err(refused("the release isn't signed by MailCraft's release key"));
+        return Err(refused("the release isn't signed by MailSolutions's release key"));
     }
     parse_sums(sums).ok_or_else(|| refused("the release's list of checksums isn't one"))
 }
@@ -417,7 +417,7 @@ mod tests {
     use std::sync::atomic::{AtomicU16, Ordering};
     use std::sync::{Arc, Mutex};
 
-    use mailcraft_model::update::Version;
+    use mailsolutions_model::update::Version;
     use proptest::prelude::*;
     use ring::rand::SystemRandom;
     use ring::signature::{Ed25519KeyPair, KeyPair as _};
@@ -425,7 +425,7 @@ mod tests {
     use super::*;
     use crate::fake::FakeHttp;
 
-    const NAME: &str = "mailcraft-9.9.9-linux-x86_64.AppImage";
+    const NAME: &str = "mailsolutions-9.9.9-linux-x86_64.AppImage";
 
     fn key() -> Ed25519KeyPair {
         let pkcs8 = Ed25519KeyPair::generate_pkcs8(&SystemRandom::new()).unwrap();
@@ -438,7 +438,7 @@ mod tests {
 
     /// The signature file as `cargo xtask release-key sign` writes it.
     fn signature(pair: &Ed25519KeyPair, bytes: &[u8]) -> Vec<u8> {
-        format!("{}\n", mailcraft_charset::base64::STANDARD.encode(pair.sign(bytes).as_ref())).into_bytes()
+        format!("{}\n", mailsolutions_charset::base64::STANDARD.encode(pair.sign(bytes).as_ref())).into_bytes()
     }
 
     fn hex(digest: &[u8]) -> String {
@@ -543,14 +543,14 @@ mod tests {
     }
 
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("mailcraft-update-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-update-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         dir
     }
 
     /// A release whose file is `file`, signed with `pair`, served as `adjust` says.
     fn signed(pair: &Ed25519KeyPair, file: &[u8], adjust: impl FnOnce(&mut Stand)) -> Served {
-        let sums = sums_for(&[(NAME, file), ("mailcraft-9.9.9-windows-x64.msi", b"other")]);
+        let sums = sums_for(&[(NAME, file), ("mailsolutions-9.9.9-windows-x64.msi", b"other")]);
         let mut stand = Stand { signature: signature(pair, &sums), sums, file: file.to_vec(), cut_at: None, no_ranges: false, redirect: None };
         adjust(&mut stand);
         serve(stand)
@@ -563,7 +563,7 @@ mod tests {
         let r = signed(&pair, &file, |_| {});
         let dir = scratch("ok");
         fs::create_dir_all(&dir).unwrap();
-        fs::write(dir.join("mailcraft-9.9.8-linux-x86_64.AppImage.part"), b"an older one").unwrap();
+        fs::write(dir.join("mailsolutions-9.9.8-linux-x86_64.AppImage.part"), b"an older one").unwrap();
         let got = download_with(&release(&r.server, file.len() as u64), NAME, &dir, &[public(&pair)], &reach()).unwrap();
         assert_eq!(got.path, dir.join(NAME));
         assert_eq!(fs::read(&got.path).unwrap(), file);
@@ -585,7 +585,7 @@ mod tests {
         for n in 0..r.server.asked() {
             let sent = r.server.request(n);
             let headers: Vec<&str> = sent.split("\r\n").skip(1).take_while(|l| !l.is_empty()).filter(|l| !l.starts_with("Host:")).collect();
-            assert_eq!(headers, ["User-Agent: MailCraft", "Accept: application/octet-stream", "Connection: close"], "{sent}");
+            assert_eq!(headers, ["User-Agent: MailSolutions", "Accept: application/octet-stream", "Connection: close"], "{sent}");
         }
         let _ = fs::remove_dir_all(&dir);
     }
@@ -602,7 +602,7 @@ mod tests {
         let dir = scratch("stranger");
         assert_eq!(
             download_with(&release(&r.server, 3), NAME, &dir, &keys, &reach()),
-            Err(refused("the release isn't signed by MailCraft's release key"))
+            Err(refused("the release isn't signed by MailSolutions's release key"))
         );
         assert!(!dir.join(NAME).exists() && !dir.join(format!("{NAME}{PART}")).exists());
         // No key at all: nothing is even asked.
@@ -621,9 +621,9 @@ mod tests {
         let dir = scratch("bad");
         // A signature over something else; one that isn't one; a list changed after signing.
         let cases: Vec<(Box<dyn FnOnce(&mut Stand)>, &str)> = vec![
-            (Box::new(|s: &mut Stand| s.signature = signature(&key(), b"else")), "the release isn't signed by MailCraft's release key"),
+            (Box::new(|s: &mut Stand| s.signature = signature(&key(), b"else")), "the release isn't signed by MailSolutions's release key"),
             (Box::new(|s: &mut Stand| s.signature = b"not a signature".to_vec()), "the release's signature isn't one"),
-            (Box::new(|s: &mut Stand| s.sums.extend_from_slice(b"00  evil\n")), "the release isn't signed by MailCraft's release key"),
+            (Box::new(|s: &mut Stand| s.sums.extend_from_slice(b"00  evil\n")), "the release isn't signed by MailSolutions's release key"),
             (Box::new(|s: &mut Stand| s.file = b"the evil version".to_vec()), "the file's checksum isn't the one the signed list gives"),
         ];
         for (adjust, why) in cases {
@@ -633,7 +633,7 @@ mod tests {
             assert!(!dir.join(NAME).exists() && !dir.join(format!("{NAME}{PART}")).exists(), "{why}");
         }
         // The signed list has no line for the file.
-        let sums = sums_for(&[("mailcraft-9.9.9-windows-x64.msi", b"x")]);
+        let sums = sums_for(&[("mailsolutions-9.9.9-windows-x64.msi", b"x")]);
         let r = signed(&pair, &file, |s| {
             s.signature = signature(&pair, &sums);
             s.sums = sums.clone();
@@ -775,7 +775,7 @@ mod tests {
         assert!(parse_signature(&sig).is_some());
         assert!(parse_signature(b"  \r\n").is_none());
         assert!(parse_signature(&[b'A'; 2000]).is_none());
-        assert!(parse_signature(mailcraft_charset::base64::STANDARD.encode([0u8; 63]).as_bytes()).is_none());
+        assert!(parse_signature(mailsolutions_charset::base64::STANDARD.encode([0u8; 63]).as_bytes()).is_none());
         let digest = "ab".repeat(32);
         let sums = format!(
             "{digest}  {NAME}\r\n{digest} *binary.msi\nnot a line\n{digest}  ../evil\n{}  short\n{digest}  \n{digest}  with space\n",

@@ -1,8 +1,8 @@
-# Contributing to MailCraft
+# Contributing to MailSolutions
 
-> **Status:** current · **Written:** 2026-10-15 · **Last updated:** 2026-11-14 · **Change:** minor
+> **Status:** current · **Written:** 2026-10-15 · **Last updated:** 2026-11-19 · **Change:** minor
 
-Thank you for wanting to help. MailCraft holds people's mail, so the way work comes in matters as
+Thank you for wanting to help. MailSolutions holds people's mail, so the way work comes in matters as
 much as the work.
 
 ## Before you build anything
@@ -39,7 +39,7 @@ Issues labelled `post-beta` are parked: they aren't open to claims until beta is
 
 - **Sign the [Contributor Licence Agreement](CLA.md) once**, by commenting on your first pull
   request: `I have read the MailCraft CLA and I agree to it.` You keep the copyright in your work;
-  it lets UCS Care Group Limited also release MailCraft under other terms, while MailCraft stays MIT OR
+  it lets UCS Care Group Limited also release MailSolutions under other terms, while MailSolutions stays MIT OR
   Apache-2.0. The `cla` check on the pull request turns green when every author has signed.
 - **One issue, one pull request**, based on current `main`, small enough to review in one sitting.
   Say `Closes #<issue>` in the description.
@@ -102,7 +102,7 @@ Ask in an issue first, and don't put any of these into a pull request until the 
   asset;
 - anything that sends something off the computer that isn't sent today.
 
-## Testing MailCraft
+## Testing MailSolutions
 
 Want to use it rather than build it? Sign up with the
 [tester form](https://github.com/UCS-Care-Group/mailcraft/issues/new?template=tester-signup.yml).
@@ -110,15 +110,16 @@ Found something wrong? Use the
 [problem report](https://github.com/UCS-Care-Group/mailcraft/issues/new?template=problem.yml).
 
 A build from this repository sends Help › Report a Problem › Send report to the project's real
-report relay (`MAILCRAFT_REPORT_URL` in `.cargo/config.toml`), where every report becomes an
+report relay (`MAILSOLUTIONS_REPORT_URL` in `.cargo/config.toml`), where every report becomes an
 issue the maintainers read. Don't press it to try the window out: build with
-`MAILCRAFT_REPORT_URL=` (empty) to have Open on GitHub alone, and use the tests' stand-in relay
+`MAILSOLUTIONS_REPORT_URL=` (empty) to have Open on GitHub alone, and use the tests' stand-in relay
 (`crates/net/src/report_tests.rs`) for the sending.
 
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-19 | minor | MC-RENAME: current MailSolutions branding, paths and contracts; historical records retained. |
 | 2026-11-15 | patch | `cargo xtask ci` lists all its steps (i18n --check, release-notes, docs-log) |
 | 2026-11-14 | patch | `cargo xtask ci` names its wasm-clock step: no std clock or sleep in code the browser runs (#1337) |
 | 2026-11-12 | minor | An open pull request holds its feature while its author answers a review within 7 days; after that the feature is free to be built afresh |

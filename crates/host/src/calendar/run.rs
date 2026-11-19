@@ -11,13 +11,13 @@ use crate::graph::local_zone;
 /// time zone), read back each time and deleted; what the server answered at each step goes back
 /// to the window, which shows and logs it. Nothing else of the calendar is read or changed.
 pub fn check_calendar(request: CalendarCheckRequest) -> CalendarCheckResult {
-    check_calendar_in(request, &local_zone(), &mailcraft_time::local_offset_minutes)
+    check_calendar_in(request, &local_zone(), &mailsolutions_time::local_offset_minutes)
 }
 
 /// [`check_calendar`], with the owner's time zone as `zone` and how far east of UTC it is at an
 /// instant as `offset_at` (minutes).
 pub fn check_calendar_in(request: CalendarCheckRequest, zone: &str, offset_at: &dyn Fn(i64) -> i32) -> CalendarCheckResult {
-    use mailcraft_net::{graph, oauth};
+    use mailsolutions_net::{graph, oauth};
     let mut out = CalendarCheckResult { account: request.account.id, cleaned_up: true, ..Default::default() };
     let mut access = request.access.clone();
     if access.is_empty() {
@@ -34,7 +34,7 @@ pub fn check_calendar_in(request: CalendarCheckRequest, zone: &str, offset_at: &
             }
         }
     }
-    let check = graph::check_calendar(&access, mailcraft_time::now(), zone, offset_at);
+    let check = graph::check_calendar(&access, mailsolutions_time::now(), zone, offset_at);
     (out.ok, out.cleaned_up, out.token_refused) = (check.ok(), check.cleaned_up, check.token_refused);
     out.steps = check
         .steps
@@ -48,7 +48,7 @@ pub fn check_calendar_in(request: CalendarCheckRequest, zone: &str, offset_at: &
 /// question to Microsoft Graph, about when their time is taken and how, never by what. It
 /// reads; nothing is written, and nobody is told that it was asked.
 pub fn free_busy(request: FreeBusyRequest) -> FreeBusyResult {
-    use mailcraft_net::{graph, oauth};
+    use mailsolutions_net::{graph, oauth};
     let mut out = FreeBusyResult { account: request.account.id, ..Default::default() };
     let mut access = request.access.clone();
     if access.is_empty() {

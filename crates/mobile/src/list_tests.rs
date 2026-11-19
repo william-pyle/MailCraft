@@ -6,9 +6,9 @@
 
 use std::sync::Arc;
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{FolderDelta, GmailSorted, SyncResult};
-use mailcraft_model::{Address, FolderKind, GmailCategory, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{FolderDelta, GmailSorted, SyncResult};
+use mailsolutions_model::{Address, FolderKind, GmailCategory, Message};
 use serde_json::{Value, json};
 
 use crate::fake_tests::{FakePlatform, block_on, sample_core};
@@ -228,7 +228,7 @@ fn categories_are_listed_with_their_colours() {
 fn deleting_a_conversation_row_takes_the_messages_it_stands_for() {
     use crate::fake_tests::now;
     let core = Core::start(FakePlatform::new(), || {
-        let mut mailbox = mailcraft_engine::sample::mailbox(now(), 0);
+        let mut mailbox = mailsolutions_engine::sample::mailbox(now(), 0);
         let inbox = mailbox.inbox().unwrap();
         for date in [now() - 100, now() - 10] {
             mailbox.add_message(Message { folder: inbox, subject: "Zebra planning".into(), date, ..Default::default() }).unwrap();
@@ -263,7 +263,7 @@ fn an_account_says_its_kind_and_a_refresh_with_no_server_is_refused() {
 fn zebra_core() -> Arc<Core> {
     use crate::fake_tests::now;
     Core::start(FakePlatform::new(), || {
-        let mut mailbox = mailcraft_engine::sample::mailbox(now(), 0);
+        let mut mailbox = mailsolutions_engine::sample::mailbox(now(), 0);
         let inbox = mailbox.inbox().unwrap();
         for (date, read) in [(now() - 100, false), (now() - 50, true), (now() - 10, false)] {
             mailbox.add_message(Message { folder: inbox, subject: "Zebra planning".into(), date, read, ..Default::default() }).unwrap();
@@ -298,7 +298,7 @@ fn a_conversation_row_names_its_messages_under_a_filter_and_under_a_search() {
 fn a_conversation_longer_than_a_row_carries_is_named_whole_by_its_members() {
     use crate::fake_tests::now;
     let core = Core::start(FakePlatform::new(), || {
-        let mut mailbox = mailcraft_engine::sample::mailbox(now(), 0);
+        let mut mailbox = mailsolutions_engine::sample::mailbox(now(), 0);
         let inbox = mailbox.inbox().unwrap();
         for n in 0..250 {
             mailbox.add_message(Message { folder: inbox, subject: "Zebra herd".into(), date: now() - 1000 - n, ..Default::default() }).unwrap();

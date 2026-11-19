@@ -5,8 +5,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{SyncRequest, SyncResult};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{SyncRequest, SyncResult};
 use serde_json::json;
 
 use super::*;
@@ -21,7 +21,7 @@ impl SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.0.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().insert(key.to_string(), secret.to_string());
         Ok(())
     }
@@ -34,7 +34,7 @@ impl SecretStore for Store {
 type Seen = Arc<Mutex<Vec<(String, String)>>>;
 
 fn app(store: &Store, seen: &Seen) -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     let seen = seen.clone();
     a.services.sync = Some(Box::new(move |req: SyncRequest| {
@@ -66,23 +66,23 @@ fn the_key_names_the_address_and_the_servers() {
     let id = add(&mut a);
     let account = a.session.mailbox.account(id).unwrap();
     assert_eq!(MailApp::secret_key("password", account), OLD);
-    let microsoft = mailcraft_model::Account {
+    let microsoft = mailsolutions_model::Account {
         email: "Me@Example.org".into(),
-        kind: mailcraft_model::AccountKind::Microsoft,
-        incoming: Some(mailcraft_model::Server { host: "ignored".into(), port: 1, security: Default::default() }),
+        kind: mailsolutions_model::AccountKind::Microsoft,
+        incoming: Some(mailsolutions_model::Server { host: "ignored".into(), port: 1, security: Default::default() }),
         ..Default::default()
     };
     assert_eq!(MailApp::secret_key("refresh", &microsoft), "refresh:me@example.org|graph");
     // AU2-V8: a mailbox file's IMAP account that says it is shared does not get the owner's Graph token.
-    let shared = mailcraft_model::Account {
-        kind: mailcraft_model::AccountKind::Imap,
+    let shared = mailsolutions_model::Account {
+        kind: mailsolutions_model::AccountKind::Imap,
         shared_of: Some(1),
-        incoming: Some(mailcraft_model::Server { host: "imap.elsewhere.example".into(), port: 993, security: Default::default() }),
+        incoming: Some(mailsolutions_model::Server { host: "imap.elsewhere.example".into(), port: 993, security: Default::default() }),
         ..microsoft.clone()
     };
     assert_ne!(MailApp::secret_key("refresh", &shared), MailApp::secret_key("refresh", &microsoft));
     assert!(MailApp::secret_key("refresh", &shared).contains("imap=imap.elsewhere.example:993"));
-    let shared_microsoft = mailcraft_model::Account { shared_of: Some(1), ..microsoft.clone() };
+    let shared_microsoft = mailsolutions_model::Account { shared_of: Some(1), ..microsoft.clone() };
     assert_eq!(MailApp::secret_key("refresh", &shared_microsoft), MailApp::secret_key("refresh", &microsoft));
 }
 
@@ -290,7 +290,7 @@ fn converting_an_app_password_account_discards_old_password_and_refresh_credenti
     app.execute("account.edit", json!({"id": id, "auth": "oauth2", "provider": "google"})).unwrap();
     assert!(store.get(&password_key).is_none() && store.get(&refresh_key).is_none());
     assert!(!app.passwords.contains_key(&id) && !app.tokens.contains_key(&id));
-    assert_eq!(app.session.mailbox.account(id).unwrap().oauth.as_ref().map(|o| o.provider), Some(mailcraft_model::OAuthProvider::Google));
+    assert_eq!(app.session.mailbox.account(id).unwrap().oauth.as_ref().map(|o| o.provider), Some(mailsolutions_model::OAuthProvider::Google));
 }
 
 fn add_google_account(app: &mut MailApp, email: &str) -> Id {
@@ -307,12 +307,12 @@ fn add_google_account(app: &mut MailApp, email: &str) -> Id {
         .unwrap()
 }
 
-fn google_tokens(email: &str, access: &str, refresh: &str) -> mailcraft_model::sync::Tokens {
-    mailcraft_model::sync::Tokens {
+fn google_tokens(email: &str, access: &str, refresh: &str) -> mailsolutions_model::sync::Tokens {
+    mailsolutions_model::sync::Tokens {
         email: email.into(),
         access: access.into(),
         refresh: refresh.into(),
-        expires_at: mailcraft_time::now() + 3600,
+        expires_at: mailsolutions_time::now() + 3600,
         ..Default::default()
     }
 }
@@ -371,7 +371,7 @@ fn late_google_sign_in_cannot_restore_a_removed_account_or_its_credential() {
     let first = add_google_account(&mut a, "one@example.org");
     let key = MailApp::secret_key("refresh", a.session.mailbox.account(first).unwrap());
     let observed = Arc::new(Mutex::new(None::<Arc<AtomicBool>>));
-    let pending = Arc::new(Mutex::new(None::<mpsc::Sender<Result<mailcraft_model::sync::Tokens, String>>>));
+    let pending = Arc::new(Mutex::new(None::<mpsc::Sender<Result<mailsolutions_model::sync::Tokens, String>>>));
     let (observed_flag, pending_sender) = (observed.clone(), pending.clone());
     a.services.sign_in = Some(Box::new(move |req: crate::SignInRequest| {
         *observed_flag.lock().unwrap() = Some(req.cancel.clone());

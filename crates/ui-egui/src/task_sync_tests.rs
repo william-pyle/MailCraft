@@ -8,10 +8,10 @@ use std::collections::VecDeque;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::remote_tasks::{RemoteTask, RemoteTaskList, TasksDownload};
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{Id, Task};
+use mailsolutions_engine::Session;
+use mailsolutions_model::remote_tasks::{RemoteTask, RemoteTaskList, TasksDownload};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{Id, Task};
 use serde_json::json;
 
 use crate::task_sync::{Permission, TasksJob, TasksResult};
@@ -25,11 +25,11 @@ type Answers = Arc<Mutex<VecDeque<TasksResult>>>;
 type SignIns = Arc<Mutex<Vec<(Id, bool)>>>;
 
 fn tokens(access: &str, refresh: &str) -> Tokens {
-    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 fn window() -> (MailApp, Id, Answers, Jobs, SignIns) {
-    let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
     app.autosave = false;
     let owner = app.execute("account.add", json!({"email": OWNER, "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     app.tokens.insert(owner, tokens("own-access", "ref-1"));
@@ -185,13 +185,13 @@ fn the_first_look_uploads_no_local_task_and_asks_the_owner() {
     assert!(ask.title.contains("Send your 1 local task to noor@example.org"), "{}", ask.title);
     assert_eq!(ask.cancel.as_deref(), Some("Not now"), "one button that goes nowhere, not Not now and Cancel");
     assert!(ask.more.is_empty());
-    assert_eq!(app.session.mailbox.local_tasks, mailcraft_model::LocalTasks::Unasked);
+    assert_eq!(app.session.mailbox.local_tasks, mailsolutions_model::LocalTasks::Unasked);
     // Still pending, still nothing sent.
     assert_eq!(tasks_remote_waiting(&app, owner), 0);
 }
 
 fn tasks_remote_waiting(app: &MailApp, owner: Id) -> usize {
-    mailcraft_engine::cmd::tasks_remote::tasks_waiting(&app.session.mailbox, owner)
+    mailsolutions_engine::cmd::tasks_remote::tasks_waiting(&app.session.mailbox, owner)
 }
 
 #[test]
@@ -236,7 +236,7 @@ fn a_question_that_goes_away_counts_as_not_now() {
     assert!(app.dialog.is_some());
     app.dialog = None;
     app.tasks_tick_at(2_000.0);
-    assert_eq!(app.session.mailbox.local_tasks, mailcraft_model::LocalTasks::NotNow);
+    assert_eq!(app.session.mailbox.local_tasks, mailsolutions_model::LocalTasks::NotNow);
     assert!(app.dialog.is_none());
 }
 
@@ -244,8 +244,8 @@ fn a_question_that_goes_away_counts_as_not_now() {
 fn a_programmatic_call_does_not_open_the_question_or_answer_it() {
     let (app, _, _, _) = first_look_with_local_tasks();
     // An agent is not let through to answer it.
-    assert_eq!(mailcraft_engine::agent::access("tasks.sendLocal"), Some(mailcraft_engine::agent::Access::Never));
-    assert_eq!(app.session.mailbox.local_tasks, mailcraft_model::LocalTasks::Unasked);
+    assert_eq!(mailsolutions_engine::agent::access("tasks.sendLocal"), Some(mailsolutions_engine::agent::Access::Never));
+    assert_eq!(app.session.mailbox.local_tasks, mailsolutions_model::LocalTasks::Unasked);
 }
 
 /// Allowed on Microsoft's page, then refused for a while all the same, as a permission given a
@@ -434,7 +434,7 @@ fn the_question_offers_the_first_account_added_first() {
     app.stand_in_tasks_work();
     app.execute("account.move", json!({"id": zoe, "before": owner})).unwrap();
     let mb = &app.session.mailbox;
-    assert_eq!(mailcraft_engine::cmd::tasks_remote::task_accounts(mb), [zoe, owner], "listed in the owner's order");
+    assert_eq!(mailsolutions_engine::cmd::tasks_remote::task_accounts(mb), [zoe, owner], "listed in the owner's order");
     assert_eq!(app.tasks_working_first(), Some(owner));
     assert!(app.offer_local_tasks());
     let Some(crate::dialogs::Dialog::Confirm { ask, .. }) = &app.dialog else { panic!("the owner is asked") };

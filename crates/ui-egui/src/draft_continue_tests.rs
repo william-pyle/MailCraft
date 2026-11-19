@@ -7,7 +7,7 @@
 use egui::Key;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -17,7 +17,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// The sample mailbox, in Drafts (`drafts`) or the Inbox, with the first message selected.
 fn window(drafts: bool) -> Harness<'static, MailApp> {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let _ = app.execute("ui.dismissReminder", json!({"all": true}));
     app.run("folder.select", json!({"kind": if drafts { "drafts" } else { "inbox" }})).unwrap();

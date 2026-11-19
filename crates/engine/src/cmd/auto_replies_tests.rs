@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! File › Info › Automatic Replies: what is read, what is to change, and what a server's answer
-//! comes to. The server's side is written out by hand, as `mailcraft-net` brings it.
+//! comes to. The server's side is written out by hand, as `mailsolutions-net` brings it.
 
-use mailcraft_model::Id;
-use mailcraft_model::auto_replies::MAX_REPLY_TEXT;
+use mailsolutions_model::Id;
+use mailsolutions_model::auto_replies::MAX_REPLY_TEXT;
 use serde_json::{Value, json};
 
 use super::auto_replies::{NOT_MICROSOFT, NOT_READ, SHARED, any_on};
@@ -154,7 +154,7 @@ fn what_cant_be_is_refused_with_a_reason() {
     assert_eq!(alone.run("account.automaticReplies", &json!({})).unwrap_err().to_string(), NOT_MICROSOFT);
     // A shared mailbox's are its managers'.
     if let Some(a) = s.mailbox.accounts.iter_mut().find(|a| a.id == account) {
-        a.kind = mailcraft_model::AccountKind::Microsoft;
+        a.kind = mailsolutions_model::AccountKind::Microsoft;
     }
     let shared = run(&mut s, "account.addSharedMailbox", json!({"account": account, "address": "team@example.org"}));
     let id = shared["id"].as_u64().unwrap();

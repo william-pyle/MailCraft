@@ -4,8 +4,8 @@
 //! for a server's folder stays on this computer, and the clean-up removes only the local copies of
 //! mail its server has.
 
-use mailcraft_model::sync::{FolderDelta, ServerMessage, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, Mailbox, Message, Pending, Queued};
+use mailsolutions_model::sync::{FolderDelta, ServerMessage, SyncResult};
+use mailsolutions_model::{Address, FolderKind, Id, Mailbox, Message, Pending, Queued};
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -81,7 +81,7 @@ fn the_same_message_id_with_another_subject_is_another_message() {
     s.mailbox.add_message(Message { folder: inbox, ..mail(1) }).unwrap();
     let mut other = mail(1);
     other.subject = "Something else".into();
-    let other = mailcraft_mime_model::write(&other, &mailcraft_mime_model::WriteOptions::default());
+    let other = mailsolutions_mime_model::write(&other, &mailsolutions_mime_model::WriteOptions::default());
     let r = s.run("file.import", &json!({"name": "a.eml", "data": crate::cmd::base64_encode(&other), "folder": inbox})).unwrap();
     assert_eq!(r["messages"], 1);
 }
@@ -98,7 +98,7 @@ fn an_import_into_an_imap_folder_lands_in_imported_and_nothing_goes_to_the_serve
     // Mail the mailbox hasn't got.
     let others: Vec<Message> = (4..=6).map(mail).collect();
     let refs: Vec<&Message> = others.iter().collect();
-    let data = crate::cmd::base64_encode(&mailcraft_mime_model::write_mbox(&refs, &Default::default()));
+    let data = crate::cmd::base64_encode(&mailsolutions_mime_model::write_mbox(&refs, &Default::default()));
     let r = import(&mut s, &data, inbox);
     assert_eq!(r["local"], true);
     assert_eq!(r["account"], "imap");
@@ -121,7 +121,7 @@ fn an_import_into_an_imap_folder_lands_in_imported_and_nothing_goes_to_the_serve
 
 #[test]
 fn an_import_into_a_jmap_or_exchange_folder_lands_in_imported_too() {
-    for kind in [mailcraft_model::AccountKind::Jmap, mailcraft_model::AccountKind::Exchange] {
+    for kind in [mailsolutions_model::AccountKind::Jmap, mailsolutions_model::AccountKind::Exchange] {
         let (mut s, a, inbox) = imap();
         s.mailbox.accounts.iter_mut().find(|x| x.id == a).unwrap().kind = kind;
         let data = export(&mut s, inbox);
@@ -153,10 +153,11 @@ fn the_clean_up_removes_only_the_local_twins_and_undo_brings_them_back() {
     let moving = local_copy(&mut s, inbox, 3);
     s.mailbox.pending.push(Pending::Move { account: a, message: moving, from: "INBOX".into(), uid: 3, synced: None, to: inbox });
     let placing = local_copy(&mut s, inbox, 3);
-    s.mailbox.queued.push(Queued::PlaceMessage { account: a, message: placing, marker: "mailcraft-1".into(), copy: false, from: None });
+    s.mailbox.queued.push(Queued::PlaceMessage { account: a, message: placing, marker: "mailsolutions-1".into(), copy: false, from: None });
     // A draft, and a copy waiting for its server's UID.
     let draft = s.mailbox.add_message(Message { folder: inbox, draft: true, ..mail(1) }).unwrap();
-    let awaiting = s.mailbox.add_message(Message { folder: inbox, synced: Some(mailcraft_model::sync::RemoteFlags::default()), ..mail(2) }).unwrap();
+    let awaiting =
+        s.mailbox.add_message(Message { folder: inbox, synced: Some(mailsolutions_model::sync::RemoteFlags::default()), ..mail(2) }).unwrap();
     let server_side: Vec<Id> = s.mailbox.messages_in(inbox).filter(|m| m.uid != 0).map(|m| m.id).collect();
     let before = s.mailbox.messages.len();
 
@@ -173,7 +174,7 @@ fn the_clean_up_removes_only_the_local_twins_and_undo_brings_them_back() {
     }
     assert_eq!(s.mailbox.messages.len(), before - 3);
     let req = sync_request(&s, a).unwrap();
-    assert!(req.ops.iter().all(|op| !matches!(op, mailcraft_model::sync::RemoteOp::Delete { .. })), "nothing is deleted on the server");
+    assert!(req.ops.iter().all(|op| !matches!(op, mailsolutions_model::sync::RemoteOp::Delete { .. })), "nothing is deleted on the server");
     assert!(!s.mailbox.pending.iter().any(|p| matches!(p, Pending::Delete { .. })));
 
     s.run("edit.undo", &json!({})).unwrap();
@@ -211,7 +212,7 @@ fn a_copy_that_is_not_whole_does_not_keep_the_backup_out() {
     }
     let backup: Vec<Message> = (1..=4).map(mail).collect();
     let refs: Vec<&Message> = backup.iter().collect();
-    let data = crate::cmd::base64_encode(&mailcraft_mime_model::write_mbox(&refs, &Default::default()));
+    let data = crate::cmd::base64_encode(&mailsolutions_mime_model::write_mbox(&refs, &Default::default()));
     let r = import(&mut s, &data, inbox);
     assert_eq!((r["messages"].as_u64(), r["already"].as_u64()), (Some(4), Some(0)), "{r}");
 }
@@ -219,11 +220,11 @@ fn a_copy_that_is_not_whole_does_not_keep_the_backup_out() {
 #[test]
 fn the_clean_up_keeps_a_copy_the_owner_changed() {
     let (mut s, _, inbox) = imap();
-    let flagged = s.mailbox.add_message(Message { folder: inbox, flag: mailcraft_model::FlagStatus::Flagged, ..mail(1) }).unwrap();
+    let flagged = s.mailbox.add_message(Message { folder: inbox, flag: mailsolutions_model::FlagStatus::Flagged, ..mail(1) }).unwrap();
     let read = s.mailbox.add_message(Message { folder: inbox, read: true, ..mail(2) }).unwrap();
     let categorised = s.mailbox.add_message(Message { folder: inbox, categories: vec!["Red category".into()], ..mail(3) }).unwrap();
     let tasked = s.mailbox.add_message(Message { folder: inbox, ..mail(3) }).unwrap();
-    s.mailbox.add_task(mailcraft_model::Task { title: "Follow up".into(), message: Some(tasked), ..Default::default() });
+    s.mailbox.add_task(mailsolutions_model::Task { title: "Follow up".into(), message: Some(tasked), ..Default::default() });
     let same = s.mailbox.add_message(Message { folder: inbox, ..mail(3) }).unwrap();
     let r = s.run("mail.removeImportedDuplicates", &json!({})).unwrap();
     assert_eq!((r["removed"].as_u64(), r["kept"].as_u64()), (Some(1), Some(4)), "{r}");

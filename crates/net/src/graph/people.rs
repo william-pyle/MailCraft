@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Calendars of other people that the owner opened by address (Open Shared Calendar, #70).
 //!
-//! Graph has no call that adds somebody's calendar to the owner's list, so MailCraft reads it at
+//! Graph has no call that adds somebody's calendar to the owner's list, so MailSolutions reads it at
 //! `/users/{address}/calendar` with the owner's token (`Calendars.ReadWrite.Shared`) and keeps
 //! the address in its own list. Such a calendar is known here by an id that names the address
-//! ([`mailcraft_model::remote::opened_id`]); every request for it goes to
+//! ([`mailsolutions_model::remote::opened_id`]); every request for it goes to
 //! `/users/{address}/calendar/…`, and none reaches `/me`: the paths below are the only ones that
 //! differ from an ordinary calendar's, and an id that says "opened by address" with an address
 //! that isn't one is refused before anything is sent.
@@ -19,8 +19,8 @@
 //! The blocks of such a calendar are drawn by the same code as a shared mailbox's (the `Graph`
 //! is simply at the person's address): nothing of the calendar itself goes through `/me`.
 
-use mailcraft_model::remote::{FreeBusyAsk, OPENED_PREFIX, OpenedWhy, RemoteCalendar, opened_address};
-use mailcraft_model::{CalendarOwner, Rights};
+use mailsolutions_model::remote::{FreeBusyAsk, OPENED_PREFIX, OpenedWhy, RemoteCalendar, opened_address};
+use mailsolutions_model::{CalendarOwner, Rights};
 use serde_json::Value;
 
 use super::{ASK_TIMEOUT, CALENDAR_FIELDS, Graph, MAX_PAGE, calendar_of, schedule_at, shared_mailbox_path};
@@ -56,8 +56,8 @@ pub fn open_calendar(token: &str, address: &str) -> Opened {
 
 /// [`open_calendar`] from Graph at `base`.
 pub(super) fn open_calendar_at(base: &str, token: &str, address: &str) -> Opened {
-    let Some(address) = mailcraft_model::mailbox_address(address) else { return Opened::Refused(OpenedWhy::NoSuchPerson) };
-    let id = mailcraft_model::remote::opened_id(&address);
+    let Some(address) = mailsolutions_model::mailbox_address(address) else { return Opened::Refused(OpenedWhy::NoSuchPerson) };
+    let id = mailsolutions_model::remote::opened_id(&address);
     let Ok(root) = shared_mailbox_path(&address).map(|path| format!("/v1.0{path}/calendar")) else { return Opened::Refused(OpenedWhy::NoSuchPerson) };
     let Ok(graph) = Graph::at(base, token) else { return Opened::SignInRefused };
     let url = graph.url(&format!("{root}?{}", http::form(&[("$select", CALENDAR_FIELDS)])));
@@ -116,15 +116,15 @@ fn listed_as(entry: &Value, address: &str, id: &str) -> Option<RemoteCalendar> {
 /// The calendar of a person who shares only when they are free and busy, when that is so: the
 /// schedule can be asked about them.
 fn free_busy_only(base: &str, token: &str, address: &str) -> Option<RemoteCalendar> {
-    let now = mailcraft_time::now();
-    let ask = FreeBusyAsk { people: vec![address.to_string()], from: now, to: now.saturating_add(mailcraft_time::DAY) };
+    let now = mailsolutions_time::now();
+    let ask = FreeBusyAsk { people: vec![address.to_string()], from: now, to: now.saturating_add(mailsolutions_time::DAY) };
     let schedule = schedule_at(base, token, &ask).ok()?;
     let person = schedule.people.iter().find(|person| person.email.eq_ignore_ascii_case(address))?;
     if !person.error.is_empty() {
         return None;
     }
     Some(RemoteCalendar {
-        id: mailcraft_model::remote::opened_id(address),
+        id: mailsolutions_model::remote::opened_id(address),
         name: address.to_string(),
         rights: Rights::FreeBusy,
         owner: CalendarOwner { address: address.to_string(), name: address.to_string() }.cleaned(),

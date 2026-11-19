@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The halves of a Digitally signed message (#30), for its Digital signature to be checked
-//! (`mailcraft-smime`, and OpenPGP's checker): of `multipart/signed` (RFC 1847 §2.1), the signed
+//! (`mailsolutions-smime`, and OpenPGP's checker): of `multipart/signed` (RFC 1847 §2.1), the signed
 //! part exactly as it came, MIME header and all, and the signature part's bytes; of S/MIME's
 //! `application/pkcs7-mime` (RFC 8551 §3.2), the CMS it carries. Read from the bytes the message
 //! came as ([`crate::Message::original`]); nothing here checks anything.

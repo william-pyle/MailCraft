@@ -6,7 +6,7 @@
 //! refuses control and format characters and what shows nothing. It stays open for more.
 
 use egui::{RichText, Ui, vec2};
-use mailcraft_engine::cmd::format::SYMBOLS;
+use mailsolutions_engine::cmd::format::SYMBOLS;
 use serde_json::{Value, json};
 
 use crate::MailApp;

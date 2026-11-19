@@ -5,8 +5,8 @@
 //! the same day here, east or west of UTC and on either side of a change of the clocks; and a day
 //! sent from here is the owner's midnight, so it is the same day there.
 
-use mailcraft_model::TaskPatch;
-use mailcraft_time::{Date, Zone};
+use mailsolutions_model::TaskPatch;
+use mailsolutions_time::{Date, Zone};
 use serde_json::{Value, json};
 
 use super::tasks::{task_body, task_of};
@@ -138,9 +138,9 @@ fn a_day_is_sent_as_the_owners_midnight_named_by_its_zone() {
 
 /// What Graph gives back for a date sent as `sent`: the same midnight, turned into UTC.
 fn as_graph_gives_it(sent: &Value) -> Value {
-    let wall = mailcraft_time::parse_iso(sent["dateTime"].as_str().unwrap()).unwrap().0;
+    let wall = mailsolutions_time::parse_iso(sent["dateTime"].as_str().unwrap()).unwrap().0;
     let at = Zone::named(sent["timeZone"].as_str().unwrap()).unwrap().instant(wall);
-    utc(&format!("{}.0000000", mailcraft_time::DateTime::from_timestamp(at, 0).iso()))
+    utc(&format!("{}.0000000", mailsolutions_time::DateTime::from_timestamp(at, 0).iso()))
 }
 
 #[test]

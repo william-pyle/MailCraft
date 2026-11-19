@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's reader of Outlook personal folders files (`.pst`), written from Microsoft's
+//! MailSolutions's reader of Outlook personal folders files (`.pst`), written from Microsoft's
 //! published specification, [MS-PST], and nothing else.
 //!
 //! [`Pst::open`] reads over any `Read + Seek` and never holds the file in memory: a page or a

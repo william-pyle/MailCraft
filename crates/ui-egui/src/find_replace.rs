@@ -6,7 +6,7 @@
 //! Replace All is one step of the message's undo.
 
 use egui::{RichText, Ui, vec2};
-use mailcraft_model::rich::MAX_FIND;
+use mailsolutions_model::rich::MAX_FIND;
 use serde_json::{Value, json};
 
 use crate::MailApp;

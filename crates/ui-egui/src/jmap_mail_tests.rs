@@ -4,16 +4,16 @@
 //! the test to answer: the secret asked for or the host's own, Cancel, a round by itself, a run
 //! whose task ended early, a secret turned down, a mailbox from a file held back, and messages
 //! being downloaded whole when another mailbox takes the place of theirs. (The whole way, through
-//! `mailcraft_jmap` and its server in the process: the desktop app's `jmap_mail_flow`.)
+//! `mailsolutions_jmap` and its server in the process: the desktop app's `jmap_mail_flow`.)
 
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::sync_progress::RunState;
-use mailcraft_model::sync::{FolderListing, GraphFetchResult, GraphFetched, GraphFolder, JmapMailResult, ServerMessage};
-use mailcraft_model::{FolderKind, Id, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::sync_progress::RunState;
+use mailsolutions_model::sync::{FolderListing, GraphFetchResult, GraphFetched, GraphFolder, JmapMailResult, ServerMessage};
+use mailsolutions_model::{FolderKind, Id, Mailbox, Message};
 use serde_json::json;
 
 use super::*;
@@ -55,7 +55,7 @@ impl SecretStore for Recording {
     fn get(&self, _: &str) -> Option<String> {
         None
     }
-    fn set(&self, key: &str, _: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, _: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().push(key.to_string());
         Ok(())
     }
@@ -165,7 +165,7 @@ fn a_host_that_holds_an_account_s_credential_runs_it_by_itself_with_no_secret() 
     let (mut app, accounts, jobs) = window(&["ada@example.org", "bo@example.org"]);
     let [ada, bo] = [accounts[0], accounts[1]];
     // The host holds Ada's; Bo's, at a server the host has nothing to do with, is the owner's.
-    app.services.jmap_host_credentials = Some(Box::new(|a: &mailcraft_model::Account| a.email == "ada@example.org"));
+    app.services.jmap_host_credentials = Some(Box::new(|a: &mailsolutions_model::Account| a.email == "ada@example.org"));
     assert!(app.can_sync_quietly(ada) && !app.can_sync_quietly(bo));
     app.session.driver.set_auto_sync(true);
     app.session.prefs.sync_minutes = 5;
@@ -189,7 +189,7 @@ fn a_host_that_holds_an_account_s_credential_runs_it_by_itself_with_no_secret() 
 fn a_host_credential_turned_down_keeps_rounds_by_themselves_away_until_the_owner_asks() {
     let (mut app, accounts, jobs) = window(&["ada@example.org"]);
     let ada = accounts[0];
-    app.services.jmap_host_credentials = Some(Box::new(|_: &mailcraft_model::Account| true));
+    app.services.jmap_host_credentials = Some(Box::new(|_: &mailsolutions_model::Account| true));
     app.execute("ui.sync", json!({"account": ada})).unwrap();
     let [(job, tx)]: [_; 1] = taken(&jobs).try_into().ok().unwrap();
     tx.send(last(&job, JmapMailResult { auth_refused: true, ..Default::default() })).unwrap();

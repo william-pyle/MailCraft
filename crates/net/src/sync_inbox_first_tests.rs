@@ -4,8 +4,8 @@
 //! listed, so that new mail is on screen first; one with changes to push, or a first run, goes in
 //! its old order.
 
-use mailcraft_model::sync::{FolderState, RemoteOp};
-use mailcraft_model::{AccountKind, Server};
+use mailsolutions_model::sync::{FolderState, RemoteOp};
+use mailsolutions_model::{AccountKind, Server};
 
 use super::*;
 use crate::fake::{Fake, FakeImap, FakeMailbox, FakeMessage, ImapWorld};

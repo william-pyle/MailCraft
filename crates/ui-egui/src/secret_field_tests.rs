@@ -9,7 +9,7 @@ use egui::epaint::text::PASSWORD_REPLACEMENT_CHAR as MASK;
 use egui::{Event, Key, Modifiers, OutputCommand, Shape};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{By, Queryable as _};
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use crate::dialogs::Dialog;
@@ -24,7 +24,7 @@ const TYPED: &str = "example-pass";
 /// The window with the Sign In dialog up for a new account, and the control channel's sender.
 fn sign_in() -> (Harness<'static, MailApp>, std::sync::mpsc::Sender<ControlRequest>) {
     let (tx, rx) = std::sync::mpsc::channel();
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default()).with_control(rx);
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default()).with_control(rx);
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     let r = app.execute("account.add", json!({"email": "avery@mail.example", "incoming": {"host": "imap.mail.example"}}));

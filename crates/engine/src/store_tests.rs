@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use std::time::{Duration, Instant, SystemTime};
 
-use mailcraft_model::{Address, Attachment, Mailbox, Message};
+use mailsolutions_model::{Address, Attachment, Mailbox, Message};
 use proptest::prelude::*;
 use serde_json::{Value, json};
 
@@ -10,15 +10,18 @@ use super::*;
 use crate::Session;
 
 #[test]
-fn contactcraft_contacts_are_never_written_into_a_mailbox() {
-    let tmp = Temp::new("contactcraft-view");
+fn contactsolutions_contacts_are_never_written_into_a_mailbox() {
+    let tmp = Temp::new("contactsolutions-view");
     let path = tmp.file();
     let mut mb = Mailbox::with_local_account("Owner", "owner@example.org");
-    let local = mb.add_contact(mailcraft_model::Contact { display_name: "Local".into(), ..Default::default() });
-    let shared =
-        mb.add_contact(mailcraft_model::Contact { display_name: "Shared".into(), contactcraft_id: "contactcraft-id".into(), ..Default::default() });
+    let local = mb.add_contact(mailsolutions_model::Contact { display_name: "Local".into(), ..Default::default() });
+    let shared = mb.add_contact(mailsolutions_model::Contact {
+        display_name: "Shared".into(),
+        contactsolutions_id: "contactsolutions-id".into(),
+        ..Default::default()
+    });
     assert_ne!(local, shared);
-    assert_eq!(mb.contact(shared).map(|c| c.contactcraft_id.as_str()), Some("contactcraft-id"));
+    assert_eq!(mb.contact(shared).map(|c| c.contactsolutions_id.as_str()), Some("contactsolutions-id"));
     save(&path, &mb).unwrap();
     let reopened = whole(&path);
     assert!(reopened.contact(local).is_some());
@@ -34,7 +37,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-store-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-store-{}-{name}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -249,14 +252,14 @@ fn the_split_form_round_trips() {
     assert_eq!(save(&path, &mb).unwrap(), Saved { unchanged: true, ..Saved::default() });
 }
 
-/// An account a newer MailCraft added goes into the mailbox file as its file had it, in the first
+/// An account a newer MailSolutions added goes into the mailbox file as its file had it, in the first
 /// save and in every one after it, and a mailbox opened and saved as it is isn't written at all.
 #[test]
 fn an_account_a_newer_version_added_is_saved_as_its_file_had_it() {
     let tmp = Temp::new("newer-account");
     let path = tmp.file();
     let mut mb = mailbox(3);
-    let newer = mb.add_account(mailcraft_model::Account { email: "ada@jmap.example".into(), ..Default::default() });
+    let newer = mb.add_account(mailsolutions_model::Account { email: "ada@jmap.example".into(), ..Default::default() });
     let mut file = serde_json::to_value(&mb).unwrap();
     let written = json!({
         "id": newer,
@@ -378,8 +381,8 @@ fn an_old_single_file_opens_and_becomes_the_split_form_on_the_next_save() {
     assert_eq!(crate::io::Format::detect("whatever", &fs::read(&path).unwrap()), Some(crate::io::Format::Mailbox));
     // A format from the future is refused in both.
     fs::write(&path, br#"{"version":3}"#).unwrap();
-    assert!(open(&path).unwrap_err().contains("newer MailCraft"));
-    assert!(crate::io::read_mailbox(br#"{"version":3}"#).unwrap_err().contains("newer MailCraft"));
+    assert!(open(&path).unwrap_err().contains("newer MailSolutions"));
+    assert!(crate::io::read_mailbox(br#"{"version":3}"#).unwrap_err().contains("newer MailSolutions"));
 }
 
 /// #649: Save As onto the file the mailbox is kept in (the dialog suggests its name) must be a
@@ -500,7 +503,7 @@ fn a_save_after_a_read_mark_writes_the_mailbox_file_and_nothing_else() {
     let third = save(&path, &mb).unwrap();
     assert_eq!((third.blobs, third.blob_bytes), (1, 300_000));
     // Moving every message to another folder changes them all, and still writes no content.
-    let archive = mb.folders.iter().find(|f| f.kind == mailcraft_model::FolderKind::Archive).unwrap().id;
+    let archive = mb.folders.iter().find(|f| f.kind == mailsolutions_model::FolderKind::Archive).unwrap().id;
     for id in mb.messages.keys().copied().collect::<Vec<_>>() {
         mb.move_message(id, archive).unwrap();
     }
@@ -566,7 +569,7 @@ fn a_crash_leaves_the_old_state_or_the_new() {
     // The same of one self-contained file.
     let single = crate::io::write_mailbox(&old).unwrap();
     fs::write(&path, &single[..single.len() / 2]).unwrap();
-    assert!(open(&path).unwrap_err().contains("isn't a MailCraft mailbox"));
+    assert!(open(&path).unwrap_err().contains("isn't a MailSolutions mailbox"));
     fs::write(&path, &old_file).unwrap();
     assert!(whole(&path) == old);
 }
@@ -626,7 +629,7 @@ fn a_missing_content_folder_never_stops_the_mailbox_from_opening() {
     fs::rename(&away, blob_dir(&path)).unwrap();
     let mut whole_again = mb.clone();
     whole_again.message_mut(id).unwrap().read = true;
-    whole_again.message_mut(rewritten).unwrap().body = mailcraft_model::Body { text: "Written anew.".into(), html: None };
+    whole_again.message_mut(rewritten).unwrap().body = mailsolutions_model::Body { text: "Written anew.".into(), html: None };
     whole_again.message_mut(renamed).unwrap().message_id = "somebody-else@mail.example.org".into();
     let mut back = open(&path).unwrap();
     assert_eq!(back.unavailable, 0);
@@ -782,7 +785,7 @@ fn a_hostile_mailbox_file_names_nothing_outside_its_folder() {
         .add_message(Message {
             folder: inbox,
             attachments: vec![file.clone(), file],
-            body: mailcraft_model::Body { text: long_text(1), html: None },
+            body: mailsolutions_model::Body { text: long_text(1), html: None },
             ..Default::default()
         })
         .unwrap();
@@ -1618,14 +1621,14 @@ fn forwarding_exporting_and_sending_carry_what_is_on_disk() {
     // (An original in HTML is carried below the owner's text; one in plain text is in it.)
     let quoted = c.quote.as_ref().map_or_else(|| c.body.plain(), |q| q.text.clone());
     // (An original in HTML is quoted as its HTML reads, line breaks aside, never as its text part.)
-    let said = was.body.html.as_deref().map_or_else(|| was.body.text.clone(), mailcraft_html::to_text);
+    let said = was.body.html.as_deref().map_or_else(|| was.body.text.clone(), mailsolutions_html::to_text);
     let squash = |t: &str| t.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(c.attachments.iter().all(Attachment::is_loaded) && squash(&quoted).contains(&squash(said.trim())), "{quoted}");
     s.run("compose.discard", &json!({})).unwrap_or_default();
 
     // Exported as .eml: the files are in it.
     let eml = s.run("file.exportMessage", &json!({"id": id})).unwrap();
-    let parsed = mailcraft_mime_model::parse(&crate::cmd::base64_decode(eml["data"].as_str().unwrap()).unwrap());
+    let parsed = mailsolutions_mime_model::parse(&crate::cmd::base64_decode(eml["data"].as_str().unwrap()).unwrap());
     assert_eq!(
         parsed.attachments.iter().map(|a| a.data.as_slice()).collect::<Vec<_>>(),
         was.attachments.iter().map(|a| a.data.as_slice()).collect::<Vec<_>>()
@@ -1633,7 +1636,7 @@ fn forwarding_exporting_and_sending_carry_what_is_on_disk() {
     assert_eq!(parsed.body.text.trim(), was.body.text.trim());
     // A folder as .mbox too.
     let mbox = s.run("file.exportFolder", &json!({"id": was.folder})).unwrap();
-    let all = mailcraft_mime_model::parse_mbox(&crate::cmd::base64_decode(mbox["data"].as_str().unwrap()).unwrap());
+    let all = mailsolutions_mime_model::parse_mbox(&crate::cmd::base64_decode(mbox["data"].as_str().unwrap()).unwrap());
     assert_eq!(all.len(), 24);
     assert!(all.iter().all(|m| m.attachments.iter().all(|a| !a.data.is_empty())));
 
@@ -1649,8 +1652,8 @@ fn forwarding_exporting_and_sending_carry_what_is_on_disk() {
     // A synchronisation's request takes the Outbox through the same door.
     let mut imap = Session::new(s.mailbox.clone());
     imap.path = s.path.clone();
-    imap.mailbox.accounts.iter_mut().for_each(|a| a.kind = mailcraft_model::AccountKind::Imap);
-    let outbox_folder = imap.mailbox.folder_of_kind(was.account, mailcraft_model::FolderKind::Outbox).unwrap();
+    imap.mailbox.accounts.iter_mut().for_each(|a| a.kind = mailsolutions_model::AccountKind::Imap);
+    let outbox_folder = imap.mailbox.folder_of_kind(was.account, mailsolutions_model::FolderKind::Outbox).unwrap();
     imap.mailbox.move_message(id, outbox_folder).unwrap();
     // (A message moved into an Outbox is held, not sent, until Send Again: #607.)
     imap.mailbox.message_mut(id).unwrap().held.clear();
@@ -1717,7 +1720,7 @@ fn a_picture_that_can_t_be_read_is_asked_for_once_not_every_frame() {
         .add_message(Message {
             folder: inbox,
             subject: "With a picture".into(),
-            body: mailcraft_model::Body { text: "See the logo.".into(), html: Some("<p><img src=\"cid:logo@x.example\"></p>".into()) },
+            body: mailsolutions_model::Body { text: "See the logo.".into(), html: Some("<p><img src=\"cid:logo@x.example\"></p>".into()) },
             attachments: vec![picture.clone()],
             ..Default::default()
         })
@@ -1931,12 +1934,12 @@ fn undo_after_a_sweep_brings_back_a_message_whose_content_is_still_there() {
     assert_eq!(back.mailbox.message(other).unwrap().body.text, UNAVAILABLE);
 }
 
-/// `MAILCRAFT_BENCH_MESSAGES=50000 cargo test -p mailcraft-engine --release -- --ignored
+/// `MAILSOLUTIONS_BENCH_MESSAGES=50000 cargo test -p mailsolutions-engine --release -- --ignored
 /// fifty_thousand_messages` (2 GB under the system's temporary folder while it runs).
 #[test]
 #[ignore = "builds 2 GB of mail; run by hand"]
 fn fifty_thousand_messages_with_two_gigabytes_of_content_open_under_a_small_budget() {
-    let messages: usize = std::env::var("MAILCRAFT_BENCH_MESSAGES").ok().and_then(|n| n.parse().ok()).unwrap_or(50_000);
+    let messages: usize = std::env::var("MAILSOLUTIONS_BENCH_MESSAGES").ok().and_then(|n| n.parse().ok()).unwrap_or(50_000);
     let body_len = (2u64 << 30) / messages as u64;
     let tmp = Temp::new("fifty-thousand");
     let path = tmp.file();
@@ -1955,7 +1958,7 @@ fn fifty_thousand_messages_with_two_gigabytes_of_content_open_under_a_small_budg
             from: Address::new("Ada Aldrin", "ada@example.org"),
             to: vec![Address::new("Avery Quinn", "avery@example.org")],
             date: 1_600_000_000 + i as i64 * 60,
-            body: mailcraft_model::Body { text, html: None },
+            body: mailsolutions_model::Body { text, html: None },
             ..Default::default()
         };
         mb.add_message(m).unwrap();
@@ -2019,7 +2022,7 @@ fn content_let_go_of_goes_from_disk_once_a_state_that_new_is_saved_in_the_backgr
     saver.flush();
     assert_eq!(content_files(&path), before);
     let m = mb.message_mut(id).unwrap();
-    (m.body, m.attachments) = (mailcraft_model::Body { text: "The words of it.".into(), html: None }, Vec::new());
+    (m.body, m.attachments) = (mailsolutions_model::Body { text: "The words of it.".into(), html: None }, Vec::new());
     saver.submit(&path, &mb, 2);
     saver.flush();
     let after = content_files(&path);

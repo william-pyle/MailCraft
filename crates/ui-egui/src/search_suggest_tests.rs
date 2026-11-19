@@ -4,7 +4,7 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::Suggesting;
@@ -15,7 +15,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// The sample mailbox with the keyboard in the search box.
 fn window() -> Harness<'static, MailApp> {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let _ = app.execute("ui.dismissReminder", json!({"all": true}));
     app.execute("ui.focusSearch", json!({})).unwrap();
@@ -378,9 +378,9 @@ fn a_person_from_the_keyboard() {
     let s = &h.state().session;
     assert!(!rows.is_empty() && rows.iter().all(|r| s.mailbox.message(r.id).is_some_and(|m| m.from.email == "priya@lumen.example")));
     // A contact added while the search waits is offered from the next key on.
-    h.state_mut().session.mailbox.add_contact(mailcraft_model::Contact {
+    h.state_mut().session.mailbox.add_contact(mailsolutions_model::Contact {
         display_name: "Ivana Gvožđar".into(),
-        emails: vec![mailcraft_model::Labeled::new("work", "ivana@example.org")],
+        emails: vec![mailsolutions_model::Labeled::new("work", "ivana@example.org")],
         ..Default::default()
     });
     typed(&mut h, "-cc:gvoz");
@@ -392,7 +392,7 @@ fn a_person_from_the_keyboard() {
 /// The address is beside a name, not beside itself.
 #[test]
 fn the_address_is_shown_beside_a_name() {
-    let person = |label: &str| mailcraft_model::search::Suggestion {
+    let person = |label: &str| mailsolutions_model::search::Suggestion {
         label: label.into(),
         range: 0..0,
         text: String::new(),
@@ -401,7 +401,7 @@ fn the_address_is_shown_beside_a_name() {
     };
     assert_eq!(super::shows_address(&person("Ada")), Some("ada@example.org"));
     assert_eq!(super::shows_address(&person("ADA@example.org")), None);
-    assert_eq!(super::shows_address(&mailcraft_model::search::Suggestion { address: None, ..person("category:") }), None);
+    assert_eq!(super::shows_address(&mailsolutions_model::search::Suggestion { address: None, ..person("category:") }), None);
 }
 
 /// Someone who arrives while the search waits (a Send/Receive brings their mail or contact) is
@@ -412,9 +412,9 @@ fn people_who_arrive_are_offered_without_a_key() {
     typed(&mut h, "to:zed");
     assert!(offered(&h).is_empty());
     let s = &mut h.state_mut().session;
-    s.mailbox.add_contact(mailcraft_model::Contact {
+    s.mailbox.add_contact(mailsolutions_model::Contact {
         display_name: "Zed Quill".into(),
-        emails: vec![mailcraft_model::Labeled::new("work", "zed@example.org")],
+        emails: vec![mailsolutions_model::Labeled::new("work", "zed@example.org")],
         ..Default::default()
     });
     s.mailbox_changed();

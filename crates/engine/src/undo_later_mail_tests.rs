@@ -3,8 +3,8 @@
 //! Undo takes back what its step did and nothing else (#605): mail that arrived after the step,
 //! and how far each IMAP folder has been read, stay as they are.
 
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, Message};
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{Address, FolderKind, Id, Message};
 use serde_json::json;
 
 use crate::Session;
@@ -45,19 +45,19 @@ fn with_subject(s: &Session, subject: &str) -> Option<Id> {
 fn undo_of_a_flag_keeps_mail_that_came_in_after_it() {
     let (mut s, a, inbox, plans) = imap();
     s.run("mail.flag", &json!({"ids": [plans]})).unwrap();
-    assert!(s.mailbox.message(plans).unwrap().flag == mailcraft_model::FlagStatus::Flagged);
+    assert!(s.mailbox.message(plans).unwrap().flag == mailsolutions_model::FlagStatus::Flagged);
     arrives(&mut s, a, Some(inbox), 6, vec![received(6, "Later")]);
     let folder_then = s.mailbox.folder(inbox).unwrap().clone();
     assert_eq!(folder_then.uid_seen, 6);
 
     assert!(s.undo());
-    assert!(s.mailbox.message(plans).unwrap().flag != mailcraft_model::FlagStatus::Flagged, "the flag is taken off");
+    assert!(s.mailbox.message(plans).unwrap().flag != mailsolutions_model::FlagStatus::Flagged, "the flag is taken off");
     let later = with_subject(&s, "Later").expect("the mail that arrived after the step is kept");
     assert_eq!((s.mailbox.message(later).unwrap().uid, s.mailbox.message(later).unwrap().folder), (6, inbox));
     assert_eq!(s.mailbox.folder(inbox).unwrap(), &folder_then, "how far the folder has been read is kept");
 
     assert!(s.redo());
-    assert!(s.mailbox.message(plans).unwrap().flag == mailcraft_model::FlagStatus::Flagged);
+    assert!(s.mailbox.message(plans).unwrap().flag == mailsolutions_model::FlagStatus::Flagged);
     assert!(with_subject(&s, "Later").is_some());
     assert_eq!(s.mailbox.folder(inbox).unwrap().uid_seen, 6);
 }
@@ -157,5 +157,5 @@ fn mail_the_server_took_away_since_stays_gone() {
     assert!(s.mailbox.message(later).is_none());
     assert!(s.undo());
     assert!(s.mailbox.message(later).is_none(), "undo doesn't bring back what the server removed");
-    assert!(s.mailbox.message(plans).unwrap().flag != mailcraft_model::FlagStatus::Flagged);
+    assert!(s.mailbox.message(plans).unwrap().flag != mailsolutions_model::FlagStatus::Flagged);
 }

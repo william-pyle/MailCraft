@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Find and Replace in the message being written.
 
-use mailcraft_model::rich::Selection;
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::rich::Selection;
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Compose, Session, sample};

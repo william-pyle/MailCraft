@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Whole-crate properties: what is written reads back the same, and no text makes the reader panic.
 
-use mailcraft_model::{Address, Attendee, Event, Freq, Importance, Recurrence, Response, ShowAs, Task};
-use mailcraft_time::{DAY, Date, DateTime, Weekday};
+use mailsolutions_model::{Address, Attendee, Event, Freq, Importance, Recurrence, Response, ShowAs, Task};
+use mailsolutions_time::{DAY, Date, DateTime, Weekday};
 use proptest::prelude::*;
 
 use crate::{IcsFile, WriteOptions, parse, write};
@@ -22,12 +22,12 @@ fn options() -> WriteOptions {
 
 /// What reading back gives for a written event: no ids, and a uid where there was none.
 fn as_read(e: &Event) -> Event {
-    let uid = if e.uid.is_empty() { format!("mailcraft-{}@mailcraft.local", e.id) } else { e.uid.clone() };
+    let uid = if e.uid.is_empty() { format!("mailsolutions-{}@mailsolutions.local", e.id) } else { e.uid.clone() };
     Event { id: 0, calendar: 0, uid, ..e.clone() }
 }
 
 fn task_as_read(t: &Task) -> Task {
-    let uid = if t.uid.is_empty() { format!("mailcraft-task-{}@mailcraft.local", t.id) } else { t.uid.clone() };
+    let uid = if t.uid.is_empty() { format!("mailsolutions-task-{}@mailsolutions.local", t.id) } else { t.uid.clone() };
     Task { id: 0, message: None, uid, ..t.clone() }
 }
 
@@ -169,7 +169,7 @@ fn every_free_busy_state_and_response_round_trips() {
 
 #[test]
 fn importance_what_is_asked_of_the_people_invited_and_the_link_to_join_by_round_trip() {
-    use mailcraft_model::{OnlineMeeting, OnlineProvider, ResponseOptions};
+    use mailsolutions_model::{OnlineMeeting, OnlineProvider, ResponseOptions};
     let join = "https://teams.example.org/l/meetup-join/19%3ameeting_abc%40thread.v2/0?context=%7b%22Tid%22%3a%221%22%7d";
     let invited = vec![Attendee { address: Address::new("Bo", "bo@example.org"), optional: false, response: Response::None }];
     let base = Event { uid: "x".into(), attendees: invited, ..Default::default() };

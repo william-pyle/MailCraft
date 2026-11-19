@@ -5,14 +5,14 @@
 //! seal, and Details that open beneath it (who signed, the certificate's fingerprint, issuer and
 //! dates, and that revocation wasn't checked); and the seal on the message's row in the list.
 //!
-//! What the check finds is the engine's ([`mailcraft_engine::Session::digital_signature`]):
+//! What the check finds is the engine's ([`mailsolutions_engine::Session::digital_signature`]):
 //! this only shows it. The signer's name and addresses come from the certificate in the message:
 //! data, shown cut short, never as ours.
 
 use egui::{Color32, Sense, Ui, vec2};
-use mailcraft_model::Message;
-use mailcraft_model::digital_signature::{Coverage, DigitalSignature, SignatureFormat, Verdict, Why};
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_model::Message;
+use mailsolutions_model::digital_signature::{Coverage, DigitalSignature, SignatureFormat, Verdict, Why};
+use mailsolutions_time::{DateTime, Timestamp};
 use serde_json::json;
 
 use super::Place;
@@ -60,15 +60,15 @@ fn why_said(why: Why) -> &'static str {
         }
         Why::Altered => tl!("What you see isn't what was signed: treat it with care."),
         Why::WeakAlgorithm => tl!("It uses an algorithm that's no longer safe."),
-        Why::UnknownAlgorithm => tl!("It uses an algorithm MailCraft doesn't know."),
+        Why::UnknownAlgorithm => tl!("It uses an algorithm MailSolutions doesn't know."),
         Why::NoPublicKey => tl!("The signer's Public key (certificate) isn't in the message or kept on this computer."),
         Why::KeyRevoked => tl!("The signer's key was revoked by its owner."),
         Why::KeyExpired => tl!("The signer's key had expired when the message was signed."),
         Why::NotASigningKey => tl!("The key that made it isn't one that may sign."),
         Why::SignatureExpired => tl!("The Digital signature has expired."),
         Why::Unreadable => tl!("The Digital signature can't be read."),
-        Why::NoOriginal => tl!("The message was downloaded before MailCraft kept the bytes it came as. Check Again downloads them."),
-        Why::TooMuch => tl!("There's more in this Digital signature than MailCraft checks for one message."),
+        Why::NoOriginal => tl!("The message was downloaded before MailSolutions kept the bytes it came as. Check Again downloads them."),
+        Why::TooMuch => tl!("There's more in this Digital signature than MailSolutions checks for one message."),
     }
 }
 
@@ -231,7 +231,7 @@ fn details(app: &mut MailApp, ui: &mut Ui, d: &DigitalSignature, m: &Message, t:
         line(ui, tl!("Revocation:"), tl!("Revocation not checked."));
     }
     let file =
-        app.session.digital_signature_part(m.id).and_then(|i| m.attachments.get(i).map(|a| (i, mailcraft_engine::opening::file_name(&a.name))));
+        app.session.digital_signature_part(m.id).and_then(|i| m.attachments.get(i).map(|a| (i, mailsolutions_engine::opening::file_name(&a.name))));
     if let Some((index, name)) = file
         && m.id != 0
     {

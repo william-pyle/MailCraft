@@ -9,8 +9,8 @@ use std::sync::{Arc, Mutex};
 use std::thread::ThreadId;
 use std::time::Duration;
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{SyncRequest, SyncResult};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{SyncRequest, SyncResult};
 use serde_json::json;
 
 use super::*;
@@ -64,7 +64,7 @@ impl SecretStore for Locked {
         }
         (key == PASSWORD_KEY).then(|| self.kept.lock().unwrap().clone()).flatten()
     }
-    fn set(&self, _: &str, _: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, _: &str, _: &str) -> Result<(), mailsolutions_host::SecretError> {
         Ok(())
     }
     fn delete(&self, _: &str) {}

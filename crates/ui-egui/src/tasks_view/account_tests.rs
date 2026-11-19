@@ -58,7 +58,7 @@ fn the_choice_is_remembered_with_the_other_view_choices() {
     let work = add(&mut w, "work@example.org");
     w.state_mut().execute("view.taskAccount", json!({"value": work})).unwrap();
     let saved = serde_json::to_value(&w.state().session.view).unwrap();
-    let back: mailcraft_engine::ViewState = serde_json::from_value(saved).unwrap();
+    let back: mailsolutions_engine::ViewState = serde_json::from_value(saved).unwrap();
     assert_eq!(back.task_account, AccountChoice::Account(work));
 }
 
@@ -66,7 +66,8 @@ fn the_choice_is_remembered_with_the_other_view_choices() {
 fn one_accounts_tasks_are_remembered_for_that_account_only() {
     let app = |email: &str| {
         let now = 1_791_993_600;
-        let mut a = MailApp::new(mailcraft_engine::Session::at(mailcraft_engine::sample::mailbox(now, 0), now, 0), crate::Services::default());
+        let mut a =
+            MailApp::new(mailsolutions_engine::Session::at(mailsolutions_engine::sample::mailbox(now, 0), now, 0), crate::Services::default());
         let params = json!({"email": email, "incoming": {"host": "outlook.example.org"}, "auth": "oauth2"});
         let id = a.execute("account.add", params).unwrap()["id"].as_u64().unwrap();
         (a, id)

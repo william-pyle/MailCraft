@@ -3,8 +3,8 @@
 //! Backstage (File): accounts and the mailbox, opening and exporting, options, About.
 
 use egui::{Align2, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_model::{AccountKind, Security};
-use mailcraft_time::Weekday;
+use mailsolutions_model::{AccountKind, Security};
+use mailsolutions_time::Weekday;
 use serde_json::json;
 
 use crate::theme::{Tokens, regular, semibold};
@@ -108,8 +108,8 @@ fn tile(ui: &mut Ui, icon: &str, title: &str, detail: &str, t: &Tokens) -> bool 
 
 /// The line under an account's name on its card in File › Info: what kind of account it is, and
 /// for one on a mail server, its servers.
-pub(crate) fn account_detail(app: &MailApp, a: &mailcraft_model::Account) -> String {
-    let server = |s: &Option<mailcraft_model::Server>| {
+pub(crate) fn account_detail(app: &MailApp, a: &mailsolutions_model::Account) -> String {
+    let server = |s: &Option<mailsolutions_model::Server>| {
         s.as_ref().map(|s| {
             if s.security == Security::None { crate::i18n::fmt(tl!("{host} (not encrypted)"), &[("host", &s.host)]) } else { s.host.clone() }
         })
@@ -129,7 +129,7 @@ pub(crate) fn account_detail(app: &MailApp, a: &mailcraft_model::Account) -> Str
         // An Exchange server account names its server, and says why it isn't kept in step.
         AccountKind::Exchange => ews_line(app, a),
         // Kept as its file has it: this version neither sends nor receives with it.
-        AccountKind::Unknown => tl!("Added by a newer version of MailCraft: send and receive with it there").to_string(),
+        AccountKind::Unknown => tl!("Added by a newer version of MailSolutions: send and receive with it there").to_string(),
         AccountKind::Imap => {
             let servers = format!(
                 "{} · {}",
@@ -147,8 +147,8 @@ pub(crate) fn account_detail(app: &MailApp, a: &mailcraft_model::Account) -> Str
 
 /// A JMAP account's line about its server (also on its settings page): the name of the host alone,
 /// as the whole address may carry the account's own.
-pub(crate) fn jmap_line(a: &mailcraft_model::Account) -> String {
-    match a.jmap.as_ref().and_then(mailcraft_model::JmapServer::host) {
+pub(crate) fn jmap_line(a: &mailsolutions_model::Account) -> String {
+    match a.jmap.as_ref().and_then(mailsolutions_model::JmapServer::host) {
         Some(host) => crate::i18n::fmt(tl!("JMAP {host}"), &[("host", host)]),
         None => tl!("JMAP · no usable server address").to_string(),
     }
@@ -156,8 +156,8 @@ pub(crate) fn jmap_line(a: &mailcraft_model::Account) -> String {
 
 /// An Exchange server account's line (#252): the name of its server alone. Where it connects, as
 /// whom and the certificate it trusts are under its card ([`crate::ews_setup::info_rows`]).
-pub(crate) fn ews_line(app: &MailApp, a: &mailcraft_model::Account) -> String {
-    let host = a.ews.as_ref().and_then(mailcraft_model::EwsServer::host);
+pub(crate) fn ews_line(app: &MailApp, a: &mailsolutions_model::Account) -> String {
+    let host = a.ews.as_ref().and_then(mailsolutions_model::EwsServer::host);
     let Some(host) = host else { return tl!("Exchange server · no usable server address").to_string() };
     let mut line = crate::i18n::fmt(tl!("Exchange server {host}"), &[("host", host)]);
     // A certificate the system doesn't trust, which only the owner can decide about.
@@ -177,7 +177,7 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     heading(ui, tl!("Info"), t);
     section(ui, tl!("Accounts"), t);
     // (Each shared mailbox right under the account it is opened through, a little in: #70.)
-    let accounts: Vec<mailcraft_model::Account> = app.session.mailbox.accounts_in_order().into_iter().cloned().collect();
+    let accounts: Vec<mailsolutions_model::Account> = app.session.mailbox.accounts_in_order().into_iter().cloned().collect();
     for a in &accounts {
         let (row, _) = ui.allocate_exact_size(vec2(ui.available_width().min(560.0), 58.0), Sense::hover());
         let r = if a.is_shared() { Rect::from_min_max(pos2(row.min.x + 24.0, row.min.y), row.max) } else { row };
@@ -198,11 +198,11 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
             // An account kept in step through Graph gets its mail that way too: without it, none.
             let link = if a.kind == AccountKind::Microsoft {
                 ui.link(tl!("Connect to Microsoft (mail, calendar and contacts)")).on_hover_text(tl!(
-                    "Sign in once more to let MailCraft read and change your mail, send, and show your calendar and contacts through Microsoft."
+                    "Sign in once more to let MailSolutions read and change your mail, send, and show your calendar and contacts through Microsoft."
                 ))
             } else {
                 ui.link(tl!("Connect calendar and contacts")).on_hover_text(tl!(
-                    "Sign in once more to let MailCraft send through Microsoft and show your calendar and contacts. Mail works without it."
+                    "Sign in once more to let MailSolutions send through Microsoft and show your calendar and contacts. Mail works without it."
                 ))
             };
             if link.clicked() {
@@ -300,7 +300,7 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
             });
             ui.add_space(4.0);
         }
-        // Where the automatic replies stand, and whether MailCraft may change them, with a way
+        // Where the automatic replies stand, and whether MailSolutions may change them, with a way
         // to sign in again or to ask for that permission again.
         if let Some((line, again)) = app.auto_replies_line(a.id) {
             ui.horizontal(|ui| {
@@ -360,7 +360,7 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
         "account",
         tl!("Add Account"),
         tl!(
-            "Type your e-mail address and MailCraft finds the rest: Microsoft 365, Outlook.com, Google and other providers, or a mailbox on this device only"
+            "Type your e-mail address and MailSolutions finds the rest: Microsoft 365, Outlook.com, Google and other providers, or a mailbox on this device only"
         ),
         t,
     ) {
@@ -369,7 +369,7 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     crate::auto_replies::info_tiles(app, ui, t);
     // The calendar of an account that signs in with Microsoft is kept on its server: the owner
     // can see for himself that what is changed here arrives there.
-    let microsoft = |a: &&mailcraft_model::Account| a.oauth.as_ref().is_some_and(|o| o.provider == mailcraft_model::OAuthProvider::Microsoft);
+    let microsoft = |a: &&mailsolutions_model::Account| a.oauth.as_ref().is_some_and(|o| o.provider == mailsolutions_model::OAuthProvider::Microsoft);
     if app.services.check_calendar.is_some() && accounts.iter().any(|a| microsoft(&a)) {
         section(ui, tl!("Calendar"), t);
         let detail = if app.checking_calendar() {
@@ -412,20 +412,20 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     if tile(ui, "categorize", tl!("Categories"), tl!("Names and colours for sorting mail, events, people and tasks"), t) {
         let _ = app.run("ui.dialog", json!({"name": "categories"}));
     }
-    // Everything MailCraft keeps here, gone (#177).
+    // Everything MailSolutions keeps here, gone (#177).
     crate::data_removal::section(app, ui, t);
 }
 
 /// The calendars subscribed to (#209): where each is read from, how it is doing, and what the
 /// owner may do about it. The address itself is never shown: it may hold a secret.
 fn subscribed_calendars(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
-    let rows: Vec<(mailcraft_model::Id, String, mailcraft_model::subscription::Subscription)> = app
+    let rows: Vec<(mailsolutions_model::Id, String, mailsolutions_model::subscription::Subscription)> = app
         .session
         .mailbox
         .calendars
         .iter()
         .filter_map(|c| c.subscription.clone().map(|sub| (c.id, c.name.clone(), sub)))
-        .take(mailcraft_model::subscription::MAX_SUBSCRIBED)
+        .take(mailsolutions_model::subscription::MAX_SUBSCRIBED)
         .collect();
     section(ui, tl!("Subscribed calendars"), t);
     if rows.is_empty() {
@@ -466,8 +466,8 @@ fn subscribed_calendars(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
                 egui::RichText::new(crate::i18n::fmt(
                     tl!("The file has more events than are kept ({one} a calendar, {all} in all): the rest are left out."),
                     &[
-                        ("one", &mailcraft_model::subscription::MAX_EVENTS.to_string()),
-                        ("all", &mailcraft_model::subscription::MAX_EVENTS_TOTAL.to_string()),
+                        ("one", &mailsolutions_model::subscription::MAX_EVENTS.to_string()),
+                        ("all", &mailsolutions_model::subscription::MAX_EVENTS_TOTAL.to_string()),
                     ],
                 ))
                 .font(regular(11.5))
@@ -526,8 +526,8 @@ fn subscribed_calendars(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
 
 /// "Download messages in full" for a Microsoft account: everything, or up to a size (larger ones
 /// download when opened).
-fn download_in_full(app: &mut MailApp, ui: &mut Ui, a: &mailcraft_model::Account) {
-    use mailcraft_model::DownloadInFull;
+fn download_in_full(app: &mut MailApp, ui: &mut Ui, a: &mailsolutions_model::Account) {
+    use mailsolutions_model::DownloadInFull;
     let choices = [
         (DownloadInFull::UpTo10Mb, "upTo10Mb", tl!("Up to 10 MB")),
         (DownloadInFull::UpTo25Mb, "upTo25Mb", tl!("Up to 25 MB")),
@@ -671,14 +671,16 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     {
         let mut on = app.ui.close_to_tray;
         let switch = ui.checkbox(&mut on, tl!("Close to system tray")).on_hover_text(tl!(
-            "Keep MailCraft running for mail and reminders when you close its window. Click its icon beside the clock to show it again, or choose Quit from the icon's menu. If no system tray is available, closing exits MailCraft."
+            "Keep MailSolutions running for mail and reminders when you close its window. Click its icon beside the clock to show it again, or choose Quit from the icon's menu. If no system tray is available, closing exits MailSolutions."
         ));
         app.hit.add("optionCloseToTray", 0, switch.rect);
         if switch.changed() {
             let _ = app.run("ui.closeToTray", json!({"value": on}));
         }
         #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-        ui.label(tl!("On Wayland, restart MailCraft after enabling this option. A reachable X11/XWayland server and a system tray are required."));
+        ui.label(tl!(
+            "On Wayland, restart MailSolutions after enabling this option. A reachable X11/XWayland server and a system tray are required."
+        ));
     }
     row(ui, tl!("Interface theme"), |ui| {
         let cur = app.ui.theme;
@@ -730,7 +732,7 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
         });
         animations = combo.response.rect;
         combo.response.on_hover_text(tl!(
-            "Use system setting follows Animation effects in Windows' settings. Where MailCraft can't read the system's setting yet, animations play until you choose Never play."
+            "Use system setting follows Animation effects in Windows' settings. Where MailSolutions can't read the system's setting yet, animations play until you choose Never play."
         ));
     });
     app.hit.add("optionAnimations", 0, animations);
@@ -838,7 +840,7 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
         egui::ComboBox::from_id_salt("opt_wait_before_sending")
             .selected_text(wait(prefs.undo_send()))
             .show_ui(ui, |ui| {
-                for n in mailcraft_engine::Prefs::UNDO_SEND_CHOICES {
+                for n in mailsolutions_engine::Prefs::UNDO_SEND_CHOICES {
                     if ui.selectable_label(n == prefs.undo_send(), wait(n)).clicked() {
                         let _ = app.run("sync.waitBeforeSending", json!({"seconds": n}));
                     }
@@ -860,22 +862,22 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     crate::attachment_preview::options(app, ui);
     section(ui, tl!("Contacts"), t);
     row(ui, tl!("Contacts manager"), |ui| {
-        let shared = app.session.prefs.contactcraft_contacts;
+        let shared = app.session.prefs.contactsolutions_contacts;
         egui::ComboBox::from_id_salt("opt_contacts_manager")
-            .selected_text(if shared { tl!("ContactCraft") } else { tl!("Included contacts") })
+            .selected_text(if shared { tl!("ContactSolutions") } else { tl!("Included contacts") })
             .show_ui(ui, |ui| {
                 if ui.selectable_label(!shared, tl!("Included contacts")).clicked() {
                     let _ = app.run("ui.contactManager", json!({"value": "included"}));
                 }
-                if app.services.contactcraft_load.is_some() && ui.selectable_label(shared, tl!("ContactCraft")).clicked() {
-                    let _ = app.run("ui.contactManager", json!({"value": "contactcraft"}));
+                if app.services.contactsolutions_load.is_some() && ui.selectable_label(shared, tl!("ContactSolutions")).clicked() {
+                    let _ = app.run("ui.contactManager", json!({"value": "contactsolutions"}));
                 }
             });
     });
-    if app.services.contactcraft_load.is_some() {
+    if app.services.contactsolutions_load.is_some() {
         ui.label(
             egui::RichText::new(tl!(
-                "ContactCraft's shared contacts are used even when its window is closed. New and edited contacts open in ContactCraft."
+                "ContactSolutions's shared contacts are used even when its window is closed. New and edited contacts open in ContactSolutions."
             ))
             .color(t.text_dim),
         );
@@ -885,7 +887,7 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     if ui
         .checkbox(&mut remember, tl!("Remember passwords and sign-ins on this computer"))
         .on_hover_text(tl!(
-            "Kept in the system's credential store, never in the mailbox or its settings. Without it you sign in again each time MailCraft starts."
+            "Kept in the system's credential store, never in the mailbox or its settings. Without it you sign in again each time MailSolutions starts."
         ))
         .changed()
     {
@@ -909,7 +911,7 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     row(ui, tl!("Google Desktop application ID"), |ui| {
         let mut id = app.ui.google_client_id.clone();
         let hint = if app.services.google_client_id.is_empty() {
-            tl!("Waiting for MailCraft's Google registration")
+            tl!("Waiting for MailSolutions's Google registration")
         } else {
             tl!("The one this build came with")
         };
@@ -983,10 +985,10 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     });
     row(ui, tl!("Time scale"), |ui| {
         // What one row of the calendar's hours stands for.
-        let current = mailcraft_engine::cmd::calendar_extra::time_scale(&app.session);
+        let current = mailsolutions_engine::cmd::calendar_extra::time_scale(&app.session);
         let label = |minutes: u8| tln!(minutes, "{n} minute", "{n} minutes");
         egui::ComboBox::from_id_salt("opt_time_scale").selected_text(label(current)).show_ui(ui, |ui| {
-            for minutes in mailcraft_engine::cmd::calendar_extra::TIME_SCALES {
+            for minutes in mailsolutions_engine::cmd::calendar_extra::TIME_SCALES {
                 if ui.selectable_label(minutes == current, label(minutes)).clicked() {
                     let _ = app.run("view.timeScale", json!({"minutes": minutes}));
                 }
@@ -1003,8 +1005,8 @@ fn options(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
 
 /// The time zone the calendar is shown in, and a second one for its time bar, each with a label
 /// for the bar: this computer's own zone unless another is chosen, as in Outlook's options.
-fn time_zones(app: &mut MailApp, ui: &mut Ui, prefs: &mailcraft_engine::Prefs) {
-    use mailcraft_time::Zone;
+fn time_zones(app: &mut MailApp, ui: &mut Ui, prefs: &mailsolutions_engine::Prefs) {
+    use mailsolutions_time::Zone;
     // What is typed into a zone's list, kept from frame to frame.
     let typed = |ui: &Ui, key: &str| ui.data(|data| data.get_temp::<String>(egui::Id::unique(key))).unwrap_or_default();
     let keep = |ui: &Ui, key: &str, text: String| ui.data_mut(|data| data.insert_temp(egui::Id::unique(key), text));
@@ -1030,7 +1032,7 @@ fn time_zones(app: &mut MailApp, ui: &mut Ui, prefs: &mailcraft_engine::Prefs) {
             let _ = app.run("view.timeZone", json!({"zone": zone}));
         }
     });
-    let second = mailcraft_engine::cmd::zones::second_zone(&app.session);
+    let second = mailsolutions_engine::cmd::zones::second_zone(&app.session);
     row(ui, tl!("Second time zone"), |ui| {
         let mut shown = second.is_some();
         if ui.checkbox(&mut shown, tl!("Show in the time bar")).changed() {
@@ -1049,7 +1051,7 @@ fn time_zones(app: &mut MailApp, ui: &mut Ui, prefs: &mailcraft_engine::Prefs) {
     });
 }
 
-/// Everyone who has worked on MailCraft, on GitHub.
+/// Everyone who has worked on MailSolutions, on GitHub.
 pub(crate) const CONTRIBUTORS_LINK: &str = "https://github.com/UCS-Care-Group/mailcraft/graphs/contributors";
 
 /// The line of About that credits the people who made the program: a link to the project's
@@ -1067,7 +1069,7 @@ pub(crate) fn contributors(ui: &mut Ui) {
 }
 
 fn about(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
-    heading(ui, tl!("About MailCraft"), t);
+    heading(ui, tl!("About MailSolutions"), t);
     ui.label(egui::RichText::new(crate::i18n::fmt(tl!("Version {version}"), &[("version", env!("CARGO_PKG_VERSION"))])).color(t.text_dim));
     ui.label(tl!(
         "Mail, calendar, people and tasks, written from scratch in Rust. It runs natively on macOS, Windows, Linux and BSD, and in the browser."
@@ -1088,7 +1090,7 @@ fn about(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
     section(ui, tl!("Your mail stays yours"), t);
     ui.label(tl!("Messages are shown without running anything in them, and the pictures a message keeps on the web are downloaded only when you ask. Passwords are kept in memory only while the app is open."));
     section(ui, tl!("Scripts and agents"), t);
-    let parity = mailcraft_engine::catalog::parity(&app.session.registry);
+    let parity = mailsolutions_engine::catalog::parity(&app.session.registry);
     ui.label(crate::i18n::fmt(
         tl!("Everything the interface does is a command: {commands} of them, covering {percent}% of the feature catalog. The command line, the control channel and the MCP server run the same commands."),
         &[("commands", &parity["commands"].to_string()), ("percent", &parity["percent"].to_string())],

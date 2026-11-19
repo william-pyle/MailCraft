@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Telling the owner when a new version of MailCraft is out: what a version is, and what is
+//! Telling the owner when a new version of MailSolutions is out: what a version is, and what is
 //! kept of a release that was found. Plain data: the window decides when to ask, a host with
-//! sockets (`mailcraft-net`) does the asking, and neither installs anything.
+//! sockets (`mailsolutions-net`) does the asking, and neither installs anything.
 //!
 //! A version is read strictly: `MAJOR.MINOR.PATCH` in digits, a `v` before it allowed, and a
 //! pre-release's suffix after a `-` (`0.5.0-beta.1`). Anything else is not a version at all.
@@ -14,7 +14,7 @@ const MAX_DIGITS: usize = 6;
 /// Longest pre-release suffix taken.
 const MAX_SUFFIX: usize = 40;
 
-/// A version of MailCraft, as the build or a release's tag names it.
+/// A version of MailSolutions, as the build or a release's tag names it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Version {
     pub major: u32,
@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn file_names() {
-        for good in ["SHA256SUMS.txt", "mailcraft-0.5.0-linux-x86_64.AppImage", "mailcraft-0.5.0-windows-x64.msi", "a+b_c"] {
+        for good in ["SHA256SUMS.txt", "mailsolutions-0.5.0-linux-x86_64.AppImage", "mailsolutions-0.5.0-windows-x64.msi", "a+b_c"] {
             assert!(is_file_name(good), "{good}");
         }
         for bad in ["", ".hidden", "a/b", "a\\b", "..", "a..b", "a b", "é", "a:b", "a\0b", &"a".repeat(121)] {

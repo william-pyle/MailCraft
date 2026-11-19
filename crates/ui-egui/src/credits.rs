@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! About ▸ Contributors: everyone who contributed to MailCraft, by GitHub username always, and by
+//! About ▸ Contributors: everyone who contributed to MailSolutions, by GitHub username always, and by
 //! a display or real name only when they chose one for themselves (`docs/contributors.md`). The tables are baked into the binary by `build.rs`
 //! from `contributors/`; nothing is read at run time.
 //!
@@ -323,7 +323,8 @@ pub fn contributors_ui(ui: &mut egui::Ui, t: &Tokens) {
 /// built in (the earliest tester first). Nothing to sort and no numbers.
 pub fn testers_ui(ui: &mut egui::Ui, t: &Tokens) {
     ui.label(
-        RichText::new(tl!("MailCraft is tested on real mail, by people who use it every day and tell us what goes wrong. Thank you.")).color(t.text),
+        RichText::new(tl!("MailSolutions is tested on real mail, by people who use it every day and tell us what goes wrong. Thank you."))
+            .color(t.text),
     );
     ui.separator();
     egui::ScrollArea::vertical().auto_shrink([false, true]).max_height(340.0).show(ui, |ui| {
@@ -489,7 +490,7 @@ mod tests {
         assert_eq!(day(""), "—");
     }
 
-    const JSON: &str = r#"{"schema": 1, "repo": "example/mailcraft", "commits": 9, "contributors": [
+    const JSON: &str = r#"{"schema": 1, "repo": "example/mailsolutions", "commits": 9, "contributors": [
         {"login": "ann", "people_entry": true, "github_name": "Ann on GitHub", "prs": 2, "commits": 5,
          "lines_added": 100, "lines_deleted": 7, "binary_added": 1, "binary_deleted": 0,
          "first_commit": "2026-10-01T10:00:00Z", "last_commit": "2026-10-02T10:00:00Z"},

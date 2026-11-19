@@ -1,18 +1,18 @@
 <#
 .SYNOPSIS
-  Build, sign and package MailCraft for Windows.
+  Build, sign and package MailSolutions for Windows.
 
 .DESCRIPTION
   Produces, in $env:DIST (default: dist/release):
-    mailcraft-<version>-windows-<arch>.msi            per-machine installer (WiX v5)
-    mailcraft-<version>-windows-<arch>-portable.zip   mailcraft.exe + mailcraft-cli.exe
+    mailsolutions-<version>-windows-<arch>.msi            per-machine installer (WiX v5)
+    mailsolutions-<version>-windows-<arch>-portable.zip   mailsolutions.exe + mailsolutions-cli.exe
 
   The binaries link the C runtime statically (+crt-static), so neither the MSI nor the portable
   zip needs the Visual C++ redistributable. Signing is delegated to sign.ps1 (skipped with a
   warning when no signing secrets are set).
 
   Needs: Rust (MSVC toolchain + the target), the Windows SDK (rc.exe, signtool.exe),
-  and WiX v5 with its UI and Util extensions (installer dialogs, "Launch MailCraft" on finish):
+  and WiX v5 with its UI and Util extensions (installer dialogs, "Launch MailSolutions" on finish):
     dotnet tool install --global wix --version 5.0.2
     wix extension add -g WixToolset.UI.wixext/5.0.2
     wix extension add -g WixToolset.Util.wixext/5.0.2
@@ -40,7 +40,7 @@ function Invoke-Native([string] $What, [scriptblock] $Block) {
 }
 
 # The version lives in one place: [workspace.package] version in the root Cargo.toml.
-$Version = $env:MAILCRAFT_VERSION
+$Version = $env:MAILSOLUTIONS_VERSION
 if (-not $Version) {
   $inPkg = $false
   foreach ($line in Get-Content (Join-Path $Root 'Cargo.toml')) {
@@ -57,10 +57,10 @@ $Dist = if ($env:DIST) { $env:DIST } else { Join-Path $Root 'dist\release' }
 $TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Root 'target' }
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 
-if (-not $env:MAILCRAFT_BUILD_SHA) { $env:MAILCRAFT_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null) }
-if (-not $env:MAILCRAFT_BUILD_DATE) { $env:MAILCRAFT_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') }
+if (-not $env:MAILSOLUTIONS_BUILD_SHA) { $env:MAILSOLUTIONS_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null) }
+if (-not $env:MAILSOLUTIONS_BUILD_DATE) { $env:MAILSOLUTIONS_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') }
 
-Write-Output "MailCraft $Version for Windows $Arch ($Target)"
+Write-Output "MailSolutions $Version for Windows $Arch ($Target)"
 
 if (-not $SkipBuild) {
   # Static CRT: no VC++ redistributable needed. Scoped to the target so host build scripts and
@@ -68,8 +68,8 @@ if (-not $SkipBuild) {
   $flagVar = 'CARGO_TARGET_' + ($Target.ToUpper() -replace '-', '_') + '_RUSTFLAGS'
   [Environment]::SetEnvironmentVariable($flagVar, '-C target-feature=+crt-static')
   # Fail the build (rather than warn) if the icon/VERSIONINFO can't be embedded.
-  $env:MAILCRAFT_REQUIRE_WINRES = '1'
-  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p mailcraft -p mailcraft-cli --target $Target }
+  $env:MAILSOLUTIONS_REQUIRE_WINRES = '1'
+  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p mailsolutions -p mailsolutions-cli --target $Target }
 }
 
 $Bin = Join-Path $TargetDir "$Target\release"
@@ -88,7 +88,7 @@ function Get-PeHeader([string] $Path) {
   return @{ Machine = [BitConverter]::ToUInt16($bytes, $pe + 4); Subsystem = [BitConverter]::ToUInt16($bytes, $pe + 0x5C) }
 }
 $Machine = switch ($Arch) { 'x64' { 0x8664 } 'x86' { 0x14C } 'arm64' { 0xAA64 } }
-foreach ($check in @(@('mailcraft.exe', 2), @('mailcraft-cli.exe', 3))) {
+foreach ($check in @(@('mailsolutions.exe', 2), @('mailsolutions-cli.exe', 3))) {
   $h = Get-PeHeader (Join-Path $Bin $check[0])
   if ($h.Machine -ne $Machine) { throw "$($check[0]) is for machine 0x$('{0:X}' -f $h.Machine), expected 0x$('{0:X}' -f $Machine) ($Arch)" }
   if ($h.Subsystem -ne $check[1]) { throw "$($check[0]) has PE subsystem $($h.Subsystem), expected $($check[1])" }
@@ -97,9 +97,9 @@ foreach ($check in @(@('mailcraft.exe', 2), @('mailcraft-cli.exe', 3))) {
 $Stage = Join-Path $TargetDir "windows-package\$Arch"
 Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
-Copy-Item (Join-Path $Bin 'mailcraft.exe'), (Join-Path $Bin 'mailcraft-cli.exe') $Stage
+Copy-Item (Join-Path $Bin 'mailsolutions.exe'), (Join-Path $Bin 'mailsolutions-cli.exe') $Stage
 
-& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'mailcraft.exe') (Join-Path $Stage 'mailcraft-cli.exe')
+& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'mailsolutions.exe') (Join-Path $Stage 'mailsolutions-cli.exe')
 
 # ---- MSI ---------------------------------------------------------------------------------------
 # The installer's welcome page shows the license: build its RTF from LICENSE-MIT and LICENSE-APACHE
@@ -116,8 +116,8 @@ function ConvertTo-RtfText([string] $Text) {
   return $sb.ToString()
 }
 $paragraphs = [System.Collections.Generic.List[string]]::new()
-$paragraphs.Add('\b MailCraft\b0')
-$paragraphs.Add((ConvertTo-RtfText 'MailCraft is dual-licensed under the MIT License or the Apache License, Version 2.0, at your option. Both license texts follow. Bundled fonts and other third-party material keep their own open licenses, listed in NOTICE and ATTRIBUTION.md at https://github.com/UCS-Care-Group/mailcraft.'))
+$paragraphs.Add('\b MailSolutions\b0')
+$paragraphs.Add((ConvertTo-RtfText 'MailSolutions is dual-licensed under the MIT License or the Apache License, Version 2.0, at your option. Both license texts follow. Bundled fonts and other third-party material keep their own open licenses, listed in NOTICE and ATTRIBUTION.md at https://github.com/UCS-Care-Group/mailcraft.'))
 foreach ($file in 'LICENSE-MIT', 'LICENSE-APACHE') {
   $title = $true  # each file opens with its license's name: show it bold
   foreach ($para in ((Get-Content -Raw (Join-Path $Root $file)) -split '\r?\n\s*\r?\n')) {
@@ -132,11 +132,11 @@ $rtf = '{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fswiss\fcharset0 Tahoma;}}\vi
   ($paragraphs -join "\par`r`n") + "\par`r`n}`r`n"
 [System.IO.File]::WriteAllText($LicenseRtf, $rtf, [System.Text.Encoding]::ASCII)
 
-$Msi = Join-Path $Dist "mailcraft-$Version-windows-$Arch.msi"
+$Msi = Join-Path $Dist "mailsolutions-$Version-windows-$Arch.msi"
 Invoke-Native 'wix build' {
-  wix build (Join-Path $PSScriptRoot 'mailcraft.wxs') -arch $Arch `
+  wix build (Join-Path $PSScriptRoot 'mailsolutions.wxs') -arch $Arch `
     -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
-    -d "Version=$MsiVersion" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\mailcraft.ico')" `
+    -d "Version=$MsiVersion" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\mailsolutions.ico')" `
     -d "LicenseRtf=$LicenseRtf" `
     -o $Msi
 }
@@ -145,7 +145,7 @@ Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Ms
 & (Join-Path $PSScriptRoot 'sign.ps1') $Msi
 
 # ---- portable zip ------------------------------------------------------------------------------
-$Portable = Join-Path $TargetDir "windows-package\mailcraft-$Version-windows-$Arch-portable"
+$Portable = Join-Path $TargetDir "windows-package\mailsolutions-$Version-windows-$Arch-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
 Copy-Item (Join-Path $Stage '*.exe') $Portable
@@ -159,7 +159,7 @@ if ($env:CRAFT_FONTS_DIR) {
     Copy-Item $ofl.FullName (Join-Path $Portable "OFL-$($ofl.Directory.Name).txt")
   }
 }
-$Zip = Join-Path $Dist "mailcraft-$Version-windows-$Arch-portable.zip"
+$Zip = Join-Path $Dist "mailsolutions-$Version-windows-$Arch-portable.zip"
 Remove-Item -Force $Zip -ErrorAction SilentlyContinue
 Compress-Archive -Path $Portable -DestinationPath $Zip
 
@@ -167,10 +167,10 @@ Compress-Archive -Path $Portable -DestinationPath $Zip
 # here; .github/workflows/windows-arm64.yml installs and runs it on ARM64 instead.
 $HostArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($NoRun) {
-  Write-Output 'skipping mailcraft-cli --version (-NoRun): a job without the signing secrets runs it'
+  Write-Output 'skipping mailsolutions-cli --version (-NoRun): a job without the signing secrets runs it'
 } elseif ($Arch -ne 'arm64' -or $HostArch -eq 'arm64') {
-  Invoke-Native 'mailcraft-cli --version' { & (Join-Path $Stage 'mailcraft-cli.exe') --version }
+  Invoke-Native 'mailsolutions-cli --version' { & (Join-Path $Stage 'mailsolutions-cli.exe') --version }
 } else {
-  Write-Output "skipping mailcraft-cli --version: an $Arch build doesn't run on this $HostArch machine"
+  Write-Output "skipping mailsolutions-cli --version: an $Arch build doesn't run on this $HostArch machine"
 }
 Get-Item $Msi, $Zip | Format-Table Name, Length

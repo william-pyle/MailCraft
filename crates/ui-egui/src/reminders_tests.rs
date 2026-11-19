@@ -3,7 +3,7 @@
 //! The Reminders window in a window of the system, while the main window has no passes (#771).
 
 use egui::{RawInput, ViewportCommand, pos2, vec2};
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 use super::*;
 
@@ -11,7 +11,7 @@ use super::*;
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
     app.autosave = false;
     app
 }

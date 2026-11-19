@@ -5,8 +5,8 @@
 //!
 //! The hosts and addresses are invented.
 
-use mailcraft_model::auth_results::MAX_AUTH_AS;
-use mailcraft_model::{Account, AccountKind, Address, Message, Security, Server};
+use mailsolutions_model::auth_results::MAX_AUTH_AS;
+use mailsolutions_model::{Account, AccountKind, Address, Message, Security, Server};
 
 use crate::reading::remote::vouched;
 
@@ -336,7 +336,7 @@ fn mail_imported_from_a_file_is_never_vouched_for() {
     file.uid = 12;
     assert!(vouched(Some(&lumen), &file));
     let mut file = taken_in(message(&[]), &["dmarc=pass header.from=shop.example"]);
-    (file.uid, file.server) = (0, Some(mailcraft_model::sync::ServerMessage::default()));
+    (file.uid, file.server) = (0, Some(mailsolutions_model::sync::ServerMessage::default()));
     assert!(vouched(Some(&account(AccountKind::Microsoft, "")), &file));
     // (A Microsoft account's mail from a file is just as much the file's.)
     (file.uid, file.server) = (0, None);
@@ -346,7 +346,7 @@ fn mail_imported_from_a_file_is_never_vouched_for() {
 /// The message as the server hands it over, read the way every message is read.
 fn delivered(results: &str) -> Message {
     let raw = format!("Authentication-Results: {results}\r\nFrom: News <news@victim.example>\r\nSubject: x\r\n\r\nHello\r\n");
-    Message { uid: 7, ..mailcraft_engine::mime::parse(raw.as_bytes()) }
+    Message { uid: 7, ..mailsolutions_engine::mime::parse(raw.as_bytes()) }
 }
 
 /// What the server copied into its header from the sender (the envelope's address) is read as

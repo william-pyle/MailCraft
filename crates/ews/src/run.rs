@@ -3,7 +3,7 @@
 //! A run for an Exchange server account (#252, E6): the folders, then each folder's messages as
 //! headers and a preview from the sync state it went on from, and messages fetched whole. It
 //! speaks through a [`Client`] over any [`HttpExchange`] and hands the run back in pieces, as
-//! `mailcraft-jmap` does; it reads no clock and starts no thread.
+//! `mailsolutions-jmap` does; it reads no clock and starts no thread.
 //!
 //! **Pieces**, in this order: the folders (when asked for, one piece), then one piece for each
 //! page of each folder (the page with the sync state to go on from, taken in together), and a last
@@ -36,8 +36,8 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use mailcraft_model::FolderKind;
-use mailcraft_model::sync::{
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::sync::{
     EwsFetchRequest, EwsFolderDeltas, EwsMailRequest, EwsMailResult, EwsMessagePage, EwsScope, FolderChange, GraphFetchResult, GraphFetched,
     GraphFolder, GraphMessage, GraphProgress, MAX_THREAD_ASKS, ThreadOf,
 };
@@ -230,7 +230,7 @@ impl<E: HttpExchange> Run<'_, E> {
 }
 
 /// The distinguished folders a run asks the ids of, with the kind each is. The server's Outbox is
-/// no kind of MailCraft's (AU2-V2: mail goes from MailCraft's own Outbox): it is asked for to be
+/// no kind of MailSolutions's (AU2-V2: mail goes from MailSolutions's own Outbox): it is asked for to be
 /// left out of the folder list while it is empty ([`server_outbox`]).
 const KNOWN: [(DistinguishedFolder, Option<FolderKind>); 7] = [
     (DistinguishedFolder::MessageRoot, None),
@@ -242,7 +242,7 @@ const KNOWN: [(DistinguishedFolder, Option<FolderKind>); 7] = [
     (DistinguishedFolder::Outbox, None),
 ];
 
-/// The server's own folders that are no kind of MailCraft's (#779), and its Outbox, which isn't
+/// The server's own folders that are no kind of MailSolutions's (#779), and its Outbox, which isn't
 /// either (AU2-V2): asked for in a request of their own, so that a server that doesn't know one of
 /// the names loses nothing else. They are never renamed, moved or deleted (the server refuses it,
 /// or should). These are the mail folders among the schema's `DistinguishedFolderIdNameType` names
@@ -274,7 +274,7 @@ struct Specials {
 
 /// The server's Outbox is left out of the folder list while it holds nothing and has no folder in
 /// it, as an Exchange mailbox's is over IMAP and a Microsoft account's (#743), so that the account
-/// shows one Outbox, MailCraft's own, not two (#747). A list that had it loses it (its id is among
+/// shows one Outbox, MailSolutions's own, not two (#747). A list that had it loses it (its id is among
 /// the deleted). While it holds mail it is listed like any other folder, so nothing is hidden: a
 /// delta that doesn't bring it has it as the server says it is now, at the top of the mail, where
 /// every server keeps it. Never sent from, either way. The id it left out, if it did.

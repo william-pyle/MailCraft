@@ -7,8 +7,8 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use mailcraft_model::FolderKind;
-use mailcraft_model::sync::{GraphFolder, GraphLink, GraphMailRequest, GraphMailResult};
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::sync::{GraphFolder, GraphLink, GraphMailRequest, GraphMailResult};
 
 use super::whole_run;
 use crate::graph::pace::{Gate, Retry};

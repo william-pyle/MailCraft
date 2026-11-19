@@ -9,7 +9,7 @@
 use std::collections::HashSet;
 
 use egui::{Align2, Key, Ui, vec2};
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 use serde_json::{Value, json};
 
 use crate::forms::Form;
@@ -139,7 +139,7 @@ pub enum Dialog {
         params: Value,
         ask: Question,
     },
-    /// About MailCraft, on one of its tabs: [`AboutTab`].
+    /// About MailSolutions, on one of its tabs: [`AboutTab`].
     About(AboutTab),
     /// The page that offers a Microsoft account kept in step by IMAP the switch to Microsoft
     /// Graph ([`crate::graph_switch`]).
@@ -339,7 +339,7 @@ impl Dialog {
             "replyTo" => Dialog::ReplyTo { text: app.session.compose.as_ref()?.reply_to.clone(), error: String::new() },
             "sharedMailbox" => {
                 // Under the account named, else the first that can open one.
-                let can = |a: &&mailcraft_model::Account| crate::shared_mailboxes::can_open_shared(a);
+                let can = |a: &&mailsolutions_model::Account| crate::shared_mailboxes::can_open_shared(a);
                 let mailbox = &app.session.mailbox;
                 let account = match id("account") {
                     Some(id) => mailbox.account(id).filter(can)?.id,
@@ -349,7 +349,7 @@ impl Dialog {
             }
             "openCalendar" => {
                 // Under the account named, else the first that can open one.
-                let can = |a: &&mailcraft_model::Account| crate::open_shared::can_open(a);
+                let can = |a: &&mailsolutions_model::Account| crate::open_shared::can_open(a);
                 let mailbox = &app.session.mailbox;
                 let account = match id("account") {
                     Some(id) => mailbox.account(id).filter(can)?.id,
@@ -365,7 +365,7 @@ impl Dialog {
                 offer: None,
             },
             "link" => {
-                let c = app.session.compose.as_ref().filter(|c| c.format == mailcraft_engine::BodyFormat::Html)?;
+                let c = app.session.compose.as_ref().filter(|c| c.format == mailsolutions_engine::BodyFormat::Html)?;
                 let sel = c.body.selection();
                 // The link the caret is in, or the selection starts in.
                 let url = c.body.text().link_span(sel.start()).map(|(from, _)| c.body.text().style_at(from + 1)).and_then(|s| s.link);
@@ -374,7 +374,7 @@ impl Dialog {
             "dateTime" => {
                 app.session.doc()?;
                 let at = app.session.now();
-                Dialog::DateTime { choices: mailcraft_engine::cmd::writing_tools::date_time_choices(&app.session, at), selected: 0, at }
+                Dialog::DateTime { choices: mailsolutions_engine::cmd::writing_tools::date_time_choices(&app.session, at), selected: 0, at }
             }
             "password" => Dialog::Password { account: id("account")?, password: String::new(), shown: false },
             // Opened by name (`ui.dialog`, which an agent may run), it has nothing waiting for its
@@ -459,14 +459,14 @@ pub(crate) fn open_dialog(app: &mut MailApp, name: &str, params: &Value) -> Opti
 pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question> {
     let mb = &app.session.mailbox;
     // Read as the command reads it (#553): one named wrongly asks nothing, and the command refuses it.
-    let folder = |key: &str| mailcraft_engine::p::id_strict(params, key).ok()?.or(Some(app.session.view.folder)).and_then(|f| mb.folder(f));
+    let folder = |key: &str| mailsolutions_engine::p::id_strict(params, key).ok()?.or(Some(app.session.view.folder)).and_then(|f| mb.folder(f));
     // (A JMAP account's too: its deletions go up with its next run. Not an Exchange server
     // account's, as before.)
-    let on_server = |account: u64| mb.account(account).is_some_and(|a| a.kind.has_server() && a.kind != mailcraft_model::AccountKind::Exchange);
+    let on_server = |account: u64| mb.account(account).is_some_and(|a| a.kind.has_server() && a.kind != mailsolutions_model::AccountKind::Exchange);
     let server_too = |yes: bool| if yes { format!(" {}", tl!("They are removed from the mail server too.")) } else { String::new() };
     let question = |title: &str, text: String, action: &str| Some(Question::new(title, text, action, Value::Null));
     match id {
-        // Everything MailCraft keeps on this computer (#177).
+        // Everything MailSolutions keeps on this computer (#177).
         "ui.removeAllData" if app.services.data_wipe.is_some() && !app.data_removed => Some(crate::data_removal::question()),
         // A mailbox from a file: where its accounts connect to.
         "ui.confirmServers" if app.unconfirmed => Some(app.confirm_servers_question()),
@@ -502,17 +502,17 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
             if !(params.is_object() || params.is_null()) {
                 return None;
             }
-            let ids: Vec<u64> = match mailcraft_engine::p::ids_strict(params) {
+            let ids: Vec<u64> = match mailsolutions_engine::p::ids_strict(params) {
                 Ok(Some(ids)) => ids,
                 Ok(None) => selected(),
                 Err(_) => return None,
             };
             // An ordinary delete only asks when it is for good: the message is in Deleted Items already.
-            let for_good = |m: &mailcraft_model::Message| {
+            let for_good = |m: &mailsolutions_model::Message| {
                 id == "mail.deletePermanently"
-                    || mb.folder_of_kind(m.account, mailcraft_model::FolderKind::Deleted).is_none_or(|bin| mb.subtree(bin).contains(&m.folder))
+                    || mb.folder_of_kind(m.account, mailsolutions_model::FolderKind::Deleted).is_none_or(|bin| mb.subtree(bin).contains(&m.folder))
             };
-            let going: Vec<&mailcraft_model::Message> = ids.iter().filter_map(|id| mb.message(*id)).filter(|m| for_good(m)).collect();
+            let going: Vec<&mailsolutions_model::Message> = ids.iter().filter_map(|id| mb.message(*id)).filter(|m| for_good(m)).collect();
             if going.is_empty() {
                 // (Once the owner said yes to it, it isn't asked again; Delete Permanently still is, above.)
                 let answered = params.get("conversation").and_then(Value::as_bool) == Some(true);
@@ -525,7 +525,7 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
                 tln!(n, "{n} message will be permanently deleted.", "{n} messages will be permanently deleted.")
             };
             // (Of a JMAP account, only what its server has: the rest is this computer's alone.)
-            let jmap = |m: &mailcraft_model::Message| mb.account(m.account).is_some_and(|a| a.kind == mailcraft_model::AccountKind::Jmap);
+            let jmap = |m: &mailsolutions_model::Message| mb.account(m.account).is_some_and(|a| a.kind == mailsolutions_model::AccountKind::Jmap);
             let text = if going.iter().any(|m| on_server(m.account) && (m.server.is_some() || !jmap(m))) {
                 let too = if n == 1 {
                     tl!("It is removed from the mail server too, and that can't be undone.")
@@ -543,8 +543,8 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
         // A contact has no Deleted Items to go to: deleting one is for good (#186). One the
         // account's server keeps can't be deleted here, and the command says so without asking.
         "people.delete" => {
-            let c = mb.contact(mailcraft_engine::p::id_strict(params, "id").ok()?.or(app.session.sel.contact)?)?;
-            if mailcraft_engine::cmd::remote::keeper(mb, &c.origin).is_some() {
+            let c = mb.contact(mailsolutions_engine::p::id_strict(params, "id").ok()?.or(app.session.sel.contact)?)?;
+            if mailsolutions_engine::cmd::remote::keeper(mb, &c.origin).is_some() {
                 return None;
             }
             let name = c.name();
@@ -565,7 +565,7 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
                 crate::i18n::fmt(tl!("Everything in \"{folder}\" will be permanently deleted."), &[("folder", crate::nav::folder_name(f))]);
             // (Of a JMAP account, only when its server has some of it: what is this computer's
             // alone, a draft or mail brought in from a file, is removed nowhere else.)
-            let jmap = mb.account(f.account).is_some_and(|a| a.kind == mailcraft_model::AccountKind::Jmap);
+            let jmap = mb.account(f.account).is_some_and(|a| a.kind == mailsolutions_model::AccountKind::Jmap);
             let going = mb.subtree(f.id);
             let theirs = || mb.messages.values().any(|m| m.server.is_some() && going.contains(&m.folder));
             let text = format!("{everything}{}", server_too(on_server(f.account) && (!jmap || theirs())));
@@ -574,8 +574,8 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
         // Copies only this computer has of mail its server has (#1401): what goes is counted first.
         // None found: the command runs and says so.
         "mail.removeImportedDuplicates" if params.get("preview").and_then(Value::as_bool) != Some(true) => {
-            let scope = mailcraft_engine::p::id_strict(params, "folder").ok()?;
-            let found = mailcraft_engine::cmd::imported_dupes::twins(mb, scope);
+            let scope = mailsolutions_engine::p::id_strict(params, "folder").ok()?;
+            let found = mailsolutions_engine::cmd::imported_dupes::twins(mb, scope);
             let n = found.remove.len();
             if n == 0 {
                 return None;
@@ -622,7 +622,7 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
                     "Its messages, attachments, settings and remembered sign-in go with it, and so do the calendar, contacts, tasks and working hours that came from its server."
                 ),
                 tl!(
-                    "Downloaded pictures and opened attachments can't be told apart by account: File › Info › Remove MailCraft's data from this computer clears them."
+                    "Downloaded pictures and opened attachments can't be told apart by account: File › Info › Remove MailSolutions's data from this computer clears them."
                 )
             );
             // (The shared mailboxes opened through it go with it, #70.)
@@ -649,7 +649,7 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
             };
             // The only account leaves an empty mailbox, as at a first start (#313).
             let text = if mb.accounts.iter().all(|x| x.id == a.id || x.shared_of == Some(a.id)) {
-                format!("{text} {}", tl!("MailCraft will have no account afterwards: File › Add Account sets one up again."))
+                format!("{text} {}", tl!("MailSolutions will have no account afterwards: File › Add Account sets one up again."))
             } else {
                 text
             };
@@ -669,7 +669,7 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
         // A calendar opened by address is removed here only: the server's is not touched (#70).
         "calendar.removeShared" => {
             let address = match params.get("id").and_then(Value::as_u64).and_then(|c| mb.calendar(c)) {
-                Some(calendar) => mailcraft_model::remote::opened_address(&calendar.origin.id)?,
+                Some(calendar) => mailsolutions_model::remote::opened_address(&calendar.origin.id)?,
                 None => params.get("address").and_then(Value::as_str)?.to_string(),
             };
             let text = crate::i18n::fmt(
@@ -705,29 +705,30 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
         // (#143). Nothing to remove: nothing to ask.
         "ui.keepOffline" => {
             let account = mb.account(params.get("account").and_then(Value::as_u64)?)?;
-            let keep = params.get("keepOffline").and_then(Value::as_str).and_then(mailcraft_model::KeepOffline::parse)?;
+            let keep = params.get("keepOffline").and_then(Value::as_str).and_then(mailsolutions_model::KeepOffline::parse)?;
             if keep >= account.keep_offline {
                 return None;
             }
-            let (messages, bytes) = mailcraft_engine::cmd::offline::would_free(&app.session, account.id, keep);
+            let (messages, bytes) = mailsolutions_engine::cmd::offline::would_free(&app.session, account.id, keep);
             if messages == 0 {
                 return None;
             }
             let text = crate::i18n::fmt(
                 tl!("About {size} of mail older than {window} will be removed from this computer. It stays on the server."),
-                &[("size", &mailcraft_model::size_label_in(crate::i18n::current(), bytes)), ("window", crate::keep_offline::label(keep))],
+                &[("size", &mailsolutions_model::size_label_in(crate::i18n::current(), bytes)), ("window", crate::keep_offline::label(keep))],
             );
             question(tl!("Mail to Keep Offline"), text, tl!("OK"))
         }
         // A check on the account's real calendar says exactly what it is about to do there.
         "ui.checkCalendar" => {
             let named = params.get("account").and_then(Value::as_u64).and_then(|id| mb.account(id));
-            let account = named
-                .or_else(|| mb.accounts.iter().find(|a| a.oauth.as_ref().is_some_and(|o| o.provider == mailcraft_model::OAuthProvider::Microsoft)))?;
+            let account = named.or_else(|| {
+                mb.accounts.iter().find(|a| a.oauth.as_ref().is_some_and(|o| o.provider == mailsolutions_model::OAuthProvider::Microsoft))
+            })?;
             let whose = if account.email.trim().is_empty() { account.name.as_str() } else { account.email.as_str() };
             let text = crate::i18n::fmt(
                 tl!(
-                    "MailCraft will make one appointment called \"MailCraft connection check\" in the calendar of {account}, a year from today. It reads it back, changes its time twice (the second time said in this computer's time zone), reads it back each time, and deletes it again. Nothing else in your calendar is read or changed, nobody is invited or written to, and no reminder is set. Afterwards you see what the server answered at each step, and whether what was sent is what the server has."
+                    "MailSolutions will make one appointment called \"MailSolutions connection check\" in the calendar of {account}, a year from today. It reads it back, changes its time twice (the second time said in this computer's time zone), reads it back each time, and deletes it again. Nothing else in your calendar is read or changed, nobody is invited or written to, and no reminder is set. Afterwards you see what the server answered at each step, and whether what was sent is what the server has."
                 ),
                 &[("account", whose)],
             );
@@ -736,14 +737,14 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
         // Moving what is only on this computer into the account's calendar puts it on the
         // server: asked about once, and about the invitations a meeting would send.
         "calendar.moveToAccount" if params.get("send").is_none() => {
-            let only_here = mailcraft_engine::cmd::remote::only_here(mb);
+            let only_here = mailsolutions_engine::cmd::remote::only_here(mb);
             let calendars: Vec<u64> = match params.get("calendar").and_then(Value::as_u64) {
                 Some(one) => vec![one],
                 None => only_here.iter().map(|(calendar, _)| *calendar).collect(),
             };
-            let items: Vec<&mailcraft_model::Event> =
+            let items: Vec<&mailsolutions_model::Event> =
                 mb.events.values().filter(|e| calendars.contains(&e.calendar)).map(|e| e.as_ref()).take(10_000).collect();
-            if items.is_empty() || mailcraft_engine::cmd::remote::server_calendar_id(mb).is_none() {
+            if items.is_empty() || mailsolutions_engine::cmd::remote::server_calendar_id(mb).is_none() {
                 return None;
             }
             let meetings = items.iter().filter(|e| !e.attendees.is_empty()).count();
@@ -788,7 +789,7 @@ pub fn confirmation(app: &MailApp, id: &str, params: &Value) -> Option<Question>
 
 /// Before Delete takes a whole conversation of more than one message (#503): the conversations
 /// of the list all of whose messages there `ids` has, of the accounts that ask
-/// ([`mailcraft_model::Mailbox::asks_before_deleting_conversation`]). Its messages in other
+/// ([`mailsolutions_model::Mailbox::asks_before_deleting_conversation`]). Its messages in other
 /// folders aren't deleted, and the question says so. Going ahead deletes what was asked about;
 /// Don't ask again turns the question off for those accounts first.
 fn conversation_question(app: &MailApp, ids: &[u64]) -> Option<Question> {
@@ -799,11 +800,11 @@ fn conversation_question(app: &MailApp, ids: &[u64]) -> Option<Question> {
     let mb = &s.mailbox;
     let rows = list_rows(s);
     let picked: HashSet<u64> = ids.iter().copied().collect();
-    let account = |r: &mailcraft_engine::list::Row| mb.message(r.id).map(|m| m.account);
+    let account = |r: &mailsolutions_engine::list::Row| mb.message(r.id).map(|m| m.account);
     // A conversation is asked about when its row goes: not when each of its messages was picked
     // by its own row under it, the conversation open.
-    let by_rows = |r: &mailcraft_engine::list::Row| r.open && !s.picked_whole(r) && r.members.iter().all(|id| s.sel.messages.contains(id));
-    let asking: Vec<&mailcraft_engine::list::Row> = rows
+    let by_rows = |r: &mailsolutions_engine::list::Row| r.open && !s.picked_whole(r) && r.members.iter().all(|id| s.sel.messages.contains(id));
+    let asking: Vec<&mailsolutions_engine::list::Row> = rows
         .iter()
         .filter(|r| r.under.is_none() && r.members.len() > 1 && r.members.iter().all(|id| picked.contains(id)) && !by_rows(r))
         .filter(|r| account(r).is_some_and(|a| mb.asks_before_deleting_conversation(a)))
@@ -818,7 +819,7 @@ fn conversation_question(app: &MailApp, ids: &[u64]) -> Option<Question> {
     // lists some of their messages, and may list them from other folders.
     let folder_id = s.view.folder;
     let threads = s.threads();
-    let keys: HashSet<(Id, mailcraft_model::ThreadKey)> =
+    let keys: HashSet<(Id, mailsolutions_model::ThreadKey)> =
         asking.iter().filter_map(|r| mb.message(r.id)).map(|m| (m.account, threads.key(m.id))).collect();
     let accounts: HashSet<Id> = keys.iter().map(|(a, _)| *a).collect();
     // What of them stays: in this folder, and in the others the conversation is read from (not
@@ -889,7 +890,7 @@ fn conversation_question(app: &MailApp, ids: &[u64]) -> Option<Question> {
     let tick = if owners.len() > 1 { tl!("Don't ask again for these accounts") } else { tl!("Don't ask again for this account") };
     // Turned off only where Account Settings can turn it on again: not for the account on this
     // computer, which has no address and no such page.
-    let settable = owners.iter().all(|o| mb.account(*o).is_some_and(|a| !a.email.is_empty() && a.kind != mailcraft_model::AccountKind::Unknown));
+    let settable = owners.iter().all(|o| mb.account(*o).is_some_and(|a| !a.email.is_empty() && a.kind != mailsolutions_model::AccountKind::Unknown));
     let then = owners.into_iter().map(|a| ("account.edit", json!({"id": a, "askBeforeDeletingConversation": false}))).collect();
     // It goes ahead with what it counted, asked again only if one of them would now go for good.
     let ask = Question::new(tl!("Delete Conversation"), text, tl!("Delete"), pinned(mb, ids, "conversation"));
@@ -900,9 +901,9 @@ fn conversation_question(app: &MailApp, ids: &[u64]) -> Option<Question> {
 /// counted, with the folder each was counted in (`counted`, which [`go_ahead`] reads and takes
 /// out), or, more than a command takes by `ids` (a whole large folder), the selection, as before
 /// (#503).
-fn pinned(mb: &mailcraft_model::Mailbox, ids: &[Id], said: &str) -> Value {
+fn pinned(mb: &mailsolutions_model::Mailbox, ids: &[Id], said: &str) -> Value {
     let mut with = json!({ said: true });
-    if ids.len() <= mailcraft_engine::p::MAX_IDS {
+    if ids.len() <= mailsolutions_engine::p::MAX_IDS {
         with["ids"] = json!(ids);
         with["counted"] = json!(ids.iter().map(|id| mb.message(*id).map_or(0, |m| m.folder)).collect::<Vec<_>>());
     }
@@ -911,8 +912,8 @@ fn pinned(mb: &mailcraft_model::Mailbox, ids: &[Id], said: &str) -> Value {
 
 /// The message list's rows as the window shows them, or, when they are of another list, as they
 /// would be built now.
-fn list_rows(s: &mailcraft_engine::Session) -> std::sync::Arc<Vec<mailcraft_engine::list::Row>> {
-    s.rows_in_view().unwrap_or_else(|| std::sync::Arc::new(mailcraft_engine::list::rows(s)))
+fn list_rows(s: &mailsolutions_engine::Session) -> std::sync::Arc<Vec<mailsolutions_engine::list::Row>> {
+    s.rows_in_view().unwrap_or_else(|| std::sync::Arc::new(mailsolutions_engine::list::rows(s)))
 }
 
 /// `params` for a question about a command that, given no target, acts on what is selected (or in
@@ -976,7 +977,7 @@ pub(crate) fn answered(params: &Value, with: &Value, note: Option<(&str, &str)>)
 pub(crate) fn leaves_message(app: &MailApp, id: &str, params: &Value) -> bool {
     let choosing = id == "file.open" && (params.get("path").is_none_or(Value::is_null) && params.get("data").is_none_or(Value::is_null));
     // (One that first asks which days asks this once they are chosen.)
-    mailcraft_engine::cmd::compose::leaves(id)
+    mailsolutions_engine::cmd::compose::leaves(id)
         && !choosing
         && !(id == "file.open" && crate::opening::reads_ahead(app, params))
         && params.get("discard").and_then(Value::as_bool) != Some(true)
@@ -988,26 +989,26 @@ pub(crate) fn leaves_message(app: &MailApp, id: &str, params: &Value) -> bool {
 /// saved draft that is gone (#494): every one for another mailbox, else the current one.
 pub(crate) fn unsaved_closed_by(app: &MailApp, id: &str, params: &Value) -> usize {
     let s = &app.session;
-    mailcraft_engine::cmd::compose::closed_by(s, id, params).into_iter().filter(|c| mailcraft_engine::cmd::compose::unsaved(s, c)).count()
+    mailsolutions_engine::cmd::compose::closed_by(s, id, params).into_iter().filter(|c| mailsolutions_engine::cmd::compose::unsaved(s, c)).count()
 }
 
 /// Whether what waits for Unsaved Message closes every message being written (quitting, another
 /// mailbox), not only the current one.
 fn closes_all(then: &str) -> bool {
-    then == "quit" || mailcraft_engine::cmd::compose::REPLACING.contains(&then)
+    then == "quit" || mailsolutions_engine::cmd::compose::REPLACING.contains(&then)
 }
 
 /// Save every message being written with changes that aren't saved (or whose draft is gone) to
 /// Drafts: `false`, with why said, at the first that can't be.
 fn save_all(app: &mut MailApp) -> bool {
     let s = &app.session;
-    let unsaved: Vec<u64> = s.all_composing().filter(|c| mailcraft_engine::cmd::compose::unsaved(s, c)).map(|c| c.id).collect();
+    let unsaved: Vec<u64> = s.all_composing().filter(|c| mailsolutions_engine::cmd::compose::unsaved(s, c)).map(|c| c.id).collect();
     unsaved.into_iter().all(|id| app.run("compose.saveDraft", json!({"compose": id})).is_ok())
 }
 
 /// Close every message being written without saving it: `false` at the first that can't be.
 fn discard_all(app: &mut MailApp) -> bool {
-    for _ in 0..=mailcraft_engine::composing::MAX_COMPOSING {
+    for _ in 0..=mailsolutions_engine::composing::MAX_COMPOSING {
         if app.session.compose.is_none() {
             return true;
         }
@@ -1088,7 +1089,7 @@ pub(crate) fn go_ahead(app: &mut MailApp, command: &str, mut params: Value) {
     let event = named.and_then(Value::as_u64).or(app.session.sel.event.filter(|_| command != "ui.openWindow"));
     if opening && let Some(event) = event {
         let one = params.get("scope").and_then(Value::as_str) == Some("occurrence");
-        let day = params.get("occurrence").and_then(Value::as_str).and_then(mailcraft_time::Date::parse_iso).filter(|_| one);
+        let day = params.get("occurrence").and_then(Value::as_str).and_then(mailsolutions_time::Date::parse_iso).filter(|_| one);
         app.session.driver.calendar.opened = params.get("scope").is_some().then_some((event, day));
     }
     let opened = if command == "ui.openWindow" { app.run_or_else(command, params.clone()) } else { app.run(command, params.clone()) };
@@ -1134,8 +1135,8 @@ fn invited_line(n: usize) -> String {
 ///    note), and declining an invitation that is being deleted (`decline`).
 /// 3. A change to the owner's own copy of somebody else's meeting, which nobody else hears of.
 fn calendar_question(app: &MailApp, id: &str, params: &Value) -> Option<Question> {
-    use mailcraft_engine::cmd::calendar::{Mail, mail_of};
-    use mailcraft_engine::cmd::remote::keeper;
+    use mailsolutions_engine::cmd::calendar::{Mail, mail_of};
+    use mailsolutions_engine::cmd::remote::keeper;
     let mb = &app.session.mailbox;
     let has = |key: &str| params.get(key).is_some_and(|v| !v.is_null());
     let note_hint = tl!("A note to go with it (optional)");
@@ -1155,12 +1156,12 @@ fn calendar_question(app: &MailApp, id: &str, params: &Value) -> Option<Question
     // A window is asked about only when it is an appointment's: `ui.openWindow` opens the event it
     // names and never the one selected, so a message's, a draft's or a new item's window asks
     // nothing about an occurrence left selected (by a reminder that was opened, #1152).
-    let named = if opening { Some(params.get("event").and_then(Value::as_u64)?) } else { mailcraft_engine::p::id_strict(params, "id").ok()? };
+    let named = if opening { Some(params.get("event").and_then(Value::as_u64)?) } else { mailsolutions_engine::p::id_strict(params, "id").ok()? };
     let e = mb.event(named.or(app.session.sel.event)?)?;
     // 1. Just this one, or the entire series? Asked of the occurrence that is selected (the
     // grid selects the one it acts on); nothing is asked about what is the same for both.
     // (An occurrence is named by the day it starts on here, whatever zone its series repeats in.)
-    let here = |instant: mailcraft_time::Timestamp| app.session.offset_at(instant);
+    let here = |instant: mailsolutions_time::Timestamp| app.session.offset_at(instant);
     let day = app.session.sel.event_day.filter(|day| app.session.sel.event == Some(e.id) && e.series_day_on(*day, &here).is_some());
     let about_days = match id {
         "calendar.move" | "calendar.delete" | "calendar.respond" | "ui.openWindow" => true,
@@ -1271,12 +1272,12 @@ pub fn as_opened(app: &mut MailApp, id: &str, params: Value) -> Value {
     // `calendar.newMeeting`, which says what goes to whom).
     if id == "people.meeting" && input_dialog(id, &params) == Some("meeting") {
         // One named wrongly invites nobody, never the selected contact (#553).
-        let contact = mailcraft_engine::p::id_strict(&params, "id")
+        let contact = mailsolutions_engine::p::id_strict(&params, "id")
             .ok()
             .and_then(|c| c.or(app.session.sel.contact))
             .and_then(|c| app.session.mailbox.contact(c));
         let mut params = params;
-        if let (Some(to), Some(map)) = (contact.and_then(mailcraft_model::Contact::address), params.as_object_mut()) {
+        if let (Some(to), Some(map)) = (contact.and_then(mailsolutions_model::Contact::address), params.as_object_mut()) {
             map.remove("id");
             map.entry("attendees").or_insert_with(|| json!(to.full()));
         }
@@ -1730,7 +1731,7 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                 }
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(
-                        tl!("Opened with {owner}'s sign-in. It needs Full Access to the mailbox, which your organisation's administrator gives. Microsoft asks you once to let MailCraft read and change shared mailboxes. What you change in it goes to it. Mail you write in it is from its address, and sending as it needs Send As or Send on Behalf permission: Microsoft asks you once more at your first send."),
+                        tl!("Opened with {owner}'s sign-in. It needs Full Access to the mailbox, which your organisation's administrator gives. Microsoft asks you once to let MailSolutions read and change shared mailboxes. What you change in it goes to it. Mail you write in it is from its address, and sending as it needs Send As or Send on Behalf permission: Microsoft asks you once more at your first send."),
                         &[("owner", &owner)],
                     ))
                     .color(t.text_dim)
@@ -1788,7 +1789,7 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                 }
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(
-                        tl!("Read with {owner}'s sign-in, for as long as you keep it: the person has to have shared their calendar with you. It is kept on this computer only: it won't appear in Outlook or on your other devices. Microsoft asks you once to let MailCraft read other people's calendars."),
+                        tl!("Read with {owner}'s sign-in, for as long as you keep it: the person has to have shared their calendar with you. It is kept on this computer only: it won't appear in Outlook or on your other devices. Microsoft asks you once to let MailSolutions read other people's calendars."),
                         &[("owner", &owner)],
                     ))
                     .color(t.text_dim)
@@ -1832,7 +1833,7 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                 crate::text_menu::field(ui.add(field));
                 ui.label(
                     egui::RichText::new(tl!(
-                        "An https:// or webcal:// address. Nothing is read until you press Subscribe. The calendar is listed under Other Calendars, read-only, and brought up to date from the web every hour and when you press Send/Receive; you can choose another time in File › Info. Its address is asked for over an encrypted connection, with nothing that says who you are. A private address holds a secret: it is kept like a password, in your system's credential store when you let MailCraft remember sign-ins, and otherwise until you quit."
+                        "An https:// or webcal:// address. Nothing is read until you press Subscribe. The calendar is listed under Other Calendars, read-only, and brought up to date from the web every hour and when you press Send/Receive; you can choose another time in File › Info. Its address is asked for over an encrypted connection, with nothing that says who you are. A private address holds a secret: it is kept like a password, in your system's credential store when you let MailSolutions remember sign-ins, and otherwise until you quit."
                     ))
                     .color(t.text_dim)
                     .size(11.0),
@@ -1994,7 +1995,7 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                 let resp = crate::secret_field::field(ui, password, shown, watch, room, |edit| edit);
                 crate::text_menu::hold(&resp);
                 ui.label(
-                    egui::RichText::new(tl!("MailCraft keeps it in memory until you close the app. It is never written to disk."))
+                    egui::RichText::new(tl!("MailSolutions keeps it in memory until you close the app. It is never written to disk."))
                         .color(t.text_dim)
                         .size(11.0),
                 );
@@ -2043,7 +2044,7 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
             close |= !open;
         }
         Dialog::Refused { text } => {
-            let open = window(ctx, "MailCraft", 420.0, |ui| {
+            let open = window(ctx, "MailSolutions", 420.0, |ui| {
                 ui.horizontal_top(|ui| {
                     // A warning mark drawn here: a round red dot with a white bar.
                     let (mark, _) = ui.allocate_exact_size(vec2(28.0, 28.0), egui::Sense::hover());
@@ -2163,7 +2164,7 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                 AboutTab::Contributors => 720.0,
                 AboutTab::Testers => 520.0,
             };
-            let open = window(ctx, tl!("About MailCraft"), width, |ui| {
+            let open = window(ctx, tl!("About MailSolutions"), width, |ui| {
                 ui.horizontal(|ui| {
                     for (which, label) in [(AboutTab::About, "About"), (AboutTab::Contributors, "Contributors"), (AboutTab::Testers, "Testers")] {
                         if ui.selectable_label(*tab == which, tl!(label)).clicked() {
@@ -2186,14 +2187,14 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                     });
                     return;
                 }
-                ui.label(egui::RichText::new("MailCraft").font(semibold(20.0)).color(t.accent_text));
+                ui.label(egui::RichText::new("MailSolutions").font(semibold(20.0)).color(t.accent_text));
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(tl!("Version {version}"), &[("version", env!("CARGO_PKG_VERSION"))])).color(t.text_dim),
                 );
                 ui.label(tl!("Mail, calendar, people and tasks, written from scratch in Rust."));
                 crate::backstage::contributors(ui);
                 ui.label(tl!("Open source under the MIT License or the Apache License 2.0, at your option. The interface fonts are Inter, Source Sans 3 and JetBrains Mono (SIL Open Font License). Every icon is drawn in code."));
-                let parity = mailcraft_engine::catalog::parity(&app.session.registry);
+                let parity = mailsolutions_engine::catalog::parity(&app.session.registry);
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(
                         tl!("{commands} commands; {percent}% of the feature catalog has one."),

@@ -4,7 +4,7 @@
 //! to sizes, and its folders and pages taken in.
 //!
 //! A result is handed over by a host and may say anything, so before anything of it is taken in
-//! ([`bounded`], after [`mailcraft_model::sync::EwsMailResult::check`] has refused what is larger
+//! ([`bounded`], after [`mailsolutions_model::sync::EwsMailResult::check`] has refused what is larger
 //! than anything real):
 //!
 //! - **Ids** (a folder's, an item's) are opaque: held to the length the model allows and to no
@@ -26,10 +26,10 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     EwsFolderDeltas, EwsMailResult, EwsMessagePage, FolderListing, GraphFetchResult, GraphFolder, GraphMessage, MAX_LISTED_FOLDERS, MessagePage,
 };
-use mailcraft_model::{FolderKind, Id, Mailbox, Queued};
+use mailsolutions_model::{FolderKind, Id, Mailbox, Queued};
 
 use super::graph_down::{self, Down, ServerIndex};
 use super::jmap_down::{MAX_BATCH, MAX_BUSY, MAX_FETCHED, MAX_MESSAGE, MAX_PREVIEW, MAX_TEXT, line, lines, people, person};
@@ -40,10 +40,10 @@ const MAX_NAME: usize = 255;
 const MAX_PAGES: usize = 1_000;
 
 /// Whether `id` may be an Exchange server id (of a folder, an item or a change key): opaque, so
-/// any characters but control characters, at most [`mailcraft_model::sync::MAX_EWS_ID`] bytes (the
+/// any characters but control characters, at most [`mailsolutions_model::sync::MAX_EWS_ID`] bytes (the
 /// rule of the model, which holds a result to the same).
 pub(crate) fn is_id(id: &str) -> bool {
-    !id.is_empty() && id.len() <= mailcraft_model::sync::MAX_EWS_ID && !id.chars().any(char::is_control)
+    !id.is_empty() && id.len() <= mailsolutions_model::sync::MAX_EWS_ID && !id.chars().any(char::is_control)
 }
 
 /// A message of a page: whether it can be taken in at all (its id is one), and if so with its text
@@ -57,7 +57,7 @@ fn bounded_message(m: &mut GraphMessage, folder: &str) -> bool {
     server.gone = false;
     (server.answered, server.forwarded) = (false, false);
     // (Its conversation, as an opaque id or none, #795; it is never asked for by itself.)
-    server.thread = mailcraft_model::sync::thread_id(&server.thread);
+    server.thread = mailsolutions_model::sync::thread_id(&server.thread);
     (server.thread_asked, server.thread_tries) = (false, 0);
     if !server.change_key.is_empty() && !is_id(&server.change_key) {
         server.change_key.clear();
@@ -313,8 +313,8 @@ pub(crate) fn take_page(mb: &mut Mailbox, index: &mut ServerIndex, account: Id, 
 
 /// How many bytes of sync state the account would keep once `result` is taken in: the folders'
 /// states (a folder the result has pages for goes on from the last it gives) and the folder list's.
-/// Held to [`mailcraft_model::sync::MAX_EWS_STATE_BYTES`] for the account, where a result's own
-/// states are held to it by [`mailcraft_model::sync::EwsMailResult::check`].
+/// Held to [`mailsolutions_model::sync::MAX_EWS_STATE_BYTES`] for the account, where a result's own
+/// states are held to it by [`mailsolutions_model::sync::EwsMailResult::check`].
 pub(crate) fn state_bytes_after(mb: &Mailbox, account: Id, result: &EwsMailResult) -> usize {
     let mut last: HashMap<&str, usize> = HashMap::new();
     for page in result.pages.iter().filter(|p| !p.state.is_empty()) {

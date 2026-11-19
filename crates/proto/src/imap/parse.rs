@@ -3,7 +3,7 @@
 //! Reading IMAP responses: the pieces a response arrives in, the values in it, and status lines.
 
 use crate::ProtoError;
-use mailcraft_i18n::said;
+use mailsolutions_i18n::said;
 
 /// Deepest that parenthesised lists may nest.
 const MAX_DEPTH: usize = 32;

@@ -12,7 +12,7 @@ fn the_palette_has_twelve_colours_and_offers_a_free_one() {
     let distinct: std::collections::BTreeSet<String> = PALETTE.iter().map(|c| c.hex()).collect();
     assert_eq!(distinct.len(), 12);
     // The six categories a mailbox starts with take red to green, blue and purple.
-    let mut s = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0);
+    let mut s = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0);
     assert_eq!(unused_color(&s.mailbox.categories), Rgb(0x1A, 0x9B, 0xA6));
     assert_eq!(unused_color(&[]), PALETTE[0]);
     let all: Vec<Category> = PALETTE.iter().map(|c| Category { name: c.hex(), color: *c }).collect();
@@ -29,5 +29,5 @@ fn the_palette_has_twelve_colours_and_offers_a_free_one() {
     f.new_name = "\u{0}\u{202e}é\n".repeat(40_000);
     let (command, params) = f.add_command();
     s.run(command, &params).unwrap();
-    assert!(s.mailbox.categories.iter().all(|c| c.name.chars().count() <= mailcraft_model::MAX_NAME));
+    assert!(s.mailbox.categories.iter().all(|c| c.name.chars().count() <= mailsolutions_model::MAX_NAME));
 }

@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Headless UI screenshots: renders the whole MailCraft window offscreen (wgpu), so it works
+//! Headless UI screenshots: renders the whole MailSolutions window offscreen (wgpu), so it works
 //! with a locked screen or a hidden window.
 //!
-//! `cargo run -p mailcraft-ui-egui --example ui_shot -- script.jsonl`
+//! `cargo run -p mailsolutions-ui-egui --example ui_shot -- script.jsonl`
 //!
 //! The script is JSON lines: control-channel requests (`{"method": …, "params": …}`, see
 //! `docs/control-protocol.md`), `{"shot": "/abs/out.png"}` to save the window as PNG,
@@ -110,12 +110,12 @@ use std::collections::VecDeque;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::io::{BackgroundSave, SaveProgress, SaveReport, SaveStage};
-use mailcraft_model::sync::{SyncResult, Tokens};
-use mailcraft_ui_egui::approval::{NEEDS_APPROVAL, NO_BROWSER, SIGN_IN_DECLINED, SIGN_IN_TIMED_OUT};
-use mailcraft_ui_egui::ews_setup::{EwsCertificate, EwsCertificateFault, EwsConsentReason, EwsSetupEnd, EwsSetupEvent, EwsSetupFailure};
-use mailcraft_ui_egui::{AdminConsentAnswer, ControlRequest, GraphResult, MailApp, Services};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::io::{BackgroundSave, SaveProgress, SaveReport, SaveStage};
+use mailsolutions_model::sync::{SyncResult, Tokens};
+use mailsolutions_ui_egui::approval::{NEEDS_APPROVAL, NO_BROWSER, SIGN_IN_DECLINED, SIGN_IN_TIMED_OUT};
+use mailsolutions_ui_egui::ews_setup::{EwsCertificate, EwsCertificateFault, EwsConsentReason, EwsSetupEnd, EwsSetupEvent, EwsSetupFailure};
+use mailsolutions_ui_egui::{AdminConsentAnswer, ControlRequest, GraphResult, MailApp, Services};
 
 static READY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -144,7 +144,7 @@ struct Host {
     /// How far the background saver has got (see the header).
     saving: Option<SaveProgress>,
     /// The folder imports begun (#420): their progress, never finished; `treeProgress` moves it.
-    tree_jobs: Vec<(Arc<mailcraft_engine::import_tree::Progress>, Sender<Result<mailcraft_engine::import_tree::Parsed, String>>)>,
+    tree_jobs: Vec<(Arc<mailsolutions_engine::import_tree::Progress>, Sender<Result<mailsolutions_engine::import_tree::Parsed, String>>)>,
     /// A folder the import looks into at once instead of waiting (`treeDir`).
     tree_dir: String,
     /// Copies of the mailbox being "written": never finished (see the header).
@@ -161,7 +161,7 @@ struct Host {
     /// What a search on the server finds (see the header), when the script said.
     server_search: Option<serde_json::Value>,
     /// Why the system won't show desktop alerts, when the script said (see the header).
-    alert_trouble: Option<mailcraft_ui_egui::alerts::AlertTrouble>,
+    alert_trouble: Option<mailsolutions_ui_egui::alerts::AlertTrouble>,
     /// The window is not the one in front (see the header).
     unfocused: bool,
     /// How Exchange server account setup ends (see the header), and the jobs that wait for it.
@@ -174,14 +174,14 @@ struct Host {
 /// it asked for.
 struct StandInAlerts(Arc<Mutex<Host>>);
 
-impl mailcraft_ui_egui::alerts::AlertHost for StandInAlerts {
-    fn show(&self, _: &mailcraft_ui_egui::alerts::DesktopAlert) -> Result<(), String> {
+impl mailsolutions_ui_egui::alerts::AlertHost for StandInAlerts {
+    fn show(&self, _: &mailsolutions_ui_egui::alerts::DesktopAlert) -> Result<(), String> {
         match self.trouble() {
             Some(why) => Err(why.code().to_string()),
             None => Ok(()),
         }
     }
-    fn trouble(&self) -> Option<mailcraft_ui_egui::alerts::AlertTrouble> {
+    fn trouble(&self) -> Option<mailsolutions_ui_egui::alerts::AlertTrouble> {
         self.0.lock().ok().and_then(|host| host.alert_trouble)
     }
 }
@@ -201,19 +201,19 @@ fn sync_piece(said: &serde_json::Value, account: u64, inbox: u64, outbox: &[u64]
         let messages = (0..new)
             .map(|_| {
                 *uid += 1;
-                mailcraft_model::Message {
+                mailsolutions_model::Message {
                     uid: *uid,
                     subject: format!("Update {uid}"),
-                    from: mailcraft_model::Address::new("Lumen Updates", "news@lumen.example"),
+                    from: mailsolutions_model::Address::new("Lumen Updates", "news@lumen.example"),
                     date: NOW - i64::from(*uid) * 60,
                     ..Default::default()
                 }
             })
             .collect();
-        piece.folders.push(mailcraft_model::sync::FolderDelta {
+        piece.folders.push(mailsolutions_model::sync::FolderDelta {
             id: Some(inbox),
             remote: "INBOX".into(),
-            kind: mailcraft_model::FolderKind::Inbox,
+            kind: mailsolutions_model::FolderKind::Inbox,
             uid_validity: 1,
             uid_seen: *uid,
             new: messages,
@@ -226,22 +226,22 @@ fn sync_piece(said: &serde_json::Value, account: u64, inbox: u64, outbox: &[u64]
 /// Every password asked for is an invented one, once the script speaks of Send/Receive.
 struct StandInSecrets(Arc<Mutex<Host>>);
 
-impl mailcraft_ui_egui::SecretStore for StandInSecrets {
+impl mailsolutions_ui_egui::SecretStore for StandInSecrets {
     fn get(&self, key: &str) -> Option<String> {
         let syncing = self.0.lock().map(|host| host.syncing).unwrap_or(false);
         (syncing && key.starts_with("password:")).then(|| "stand-in-password".to_string())
     }
-    fn set(&self, _: &str, _: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, _: &str, _: &str) -> Result<(), mailsolutions_host::SecretError> {
         Ok(())
     }
     fn delete(&self, _: &str) {}
 }
 
-/// Removing MailCraft's data: nothing is kept by this window, so nothing is removed.
+/// Removing MailSolutions's data: nothing is kept by this window, so nothing is removed.
 struct StandInWipe;
 
-impl mailcraft_ui_egui::data_removal::DataWipe for StandInWipe {
-    fn erase(&self, _: Option<&std::path::Path>) -> mailcraft_ui_egui::data_removal::WipeReport {
+impl mailsolutions_ui_egui::data_removal::DataWipe for StandInWipe {
+    fn erase(&self, _: Option<&std::path::Path>) -> mailsolutions_ui_egui::data_removal::WipeReport {
         Default::default()
     }
 }
@@ -254,7 +254,7 @@ impl Host {
             "signedIn" => Ok(Tokens {
                 access: "stand-in-access".into(),
                 refresh: "stand-in-refresh".into(),
-                expires_at: mailcraft_time::now() + 3_600,
+                expires_at: mailsolutions_time::now() + 3_600,
                 name: "Noor Haddad".into(),
                 email: if self.signed_in_as.is_empty() { email.to_string() } else { self.signed_in_as.clone() },
                 tenant: "3a1c5e7b-9d2f-4a6c-8e0b-1d3f5a7c9e2b".into(),
@@ -331,7 +331,7 @@ impl Host {
             }
         }
         if let Some(why) = said.get("alerts").and_then(|v| v.as_str()) {
-            use mailcraft_ui_egui::alerts::AlertTrouble;
+            use mailsolutions_ui_egui::alerts::AlertTrouble;
             self.alert_trouble = [AlertTrouble::NotInstalled, AlertTrouble::OutsideApp, AlertTrouble::TurnedOff, AlertTrouble::NoService]
                 .into_iter()
                 .find(|t| t.code() == why);
@@ -418,7 +418,7 @@ struct StandInSaver(Arc<Mutex<Host>>);
 
 impl BackgroundSave for StandInSaver {
     fn follow(&self, _: &std::path::Path) {}
-    fn submit(&self, _: &std::path::Path, _: &mailcraft_model::Mailbox, _: u64) {}
+    fn submit(&self, _: &std::path::Path, _: &mailsolutions_model::Mailbox, _: u64) {}
     fn reports(&self) -> Vec<SaveReport> {
         Vec::new()
     }
@@ -446,7 +446,7 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
         microsoft_client_id: "11111111-2222-3333-4444-555555555555".into(),
         discover: Some(Box::new(|domain: String| {
             let mx = if domain.ends_with(HOSTER) { format!("mxpool{HOSTER}") } else { "example-org.mail.protection.outlook.com".to_string() };
-            answered(Ok(mailcraft_model::provider::Discovered::from_exchangers(vec![mx])))
+            answered(Ok(mailsolutions_model::provider::Discovered::from_exchangers(vec![mx])))
         })),
         lookup_autodiscover: Some(Box::new(|domain: String| {
             answered(Ok(if domain.ends_with(HOSTER) { vec![format!("autodiscover.de2{HOSTER}")] } else { Vec::new() }))
@@ -499,7 +499,7 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
             // Calendars opened by address (#70): "opened" lists each with a name made of its address
             // (read rights), "openedRefused" says the server wouldn't give any, "openedConsent" says
             // the sign-in doesn't cover reading other people's calendars.
-            let main = mailcraft_model::remote::RemoteCalendar { id: "c-main".into(), name: "Calendar".into(), main: true, ..Default::default() };
+            let main = mailsolutions_model::remote::RemoteCalendar { id: "c-main".into(), name: "Calendar".into(), main: true, ..Default::default() };
             let mut calendars = vec![main];
             let mut refused = Vec::new();
             for one in &request.account.opened_calendars {
@@ -510,18 +510,18 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
                         .map(|w| w.chars().next().map(|c| c.to_uppercase().collect::<String>() + &w[c.len_utf8()..]).unwrap_or_default())
                         .collect::<Vec<_>>()
                         .join(" ");
-                    let owner = mailcraft_model::CalendarOwner { address: one.address.clone(), name: name.clone() };
-                    calendars.push(mailcraft_model::remote::RemoteCalendar {
-                        id: mailcraft_model::remote::opened_id(&one.address),
+                    let owner = mailsolutions_model::CalendarOwner { address: one.address.clone(), name: name.clone() };
+                    calendars.push(mailsolutions_model::remote::RemoteCalendar {
+                        id: mailsolutions_model::remote::opened_id(&one.address),
                         name,
-                        rights: mailcraft_model::Rights::Read,
+                        rights: mailsolutions_model::Rights::Read,
                         owner: Some(owner),
                         ..Default::default()
                     });
                 } else if how == "openedRefused" {
-                    refused.push(mailcraft_model::remote::OpenedRefusal {
+                    refused.push(mailsolutions_model::remote::OpenedRefusal {
                         address: one.address.clone(),
-                        why: mailcraft_model::remote::OpenedWhy::NoRights,
+                        why: mailsolutions_model::remote::OpenedWhy::NoRights,
                     });
                 }
             }
@@ -530,9 +530,9 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
             // Outlook, #70), called Name, unless the owner hid it (the host leaves it out then).
             let twice = how.strip_prefix("listedTwice ").and_then(|rest| rest.split_once(' '));
             if let Some((address, name)) = twice {
-                let owner = mailcraft_model::CalendarOwner { address: address.to_string(), name: name.to_string() };
+                let owner = mailsolutions_model::CalendarOwner { address: address.to_string(), name: name.to_string() };
                 if !request.account.hides_listed(Some(&owner)) {
-                    calendars.push(mailcraft_model::remote::RemoteCalendar {
+                    calendars.push(mailsolutions_model::remote::RemoteCalendar {
                         id: "AAMk-listed-twice".into(),
                         name: name.to_string(),
                         group: "Other Calendars".into(),
@@ -542,7 +542,7 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
                 }
             }
             let listed = (how.starts_with("opened") && how != "openedConsent") || twice.is_some();
-            let calendars = listed.then(|| mailcraft_model::remote::CalendarsDownload {
+            let calendars = listed.then(|| mailsolutions_model::remote::CalendarsDownload {
                 account: request.account.id,
                 email: request.account.email.clone(),
                 complete: true,
@@ -561,7 +561,7 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
         })),
         sync: Some(Box::new(move |request| {
             let (account, (tx, rx)) = (request.account.id, channel());
-            let inbox = request.folders.iter().find(|f| f.kind == mailcraft_model::FolderKind::Inbox).map_or(0, |f| f.id);
+            let inbox = request.folders.iter().find(|f| f.kind == mailsolutions_model::FolderKind::Inbox).map_or(0, |f| f.id);
             let outbox: Vec<u64> = request.outbox.iter().map(|m| m.id).collect();
             let Ok(mut host) = syncing.lock() else { return rx };
             let pieces = host.sync_runs.pop_front().unwrap_or_default();
@@ -579,14 +579,14 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
             rx
         })),
         // A search on the server answers what the script said it finds (see the header).
-        graph_search: Some(Box::new(move |job: mailcraft_ui_egui::server_search::GraphSearchJob| {
+        graph_search: Some(Box::new(move |job: mailsolutions_ui_egui::server_search::GraphSearchJob| {
             let said = searching.lock().ok().and_then(|host| host.server_search.clone()).unwrap_or_default();
             let request = &job.request;
-            let messages: Vec<mailcraft_model::sync::GraphMessage> =
+            let messages: Vec<mailsolutions_model::sync::GraphMessage> =
                 said.get("messages").cloned().and_then(|m| serde_json::from_value(m).ok()).unwrap_or_default();
             let offline = said.get("offline").and_then(|v| v.as_bool()) == Some(true);
             let more = said.get("next").and_then(|v| v.as_bool()) == Some(true) && request.next.is_empty();
-            answered(mailcraft_model::sync::GraphSearchResult {
+            answered(mailsolutions_model::sync::GraphSearchResult {
                 account: request.account,
                 email: request.email.clone(),
                 ticket: request.ticket,
@@ -607,7 +607,7 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
             let dir = tree.lock().map(|host| host.tree_dir.clone()).unwrap_or_default();
             if !dir.is_empty() {
                 // Answered at once from a folder on this computer (`treeDir`).
-                return answered(mailcraft_engine::import_tree::load_path(&dir, None, job.count_only, &job.progress).map_err(|e| e.to_string()));
+                return answered(mailsolutions_engine::import_tree::load_path(&dir, None, job.count_only, &job.progress).map_err(|e| e.to_string()));
             }
             let (tx, rx) = channel();
             if let Ok(mut host) = tree.lock() {
@@ -629,9 +629,9 @@ fn stand_in(host: &Arc<Mutex<Host>>) -> Services {
                 None if found == "same" => (env!("CARGO_PKG_VERSION").to_string(), false),
                 None => (found, false),
             };
-            answered(match mailcraft_model::update::Version::parse(&version) {
-                Some(version) => Ok(mailcraft_model::update::Release {
-                    page: format!("https://github.com/william-pyle/MailCraft/releases/tag/v{version}"),
+            answered(match mailsolutions_model::update::Version::parse(&version) {
+                Some(version) => Ok(mailsolutions_model::update::Release {
+                    page: format!("https://github.com/william-pyle/MailSolutions/releases/tag/v{version}"),
                     version,
                     security,
                     assets: Vec::new(),
@@ -670,12 +670,12 @@ fn main() {
     let lines: Vec<serde_json::Value> =
         script.lines().filter(|l| !l.trim().is_empty()).map(|l| serde_json::from_str(l).expect("json line")).collect();
     // Where the computer is, when a line says: a zone with a name, so that it has daylight saving.
-    let zone = lines.iter().find_map(|l| l.get("zone").and_then(|v| v.as_str())).and_then(mailcraft_time::Zone::named);
+    let zone = lines.iter().find_map(|l| l.get("zone").and_then(|v| v.as_str())).and_then(mailsolutions_time::Zone::named);
     let offset = zone.map_or(0, |zone| zone.offset_at(NOW));
     let mailbox = if lines.first().is_some_and(|l| l.get("empty").is_some()) {
-        mailcraft_model::Mailbox::with_local_account("", "")
+        mailsolutions_model::Mailbox::with_local_account("", "")
     } else {
-        mailcraft_engine::sample::mailbox(NOW, offset)
+        mailsolutions_engine::sample::mailbox(NOW, offset)
     };
     let mut session = match zone {
         Some(zone) => Session::in_zone(mailbox, NOW, zone),
@@ -690,11 +690,11 @@ fn main() {
     let mut services = if stood_in { stand_in(&host) } else { Services::default() };
     // The system's notifications, always (File › Options shows its switches where there are some).
     services.alert = Some(Box::new(StandInAlerts(host.clone())));
-    // Remove MailCraft's data (#177): offered, and removes nothing here.
+    // Remove MailSolutions's data (#177): offered, and removes nothing here.
     services.data_wipe = Some(Box::new(StandInWipe));
-    // Open MailCraft's data folder (#460): offered, and opens nothing here.
-    services.data_folder = Some(mailcraft_ui_egui::data_removal::DataFolder {
-        path: std::path::PathBuf::from("/home/you/.config/mailcraft"),
+    // Open MailSolutions's data folder (#460): offered, and opens nothing here.
+    services.data_folder = Some(mailsolutions_ui_egui::data_removal::DataFolder {
+        path: std::path::PathBuf::from("/home/you/.config/mailsolutions"),
         open: Box::new(|_| Ok(())),
     });
     // The organisation has turned updating by itself off for the computer.
@@ -709,8 +709,8 @@ fn main() {
     // certificate and a GnuPG key, made up, and GnuPG trusting nothing.
     if lines.iter().any(|l| l.pointer("/host/ownKeys").is_some()) {
         services.own_keys = Some(Box::new(|job| {
-            use mailcraft_model::digital_signature::SignatureFormat;
-            use mailcraft_ui_egui::own_keys::*;
+            use mailsolutions_model::digital_signature::SignatureFormat;
+            use mailsolutions_ui_egui::own_keys::*;
             let (tx, rx) = std::sync::mpsc::channel();
             let key = |format, name: &str, address: &str, fingerprint: &str, place| OwnKey {
                 format,
@@ -769,21 +769,21 @@ fn main() {
     let mut _arriving = None;
     if let Some(said) = lines.iter().find_map(|l| l.get("opening").cloned()) {
         let (tx, arrive) = channel();
-        let progress = Arc::new(mailcraft_engine::io::OpenProgress::default());
+        let progress = Arc::new(mailsolutions_engine::io::OpenProgress::default());
         let n = |k: &str| said.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
         progress.set_total(n("total"));
         progress.add_read(n("read"));
-        use mailcraft_ui_egui::opening::{Arrival, Opening, Trouble};
+        use mailsolutions_ui_egui::opening::{Arrival, Opening, Trouble};
         let trouble = match said.get("trouble").and_then(|v| v.as_str()) {
             Some("unreadable") => {
-                Some(Trouble::Unreadable("/home/you/.config/mailcraft/mailbox.mailcraft: this mailbox file is damaged (its header)".into()))
+                Some(Trouble::Unreadable("/home/you/.config/mailsolutions/mailbox.mailcraft: this mailbox file is damaged (its header)".into()))
             }
             Some("stopped") => Some(Trouble::Stopped),
             Some("damaged") => Some(Trouble::Damaged),
             Some("repaired") => Some(Trouble::Repaired(n("repaired").max(1) as usize)),
             _ => None,
         };
-        let arrival = |trouble| Arrival { trouble, ..Arrival::opened(mailcraft_model::Mailbox::with_local_account("", ""), None) };
+        let arrival = |trouble| Arrival { trouble, ..Arrival::opened(mailsolutions_model::Mailbox::with_local_account("", ""), None) };
         if trouble.is_some() {
             let _ = tx.send(arrival(trouble));
         } else if let Some(after) = said.get("after").and_then(|v| v.as_u64()) {
@@ -795,10 +795,10 @@ fn main() {
             _arriving = Some(tx);
         }
         let theme = match said.get("theme").and_then(|v| v.as_str()) {
-            Some("dark") => mailcraft_ui_egui::theme::Appearance::Dark,
-            _ => mailcraft_ui_egui::theme::Appearance::Light,
+            Some("dark") => mailsolutions_ui_egui::theme::Appearance::Dark,
+            _ => mailsolutions_ui_egui::theme::Appearance::Light,
         };
-        let prefs = mailcraft_ui_egui::UiState { theme, ..Default::default() };
+        let prefs = mailsolutions_ui_egui::UiState { theme, ..Default::default() };
         let built = app;
         app = MailApp::opening(Opening::new(arrive, progress, Box::new(move |_| built)), Some(prefs), None);
     }
@@ -851,7 +851,7 @@ fn main() {
             // on and only readable with the sign-in it has (`"readOnly"`).
             if let Some(how) = said.get("autoReplies").and_then(|v| v.as_str()) {
                 let app = harness.state_mut();
-                let setting = mailcraft_model::auto_replies::AutoReplies::from_graph(&serde_json::json!({
+                let setting = mailsolutions_model::auto_replies::AutoReplies::from_graph(&serde_json::json!({
                     "status": "scheduled",
                     "externalAudience": "contactsOnly",
                     "scheduledStartDateTime": {"dateTime": "2026-10-14T09:00:00", "timeZone": "UTC"},
@@ -859,7 +859,7 @@ fn main() {
                     "internalReplyMessage": "<p>I'm away until Friday 23 October.</p><p>For anything urgent, ask bo@example.org.</p>",
                     "externalReplyMessage": "<p>Thank you for your message. I'm out of the office until 23 October.</p>",
                 }));
-                for account in mailcraft_engine::cmd::auto_replies::reply_accounts(&app.session.mailbox) {
+                for account in mailsolutions_engine::cmd::auto_replies::reply_accounts(&app.session.mailbox) {
                     let _ = app.stand_in_auto_replies(account, &setting, how != "readOnly");
                 }
             }
@@ -867,12 +867,12 @@ fn main() {
             if said.get("serverSearch").is_some() {
                 let app = harness.state_mut();
                 let ids: Vec<u64> =
-                    app.session.mailbox.accounts.iter().filter(|a| a.kind == mailcraft_model::AccountKind::Microsoft).map(|a| a.id).collect();
+                    app.session.mailbox.accounts.iter().filter(|a| a.kind == mailsolutions_model::AccountKind::Microsoft).map(|a| a.id).collect();
                 for id in ids {
                     let tokens = Tokens {
                         access: "stand-in-access".into(),
                         refresh: "stand-in-refresh".into(),
-                        expires_at: mailcraft_time::now() + 3_600,
+                        expires_at: mailsolutions_time::now() + 3_600,
                         ..Default::default()
                     };
                     app.seed_graph_token(id, tokens);
@@ -916,7 +916,7 @@ fn main() {
         } else if let Some(m) = l.get("method").and_then(|v| v.as_str()) {
             let (req, reply) = ControlRequest::new(m, l.get("params").cloned().unwrap_or_default());
             let req = match l.get("agent") {
-                Some(a) => req.from_agent(mailcraft_ui_egui::control::agent_allow(a)),
+                Some(a) => req.from_agent(mailsolutions_ui_egui::control::agent_allow(a)),
                 None => req,
             };
             tx.send(req).expect("send");

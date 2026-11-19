@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! People: the list, the card and the small pieces they are made of.
 
-use mailcraft_model::{Labeled, Message};
+use mailsolutions_model::{Labeled, Message};
 
 use super::*;
 

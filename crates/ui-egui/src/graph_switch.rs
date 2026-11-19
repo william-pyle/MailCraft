@@ -8,7 +8,7 @@
 //!
 //! - **The page** opens by itself (where the host wants it offered: `offer_graph_switch`) for each account still on IMAP that its owner wasn't asked
 //!   about yet, when nothing else is on screen. Switch and Later each answer it for good; closing
-//!   it without either asks again the next time MailCraft starts. It opens any time from command
+//!   it without either asks again the next time MailSolutions starts. It opens any time from command
 //!   search ("Switch to Microsoft Graph", `ui.graphSwitch`).
 //! - **Switch** (`ui.switchToGraph`): when something waits for the IMAP server, a Send/Receive of
 //!   the account goes first, and the switch happens once nothing waits any more (checked again
@@ -22,7 +22,7 @@
 //!   writes it itself.
 
 use egui::vec2;
-use mailcraft_model::{GraphSwitch, Id};
+use mailsolutions_model::{GraphSwitch, Id};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -36,7 +36,7 @@ pub(crate) struct Copying {
     account: Id,
     answer: String,
     path: std::path::PathBuf,
-    /// The mailbox opening the copy was written for ([`mailcraft_engine::Session::openings`]).
+    /// The mailbox opening the copy was written for ([`mailsolutions_engine::Session::openings`]).
     opening: u64,
     rx: std::sync::mpsc::Receiver<Result<(), String>>,
 }
@@ -51,13 +51,13 @@ pub(crate) fn wording(account: &str) -> Vec<String> {
     let with = |text: &str| fmt(text, &[("account", account)]);
     vec![
         with(tl!(
-            "MailCraft can now keep {account} in step with Microsoft through Microsoft Graph, the way Outlook on the web does, instead of IMAP. Your folders, flags, categories and drafts then match what you see in Outlook, and your mail keeps coming even where your organisation has turned IMAP off."
+            "MailSolutions can now keep {account} in step with Microsoft through Microsoft Graph, the way Outlook on the web does, instead of IMAP. Your folders, flags, categories and drafts then match what you see in Outlook, and your mail keeps coming even where your organisation has turned IMAP off."
         )),
         tl!("When you switch:").to_string(),
         format!(
             "•  {}",
             tl!(
-                "Anything still waiting to go to the server goes first: mail in the Outbox, and flags and moves made while you were offline. If MailCraft can't reach the server, the switch waits until it can."
+                "Anything still waiting to go to the server goes first: mail in the Outbox, and flags and moves made while you were offline. If MailSolutions can't reach the server, the switch waits until it can."
             )
         ),
         format!("•  {}", tl!("Before anything changes, a copy of your whole mailbox is saved next to it, with today's date in its name.")),
@@ -73,7 +73,7 @@ pub(crate) fn wording(account: &str) -> Vec<String> {
                 "Drafts you haven't sent go to your Drafts on the server. Folders and messages that are only on this computer stay on this computer, in a folder called \"Kept from {account}\". Your folders in Favorites stay there."
             ))
         ),
-        format!("•  {}", tl!("You may be asked to sign in with Microsoft again, to let MailCraft read and change your mail there.")),
+        format!("•  {}", tl!("You may be asked to sign in with Microsoft again, to let MailSolutions read and change your mail there.")),
         tl!("Later keeps this account on IMAP for now. You can switch whenever you like: search the commands for \"Switch to Microsoft Graph\".")
             .to_string(),
     ]
@@ -92,8 +92,8 @@ pub(crate) fn waiting_wording(account: &str, n: usize) -> Vec<String> {
         )
     };
     vec![
-        fmt(tl!("{account} is switching to Microsoft Graph, but MailCraft can't reach its IMAP server to send what is waiting there first."), &[("account", account)]),
-        tl!("Keep waiting, and the switch goes ahead by itself once MailCraft can reach the server. Or switch without them, if the server can't be reached any more (for example, your organisation has turned IMAP off):").to_string(),
+        fmt(tl!("{account} is switching to Microsoft Graph, but MailSolutions can't reach its IMAP server to send what is waiting there first."), &[("account", account)]),
+        tl!("Keep waiting, and the switch goes ahead by itself once MailSolutions can reach the server. Or switch without them, if the server can't be reached any more (for example, your organisation has turned IMAP off):").to_string(),
         left,
         tl!("A copy of your whole mailbox is saved next to it first, as always. Mail in the Outbox isn't left behind: it is sent through Microsoft Graph.").to_string(),
     ]
@@ -184,7 +184,7 @@ fn show_copying(app: &mut MailApp, ctx: &egui::Context, account: Id) -> bool {
 /// The page for a switch that waits: Keep Waiting, or Switch without Them.
 fn show_waiting(app: &mut MailApp, ctx: &egui::Context, account: Id) -> bool {
     let whose = address(app, account);
-    let n = mailcraft_engine::cmd::graph_switch::left_behind(&app.session, account);
+    let n = mailsolutions_engine::cmd::graph_switch::left_behind(&app.session, account);
     let mut answer: Option<&str> = None;
     let open = window(ctx, tl!("Switch to Microsoft Graph"), 520.0, |ui| {
         for line in waiting_wording(&whose, n) {
@@ -250,7 +250,7 @@ impl MailApp {
             }
             Err(e) => {
                 log::warn!("the copy of the mailbox before the switch to Microsoft Graph couldn't be written: {e}");
-                let why = mailcraft_engine::cmd::graph_switch::copy_failed(&e);
+                let why = mailsolutions_engine::cmd::graph_switch::copy_failed(&e);
                 self.status(fmt(tl!("{account} couldn't switch to Microsoft Graph: {why}"), &[("account", &whose), ("why", &why)]));
             }
         }
@@ -282,7 +282,7 @@ impl MailApp {
         for (account, state) in &accounts {
             if *state == GraphSwitch::Switching
                 && !self.graph_switch_tried.contains(account)
-                && mailcraft_engine::cmd::graph_switch::waiting(&self.session, *account) == 0
+                && mailsolutions_engine::cmd::graph_switch::waiting(&self.session, *account) == 0
             {
                 // Once until the next Send/Receive of the account: a switch that can't be made
                 // (the mailbox isn't in a file) isn't tried every frame.
@@ -313,7 +313,10 @@ impl MailApp {
         self.graph_switch_tried.remove(&account);
         if !ok {
             let whose = address(self, account);
-            self.status(fmt(tl!("The switch of {account} to Microsoft Graph waits until MailCraft can reach the server."), &[("account", &whose)]));
+            self.status(fmt(
+                tl!("The switch of {account} to Microsoft Graph waits until MailSolutions can reach the server."),
+                &[("account", &whose)],
+            ));
             // Once a run of the program, the owner is offered to switch without what waits.
             if self.offer_graph_switch && self.dialog.is_none() && self.graph_switch_waiting_shown.insert(account) {
                 self.dialog = Some(Dialog::GraphSwitch { account });
@@ -330,14 +333,14 @@ impl MailApp {
             if self.graph_switch_copy.is_some() {
                 return Err(tl!("A copy of the mailbox is being saved for a switch already: wait for it to finish.").to_string());
             }
-            let now = answer == "switchWithout" || mailcraft_engine::cmd::graph_switch::waiting(&self.session, account) == 0;
+            let now = answer == "switchWithout" || mailsolutions_engine::cmd::graph_switch::waiting(&self.session, account) == 0;
             let on_imap = self.session.mailbox.account(account).is_some_and(|a| a.on_imap_with_microsoft());
             if now
                 && on_imap
                 && let Some(write) = &self.services.write_copy
             {
                 let whose = address(self, account);
-                let (path, copy) = mailcraft_engine::cmd::graph_switch::prepare_backup(&self.session, account)
+                let (path, copy) = mailsolutions_engine::cmd::graph_switch::prepare_backup(&self.session, account)
                     .map_err(|e| fmt(tl!("{account} couldn't switch to Microsoft Graph: {why}"), &[("account", &whose), ("why", &e.to_string())]))?;
                 let rx = write(path.clone(), copy);
                 self.graph_switch_copy = Some(Copying { account, answer: answer.to_string(), path, opening: self.session.openings(), rx });

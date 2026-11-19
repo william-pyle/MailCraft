@@ -9,8 +9,8 @@
 //! tasks, notes: its `FolderClass` is not `IPF.Note`) is skipped and counted: it is not this
 //! slice's, and the count is told once per run (E7), never its name.
 
-use mailcraft_model::FolderKind;
-use mailcraft_model::sync::GraphFolder;
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::sync::GraphFolder;
 
 use crate::error::Error;
 use crate::folder::{FolderId, valid_id};

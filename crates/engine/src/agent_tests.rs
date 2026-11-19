@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The agent gate: what it asks about, and what it shows when it asks.
 
-use mailcraft_model::{Action, Condition, Contact, FolderKind, Id, Rule, Task};
+use mailsolutions_model::{Action, Condition, Contact, FolderKind, Id, Rule, Task};
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -176,7 +176,7 @@ fn diagnostics_are_not_for_agents() {
 /// mailbox", and removing the only account says that it leaves an empty mailbox (#313).
 #[test]
 fn the_account_question_names_a_local_mailbox_and_the_only_account() {
-    use mailcraft_model::{Account, Mailbox, Message};
+    use mailsolutions_model::{Account, Mailbox, Message};
     let mut s = Session::new(Mailbox::with_local_account("", ""));
     let local = s.mailbox.accounts[0].id;
     // The placeholder of an empty mailbox isn't removed (the command says so): no empty mailbox is promised.

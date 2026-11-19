@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tasks: to-do items.
 
-use mailcraft_model::{AccountChoice, Id, Importance, Mailbox, Message, Origin, Task, clean_name};
-use mailcraft_time::Date;
+use mailsolutions_model::{AccountChoice, Id, Importance, Mailbox, Message, Origin, Task, clean_name};
+use mailsolutions_time::Date;
 use serde_json::{Value, json};
 
 use super::tasks_remote::{keeps_tasks, task_accounts, tasks_home};
@@ -207,7 +207,7 @@ fn edit(s: &mut Session, v: &Value) -> CmdResult {
 fn delete(s: &mut Session, v: &Value) -> CmdResult {
     let id = target(s, v)?;
     if s.mailbox.task(id).is_some_and(|t| t.origin.is_remote() && !t.origin.id.is_empty())
-        && s.mailbox.task_gone.len() >= mailcraft_model::MAX_TASK_GONE
+        && s.mailbox.task_gone.len() >= mailsolutions_model::MAX_TASK_GONE
     {
         return Err(fail("too many deletions are waiting to be sent to Microsoft To Do; wait for them to go first"));
     }
@@ -232,7 +232,7 @@ fn complete(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(m) = message
         && let Ok(m) = s.mailbox.message_mut(m)
     {
-        m.flag = if done { mailcraft_model::FlagStatus::Complete } else { mailcraft_model::FlagStatus::Flagged };
+        m.flag = if done { mailsolutions_model::FlagStatus::Complete } else { mailsolutions_model::FlagStatus::Flagged };
     }
     Ok(json!({"id": id, "complete": done}))
 }
@@ -250,7 +250,7 @@ fn select(s: &mut Session, v: &Value) -> CmdResult {
 fn task_json(s: &Session, t: &Task) -> Value {
     json!({
         "id": t.id, "title": t.title, "notes": t.notes, "due": t.due.map(Date::iso), "start": t.start.map(Date::iso),
-        "complete": t.is_complete(), "completed": t.completed.map(mailcraft_time::format_iso_utc), "overdue": t.is_overdue(s.today()),
+        "complete": t.is_complete(), "completed": t.completed.map(mailsolutions_time::format_iso_utc), "overdue": t.is_overdue(s.today()),
         "dueLabel": t.due_label(s.today()), "importance": t.importance, "categories": t.categories, "message": t.message,
         "reminder": t.reminder.map(|r| s.local(r).iso()), "account": t.origin.account, "keptAt": kept_at(&s.mailbox, &t.origin),
     })
@@ -358,8 +358,8 @@ fn from_message(s: &mut Session, v: &Value) -> CmdResult {
     reveal(s, &task.origin);
     let id = s.mailbox.add_task(task);
     let m = s.mailbox.message_mut(mid)?;
-    if m.flag == mailcraft_model::FlagStatus::None {
-        m.flag = mailcraft_model::FlagStatus::Flagged;
+    if m.flag == mailsolutions_model::FlagStatus::None {
+        m.flag = mailsolutions_model::FlagStatus::Flagged;
     }
     s.sel.task = Some(id);
     s.view.module = Module::Tasks;

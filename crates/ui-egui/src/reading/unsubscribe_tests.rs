@@ -8,8 +8,8 @@
 use std::sync::{Arc, Mutex, mpsc};
 
 use egui_kittest::kittest::Queryable;
-use mailcraft_engine::Session;
-use mailcraft_model::{Address, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Address, Mailbox, Message};
 use serde_json::json;
 
 use super::super::tests::{select, window};
@@ -24,8 +24,9 @@ const PASSED: &str = "mx.example.org; dkim=pass header.d=news.example; dmarc=pas
 fn list_app(headers: &[(&str, &str)]) -> (MailApp, u64) {
     let mut mailbox = Mailbox::with_local_account("Avery Quinn", "avery@lumen-works.example");
     for account in &mut mailbox.accounts {
-        account.kind = mailcraft_model::AccountKind::Imap;
-        account.incoming = Some(mailcraft_model::Server { host: "imap.example.org".into(), port: 993, security: mailcraft_model::Security::Tls });
+        account.kind = mailsolutions_model::AccountKind::Imap;
+        account.incoming =
+            Some(mailsolutions_model::Server { host: "imap.example.org".into(), port: 993, security: mailsolutions_model::Security::Tls });
     }
     let inbox = mailbox.inbox().unwrap();
     let m = Message {

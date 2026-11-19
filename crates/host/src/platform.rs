@@ -10,7 +10,7 @@ use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 
 use crate::SecretStore;
 
@@ -137,12 +137,12 @@ pub trait Platform: Send + Sync {
 
     /// Now, in seconds since 1970 (UTC).
     fn now(&self) -> Timestamp {
-        mailcraft_time::now()
+        mailsolutions_time::now()
     }
 
     /// Minutes east of UTC of the owner's time zone at `at`, daylight saving included.
     fn utc_offset_minutes(&self, at: Timestamp) -> i32 {
-        mailcraft_time::local_offset_minutes(at)
+        mailsolutions_time::local_offset_minutes(at)
     }
 
     /// The most memory, in bytes, the system lets the program use for what it keeps in memory;

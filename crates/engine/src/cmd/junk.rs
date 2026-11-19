@@ -3,14 +3,14 @@
 //! Junk E-mail Options (#504): the Safe Senders and Blocked Senders lists, and Home › Delete ›
 //! Junk's Block Sender, Never Block Sender and Never Block Sender's Domain.
 //!
-//! The lists are each account's (#516; [`mailcraft_model::JunkLists`], kept in the mailbox file),
+//! The lists are each account's (#516; [`mailsolutions_model::JunkLists`], kept in the mailbox file),
 //! so they are saved with it and a change to them is undone as any other. A command on a message
 //! changes its account's lists; `junk.add`, `junk.remove` and `junk.list` take an optional
 //! `account` (default: the selected message's account, else the first). They sort mail as it arrives
-//! ([`mailcraft_model::Mailbox::sort_junk`]); a change to a list leaves the mail that is here
+//! ([`mailsolutions_model::Mailbox::sort_junk`]); a change to a list leaves the mail that is here
 //! where it is, but for Block Sender's own message, which goes to Junk E-mail.
 
-use mailcraft_model::{Added, FolderKind, Id, JunkList, junk_entry, junk_key};
+use mailsolutions_model::{Added, FolderKind, Id, JunkList, junk_entry, junk_key};
 use serde_json::{Value, json};
 
 use super::{bad, fail, needs_message, select_after_removal, targets};
@@ -68,7 +68,7 @@ fn add_entry(s: &mut Session, account: Id, list: JunkList, entry: &str) -> Resul
     match s.mailbox.junk_lists_mut(account).add(list, entry) {
         Added::Added(e) | Added::There(e) => Ok(e),
         Added::Invalid => Err(fail("type an address, such as someone@example.org, or a domain, such as @example.org")),
-        Added::Full => Err(failed!("a list holds {n} entries at most", n = mailcraft_model::MAX_JUNK_ENTRIES)),
+        Added::Full => Err(failed!("a list holds {n} entries at most", n = mailsolutions_model::MAX_JUNK_ENTRIES)),
     }
 }
 

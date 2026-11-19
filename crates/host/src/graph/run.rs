@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The Graph run itself (native only).
 
-use mailcraft_model::sync::Tokens;
+use mailsolutions_model::sync::Tokens;
 
 use super::{GraphRequest, GraphResult};
 
@@ -16,7 +16,7 @@ const CALENDAR_AHEAD: i64 = 366 * 86_400;
 /// one Windows has for the zone (`Pacific Standard Time`), which is the one Graph prefers, else
 /// the one of the IANA database (`Europe/Berlin`).
 pub fn local_zone() -> String {
-    let zone = mailcraft_time::Zone::system();
+    let zone = mailsolutions_time::Zone::system();
     zone.windows_name().map_or_else(|| zone.id(), str::to_string)
 }
 
@@ -24,8 +24,8 @@ pub fn local_zone() -> String {
 /// the event's id (the same in every line about that event, and nothing of the id can be read
 /// from it), which of the event's properties were sent (their names, never what they say), the
 /// zone its times were said in, the calendar, and the server's answer. Nothing of the event.
-fn log_outcome(outcome: &mailcraft_model::remote::EventOutcome) {
-    use mailcraft_model::remote::{EventResult, id_tag};
+fn log_outcome(outcome: &mailsolutions_model::remote::EventOutcome) {
+    use mailsolutions_model::remote::{EventResult, id_tag};
     let op = &outcome.op;
     // What the server calls it: for a new event, what it is called from now on.
     let id = [op.remote.as_str(), outcome.remote.as_str()].into_iter().find(|id| !id.is_empty());
@@ -57,7 +57,7 @@ pub fn graph(request: GraphRequest) -> GraphResult {
 
 /// [`graph`], with the owner's time zone as `zone` (a name Microsoft Graph knows).
 pub fn graph_in(request: GraphRequest, zone: &str) -> GraphResult {
-    graph_in_with(request, zone, &mailcraft_net::oauth::refresh_graph_opened_calendars)
+    graph_in_with(request, zone, &mailsolutions_net::oauth::refresh_graph_opened_calendars)
 }
 
 /// [`graph_in`], with how a token that covers other people's calendars is had as `renew_calendars`
@@ -65,9 +65,9 @@ pub fn graph_in(request: GraphRequest, zone: &str) -> GraphResult {
 pub fn graph_in_with(
     request: GraphRequest,
     zone: &str,
-    renew_calendars: &dyn Fn(&mailcraft_model::OAuth, &str) -> Result<mailcraft_net::oauth::GraphTokens, mailcraft_net::NetError>,
+    renew_calendars: &dyn Fn(&mailsolutions_model::OAuth, &str) -> Result<mailsolutions_net::oauth::GraphTokens, mailsolutions_net::NetError>,
 ) -> GraphResult {
-    use mailcraft_net::oauth;
+    use mailsolutions_net::oauth;
     // A token for everything Graph is asked for, and for reading the Favorites of Outlook when
     // the window wants that too (it stops wanting it for the day once it was told no).
     // (An account kept in step through Graph has its token asked for with its mail, R3.)
@@ -122,7 +122,7 @@ struct OpenedToken {
 fn opened_token(
     mut request: GraphRequest,
     shared: bool,
-    renew: &dyn Fn(&mailcraft_model::OAuth, &str) -> Result<mailcraft_net::oauth::GraphTokens, mailcraft_net::NetError>,
+    renew: &dyn Fn(&mailsolutions_model::OAuth, &str) -> Result<mailsolutions_net::oauth::GraphTokens, mailsolutions_net::NetError>,
 ) -> (GraphRequest, OpenedToken) {
     let mut found = OpenedToken::default();
     if request.account.opened_calendars.is_empty() || request.mail.is_some() || shared {
@@ -150,12 +150,13 @@ fn opened_token(
 
 /// How a job gets a token for Microsoft Graph when the window handed it none: from the sign-in
 /// settings and the refresh token, and whether one that is good for the Favorites is wanted.
-pub type Renew<'a> = &'a dyn Fn(&mailcraft_model::OAuth, &str, bool) -> Result<mailcraft_net::oauth::GraphTokens, mailcraft_net::NetError>;
+pub type Renew<'a> =
+    &'a dyn Fn(&mailsolutions_model::OAuth, &str, bool) -> Result<mailsolutions_net::oauth::GraphTokens, mailsolutions_net::NetError>;
 
 /// Why reading the Favorites of Outlook failed, in a few plain words for the folder pane.
-fn favorites_words(error: &mailcraft_net::NetError) -> &'static str {
+fn favorites_words(error: &mailsolutions_net::NetError) -> &'static str {
     match error {
-        mailcraft_net::NetError::Busy { .. } => "Outlook is busy",
+        mailsolutions_net::NetError::Busy { .. } => "Outlook is busy",
         error if error.is_unreachable() => "Couldn't reach Outlook",
         _ => "Couldn't read the list",
     }
@@ -170,13 +171,13 @@ pub fn graph_with(request: GraphRequest, zone: &str, renew: Renew<'_>) -> GraphR
 
 /// How a shared mailbox's run that has mail to send gets a token that covers sending from it
 /// (`Mail.Send.Shared`, #70) when the window handed it none.
-pub type RenewSend<'a> = &'a dyn Fn(&mailcraft_model::OAuth, &str) -> Result<mailcraft_net::oauth::GraphTokens, mailcraft_net::NetError>;
+pub type RenewSend<'a> = &'a dyn Fn(&mailsolutions_model::OAuth, &str) -> Result<mailsolutions_net::oauth::GraphTokens, mailsolutions_net::NetError>;
 
 /// [`graph_in`], with the token coming from `renew` when the request brings none, and from
 /// `renew_send` for a shared mailbox's run that has mail to send.
 pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_>, renew_send: RenewSend<'_>) -> GraphResult {
-    use mailcraft_model::remote::{FavoritesDownload, FavoritesOutcome};
-    use mailcraft_net::{NetError, graph};
+    use mailsolutions_model::remote::{FavoritesDownload, FavoritesOutcome};
+    use mailsolutions_net::{NetError, graph};
     let mut out = GraphResult { account: request.account.id, ..Default::default() };
     let mut access = request.access.clone();
     // A shared mailbox with mail to send (#70): the token covers sending from it, or nothing of
@@ -208,7 +209,7 @@ pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_
     // everything else goes all the same. (Same as its mail: the window asks the owner.)
     let sending_calendar = request.account.is_shared()
         && request.mail.is_none()
-        && request.changes.as_ref().is_some_and(|changes| changes.ops.iter().any(mailcraft_model::remote::EventOp::mails_others));
+        && request.changes.as_ref().is_some_and(|changes| changes.ops.iter().any(mailsolutions_model::remote::EventOp::mails_others));
     if sending_calendar {
         let kept = if request.refresh.is_empty() {
             Err(NetError::Config("no sign-in to renew".into()))
@@ -300,11 +301,11 @@ pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_
     if let Some(mail) = request.mail.as_ref().filter(|_| !refused) {
         // The run comes a piece at a time (the folders, then a page of mail at a time): to the
         // window as each comes, or put together for a caller that takes it in at once.
-        let mut result: Option<mailcraft_model::sync::GraphMailResult> = None;
+        let mut result: Option<mailsolutions_model::sync::GraphMailResult> = None;
         let (cancel, pieces) = (&request.cancel, &request.mail_pieces);
         // When Graph stops taking the token part-way (it ran out during a long run, or while the
         // computer slept), one new one from the refresh token, the newest there is (#306).
-        let renewed: std::cell::RefCell<Option<mailcraft_model::sync::Tokens>> = std::cell::RefCell::new(None);
+        let renewed: std::cell::RefCell<Option<mailsolutions_model::sync::Tokens>> = std::cell::RefCell::new(None);
         let refresh = out.tokens.as_ref().map(|t| t.refresh.clone()).filter(|r| !r.is_empty()).unwrap_or_else(|| request.refresh.clone());
         let again = || {
             let got = if mail.shared && !mail.sends.is_empty() {
@@ -368,7 +369,7 @@ pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_
     }
     // The wide stretch with the contacts, every quarter of an hour; otherwise the days on screen.
     // (The window counts the wide stretch from its own clock and says it in `calendar`.)
-    let now = mailcraft_time::now();
+    let now = mailsolutions_time::now();
     let stretch = if request.directory { request.calendar.or(Some((now - CALENDAR_BEHIND, now + CALENDAR_AHEAD))) } else { request.calendar };
     // A shared mailbox's calendars (#70): asked for and written at its own address, and only
     // those that are ticked are asked for (the window says which, in the asks); no contacts,
@@ -422,7 +423,7 @@ pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_
         // (A shared mailbox's main calendar when it is ticked.)
         let wants_main = shared_address.is_none() || request.asks.iter().any(|ask| ask.calendar.is_empty());
         let main = graph::EventsQuery { calendar: String::new(), from, to, series: expected(""), shared: shared.clone() };
-        let days = |instant: i64| mailcraft_time::DateTime::from_timestamp(instant, 0).date.iso();
+        let days = |instant: i64| mailsolutions_time::DateTime::from_timestamp(instant, 0).date.iso();
         match wants_main.then(|| graph::events_in(&access, &main)) {
             None => {}
             Some(Ok(events)) => {
@@ -441,7 +442,7 @@ pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_
         }
         // Those opened by address come first (the owner asked for them by name): they count
         // within the same cap as the account's other calendars.
-        others.sort_by_key(|calendar| !calendar.starts_with(mailcraft_model::remote::OPENED_PREFIX));
+        others.sort_by_key(|calendar| !calendar.starts_with(mailsolutions_model::remote::OPENED_PREFIX));
         for calendar in others.iter().take(MAX_OTHER_CALENDARS) {
             if refused {
                 break;
@@ -451,7 +452,7 @@ pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_
                 Ok(events) => {
                     log::info!(
                         "calendar: calendar #{} came down: {} events (all of them: {})",
-                        mailcraft_model::remote::id_tag(calendar),
+                        mailsolutions_model::remote::id_tag(calendar),
                         events.events.len(),
                         events.complete
                     );
@@ -524,8 +525,8 @@ pub fn graph_sending_with(mut request: GraphRequest, zone: &str, renew: Renew<'_
 /// (`calendar_settings::work_hours`). No offset is given beside it: a zone the engine doesn't
 /// know (`Customized Time Zone`) is one this program can't look up either, and its hours are
 /// then taken as they are written.
-fn mailbox_hours(email: &str, hours: mailcraft_net::graph::WorkingHours) -> mailcraft_engine::cmd::calendar_settings::MailboxHours {
-    mailcraft_engine::cmd::calendar_settings::MailboxHours {
+fn mailbox_hours(email: &str, hours: mailsolutions_net::graph::WorkingHours) -> mailsolutions_engine::cmd::calendar_settings::MailboxHours {
+    mailsolutions_engine::cmd::calendar_settings::MailboxHours {
         email: email.trim().to_string(),
         days: hours.days,
         start: hours.start,
@@ -541,15 +542,15 @@ const MAX_OTHER_CALENDARS: usize = 20;
 
 /// Read the calendars opened by address with `token`: the calendars that can be read (named by
 /// their owners, with their rights), and those that can't, with why; and whether the sign-in
-/// itself was refused. At most [`mailcraft_model::MAX_OPENED_CALENDARS`], one request each.
+/// itself was refused. At most [`mailsolutions_model::MAX_OPENED_CALENDARS`], one request each.
 pub fn open_by_address(
     token: &str,
-    opened: &[mailcraft_model::OpenedCalendar],
-) -> (Vec<mailcraft_model::remote::RemoteCalendar>, (Vec<mailcraft_model::remote::OpenedRefusal>, bool)) {
-    use mailcraft_model::remote::OpenedRefusal;
-    use mailcraft_net::graph::{self, Opened};
+    opened: &[mailsolutions_model::OpenedCalendar],
+) -> (Vec<mailsolutions_model::remote::RemoteCalendar>, (Vec<mailsolutions_model::remote::OpenedRefusal>, bool)) {
+    use mailsolutions_model::remote::OpenedRefusal;
+    use mailsolutions_net::graph::{self, Opened};
     let (mut read, mut refusals, mut signed_out) = (Vec::new(), Vec::new(), false);
-    for one in opened.iter().take(mailcraft_model::MAX_OPENED_CALENDARS) {
+    for one in opened.iter().take(mailsolutions_model::MAX_OPENED_CALENDARS) {
         if signed_out {
             break;
         }

@@ -62,10 +62,14 @@ fn the_switch_moves_from_the_bar_to_the_foot_and_back() {
 fn a_click_at_the_foot_goes_to_that_module() {
     let mut w = window();
     at_foot(&mut w, true);
-    for (i, module) in
-        [mailcraft_engine::Module::Calendar, mailcraft_engine::Module::People, mailcraft_engine::Module::Tasks, mailcraft_engine::Module::Mail]
-            .into_iter()
-            .enumerate()
+    for (i, module) in [
+        mailsolutions_engine::Module::Calendar,
+        mailsolutions_engine::Module::People,
+        mailsolutions_engine::Module::Tasks,
+        mailsolutions_engine::Module::Mail,
+    ]
+    .into_iter()
+    .enumerate()
     {
         let at = [1u64, 2, 3, 0][i];
         let r = w.state().hit.rect("moduleFoot", at).unwrap_or_else(|| panic!("{module:?} at the foot"));
@@ -95,10 +99,10 @@ fn a_screen_reader_hears_which_module_is_in_view() {
 }
 
 /// The pictures for the pull request, in both themes: the row at the foot, in Mail and in the
-/// calendar, when `MAILCRAFT_SHOTS_DIR` names a folder.
+/// calendar, when `MAILSOLUTIONS_SHOTS_DIR` names a folder.
 #[test]
 fn shots() {
-    let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") else { return };
+    let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") else { return };
     let dir = std::path::Path::new(&dir);
     let mut w = window();
     at_foot(&mut w, true);

@@ -6,7 +6,7 @@
 //! credential store, and asking what a stored sign-in covers. The secrets rules and the consent
 //! rules live here once, so that no front end carries a copy of them.
 //!
-//! Everything about the address that comes back is judged by the OAuth strategy of `mailcraft-net`
+//! Everything about the address that comes back is judged by the OAuth strategy of `mailsolutions-net`
 //! (`oauth/scheme.rs`): the scheme and path to the letter, the state, the fields, the sizes. The
 //! tokens never leave this module but through the credential store: the refresh token is kept
 //! there and nowhere else, the access token is dropped, and neither appears in an error or a log
@@ -19,23 +19,23 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{OAuth, OAuthProvider};
-use mailcraft_net::oauth::{
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{OAuth, OAuthProvider};
+use mailsolutions_net::oauth::{
     CustomScheme, DEFAULT_REDIRECT_HOST, Handback, RedirectStrategy, refresh_for_at, refresh_graph_shared_at, refresh_graph_shared_send_at,
     refresh_graph_tasks_at, sign_in_ending_via, sign_in_for_permission_at,
 };
 
 // What a front end needs to name the page it asks for, without a dependency on the network crate of its own.
-pub use mailcraft_net::NetError;
-pub use mailcraft_net::oauth::{Ending, Endpoints, FavoritesRefusal, Permission, Resource, admin_consent_url, permission_endpoints};
+pub use mailsolutions_net::NetError;
+pub use mailsolutions_net::oauth::{Ending, Endpoints, FavoritesRefusal, Permission, Resource, admin_consent_url, permission_endpoints};
 
 use crate::secrets::{SecretError, microsoft_secret_key};
 use crate::{Platform, Redirect};
 
 /// The application (client) id this build presents to Microsoft's page: the project's own
-/// registration, an identifier and not a secret (`MAILCRAFT_MS_CLIENT_ID` in `.cargo/config.toml`).
-const CLIENT_ID: &str = match option_env!("MAILCRAFT_MS_CLIENT_ID") {
+/// registration, an identifier and not a secret (`MAILSOLUTIONS_MS_CLIENT_ID` in `.cargo/config.toml`).
+const CLIENT_ID: &str = match option_env!("MAILSOLUTIONS_MS_CLIENT_ID") {
     Some(id) => id,
     None => "",
 };
@@ -236,7 +236,7 @@ pub fn page(
     why: Why,
     cancel: &AtomicBool,
 ) -> Page {
-    let Some(oauth) = client_oauth() else { return Page::Unable("this build of MailCraft has no Microsoft sign-in set up") };
+    let Some(oauth) = client_oauth() else { return Page::Unable("this build of MailSolutions has no Microsoft sign-in set up") };
     let Some(scheme) = redirect_scheme(platform) else { return Page::Unable("this phone can't take a sign-in back through the app's own address") };
     let no_browser = AtomicBool::new(false);
     // (No page opened means nothing will come back: the wait is over.)
@@ -282,10 +282,10 @@ pub fn page(
 /// Keep `refresh` as the account's sign-in in the platform's credential store.
 pub fn keep_refresh(platform: &dyn Platform, email: &str, refresh: &str) -> Result<(), &'static str> {
     if refresh.is_empty() {
-        return Err("Microsoft didn't let MailCraft stay signed in to this account");
+        return Err("Microsoft didn't let MailSolutions stay signed in to this account");
     }
     let Some(store) = platform.secrets() else { return Err("this phone has no secure store to keep your sign-in in") };
-    store.set(&microsoft_secret_key("refresh", email), refresh).map_err(|_| "MailCraft couldn't keep your sign-in in this phone's secure store")
+    store.set(&microsoft_secret_key("refresh", email), refresh).map_err(|_| "MailSolutions couldn't keep your sign-in in this phone's secure store")
 }
 
 /// The refresh token kept for the account at `email`, when there is one.

@@ -10,13 +10,13 @@
 //! The same mark asks for a Digitally signed or Encrypted message read before the bytes it came
 //! as were kept (`mail.checkAgain`, #30), which then keeps them ([`Message::original`]).
 //!
-//! [`FolderState::again`]: mailcraft_model::sync::FolderState::again
+//! [`FolderState::again`]: mailsolutions_model::sync::FolderState::again
 
 use std::collections::HashMap;
 
-use mailcraft_model::sync::FolderDelta;
-use mailcraft_model::{AccountKind, Address, Id, Mailbox, Message, ORIGINAL_PATIENCE, ORIGINAL_TRIES};
-use mailcraft_time::Timestamp;
+use mailsolutions_model::sync::FolderDelta;
+use mailsolutions_model::{AccountKind, Address, Id, Mailbox, Message, ORIGINAL_PATIENCE, ORIGINAL_TRIES};
+use mailsolutions_time::Timestamp;
 
 /// Most messages one synchronisation request asks to have downloaded again, over all folders.
 pub const MAX_AGAIN: usize = 200;
@@ -89,7 +89,7 @@ pub fn take_again(mb: &mut Mailbox, id: Id, mut read: Message) {
     // What came brought no original (#30): its server's copy isn't protected either.
     let brought = read.original.is_some();
     // Within what the mailbox keeps of originals in all (#30), counting the one it replaces.
-    let replaced = mb.message(id).and_then(|m| m.original.as_ref()).map_or(0, mailcraft_model::Original::size);
+    let replaced = mb.message(id).and_then(|m| m.original.as_ref()).map_or(0, mailsolutions_model::Original::size);
     // (No room for it: how much room it needs, which there must be before it is asked again.)
     let mut no_room = 0;
     let needs = read.original.as_ref().map_or(0, |o| o.size().saturating_sub(replaced));
@@ -155,7 +155,7 @@ pub(crate) fn moved_out(mb: &Mailbox, account: Id) -> HashMap<(Id, u32), Id> {
         .iter()
         .filter(|p| p.account() == account)
         .filter_map(|p| match p {
-            mailcraft_model::Pending::Move { message, .. } => {
+            mailsolutions_model::Pending::Move { message, .. } => {
                 let (from, uid) = p.source();
                 let m = mb.message(*message).filter(|m| m.refetch && m.original_wanted && m.account != account && uid != 0)?;
                 let folder = mb.folders.iter().find(|f| f.account == account && f.remote == from)?;

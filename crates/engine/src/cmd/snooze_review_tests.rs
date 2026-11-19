@@ -4,10 +4,10 @@
 //! the moves, a move back the server refused, Return times across a change of the clocks, early
 //! return only by a known link, and a Snoozed folder the owner deleted.
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     ChangeOutcome, EwsMailResult, FolderChangeDone, GraphFolder, GraphMailResult, MessageChange, MessageChangeDone, MessageOutcome, ServerMessage,
 };
-use mailcraft_model::{Account, AccountKind, Address, FolderKind, Id, Message, Snooze};
+use mailsolutions_model::{Account, AccountKind, Address, FolderKind, Id, Message, Snooze};
 use serde_json::json;
 
 use super::ews_mail::up_tests::{piece, setup as ews_setup, took};
@@ -118,7 +118,7 @@ fn ews_undo_of_return_now_and_of_a_snooze_after_the_server_moved_it() {
 }
 
 fn local() -> (Session, Id, Id, Id) {
-    let mut s = Session::new(mailcraft_model::Mailbox::with_local_account("Ann", "ann@example.org"));
+    let mut s = Session::new(mailsolutions_model::Mailbox::with_local_account("Ann", "ann@example.org"));
     at(&mut s, NOW);
     let account = s.mailbox.accounts[0].id;
     let inbox = s.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
@@ -153,8 +153,8 @@ fn a_return_time_across_a_change_of_the_clocks_is_the_wall_clock_time_written() 
     s.clock = Clock { now: Some(NOW), offset: None, zone: None };
     // Now is January (UTC+0); the clocks go forward on 2027-03-28, so 09:00 there is 08:00 UTC.
     s.run("mail.snooze", &json!({"ids": [a], "until": "2027-03-28T09:00"})).unwrap();
-    let wall = mailcraft_time::parse_iso("2027-03-28T08:00").unwrap().0;
-    let expected = mailcraft_time::Zone::fixed(0).unwrap().instant(wall);
+    let wall = mailsolutions_time::parse_iso("2027-03-28T08:00").unwrap().0;
+    let expected = mailsolutions_time::Zone::fixed(0).unwrap().instant(wall);
     assert_eq!(s.mailbox.message(a).unwrap().snooze.unwrap().until, expected);
     // A time with its own offset is that offset's, and absurd text or years are refused.
     let (mut s, _, _, a) = local();

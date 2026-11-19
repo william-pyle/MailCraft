@@ -28,8 +28,8 @@
 
 use std::time::{Duration, Instant};
 
-use mailcraft_model::provider::{self, Discovered, FoundServer, Via};
-use mailcraft_model::{Security, Server};
+use mailsolutions_model::provider::{self, Discovered, FoundServer, Via};
+use mailsolutions_model::{Security, Server};
 
 use crate::NetError;
 use crate::autoconfig;

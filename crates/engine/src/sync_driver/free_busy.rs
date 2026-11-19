@@ -8,10 +8,10 @@
 //! [`Session::free_busy_answered`], which takes it in through `calendar.freeBusy` and keeps what
 //! was found out. Asking reads; it writes nothing and tells nobody.
 
-use mailcraft_i18n::Lang;
-use mailcraft_model::remote::{FreeBusy, FreeBusyAsk, MAX_SCHEDULES};
-use mailcraft_model::{Account, Address, Id, OAuthProvider, ShowAs};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_i18n::Lang;
+use mailsolutions_model::remote::{FreeBusy, FreeBusyAsk, MAX_SCHEDULES};
+use mailsolutions_model::{Account, Address, Id, OAuthProvider, ShowAs};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use super::{Busy, Start};
@@ -158,7 +158,7 @@ fn stretch(day: Date) -> (String, String) {
 pub fn days_of(answer: &Value, day: Date) -> Vec<(String, Day)> {
     let midnight = DateTime::at_midnight(day);
     let minute = |v: Option<&Value>| -> Option<u32> {
-        let (at, _) = mailcraft_time::parse_iso(v?.as_str()?)?;
+        let (at, _) = mailsolutions_time::parse_iso(v?.as_str()?)?;
         u32::try_from(midnight.minutes_until(at).clamp(0, i64::from(DAY))).ok()
     };
     let people = answer.get("people").and_then(Value::as_array).map(Vec::as_slice).unwrap_or_default();

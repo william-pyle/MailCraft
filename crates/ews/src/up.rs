@@ -30,12 +30,12 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     ChangeOutcome, DraftDone, DraftUp, EwsMailRequest, EwsMailResult, FlagUp, FolderChange, FolderChangeDone, GraphFolder, MAX_DRAFTS,
     MAX_FOLDER_CHANGES, MAX_MESSAGE_CHANGES, MAX_SENDS, MessageChange, MessageChangeDone, MessageOutcome, SendDone, SendOutcome, SendUp,
     SyncedAttachment, marker_id, marker_of, merge_categories,
 };
-use mailcraft_model::{FolderKind, Id, Importance};
+use mailsolutions_model::{FolderKind, Id, Importance};
 
 use crate::changes::{CreateFolder, DeleteFolder, DeleteItem, DeleteMode, GetItemNow, ItemUpdate, MoveFolder, MoveItem, RenameFolder, UpdateItem};
 use crate::compose::{AddAttachments, CreateDraft, DraftContent, FindDraft, RemoveAttachments, SendMessage};
@@ -65,7 +65,7 @@ fn why(code: &ResponseCode) -> String {
 
 fn plain(code: &ResponseCode) -> String {
     match code.to_string().as_str() {
-        "ErrorSendAsDenied" => mailcraft_model::sync::SEND_AS_DENIED.to_owned(),
+        "ErrorSendAsDenied" => mailsolutions_model::sync::SEND_AS_DENIED.to_owned(),
         "ErrorAccessDenied" => "the server doesn't allow it".to_owned(),
         "ErrorQuotaExceeded" | "ErrorMessageSizeExceeded" => "the mailbox or the message is over a limit the server holds".to_owned(),
         "ErrorInvalidRecipients" | "ErrorMessageDispositionRequired" | "ErrorRecipientNotFound" => {
@@ -209,7 +209,7 @@ impl<E: HttpExchange> Run<'_, E> {
                 // One of the server's own folders that no distinguished name asked for tells
                 // apart (RSS Feeds, say; #1069): put back, and never offered for it again.
                 let name = code.to_string();
-                if mailcraft_model::sync::OWN_FOLDER_CODES.iter().any(|own| own.eq_ignore_ascii_case(&name)) {
+                if mailsolutions_model::sync::OWN_FOLDER_CODES.iter().any(|own| own.eq_ignore_ascii_case(&name)) {
                     return Ok(Some(ChangeOutcome::OwnFolder { why: why(&code) }));
                 }
                 Ok(Some(ChangeOutcome::Refused { why: why(&code) }))
@@ -511,7 +511,7 @@ impl<E: HttpExchange> Run<'_, E> {
         &mut self,
         id: &str,
         key: &str,
-        up: &mailcraft_model::sync::AttachmentsUp,
+        up: &mailsolutions_model::sync::AttachmentsUp,
     ) -> Result<(Vec<SyncedAttachment>, Option<String>), Asked> {
         let now = GetItemNow::new(id);
         let there = self.ask(&now.element(), &|reply| now.answer(reply)).await?;

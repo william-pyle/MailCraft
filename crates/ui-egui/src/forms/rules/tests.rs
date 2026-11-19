@@ -3,13 +3,13 @@
 //! The Rules dialog: a new rule spelled out for the command, and rules as people read them.
 
 use super::*;
-use mailcraft_model::Condition;
+use mailsolutions_model::Condition;
 
 /// Wednesday 2026-10-14 16:00 UTC.
 const NOW: i64 = 1_791_993_600;
 
 fn session() -> Session {
-    Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0)
+    Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0)
 }
 
 fn folder_id(s: &Session, path: &str) -> Id {
@@ -141,6 +141,6 @@ fn rules_and_folders_read_as_people_know_them() {
     let (command, params) = f.command();
     let id = s.run(command, &params).unwrap()["id"].as_u64().unwrap();
     let rule = s.mailbox.rules.iter().find(|r| r.id == id).cloned().unwrap();
-    assert!(rule.name.chars().count() <= mailcraft_model::MAX_NAME);
+    assert!(rule.name.chars().count() <= mailsolutions_model::MAX_NAME);
     assert!(shown(&describe(&s.mailbox, &rule), 600).chars().count() <= 601);
 }

@@ -5,8 +5,8 @@
 
 use std::sync::mpsc;
 
-use mailcraft_engine::Session;
-use mailcraft_model::Mailbox;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Mailbox;
 use serde_json::json;
 
 use crate::{MailApp, Services, UiState};

@@ -152,7 +152,7 @@ impl Form {
     }
 
     /// The appointment, contact or task the form changes, when it is one that exists.
-    pub(crate) fn editing(&self) -> Option<mailcraft_model::Id> {
+    pub(crate) fn editing(&self) -> Option<mailsolutions_model::Id> {
         match self {
             Form::Event(f) => f.editing(),
             Form::Contact(f) => f.editing(),
@@ -228,7 +228,7 @@ pub(crate) enum Verdict {
     /// The window closes: what it was for is done, or given up.
     Close,
     /// The window stays, and is about this event from now on (it was saved).
-    Now(mailcraft_model::Id),
+    Now(mailsolutions_model::Id),
 }
 
 /// What the forms share: labelled rows, text, date and time fields, chips, the buttons at the
@@ -238,9 +238,9 @@ pub(crate) mod kit {
     use std::hash::Hash;
 
     use egui::{Align, Align2, Color32, CornerRadius, Response, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
-    use mailcraft_engine::Session;
-    use mailcraft_model::Category;
-    use mailcraft_time::{Date, Weekday, parse_time, time_short};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::Category;
+    use mailsolutions_time::{Date, Weekday, parse_time, time_short};
     use serde_json::{Map, Value, json};
 
     use crate::date_picker::{Calendar, Picked};
@@ -755,7 +755,7 @@ pub(crate) mod kit {
     /// Text from elsewhere for a label, as a name is shown (#454): one line, without control
     /// characters or characters that show nothing, spaces run together, at most `max` characters,
     /// the last an ellipsis where it was cut.
-    pub use mailcraft_names::shown;
+    pub use mailsolutions_names::shown;
 
     /// Which of the buttons at the bottom was clicked.
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -1073,9 +1073,9 @@ pub(crate) mod kit {
 /// The appointment and meeting form.
 mod event {
     use egui::{Ui, vec2};
-    use mailcraft_engine::Session;
-    use mailcraft_model::{Address, Freq, Id, Importance, Recurrence, ResponseOptions, ShowAs, format_list};
-    use mailcraft_time::{Date, DateTime, Weekday, Zone, month_name, time_short};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::{Address, Freq, Id, Importance, Recurrence, ResponseOptions, ShowAs, format_list};
+    use mailsolutions_time::{Date, DateTime, Weekday, Zone, month_name, time_short};
     use serde_json::{Map, Value, json};
 
     use super::kit::{
@@ -1326,7 +1326,7 @@ mod event {
                 DateTime { hour: s.prefs.work_start.min(23), ..DateTime::at_midnight(day) }
             }
         };
-        let read = |text: Option<&str>| text.and_then(|t| mailcraft_time::parse_iso(t).map(|(at, _)| (at, t.trim().contains(['T', 't', ' ']))));
+        let read = |text: Option<&str>| text.and_then(|t| mailsolutions_time::parse_iso(t).map(|(at, _)| (at, t.trim().contains(['T', 't', ' ']))));
         let timed = match read(start) {
             Some((at, true)) => at,
             Some((at, false)) => clock(at.date),
@@ -1362,7 +1362,7 @@ mod event {
                     .mailbox
                     .contacts
                     .values()
-                    .filter(|k| (k.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts) && k.matches(&typed))
+                    .filter(|k| (k.contactsolutions_id.is_empty() != s.prefs.contactsolutions_contacts) && k.matches(&typed))
                     .filter_map(|k| k.address())
                     .filter(Address::is_valid);
                 match (hits.next(), hits.next()) {
@@ -1400,7 +1400,7 @@ mod event {
                     .mailbox
                     .contacts
                     .values()
-                    .find(|c| (c.contactcraft_id.is_empty() != s.prefs.contactcraft_contacts) && c.has_email(&who.email))
+                    .find(|c| (c.contactsolutions_id.is_empty() != s.prefs.contactsolutions_contacts) && c.has_email(&who.email))
                     .map(|c| c.name())
                     .filter(|name| !name.trim().is_empty());
                 contact.unwrap_or_else(|| who.email.clone())
@@ -2096,7 +2096,7 @@ mod event {
                     Some(Value::Null) => None,
                     Some(v) => v.as_u64().map(|m| u32::try_from(m.min(40_320)).unwrap_or(0)).or(s.prefs.default_reminder),
                     // A whole day reminds the afternoon before, as `calendar.new` has it.
-                    None if all_day => s.prefs.default_reminder.map(|_| mailcraft_engine::cmd::calendar::ALL_DAY_REMINDER),
+                    None if all_day => s.prefs.default_reminder.map(|_| mailsolutions_engine::cmd::calendar::ALL_DAY_REMINDER),
                     None => s.prefs.default_reminder,
                 },
                 reminder_set: p.get("reminder").is_some(),
@@ -2107,7 +2107,7 @@ mod event {
                     .get("calendar")
                     .and_then(Value::as_u64)
                     .filter(|c| s.mailbox.calendar(*c).is_some())
-                    .unwrap_or_else(|| mailcraft_engine::cmd::calendar::current_calendar(s)),
+                    .unwrap_or_else(|| mailsolutions_engine::cmd::calendar::current_calendar(s)),
                 categories: p
                     .get("categories")
                     .and_then(Value::as_array)
@@ -2141,7 +2141,7 @@ mod event {
         /// The form for an existing event: the one `p.id` names, else the selected one.
         pub fn edit(s: &Session, p: &Value) -> Option<EventForm> {
             // As the command reads it (#553): one named wrongly opens nothing, never the selected one.
-            let id = mailcraft_engine::p::id_strict(p, "id").ok()?.or(s.sel.event)?;
+            let id = mailsolutions_engine::p::id_strict(p, "id").ok()?.or(s.sel.event)?;
             let e = s.mailbox.event(id)?;
             let line =
                 |optional: bool| format_list(&e.attendees.iter().filter(|a| a.optional == optional).map(|a| a.address.clone()).collect::<Vec<_>>());
@@ -2150,7 +2150,7 @@ mod event {
                 id: Some(id),
                 meeting: e.is_meeting(),
                 was_meeting: e.is_meeting(),
-                guest: e.origin.guest && mailcraft_engine::cmd::remote::keeper(&s.mailbox, &e.origin).is_some(),
+                guest: e.origin.guest && mailsolutions_engine::cmd::remote::keeper(&s.mailbox, &e.origin).is_some(),
                 title: e.title.clone(),
                 location: e.location.clone(),
                 required: line(false),
@@ -2168,13 +2168,15 @@ mod event {
                 options: e.response_options,
                 online: e.online.is_some(),
                 // (Made by its server: one that is still on its way there can be taken back.)
-                online_made: e.online.is_some() && !e.origin.id.is_empty() && mailcraft_engine::cmd::remote::keeper(&s.mailbox, &e.origin).is_some(),
+                online_made: e.online.is_some()
+                    && !e.origin.id.is_empty()
+                    && mailsolutions_engine::cmd::remote::keeper(&s.mailbox, &e.origin).is_some(),
                 join_url: e.join_link().unwrap_or_default().to_string(),
                 proposals: e.proposals.len(),
                 shown_zone: s.zone().id(),
                 ..Default::default()
             };
-            let here = |instant: mailcraft_time::Timestamp| s.offset_at(instant);
+            let here = |instant: mailsolutions_time::Timestamp| s.offset_at(instant);
             // Which of a series is meant, when that is said: one occurrence shows on its own day.
             // (The day that is said is the day the occurrence starts on here; the series names
             // it by a day of its own, which is another on some nights for a series that repeats
@@ -2209,13 +2211,14 @@ mod event {
             // Opened to take up another time somebody proposed: that time is in its fields, for
             // the owner to send as an update (or not). Nothing is changed by opening it.
             if let Some(proposed) = p.get("proposed") {
-                let time = |key: &str| proposed.get(key).and_then(Value::as_str).and_then(|text| mailcraft_time::parse_iso(text).map(|(at, _)| at));
+                let time =
+                    |key: &str| proposed.get(key).and_then(Value::as_str).and_then(|text| mailsolutions_time::parse_iso(text).map(|(at, _)| at));
                 if let (Some(mut start), Some(mut end)) = (time("start"), time("end")) {
                     // (It is said by the clock here. A form that shows its times by the clocks of
                     // the event's own zones shows that moment by those.)
                     if let (false, Some(zone)) = (e.all_day, e.zone()) {
                         let ends_in = e.zone_of_end().unwrap_or(zone);
-                        let moment = |wall: DateTime| mailcraft_model::zoned::instant_at(wall, &here);
+                        let moment = |wall: DateTime| mailsolutions_model::zoned::instant_at(wall, &here);
                         (start, end) = (zone.wall(moment(start)), ends_in.wall(moment(end)));
                     }
                     f.take_proposal(start, end, s.prefs.twelve_hour);
@@ -2480,7 +2483,7 @@ mod event {
                 }
             }
             if self.id.is_none() && !self.reminder_set {
-                self.reminder = if on { default_reminder.map(|_| mailcraft_engine::cmd::calendar::ALL_DAY_REMINDER) } else { default_reminder };
+                self.reminder = if on { default_reminder.map(|_| mailsolutions_engine::cmd::calendar::ALL_DAY_REMINDER) } else { default_reminder };
             }
             // A new whole-day event shows as Free, a new one with times as Busy, until the
             // owner says otherwise.
@@ -2603,7 +2606,7 @@ mod event {
 
         /// When the fields say the event starts and ends, as instants: each time by the clock
         /// of its own zone. `None` when they don't read, or the zones are not known.
-        fn instants(&self) -> Option<(mailcraft_time::Timestamp, mailcraft_time::Timestamp)> {
+        fn instants(&self) -> Option<(mailsolutions_time::Timestamp, mailsolutions_time::Timestamp)> {
             let (start, end) = (self.start()?, self.end()?);
             Some((self.zone_of(&self.start_zone)?.instant(start), self.zone_of(&self.end_zone)?.instant(end)))
         }
@@ -2662,7 +2665,8 @@ mod event {
                 }
                 // What it opened with reads by the new clock too: it is the same event.
                 let stamp_of = |text: &str| {
-                    mailcraft_time::parse_iso(text).map(|(at, _)| stamp(&was.wall_in(at, now).date.iso(), &was.wall_in(at, now).time_short(twelve)))
+                    mailsolutions_time::parse_iso(text)
+                        .map(|(at, _)| stamp(&was.wall_in(at, now).date.iso(), &was.wall_in(at, now).time_short(twelve)))
                 };
                 if fresh {
                     self.shown_zone = now.id();
@@ -2897,7 +2901,7 @@ mod event {
             let account = self.category_account(s);
             let listed = s.mailbox.categories_of(account).iter().map(|c| (c.name.clone(), c32(c.color)));
             let off_list = self.categories.iter().filter(|name| s.mailbox.category_of(account, name).is_none());
-            listed.chain(off_list.map(|name| (name.clone(), c32(mailcraft_model::GREY_CATEGORY)))).take(200).collect()
+            listed.chain(off_list.map(|name| (name.clone(), c32(mailsolutions_model::GREY_CATEGORY)))).take(200).collect()
         }
 
         /// The window's own bar. The key of the button that was clicked.
@@ -2994,7 +2998,7 @@ mod event {
             // A Teams meeting: the link to join it by, as its server gave it. It is shown as it
             // is (where it really leads), copied on request, and followed only on a click.
             if self.online {
-                row(ui, tl!("Teams meeting"), |ui| match mailcraft_model::OnlineMeeting::clean_link(&self.join_url) {
+                row(ui, tl!("Teams meeting"), |ui| match mailsolutions_model::OnlineMeeting::clean_link(&self.join_url) {
                     Some(link) => {
                         if ui.button(tl!("Join")).on_hover_text(link.as_str()).clicked() {
                             asked = Some("join");
@@ -3256,7 +3260,7 @@ mod event {
                 Some("importanceLow") => self.importance = if self.importance == Importance::Low { Importance::Normal } else { Importance::Low },
                 // A Teams meeting is made by the server of the calendar the meeting is in: where
                 // that can't make one, the button says so and nothing is switched on.
-                Some("teams") => match mailcraft_engine::cmd::calendar::teams_refusal(&app.session, self.calendar).filter(|_| !self.online) {
+                Some("teams") => match mailsolutions_engine::cmd::calendar::teams_refusal(&app.session, self.calendar).filter(|_| !self.online) {
                     Some(why) => self.error = tl!(why.as_str()).to_string(),
                     None => {
                         self.online = !self.online;
@@ -3430,9 +3434,9 @@ mod contact {
     use std::hash::Hash;
 
     use egui::Ui;
-    use mailcraft_engine::Session;
-    use mailcraft_model::{ContactKey, Id, Labeled, PostalAddress};
-    use mailcraft_time::Date;
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::{ContactKey, Id, Labeled, PostalAddress};
+    use mailsolutions_time::Date;
     use serde_json::{Map, Value, json};
 
     use super::kit::{Pass, body, category_chips, changes, date_hint, date_ok, date_value, error, footer, multiline, object, row, shown, tall_row};
@@ -3553,7 +3557,7 @@ mod contact {
         /// Add a Public key from a file to the card (Add from file…), when there is room and it
         /// isn't there already.
         pub fn add_key(&mut self, key: ContactKey) -> Result<(), String> {
-            if self.keys.len() >= mailcraft_model::Contact::MAX_KEYS {
+            if self.keys.len() >= mailsolutions_model::Contact::MAX_KEYS {
                 return Err(tl!("A contact's card keeps at most 32 certificates and keys").to_string());
             }
             if self.keys.iter().any(|k| k.key().data == key.data) {
@@ -3610,7 +3614,7 @@ mod contact {
                 notes: c.notes.clone(),
                 categories: c.categories.clone(),
                 favorite: c.favorite,
-                keys: c.keys.iter().take(mailcraft_model::Contact::MAX_KEYS).cloned().enumerate().map(|(i, k)| CardKey::Had(i, k)).collect(),
+                keys: c.keys.iter().take(mailsolutions_model::Contact::MAX_KEYS).cloned().enumerate().map(|(i, k)| CardKey::Had(i, k)).collect(),
                 focus: true,
                 ..Default::default()
             };
@@ -3822,10 +3826,10 @@ mod contact {
 /// The task form.
 mod task {
     use egui::Ui;
-    use mailcraft_engine::Session;
-    use mailcraft_engine::cmd::{tasks, tasks_remote};
-    use mailcraft_model::{Id, Importance};
-    use mailcraft_time::{Date, time_short};
+    use mailsolutions_engine::Session;
+    use mailsolutions_engine::cmd::{tasks, tasks_remote};
+    use mailsolutions_model::{Id, Importance};
+    use mailsolutions_time::{Date, time_short};
     use serde_json::{Map, Value, json};
 
     use super::kit::{
@@ -3836,7 +3840,7 @@ mod task {
 
     /// The Monday after `today`'s week: where "Next week" puts a date.
     pub fn next_week(today: Date) -> Date {
-        today.start_of_week(mailcraft_time::Weekday::Mon).add_days(7)
+        today.start_of_week(mailsolutions_time::Weekday::Mon).add_days(7)
     }
 
     /// The quick choices after a date field: today, tomorrow, next week, no date.
@@ -4150,8 +4154,8 @@ mod account {
 /// The Categories dialog: recolour, rename, delete, add.
 mod categories {
     use egui::{Ui, vec2};
-    use mailcraft_engine::Session;
-    use mailcraft_model::{AccountKind, Category, Id, Mailbox, Rgb};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::{AccountKind, Category, Id, Mailbox, Rgb};
     use serde_json::{Value, json};
 
     use super::kit::{ROW_H, body, close_button, error, field_id, shown};
@@ -4205,7 +4209,7 @@ mod categories {
             let named = match params.get("account") {
                 None | Some(Value::Null) => None,
                 Some(a) if a.as_u64() == Some(0) => Some(0),
-                Some(_) => Some(mailcraft_engine::cmd::category::list_account(s, params).ok()?),
+                Some(_) => Some(mailsolutions_engine::cmd::category::list_account(s, params).ok()?),
             };
             let account = named
                 .or_else(|| s.sel.messages.last().and_then(|m| s.mailbox.message(*m)).map(|m| m.account))
@@ -4248,8 +4252,10 @@ mod categories {
             let list = app.session.mailbox.categories_of(self.account).to_vec();
             // Once Outlook's list of categories was read, those not on it say so (R3 spec S18).
             let outlook = app.session.mailbox.server_categories.get(&self.account);
-            let not_outlooks: Vec<bool> =
-                list.iter().map(|c| outlook.is_some_and(|names| !names.iter().any(|o| mailcraft_model::sync::same_category(o, &c.name)))).collect();
+            let not_outlooks: Vec<bool> = list
+                .iter()
+                .map(|c| outlook.is_some_and(|names| !names.iter().any(|o| mailsolutions_model::sync::same_category(o, &c.name))))
+                .collect();
             let mut run: Option<(&'static str, Value)> = None;
             let mut adding = false;
             let mut picked = None;
@@ -4365,9 +4371,9 @@ mod task_place_tests;
 /// The Rules dialog: the rules, Run Rules Now, and a builder for a new rule.
 pub(crate) mod rules {
     use egui::{Align2, Rect, Sense, Ui, pos2, vec2};
-    use mailcraft_engine::Session;
-    use mailcraft_engine::cmd::rules::{NotOnServer, server_cannot, server_cannot_draft};
-    use mailcraft_model::{Action, FolderKind, Id, Importance, Keep, Mailbox, Rule};
+    use mailsolutions_engine::Session;
+    use mailsolutions_engine::cmd::rules::{NotOnServer, server_cannot, server_cannot_draft};
+    use mailsolutions_model::{Action, FolderKind, Id, Importance, Keep, Mailbox, Rule};
     use serde_json::{Value, json};
 
     use super::kit::{Pass, body, close_button, error, row, shown, tall_row};
@@ -4526,8 +4532,8 @@ pub(crate) mod rules {
 
     /// Whether the dialog shows an account's rules: not a shared mailbox's, nor one of a kind this
     /// version doesn't know.
-    fn has_rules(a: &mailcraft_model::Account) -> bool {
-        !a.is_shared() && a.kind != mailcraft_model::AccountKind::Unknown
+    fn has_rules(a: &mailsolutions_model::Account) -> bool {
+        !a.is_shared() && a.kind != mailsolutions_model::AccountKind::Unknown
     }
 
     /// The account the dialog falls back on when none is in view: the first added that has
@@ -4606,7 +4612,7 @@ pub(crate) mod rules {
         if r.account == 0 {
             return tl!("On this computer, for the mail of every account").to_string();
         }
-        // A change the server isn't told of while MailCraft may not change its rules: the server
+        // A change the server isn't told of while MailSolutions may not change its rules: the server
         // still has the rule as it was, and runs it so.
         if r.changed_here() && app.rules_held(r.account) {
             return tl!("On the server, still as it was: your change waits for permission (File › Info)").to_string();
@@ -4679,7 +4685,7 @@ pub(crate) mod rules {
             let words = if r.known() {
                 shown(&describe(mb, r), 600)
             } else {
-                tl!("Made in another program or on the web, with parts MailCraft can't show").to_string()
+                tl!("Made in another program or on the web, with parts MailSolutions can't show").to_string()
             };
             let shade = if r.enabled { t.text } else { t.text_disabled };
             paint_clipped(ui.painter(), pos2(rect.min.x, rect.min.y + 11.0), width, &shown(&r.name, 200), semibold(12.5), shade);
@@ -4701,7 +4707,7 @@ pub(crate) mod rules {
                 }
                 [(only, address)] => {
                     let tip = crate::i18n::fmt(
-                        tl!("Keep this rule on the server of {address}: it then runs there whether MailCraft is open or not, for that account's mail"),
+                        tl!("Keep this rule on the server of {address}: it then runs there whether MailSolutions is open or not, for that account's mail"),
                         &[("address", &shown(address, 80))],
                     );
                     if icon_button(ui, "server", &tip, 14.0, true).clicked() {
@@ -4709,7 +4715,7 @@ pub(crate) mod rules {
                     }
                 }
                 several => {
-                    let tip = tl!("Keep this rule on an account's server: choose which. It then runs there whether MailCraft is open or not, for that account's mail");
+                    let tip = tl!("Keep this rule on an account's server: choose which. It then runs there whether MailSolutions is open or not, for that account's mail");
                     let resp = icon_button(ui, "server", tip, 14.0, true);
                     egui::Popup::menu(&resp).show(|ui| {
                         for (id, address) in several {
@@ -4788,7 +4794,7 @@ pub(crate) mod rules {
             }
             self.choose(mb, account);
             let name = crate::i18n::fmt(tl!("{sender} to {folder}"), &[("sender", m.from.display()), ("folder", &target.name)]);
-            self.name = name.chars().take(mailcraft_model::MAX_NAME).collect();
+            self.name = name.chars().take(mailsolutions_model::MAX_NAME).collect();
             self.conds = vec![Cond { kind: When::From, text: sender.to_string(), ..Default::default() }];
             self.acts = vec![Act { kind: Do::Move, folder, ..self.fresh_action() }];
             self.open = true;
@@ -4902,7 +4908,7 @@ pub(crate) mod rules {
             // this computer alone has none).
             let place = mb
                 .account(account)
-                .filter(|a| self.open && a.kind != mailcraft_model::AccountKind::Local)
+                .filter(|a| self.open && a.kind != mailsolutions_model::AccountKind::Local)
                 .map(|a| (a.email.clone(), server_cannot_draft(&app.session, &self.command().1)));
             let mut run: Option<(&'static str, Value)> = None;
             let mut chosen = None;
@@ -4924,7 +4930,7 @@ pub(crate) mod rules {
                 }
                 let mark_of = |id: Id| marks.iter().find(|(m, _)| *m == id).map(|(_, m)| m.as_str()).unwrap_or("");
                 if on_server {
-                    heading(ui, t, tl!("On the server"), tl!("Run by the server as mail arrives, whether MailCraft is open or not"));
+                    heading(ui, t, tl!("On the server"), tl!("Run by the server as mail arrives, whether MailSolutions is open or not"));
                     for (i, r) in there.iter().enumerate() {
                         // A rule waiting to go stands after those the server has, and moves among them once it is there.
                         let up = i > 0 && there.get(i - 1).is_some_and(|p| p.on_server() == r.on_server());
@@ -4938,13 +4944,13 @@ pub(crate) mod rules {
                     if gone > 0 {
                         let said = tln!(
                             gone,
-                            "{n} rule deleted here is still on the server until MailCraft may change the server's rules (File › Info › Ask again).",
-                            "{n} rules deleted here are still on the server until MailCraft may change the server's rules (File › Info › Ask again)."
+                            "{n} rule deleted here is still on the server until MailSolutions may change the server's rules (File › Info › Ask again).",
+                            "{n} rules deleted here are still on the server until MailSolutions may change the server's rules (File › Info › Ask again)."
                         );
                         ui.label(egui::RichText::new(said).color(t.orange).size(11.5));
                     }
                     ui.add_space(6.0);
-                    heading(ui, t, tl!("On this computer"), tl!("Run by MailCraft as mail arrives, while it is open"));
+                    heading(ui, t, tl!("On this computer"), tl!("Run by MailSolutions as mail arrives, while it is open"));
                 }
                 for (i, r) in here.iter().enumerate() {
                     rule_row(ui, app, r, mark_of(r.id), (i > 0, i + 1 < here.len()), account, &servers, &mut run);
@@ -5144,24 +5150,24 @@ pub(crate) mod rules {
                 });
                 let (said, warn) = match cannot {
                     Some(NotOnServer::NoServer) => {
-                        (tl!("MailCraft keeps this account's rules on this computer: the rule runs while MailCraft is open.").to_string(), false)
+                        (tl!("MailSolutions keeps this account's rules on this computer: the rule runs while MailSolutions is open.").to_string(), false)
                     }
                     Some(why) => (
                         crate::i18n::fmt(
-                            tl!("This rule can't be kept on the server: {why}. It runs on this computer, while MailCraft is open."),
+                            tl!("This rule can't be kept on the server: {why}. It runs on this computer, while MailSolutions is open."),
                             &[("why", tl!(why.said()))],
                         ),
                         true,
                     ),
                     None if ticked && held => (
-                        tl!("It goes to the server once MailCraft may change the server's rules (File › Info › Ask again); until then it runs on this computer, while MailCraft is open.")
+                        tl!("It goes to the server once MailSolutions may change the server's rules (File › Info › Ask again); until then it runs on this computer, while MailSolutions is open.")
                             .to_string(),
                         true,
                     ),
                     None if ticked => {
-                        (tl!("It runs there whether MailCraft is open or not, and shows in Outlook on the web and on your phone.").to_string(), false)
+                        (tl!("It runs there whether MailSolutions is open or not, and shows in Outlook on the web and on your phone.").to_string(), false)
                     }
-                    None => (tl!("It runs on this computer, while MailCraft is open.").to_string(), false),
+                    None => (tl!("It runs on this computer, while MailSolutions is open.").to_string(), false),
                 };
                 // Wrapped within the dialog: a reason can be long.
                 tall_row(ui, "", |ui| {

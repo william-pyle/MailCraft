@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Telling a Digitally signed or Encrypted message by what was read of it (#30): the parts that
 //! S/MIME (RFC 8551) and PGP/MIME (RFC 3156) carry, and OpenPGP armour (RFC 9580 §6.2) in text.
-//! What a message's own MIME says is read by `mailcraft_mime::protection`; this is for a message
+//! What a message's own MIME says is read by `mailsolutions_mime::protection`; this is for a message
 //! of which only the parsed parts are here.
 
 /// Most bytes of a text looked through for armour: a message whose armour starts further in

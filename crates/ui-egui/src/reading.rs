@@ -3,9 +3,9 @@
 //! Reading a message: its header, attachments and body, in the reading pane or in a window of
 //! its own ([`show_message`] is both).
 //!
-//! HTML mail is shown through `mailcraft-html`'s display blocks, never executed: scripts and
+//! HTML mail is shown through `mailsolutions-html`'s display blocks, never executed: scripts and
 //! style sheets don't exist here. What a message may decide is on a short whitelist (colours,
-//! emphasis, alignment, sizes, tables; see `mailcraft-html`), and its colours are checked against
+//! emphasis, alignment, sizes, tables; see `mailsolutions-html`), and its colours are checked against
 //! the window's before they are used ([`colors`]). Pictures attached to the message are decoded
 //! and shown where they belong ([`images`]).
 //!
@@ -53,8 +53,8 @@ mod warnings_tests;
 use std::sync::Arc;
 
 use egui::{Align2, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_html::Block;
-use mailcraft_model::{FlagStatus, Importance, Message, format_list_capped};
+use mailsolutions_html::Block;
+use mailsolutions_model::{FlagStatus, Importance, Message, format_list_capped};
 use serde_json::json;
 
 pub(crate) use invitation::{list_marks, options as invitation_options, question as invitation_question};
@@ -309,7 +309,7 @@ const UNREADABLE_KEPT: usize = 8;
 fn unreadable_line(ui: &mut Ui, m: &Message, t: &Tokens, windows: usize) {
     // Kept for the last few messages shown (the pane and windows), under one key: not one entry
     // in egui's memory for every message ever read.
-    let key = egui::Id::unique("mailcraft-unreadable");
+    let key = egui::Id::unique("mailsolutions-unreadable");
     let this = egui::Id::unique((m.id, m.subject.len(), m.body.text.len(), m.body.html.as_ref().map_or(0, String::len)));
     let known = ui.ctx().data(|d| d.get_temp::<Vec<(egui::Id, bool)>>(key)).unwrap_or_default();
     let unreadable = match known.iter().find(|(of, _)| *of == this) {
@@ -375,12 +375,12 @@ fn quote_message(app: &MailApp, ctx: &egui::Context) -> Option<Arc<Message>> {
     // #602), and, but for an answer, the message's attachments: a forward carries the original's
     // itself, its pictures among them, and so does one opened again as a draft (a picture its
     // HTML calls by a Content-ID written otherwise, `cid:logo%40…`, stays among them).
-    let answer = matches!(c.mode, mailcraft_engine::ComposeMode::Reply | mailcraft_engine::ComposeMode::ReplyAll);
+    let answer = matches!(c.mode, mailsolutions_engine::ComposeMode::Reply | mailsolutions_engine::ComposeMode::ReplyAll);
     let forward = !answer || quote.pictures.is_empty();
-    let attached: &[mailcraft_model::Attachment] = if forward { &c.attachments } else { &[] };
+    let attached: &[mailsolutions_model::Attachment] = if forward { &c.attachments } else { &[] };
     let pictures = || quote.pictures.iter().chain(attached);
     // The same pictures: the same parts, by their ids and their very bytes, in the same order.
-    let same_part = |a: &mailcraft_model::Attachment, b: &mailcraft_model::Attachment| {
+    let same_part = |a: &mailsolutions_model::Attachment, b: &mailsolutions_model::Attachment| {
         a.content_id == b.content_id && a.name == b.name && Arc::ptr_eq(&a.data, &b.data)
     };
     let same = |m: &Arc<Message>| {
@@ -393,7 +393,7 @@ fn quote_message(app: &MailApp, ctx: &egui::Context) -> Option<Arc<Message>> {
         return Some(m.clone());
     }
     let mut m = source.map(|s| (**s).clone()).unwrap_or_default();
-    m.body = mailcraft_model::Body { text: quote.text.clone(), html: Some(quote.html.clone()) };
+    m.body = mailsolutions_model::Body { text: quote.text.clone(), html: Some(quote.html.clone()) };
     m.attachments = pictures().cloned().collect();
     // Its body is the quote's, whole: nothing of it waits on disk.
     m.kept = None;
@@ -408,7 +408,7 @@ fn quote_message(app: &MailApp, ctx: &egui::Context) -> Option<Arc<Message>> {
 
 /// Where the carried originals are kept, in the context the windows share.
 fn quotes_key() -> egui::Id {
-    egui::Id::unique("mailcraft-compose-quote")
+    egui::Id::unique("mailsolutions-compose-quote")
 }
 
 /// The carried originals of messages no longer being written go, with their pictures' bytes:
@@ -518,7 +518,7 @@ fn header(app: &mut MailApp, ui: &mut Ui, m: &Arc<Message>, place: Place, pictur
                     let external = warnings::external(app, m);
                     let tag_room = if external { warnings::external_tag_width(ui, &t) + TAG_GAP } else { 0.0 };
                     let has_address = !m.from.name.is_empty();
-                    let looks_like_address = mailcraft_model::confusables::as_seen(&m.from.name, 1_000).contains('@');
+                    let looks_like_address = mailsolutions_model::confusables::as_seen(&m.from.name, 1_000).contains('@');
                     let name = egui::RichText::new(m.from.display().to_string()).font(semibold(13.0)).color(if looks_like_address {
                         t.orange
                     } else {
@@ -579,7 +579,7 @@ fn header(app: &mut MailApp, ui: &mut Ui, m: &Arc<Message>, place: Place, pictur
                     });
                 }
                 // (`said` is the line in the interface language, with `{names}` still to fill.)
-                let mut line = |ui: &mut Ui, field: select::Field, said: &str, list: &[mailcraft_model::Address]| {
+                let mut line = |ui: &mut Ui, field: select::Field, said: &str, list: &[mailsolutions_model::Address]| {
                     if !list.is_empty() {
                         // (A sender can write thousands of names; the first ones are shown.)
                         let (mut names, more) = format_list_capped(list, SHOWN_NAMES);
@@ -697,7 +697,8 @@ fn gmail_labels(app: &mut MailApp, ui: &mut Ui, m: &Message) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(6.0, 4.0);
         for label in &labels {
-            let text = crate::widgets::label_tag_text(ui.painter(), mailcraft_model::gmail::label_leaf(label), 10.5, crate::widgets::LABEL_TAG_MAX);
+            let text =
+                crate::widgets::label_tag_text(ui.painter(), mailsolutions_model::gmail::label_leaf(label), 10.5, crate::widgets::LABEL_TAG_MAX);
             let (r, response) = ui.allocate_exact_size(vec2(crate::widgets::label_tag_width(&text), 18.0), Sense::hover());
             crate::widgets::paint_label_tag(ui.painter(), pos2(r.min.x, r.center().y), text, 16.0);
             app.hit.add("gmailLabel", m.id, r);
@@ -712,7 +713,7 @@ fn attachments(app: &mut MailApp, ui: &mut Ui, m: &Message, t: &Tokens) {
     // The signature part of a message whose signature was checked (that very part, by its bytes)
     // is what its bar says; it is reached from the bar's Details (#30).
     let signature = app.session.digital_signature_known(m.id).and_then(|_| app.session.digital_signature_part(m.id));
-    let files: Vec<(usize, &mailcraft_model::Attachment)> =
+    let files: Vec<(usize, &mailsolutions_model::Attachment)> =
         m.listed_attachments().filter(|(index, _)| !invitation::stands_for(meeting.as_deref(), *index) && Some(*index) != signature).collect();
     if files.is_empty() {
         return;
@@ -723,7 +724,7 @@ fn attachments(app: &mut MailApp, ui: &mut Ui, m: &Message, t: &Tokens) {
         for (index, a) in files {
             // The name it is opened and saved under, not the one the sender wrote: a right-to-left
             // override can make `fdp.exe` read as `exe.pdf`.
-            let shown = mailcraft_engine::opening::file_name(&a.name);
+            let shown = mailsolutions_engine::opening::file_name(&a.name);
             let name_w = ui.ctx().fonts_mut(|f| f.layout_no_wrap(shown.clone(), regular(12.0), t.text).size().x).min(220.0);
             // The chip, and at its right end a `▾` that opens the menu a right-click opens (#785).
             let (r, _) = ui.allocate_exact_size(vec2(name_w + 44.0 + crate::ribbon::DROP_W, 38.0), Sense::hover());
@@ -760,7 +761,7 @@ fn attachments(app: &mut MailApp, ui: &mut Ui, m: &Message, t: &Tokens) {
             ui.painter().text(
                 pos2(r.min.x + 34.0, r.min.y + 27.0),
                 Align2::LEFT_CENTER,
-                mailcraft_model::size_label_in(crate::i18n::current(), a.size() as u64),
+                mailsolutions_model::size_label_in(crate::i18n::current(), a.size() as u64),
                 regular(10.5),
                 t.text_dim,
             );

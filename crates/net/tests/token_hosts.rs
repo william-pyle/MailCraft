@@ -7,9 +7,9 @@
 
 use std::net::TcpListener;
 
-use mailcraft_model::sync::SyncRequest;
-use mailcraft_model::{Account, AccountKind, OAuth, OAuthProvider, Security, Server};
-use mailcraft_net::token_may_go_to;
+use mailsolutions_model::sync::SyncRequest;
+use mailsolutions_model::{Account, AccountKind, OAuth, OAuthProvider, Security, Server};
+use mailsolutions_net::token_may_go_to;
 
 /// Every provider. (A new one fails to build here until it has its row.)
 fn providers() -> Vec<OAuthProvider> {
@@ -112,18 +112,18 @@ fn a_microsoft_account_at_a_loopback_server_is_refused_before_anything_connects(
         }
         // Send/Receive (IMAP) with a token in hand.
         let request = SyncRequest { account: a.clone(), access_token: "dummy-access-token".into(), ..Default::default() };
-        let result = mailcraft_net::sync(&request);
+        let result = mailsolutions_net::sync(&request);
         assert!(result.errors.iter().any(|e| e.contains("Microsoft")), "{host}: {:?}", result.errors);
         assert!(result.errors.iter().all(|e| !e.contains("dummy-access-token")));
         // Sending one message (SMTP).
-        let message = mailcraft_model::Message {
-            from: mailcraft_model::Address::new("Avery", "avery@mail.example"),
-            to: vec![mailcraft_model::Address::new("Bo", "bo@example.org")],
+        let message = mailsolutions_model::Message {
+            from: mailsolutions_model::Address::new("Avery", "avery@mail.example"),
+            to: vec![mailsolutions_model::Address::new("Bo", "bo@example.org")],
             subject: "Hello".into(),
-            body: mailcraft_model::Body { text: "Hi".into(), html: None },
+            body: mailsolutions_model::Body { text: "Hi".into(), html: None },
             ..Default::default()
         };
-        let sent = mailcraft_net::send(&a, "dummy-access-token", &message).unwrap_err().to_string();
+        let sent = mailsolutions_net::send(&a, "dummy-access-token", &message).unwrap_err().to_string();
         assert!(sent.contains("Microsoft"), "{host}: {sent}");
         // Nothing reached the listener either way.
         assert_eq!(listener.accept().map(|_| ()).map_err(|e| e.kind()), Err(std::io::ErrorKind::WouldBlock), "{host}");

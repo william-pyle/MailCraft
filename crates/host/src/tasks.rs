@@ -5,19 +5,19 @@
 //! is to be asked), what waits to go up told to the server, then the lists and tasks read whole.
 //! Nothing of a task is logged.
 //!
-//! What to run and when is the engine's ([`mailcraft_engine::sync_driver`]); what the answer
-//! means for the mailbox is [`mailcraft_engine::cmd::tasks_remote`], applied by the front end.
+//! What to run and when is the engine's ([`mailsolutions_engine::sync_driver`]); what the answer
+//! means for the mailbox is [`mailsolutions_engine::cmd::tasks_remote`], applied by the front end.
 
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_model::remote_tasks::{TasksDownload, TasksUpload, TasksUploaded};
-use mailcraft_model::sync::Tokens;
-use mailcraft_model::{Account, AccountKind, Id, OAuth};
+use mailsolutions_model::remote_tasks::{TasksDownload, TasksUpload, TasksUploaded};
+use mailsolutions_model::sync::Tokens;
+use mailsolutions_model::{Account, AccountKind, Id, OAuth};
 #[cfg(not(target_arch = "wasm32"))]
-use mailcraft_net::oauth::{GraphTokens, Resource};
+use mailsolutions_net::oauth::{GraphTokens, Resource};
 #[cfg(not(target_arch = "wasm32"))]
-use mailcraft_net::{NetError, graph};
+use mailsolutions_net::{NetError, graph};
 
 /// What the host is asked to do for one account's to-dos.
 pub struct TasksJob {
@@ -28,9 +28,9 @@ pub struct TasksJob {
     pub refresh: String,
     /// What the server is to be told first.
     pub upload: TasksUpload,
-    /// The zone the calendar is shown in ([`mailcraft_engine::Session::zone`]): a to-do's start
+    /// The zone the calendar is shown in ([`mailsolutions_engine::Session::zone`]): a to-do's start
     /// and due dates are days there, read from and sent to the server as its midnights (#809).
-    pub zone: mailcraft_time::Zone,
+    pub zone: mailsolutions_time::Zone,
     pub cancel: Arc<AtomicBool>,
 }
 
@@ -51,7 +51,7 @@ pub struct TasksResult {
     pub errors: Vec<String>,
 }
 
-// The browser can't open sockets: `mailcraft_net` is empty there, so only the job's data (above) builds.
+// The browser can't open sockets: `mailsolutions_net` is empty there, so only the job's data (above) builds.
 
 /// How a to-do job's account has its mail: what a no for the to-dos is checked against (#520).
 #[cfg(not(target_arch = "wasm32"))]
@@ -64,13 +64,13 @@ pub fn mail_resource(account: &Account) -> Resource {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run(job: TasksJob) -> TasksResult {
     let mail = mail_resource(&job.account);
-    run_with(job, &move |oauth, refresh| mailcraft_net::oauth::refresh_graph_tasks(oauth, refresh, mail))
+    run_with(job, &move |oauth, refresh| mailsolutions_net::oauth::refresh_graph_tasks(oauth, refresh, mail))
 }
 
 /// [`run`], with how the token is had as `renew` (the tests' own, which asks nobody).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_with(job: TasksJob, renew: &dyn Fn(&OAuth, &str) -> Result<GraphTokens, NetError>) -> TasksResult {
-    use mailcraft_model::remote_tasks::TaskResult;
+    use mailsolutions_model::remote_tasks::TaskResult;
     let mut out = TasksResult { account: job.account.id, ..Default::default() };
     let access = match renew(&job.oauth, &job.refresh) {
         Ok(got) => {

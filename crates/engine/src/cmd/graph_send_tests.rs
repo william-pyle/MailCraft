@@ -3,8 +3,8 @@
 //! What a Microsoft account sends: only what the owner queued here (AU2-V2), and a saved draft
 //! as the owner has it, every field and attachment (AU2-14). Invented people and servers.
 
-use mailcraft_model::sync::{DraftState, FolderListing, GraphFolder, ServerDraft, ServerMessage};
-use mailcraft_model::{Address, Attachment, FolderKind, Message, ServerFolder};
+use mailsolutions_model::sync::{DraftState, FolderListing, GraphFolder, ServerDraft, ServerMessage};
+use mailsolutions_model::{Address, Attachment, FolderKind, Message, ServerFolder};
 use serde_json::json;
 
 use super::*;
@@ -107,8 +107,8 @@ fn the_servers_outbox_listed_before_goes_once_the_listing_leaves_it_out() {
 fn a_draft_saved_here_and_queued_is_still_sent() {
     let (mut s, account, outbox) = setup();
     let id = queued(&mut s, account, outbox, "Saved", delivered());
-    // Saved as a draft by MailCraft (its marker), then queued to send.
-    s.mailbox.message_mut(id).unwrap().server_draft = Some(ServerDraft { marker: "mailcraft-draft-7".into(), ..Default::default() });
+    // Saved as a draft by MailSolutions (its marker), then queued to send.
+    s.mailbox.message_mut(id).unwrap().server_draft = Some(ServerDraft { marker: "mailsolutions-draft-7".into(), ..Default::default() });
     assert_eq!(subjects(&s, account), ["Saved"]);
 }
 
@@ -125,8 +125,8 @@ fn a_saved_draft_goes_up_whole_before_it_is_sent() {
     // What the server last had is what is here: nothing differs, so nothing would be named.
     let state = DraftState::of(s.mailbox.message(id).unwrap());
     s.mailbox.message_mut(id).unwrap().server_draft =
-        Some(ServerDraft { marker: "mailcraft-draft-7".into(), synced: Some(state), ..Default::default() });
-    let draft = mailcraft_model_draft(&s, id);
+        Some(ServerDraft { marker: "mailsolutions-draft-7".into(), synced: Some(state), ..Default::default() });
+    let draft = mailsolutions_model_draft(&s, id);
     assert!(draft.has_fields());
     assert_eq!((draft.subject.as_deref(), draft.bcc.as_ref().map(Vec::len)), (Some("Rota"), Some(0)));
     assert!(draft.body.is_some() && draft.to.is_some() && draft.cc.is_some() && draft.importance.is_some());
@@ -134,7 +134,7 @@ fn a_saved_draft_goes_up_whole_before_it_is_sent() {
     assert!(draft.change_key.is_empty());
 }
 
-fn mailcraft_model_draft(s: &Session, id: Id) -> mailcraft_model::sync::DraftUp {
+fn mailsolutions_model_draft(s: &Session, id: Id) -> mailsolutions_model::sync::DraftUp {
     let ups = sends(s, s.mailbox.message(id).unwrap().account);
     ups.into_iter().find(|up| up.message == id).and_then(|up| up.draft).unwrap()
 }
@@ -151,7 +151,7 @@ fn a_send_whose_answer_never_came_is_held_at_the_next_run() {
     assert!(!mark_sending(&mut s.mailbox, account, &[first]));
     assert!(!mark_sending(&mut s.mailbox, account + 100, &[second]));
     let mut said = Vec::new();
-    assert!(hold_unanswered(&mut s.mailbox, account, mailcraft_i18n::Lang::default(), &mut said));
+    assert!(hold_unanswered(&mut s.mailbox, account, mailsolutions_i18n::Lang::default(), &mut said));
     let m = s.mailbox.message(first).unwrap();
     assert_eq!((m.sending, m.held.as_str()), (false, MAY_HAVE_GONE));
     assert_eq!(said, ["'First' may have been sent: look in Sent Items. It is held in the Outbox."]);
@@ -170,7 +170,7 @@ fn a_send_whose_answer_was_taken_in_is_not_held() {
     mark_sending(&mut s.mailbox, account, &[first]);
     assert!(sending_answered(&mut s.mailbox, account));
     let mut said = Vec::new();
-    assert!(!hold_unanswered(&mut s.mailbox, account, mailcraft_i18n::Lang::default(), &mut said));
+    assert!(!hold_unanswered(&mut s.mailbox, account, mailsolutions_i18n::Lang::default(), &mut said));
     assert!(said.is_empty());
     assert_eq!(subjects(&s, account), ["First"]);
 }
@@ -200,7 +200,7 @@ fn only_what_is_still_in_the_outbox_is_held() {
     // (As a file written by a version that left the mark on.)
     s.mailbox.message_mut(stray).unwrap().folder = sent_items;
     let mut said = Vec::new();
-    assert!(hold_unanswered(&mut s.mailbox, account, mailcraft_i18n::Lang::default(), &mut said));
+    assert!(hold_unanswered(&mut s.mailbox, account, mailsolutions_i18n::Lang::default(), &mut said));
     for id in [moved, stray] {
         let m = s.mailbox.message(id).unwrap();
         assert_eq!((m.sending, m.held.as_str()), (false, ""));
@@ -216,7 +216,7 @@ fn each_send_the_answer_accounts_for_loses_its_mark() {
     let busy = queued(&mut s, account, outbox, "Busy", None);
     let untold = queued(&mut s, account, outbox, "Untold", None);
     mark_sending(&mut s.mailbox, account, &[refused, busy, untold]);
-    let lang = mailcraft_i18n::Lang::default();
+    let lang = mailsolutions_i18n::Lang::default();
     let mut said = Vec::new();
     for (message, outcome) in [(refused, SendOutcome::Held { lost: false, why: "no recipients".into() }), (busy, SendOutcome::Waits)] {
         send_done(&mut s.mailbox, account, &SendDone { message, outcome, draft: None, draft_left: String::new() }, lang, &mut said);
@@ -233,7 +233,7 @@ fn a_lost_answer_says_to_look_in_sent_items() {
     let lost = queued(&mut s, account, outbox, "Lost", None);
     let done = SendDone { message: lost, outcome: SendOutcome::Held { lost: true, why: String::new() }, draft: None, draft_left: String::new() };
     let mut said = Vec::new();
-    assert!(send_done(&mut s.mailbox, account, &done, mailcraft_i18n::Lang::default(), &mut said));
+    assert!(send_done(&mut s.mailbox, account, &done, mailsolutions_i18n::Lang::default(), &mut said));
     assert_eq!(said, ["'Lost' may have been sent: look in Sent Items. It is held in the Outbox."]);
     let held = &s.mailbox.message(lost).unwrap().held;
     assert_eq!(held, "It may have been sent: the answer from Microsoft was lost. Look in Sent Items before you send it again.");
@@ -251,7 +251,7 @@ fn a_held_answer_for_the_servers_own_mail_doesnt_make_it_the_owners() {
     let done =
         SendDone { message: theirs, outcome: SendOutcome::Held { lost: false, why: "declined".into() }, draft: None, draft_left: String::new() };
     let mut said = Vec::new();
-    send_done(&mut s.mailbox, account, &done, mailcraft_i18n::Lang::default(), &mut said);
+    send_done(&mut s.mailbox, account, &done, mailsolutions_i18n::Lang::default(), &mut said);
     assert!(s.mailbox.message(theirs).unwrap().server_draft.as_ref().unwrap().marker.is_empty());
     s.run("mail.sendAgain", &json!({"id": theirs})).unwrap();
     assert!(subjects(&s, account).is_empty());

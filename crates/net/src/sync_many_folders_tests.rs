@@ -3,8 +3,8 @@
 //! #991: an IMAP account with thousands of folders has them all read, up to 10,000, in their
 //! tree, and is told how many more there were.
 
-use mailcraft_model::sync::ListedFolder;
-use mailcraft_model::{AccountKind, Server};
+use mailsolutions_model::sync::ListedFolder;
+use mailsolutions_model::{AccountKind, Server};
 
 use super::*;
 use crate::fake::{Fake, FakeImap, FakeMailbox, FakeMessage, ImapWorld};

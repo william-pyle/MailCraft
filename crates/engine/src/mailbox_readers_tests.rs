@@ -55,5 +55,5 @@ fn every_mailbox_reader_reads_within_the_budget() {
             }
         }
     }
-    assert!(found.is_empty(), "read a mailbox file with `mailcraft_model::load_limit::read_json` instead:\n{}", found.join("\n"));
+    assert!(found.is_empty(), "read a mailbox file with `mailsolutions_model::load_limit::read_json` instead:\n{}", found.join("\n"));
 }

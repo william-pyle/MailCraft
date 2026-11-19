@@ -3,7 +3,7 @@
 //! Which messages are taken for calendar sharing invitations (#70): only those with the sharing
 //! headers of a calendar; and the sender's address is checked before it is used.
 
-use mailcraft_model::{Address, Message};
+use mailsolutions_model::{Address, Message};
 
 use super::sharing::{is_calendar_share, sharer};
 

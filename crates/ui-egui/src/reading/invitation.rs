@@ -23,8 +23,8 @@
 use std::sync::{Arc, Mutex};
 
 use egui::{Align2, Color32, Rect, Response, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_model::{Id, Message, ShowAs};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Id, Message, ShowAs};
+use mailsolutions_time::{Date, DateTime};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -60,7 +60,7 @@ const STRIP_HOURS: i64 = 5;
 const PEOPLE_CHARS: usize = 600;
 
 /// What somebody answered: `none`, `accepted`, `tentative`, `declined`.
-type Said = mailcraft_model::Response;
+type Said = mailsolutions_model::Response;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -184,7 +184,7 @@ impl Info {
 
 /// A wall-clock time as the engine writes it (`2026-10-15T10:00:00`).
 fn time_of(text: &str) -> Option<DateTime> {
-    mailcraft_time::parse_iso(text).map(|(at, _)| at)
+    mailsolutions_time::parse_iso(text).map(|(at, _)| at)
 }
 
 /// When a meeting is: from `start` up to `end` (for whole days, the midnight after the last).
@@ -237,13 +237,13 @@ struct Kept {
 
 impl Store {
     fn of(ctx: &egui::Context) -> Arc<Mutex<Store>> {
-        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Store>>>(egui::Id::unique("mailcraft-reading-invitations")).clone())
+        ctx.data_mut(|d| d.get_temp_mut_or_default::<Arc<Mutex<Store>>>(egui::Id::unique("mailsolutions-reading-invitations")).clone())
     }
 }
 
 /// Whether an attachment is a calendar part: what the engine looks for a meeting in. (Asked of
 /// every row of the message list in every frame: nothing is copied to tell.)
-fn is_calendar(part: &mailcraft_model::Attachment) -> bool {
+fn is_calendar(part: &mailsolutions_model::Attachment) -> bool {
     let kind = part.mime.trim().as_bytes();
     let starts = |with: &[u8]| kind.get(..with.len()).is_some_and(|head| head.eq_ignore_ascii_case(with));
     let name = part.name.as_bytes();
@@ -274,7 +274,7 @@ pub(super) fn info(app: &mut MailApp, ctx: &egui::Context, m: &Message) -> Optio
         }
     }
     // (Asked with the store let go of: the command is the engine's, and may take its time.)
-    let began = mailcraft_time::Stopwatch::start();
+    let began = mailsolutions_time::Stopwatch::start();
     let info = engine_says(app, m.id).map(Arc::new);
     let slow = began.so_far() > SLOW;
     let mut store = store.lock().unwrap_or_else(|e| e.into_inner());
@@ -348,7 +348,7 @@ fn look_for(app: &mut MailApp, ctx: &egui::Context, message: Id, info: &Info, as
     let Some(when) = info.when() else { return Err(tl!("This invitation doesn't say when the meeting is.").to_string()) };
     // A shared mailbox's calendar is read once the owner has ticked it (#70), and this meeting
     // is in its main one.
-    if app.session.mailbox.account(info.account).is_some_and(mailcraft_model::Account::is_shared) {
+    if app.session.mailbox.account(info.account).is_some_and(mailsolutions_model::Account::is_shared) {
         let ticked = app.session.mailbox.calendars.iter().any(|c| c.origin.account == info.account && c.origin.id.is_empty() && c.visible);
         if !ticked {
             return Err(tl!("Tick this shared mailbox's calendar in the calendar's folder pane to answer its meeting requests.").to_string());

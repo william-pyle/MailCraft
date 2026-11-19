@@ -5,8 +5,8 @@
 //! Read-only: the session's own view (the folder in view, its filter, search and selection) is
 //! as it was when the query is answered, so a list drawn here never moves the desktop's state.
 
-use mailcraft_engine::{Filter, Scope, Session};
-use mailcraft_model::GmailCategory;
+use mailsolutions_engine::{Filter, Scope, Session};
+use mailsolutions_model::GmailCategory;
 use serde_json::Value;
 
 use crate::queries::row;
@@ -39,7 +39,7 @@ fn bad(message: &str) -> CoreError {
 
 /// The rows of the list `q` asks for; `conversations` is whether it folds conversations (`None`:
 /// as the session's own view does). The session's view and selection are as they were after.
-fn rows_of(s: &mut Session, q: &ListQuery, conversations: Option<bool>) -> Result<Vec<mailcraft_engine::list::Row>, CoreError> {
+fn rows_of(s: &mut Session, q: &ListQuery, conversations: Option<bool>) -> Result<Vec<mailsolutions_engine::list::Row>, CoreError> {
     let filter: Filter = serde_json::from_value(Value::String(q.filter.clone())).map_err(|_| bad("that filter is not known"))?;
     if s.mailbox.folder(q.folder).is_none() {
         return Err(bad("there is no such folder"));
@@ -48,7 +48,7 @@ fn rows_of(s: &mut Session, q: &ListQuery, conversations: Option<bool>) -> Resul
         None
     } else {
         let category = GmailCategory::parse(&q.split).ok_or_else(|| bad("that Inbox split tab is not known"))?;
-        if !mailcraft_engine::gmail::has_categories(s, q.folder) {
+        if !mailsolutions_engine::gmail::has_categories(s, q.folder) {
             return Err(bad("that folder has no Inbox split"));
         }
         Some((q.folder, category))
@@ -68,7 +68,7 @@ fn rows_of(s: &mut Session, q: &ListQuery, conversations: Option<bool>) -> Resul
         s.view.conversations = on;
     }
     s.view.open.clear();
-    let rows = mailcraft_engine::list::rows(s);
+    let rows = mailsolutions_engine::list::rows(s);
     s.view = saved;
     s.sel.stays = stays;
     Ok(rows)
@@ -96,13 +96,17 @@ impl Core {
 
     /// Every message the row of `id` stands for in the list `query` asks for, newest first (a
     /// conversation's row can stand for more than the ids a window's row carries), at most
-    /// [`mailcraft_engine::p::MAX_IDS`]: what a command on that row names. Empty when the list has no
+    /// [`mailsolutions_engine::p::MAX_IDS`]: what a command on that row names. Empty when the list has no
     /// row for `id` (it changed since the row was read).
     pub async fn row_members(&self, query: ListQuery, id: u64) -> Result<Vec<u64>, CoreError> {
         let (query, bytes) = held(query);
         self.call_holding(bytes, move |s| {
             let rows = rows_of(s, &query, Some(query.conversations))?;
-            Ok(rows.into_iter().find(|r| r.id == id).map(|r| r.members.into_iter().take(mailcraft_engine::p::MAX_IDS).collect()).unwrap_or_default())
+            Ok(rows
+                .into_iter()
+                .find(|r| r.id == id)
+                .map(|r| r.members.into_iter().take(mailsolutions_engine::p::MAX_IDS).collect())
+                .unwrap_or_default())
         })
         .await
     }
@@ -128,7 +132,7 @@ impl Core {
                 return Err(bad("there is no such folder"));
             }
             let rev = s.rev();
-            if !mailcraft_engine::gmail::listed_under(s, folder) {
+            if !mailsolutions_engine::gmail::listed_under(s, folder) {
                 return Ok(InboxSplit { rev, folder, tabs: Vec::new() });
             }
             let counts = s.folder_counts();

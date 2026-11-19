@@ -6,8 +6,8 @@
 
 use egui::{Event, Key, Modifiers};
 use egui_kittest::Harness;
-use mailcraft_engine::Session;
-use mailcraft_model::rich::{ListKind, Selection};
+use mailsolutions_engine::Session;
+use mailsolutions_model::rich::{ListKind, Selection};
 use serde_json::json;
 
 use super::editor;
@@ -19,7 +19,7 @@ const NOW: i64 = 1_791_993_600;
 pub(super) type Window = Harness<'static, MailApp>;
 
 pub(super) fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app
 }
@@ -261,7 +261,7 @@ fn the_formatting_keys_are_the_bodys_only_while_it_has_the_keyboard() {
     a.run("mail.select", json!({"id": id})).unwrap();
     a.run("mail.markRead", json!({"ids": [id]})).unwrap();
     a.run("mail.flag", json!({"ids": [id]})).unwrap();
-    let flagged = |h: &Window| h.state().session.mailbox.message(id).unwrap().flag == mailcraft_model::FlagStatus::Flagged;
+    let flagged = |h: &Window| h.state().session.mailbox.message(id).unwrap().flag == mailsolutions_model::FlagStatus::Flagged;
     let read = |h: &Window| h.state().session.mailbox.message(id).unwrap().read;
     a.run("mail.reply", json!({"id": id})).unwrap();
     a.want_body_focus();
@@ -685,7 +685,7 @@ fn tab_takes_a_list_item_a_level_deeper_and_shift_tab_out() {
     let levels = |h: &Window| h.state().session.compose.as_ref().unwrap().body.text().paragraphs().iter().map(|p| p.level).collect::<Vec<_>>();
     assert_eq!(levels(&h), [0, 1, 1], "Enter goes on at the same level");
     assert_eq!(plain(&h), "one\none.one\none.two", "Tab at an item's start is no tab character");
-    assert_eq!(mailcraft_model::rich::numbers(h.state().session.compose.as_ref().unwrap().body.text().paragraphs()), [1, 1, 2]);
+    assert_eq!(mailsolutions_model::rich::numbers(h.state().session.compose.as_ref().unwrap().body.text().paragraphs()), [1, 1, 2]);
     // Tab inside an item's text is a tab; the ribbon buttons do what the keys do.
     type_in(&mut h, "");
     key(&mut h, Key::Tab);

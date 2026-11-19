@@ -13,7 +13,7 @@
 //! and hours that are not hours (no days, a time that isn't one, an end before the start) are
 //! no hours at all.
 
-use mailcraft_time::Weekday;
+use mailsolutions_time::Weekday;
 use serde_json::Value;
 
 use super::{ASK_TIMEOUT, DAYS, Doing, Graph, code_of, nonsense, text};

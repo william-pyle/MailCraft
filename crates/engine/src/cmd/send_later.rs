@@ -5,7 +5,7 @@
 //! A message in an Outbox may carry a **Send time** ([`Message::send_at`]). The runs that send
 //! from an Outbox leave out what waits for it ([`Message::waits_until`], asked with the clock's
 //! `now` at each run), for every kind of account; nothing else decides. So a message waits across
-//! a restart, goes at the next run after its time when MailCraft wasn't running then, and never
+//! a restart, goes at the next run after its time when MailSolutions wasn't running then, and never
 //! goes early: a clock set back only makes it wait longer.
 //!
 //! - `compose.delay` (Options › Delay Delivery) gives the message being written a time;
@@ -15,10 +15,10 @@
 //! - **Undo Send** is the same mechanism: with `sync.waitBeforeSending` on, Send gives the message a
 //!   time a few seconds ahead, and `compose.undoSend` takes it back while it has not come.
 //!
-//! A Microsoft account's message waits here too and is sent by MailCraft at its time: the server
+//! A Microsoft account's message waits here too and is sent by MailSolutions at its time: the server
 //! is not asked to hold it. Nothing here touches a server.
 
-use mailcraft_model::{FolderKind, Id, Message};
+use mailsolutions_model::{FolderKind, Id, Message};
 use serde_json::{Value, json};
 
 use super::{bad, fail, needs_compose};
@@ -28,7 +28,7 @@ use crate::{CmdError, CmdResult, CommandSpec, Prefs, Session, p};
 pub const MIN_AHEAD: i64 = 60;
 /// How far ahead a Send time may be: a year (and a day).
 pub const MAX_AHEAD: i64 = 366 * 24 * 3600;
-/// A message that goes this long after its Send time went late (MailCraft wasn't running, or the
+/// A message that goes this long after its Send time went late (MailSolutions wasn't running, or the
 /// computer slept): the status bar says so.
 pub const LATE_AFTER: i64 = 120;
 
@@ -39,7 +39,7 @@ pub fn specs() -> Vec<CommandSpec> {
             .params(r#"{"at": number | null} — the message being written is not sent before this time (seconds since 1970, in the future and within a year); null takes the delay off. Kept with its draft. Answers {"sendAt": number | null}"#)
             .when_writing(needs_compose),
         CommandSpec::new("compose.sendLater", "Send Later", "Message", send_later)
-            .params(r#"{"at": number} — Send, but not before that time (seconds since 1970, in the future and within a year): the message waits in the Outbox, can be changed or cancelled there, and goes at its time if MailCraft is running, else at the next run after it. Answers as Send does, with "sendAt""#)
+            .params(r#"{"at": number} — Send, but not before that time (seconds since 1970, in the future and within a year): the message waits in the Outbox, can be changed or cancelled there, and goes at its time if MailSolutions is running, else at the next run after it. Answers as Send does, with "sendAt""#)
             .when_writing(needs_compose),
         CommandSpec::new("mail.setSendTime", "Change Send Time", "Mail", set_time)
             .params(r#"{"id": number, "at": number | null} — a message waiting in the Outbox goes not before `at` (seconds since 1970, in the future and within a year); null lets it go at the next run. One that is being sent, held, or that the server delivered is refused. Answers {"id", "sendAt"}"#),
@@ -186,7 +186,7 @@ pub struct SendLaterNote {
     pub next: Option<i64>,
     pub waiting: usize,
     /// Messages whose time came more than [`LATE_AFTER`] seconds ago and that haven't gone yet:
-    /// MailCraft wasn't running, or the computer slept, and they go now.
+    /// MailSolutions wasn't running, or the computer slept, and they go now.
     pub late: usize,
     /// The account of one of the late messages, for saying why it didn't go.
     pub late_account: Option<Id>,

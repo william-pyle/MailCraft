@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, PoisonError};
 
-use mailcraft_model::sync::Tokens;
+use mailsolutions_model::sync::Tokens;
 
 use crate::signin::{
     Ending, Endpoints, FavoritesRefusal, NetError, Page, SignIns, Why, forget, hint_of, keep_refresh, page, renewed, sensible_email,

@@ -15,8 +15,8 @@ use egui::accesskit::Role;
 use egui::{Event, Key, Modifiers, OutputCommand, PointerButton, Pos2, Rect, vec2};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
-use mailcraft_engine::Session;
-use mailcraft_model::rich::Selection;
+use mailsolutions_engine::Session;
+use mailsolutions_model::rich::Selection;
 use serde_json::json;
 
 use crate::dialogs::Dialog;
@@ -89,7 +89,7 @@ fn select_all() -> String {
 }
 
 fn app(board: Option<&Board>) -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.services.clipboard = board.map(|b| Box::new(b.clone()) as Box<dyn RichClipboard>);
     a
@@ -557,7 +557,7 @@ fn natively(h: &mut Window) -> Rc<RefCell<Native>> {
 
 /// The viewport of the window numbered `id` (as `windows` names it).
 fn viewport_of(id: u64) -> egui::ViewportId {
-    egui::ViewportId::from_hash_of(("mailcraft-window", id))
+    egui::ViewportId::from_hash_of(("mailsolutions-window", id))
 }
 
 /// A frame of the main window, in which the window of `viewport` gets `events`.
@@ -665,7 +665,7 @@ fn the_folder_search_of_a_menu_keeps_it_open_through_its_menu() {
     let board = Board::holding("Sent");
     let mut a = app(Some(&board));
     let account = a.session.mailbox.default_account().expect("an account").id;
-    let inbox = a.session.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Inbox).expect("an Inbox");
+    let inbox = a.session.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Inbox).expect("an Inbox");
     let first = a.session.mailbox.messages.values().find(|m| m.folder == inbox && !m.draft).expect("a message in the Inbox").id;
     a.execute("mail.select", json!({"id": first})).unwrap();
     let mut h = window(a);
@@ -1574,7 +1574,7 @@ fn a_picture_too_big_for_a_signature_as_it_is_is_made_smaller_by_the_menu_and_ct
     // Within the side a paste takes, but more than a signature keeps as it is (noise doesn't
     // compress): made smaller and added, as the signature's Paste Picture does.
     let big = crate::tests::big_png(400);
-    assert!(big.len() > mailcraft_model::signature::MAX_PICTURE_BYTES);
+    assert!(big.len() > mailsolutions_model::signature::MAX_PICTURE_BYTES);
     for menu in [true, false] {
         let board = Board::default();
         board.0.borrow_mut().image = Some(big.clone());

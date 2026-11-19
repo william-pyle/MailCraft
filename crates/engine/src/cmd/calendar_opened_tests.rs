@@ -3,8 +3,8 @@
 //! #70: calendars opened by address: the commands, what a list from the host does with them, and
 //! that nothing but the owner's own list can bring one in.
 
-use mailcraft_model::remote::{CalendarsDownload, EventsDownload, OpenedRefusal, OpenedWhy, RemoteCalendar, RemoteEvent, opened_id};
-use mailcraft_model::{CalendarOwner, Directory, Id, MAX_OPENED_CALENDARS, Rights};
+use mailsolutions_model::remote::{CalendarsDownload, EventsDownload, OpenedRefusal, OpenedWhy, RemoteCalendar, RemoteEvent, opened_id};
+use mailsolutions_model::{CalendarOwner, Directory, Id, MAX_OPENED_CALENDARS, Rights};
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -46,7 +46,7 @@ fn open(s: &mut Session, address: &str) -> Result<Value, String> {
     s.run("calendar.openShared", &json!({"address": address})).map_err(|e| e.to_string())
 }
 
-fn named(s: &Session, name: &str) -> Option<mailcraft_model::Calendar> {
+fn named(s: &Session, name: &str) -> Option<mailsolutions_model::Calendar> {
     s.mailbox.calendars.iter().find(|c| c.name == name).cloned()
 }
 
@@ -247,7 +247,7 @@ fn an_older_mailbox_and_a_saved_one_keep_the_list() {
     open(&mut s, "cy@example.org").unwrap();
     list(&mut s, account, vec![opened("cy@example.org", "Cy", Rights::Edit)], vec![]);
     let text = serde_json::to_string(&s.mailbox).unwrap();
-    let back: mailcraft_model::Mailbox = serde_json::from_str(&text).unwrap();
+    let back: mailsolutions_model::Mailbox = serde_json::from_str(&text).unwrap();
     assert_eq!(back.account(account).unwrap().opened_calendars, s.mailbox.account(account).unwrap().opened_calendars);
     let calendar = back.calendars.iter().find(|c| c.name == "Cy").unwrap();
     assert_eq!((calendar.rights, calendar.origin.id.as_str()), (Rights::Edit, "user:cy@example.org"));
@@ -330,7 +330,7 @@ fn a_shared_mailboxs_calendar_listed_twice_is_offered_until_answered_and_hidden_
     let said = list(&mut s, account, vec![ops_copy()], vec![]);
     assert!(said["listedTwice"].as_array().unwrap().is_empty() && !has_copy(&s));
     // A save and a reload keep it hidden.
-    let back = mailcraft_model::from_json(&serde_json::to_vec(&s.mailbox).unwrap(), 1_000_000).unwrap();
+    let back = mailsolutions_model::from_json(&serde_json::to_vec(&s.mailbox).unwrap(), 1_000_000).unwrap();
     assert_eq!(back.account(account).unwrap().listed_twice_answer(OPS), Some(true));
 
     // Undone, as another calendar setting is: the copy and its events are back.

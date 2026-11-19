@@ -180,7 +180,7 @@ pub mod zones;
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::{Id, Message};
+use mailsolutions_model::{Id, Message};
 use serde_json::{Value, json};
 
 use crate::list::{Row, position_of};
@@ -389,9 +389,9 @@ pub fn message_summary(s: &Session, m: &Message) -> Value {
         "id": m.id,
         "folder": m.folder,
         "from": m.from.full(),
-        "to": mailcraft_model::format_list(&m.to),
+        "to": mailsolutions_model::format_list(&m.to),
         "subject": m.subject,
-        "date": mailcraft_time::format_iso_utc(m.date),
+        "date": mailsolutions_time::format_iso_utc(m.date),
         "received": s.local(crate::list::when(m)).iso(),
         "read": m.read,
         "flag": m.flag,
@@ -413,8 +413,8 @@ pub fn message_summary(s: &Session, m: &Message) -> Value {
 pub fn message_json(s: &Session, m: &Message) -> Value {
     let mut v = message_summary(s, m);
     if let Some(o) = v.as_object_mut() {
-        o.insert("cc".into(), json!(mailcraft_model::format_list(&m.cc)));
-        o.insert("bcc".into(), json!(mailcraft_model::format_list(&m.bcc)));
+        o.insert("cc".into(), json!(mailsolutions_model::format_list(&m.cc)));
+        o.insert("bcc".into(), json!(mailsolutions_model::format_list(&m.bcc)));
         o.insert("messageId".into(), json!(m.message_id));
         o.insert("body".into(), json!(m.body.text));
         // What the sender hid (a preheader, the other copy of a desktop and mobile pair): not shown to
@@ -442,12 +442,12 @@ pub fn message_json(s: &Session, m: &Message) -> Value {
 
 /// Bytes for a command's answer or from its params.
 pub fn base64_encode(bytes: &[u8]) -> String {
-    mailcraft_charset::base64::STANDARD.encode(bytes)
+    mailsolutions_charset::base64::STANDARD.encode(bytes)
 }
 
 pub fn base64_decode(text: &str) -> Result<Vec<u8>, CmdError> {
     let clean: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    mailcraft_charset::base64::STANDARD.decode(clean).map_err(|_| bad("`data` must be base64"))
+    mailsolutions_charset::base64::STANDARD.decode(clean).map_err(|_| bad("`data` must be base64"))
 }
 
 /// Write `bytes` to `path` when the command got one; otherwise hand them back as base64 `data`

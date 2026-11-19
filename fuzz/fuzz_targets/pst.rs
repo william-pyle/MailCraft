@@ -5,13 +5,13 @@
 //! the messages attached to it; and the same bytes as a distribution list's stream of members
 //! ([MS-OXOCNTC] 2.2.2.2.4), which the import reads out of a list. The header's CRCs are put
 //! right first, so that a change to the header reaches what is behind it; the seeds in
-//! `fuzz/seeds/pst/` (made by `cargo test -p mailcraft-pst -- --ignored write_fuzz_seeds`) give
+//! `fuzz/seeds/pst/` (made by `cargo test -p mailsolutions-pst -- --ignored write_fuzz_seeds`) give
 //! the rest its shape.
 #![no_main]
 
 use std::io::{Cursor, Read};
 
-use mailcraft_pst::{AttachmentContent, Limits, MessageRef, Pst, crc32};
+use mailsolutions_pst::{AttachmentContent, Limits, MessageRef, Pst, crc32};
 
 /// Puts dwCRCPartial (and dwCRCFull of a Unicode file) right for the header's bytes.
 fn fix_header(b: &mut [u8]) {
@@ -26,9 +26,9 @@ fn fix_header(b: &mut [u8]) {
 }
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
-    let _ = mailcraft_pst::list_stream(data, 1000);
-    let _ = mailcraft_pst::appointment_recurrence(data);
-    let _ = mailcraft_pst::time_zone_key(data);
+    let _ = mailsolutions_pst::list_stream(data, 1000);
+    let _ = mailsolutions_pst::appointment_recurrence(data);
+    let _ = mailsolutions_pst::time_zone_key(data);
     let mut data = data.to_vec();
     // ponytail: only the header's CRCs are put right; pages and blocks keep theirs, since the proptests already mutate with checksums put right. Add a repair mode if coverage stalls behind them.
     fix_header(&mut data);

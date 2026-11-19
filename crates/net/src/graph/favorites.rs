@@ -40,10 +40,10 @@ mod xml;
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
-use mailcraft_charset::base64::{STANDARD_NO_PAD, URL_SAFE_NO_PAD};
-use mailcraft_model::FolderKind;
-use mailcraft_model::remote::{FavoritesDownload, FavoritesOutcome, MAX_FAVORITE_DEPTH, MAX_FAVORITES};
-use mailcraft_proto::ProtoError;
+use mailsolutions_charset::base64::{STANDARD_NO_PAD, URL_SAFE_NO_PAD};
+use mailsolutions_model::FolderKind;
+use mailsolutions_model::remote::{FavoritesDownload, FavoritesOutcome, MAX_FAVORITE_DEPTH, MAX_FAVORITES};
+use mailsolutions_proto::ProtoError;
 use serde_json::{Value, json};
 
 use super::{ASK_TIMEOUT, BATCH, BATCH_SIZE, Doing, Graph, MAX_BATCH, code_of, nonsense, text, wait_of};
@@ -193,9 +193,9 @@ enum Slot {
 
 /// The folder in the body of an answer; `None` when it isn't one.
 fn folder_of(body: &Value) -> Option<Found> {
-    let id = mailcraft_model::remote::clean_key(text(body, "id"));
+    let id = mailsolutions_model::remote::clean_key(text(body, "id"));
     let name: String = text(body, "displayName").chars().take(MAX_NAME).collect();
-    let parent = mailcraft_model::remote::clean_key(text(body, "parentFolderId"));
+    let parent = mailsolutions_model::remote::clean_key(text(body, "parentFolderId"));
     (!id.is_empty() && id.len() <= MAX_ID && parent.len() <= MAX_ID).then_some(Found::Folder { id, name, parent })
 }
 
@@ -217,7 +217,7 @@ impl Graph<'_> {
             .collect();
         let body = json!({"requests": requests}).to_string();
         let reply = self.ask(&self.url(BATCH), "POST", &[("Content-Type", "application/json")], Some(&body), patience.min(ASK_TIMEOUT), MAX_BATCH)?;
-        let now = mailcraft_time::now();
+        let now = mailsolutions_time::now();
         match reply.status {
             200 => {}
             // The batch as a whole is told to come back later.

@@ -5,7 +5,7 @@
 
 use std::path::PathBuf;
 
-use mailcraft_model::{Account, AccountKind, EwsServer, FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::{Account, AccountKind, EwsServer, FolderKind, Id, Mailbox, Message};
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -17,7 +17,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-ews-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-ews-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -73,7 +73,7 @@ fn an_exchange_account_is_added_and_its_commands_answer() {
     let listed = s.run("account.list", &json!({})).unwrap();
     let text = listed.to_string();
     assert!(text.contains("https://exchange.example.org") && !text.contains("Exchange.asmx"), "{text}");
-    assert_eq!(mailcraft_engine_text(&s, id), "exchange https://exchange.example.org");
+    assert_eq!(mailsolutions_engine_text(&s, id), "exchange https://exchange.example.org");
     // Its commands answer, and say where the server is without the password.
     let ask = s.run("sync.ewsRequest", &json!({})).unwrap();
     assert_eq!((ask["url"].as_str(), ask["username"].as_str(), ask["listFolders"].as_bool()), (Some(URL), Some("CORP\\ada"), Some(true)));
@@ -86,7 +86,7 @@ fn an_exchange_account_is_added_and_its_commands_answer() {
     assert!(said(s.run("sync.request", &json!({"account": id}))).contains("Exchange Web Services"));
 }
 
-fn mailcraft_engine_text(s: &Session, id: Id) -> String {
+fn mailsolutions_engine_text(s: &Session, id: Id) -> String {
     crate::cmd::account::servers_text(s.mailbox.account(id).unwrap())
 }
 
@@ -208,7 +208,7 @@ fn an_exchange_accounts_server_address_and_user_name_are_fixed_once_its_mail_is_
     assert_eq!(s.mailbox.account(id).unwrap().ews.as_ref().unwrap().hierarchy, "");
     s.mailbox.account_mut(id).unwrap().ews.as_mut().unwrap().hierarchy = "HIER".into();
     let inbox = s.mailbox.folder_of_kind(id, FolderKind::Inbox).unwrap();
-    s.mailbox.folder_mut(inbox).unwrap().server = Some(mailcraft_model::ServerFolder { id: "F1".into(), ..Default::default() });
+    s.mailbox.folder_mut(inbox).unwrap().server = Some(mailsolutions_model::ServerFolder { id: "F1".into(), ..Default::default() });
     for edit in &edits {
         let why = said(s.run("account.edit", edit));
         assert!(why.contains("can't be changed once its mail is here"), "{edit}: {why}");
@@ -229,7 +229,7 @@ fn putting_a_server_address_right_forgets_where_its_folders_went_on_from() {
     let id = s.run("account.add", &exchange("ada@example.org")).unwrap()["id"].as_u64().unwrap();
     let inbox = s.mailbox.folder_of_kind(id, FolderKind::Inbox).unwrap();
     s.mailbox.folder_mut(inbox).unwrap().server =
-        Some(mailcraft_model::ServerFolder { id: "F1".into(), sync_state: "FOLDER-STATE".into(), ..Default::default() });
+        Some(mailsolutions_model::ServerFolder { id: "F1".into(), sync_state: "FOLDER-STATE".into(), ..Default::default() });
     {
         let ews = s.mailbox.account_mut(id).unwrap().ews.as_mut().unwrap();
         (ews.url, ews.hierarchy) = ("ftp://not-a-server.example.org".into(), "HIER".into());
@@ -265,10 +265,10 @@ fn mail_is_queued_for_an_exchange_account() {
 fn a_result_with_too_much_in_it_is_refused_before_anything_else_is_asked() {
     let mut s = Session::empty();
     let id = s.run("account.add", &exchange("ada@example.org")).unwrap()["id"].as_u64().unwrap();
-    let pages: Vec<Value> = (0..=mailcraft_model::sync::MAX_EWS_PAGES).map(|i| json!({"folder": format!("F{i}")})).collect();
+    let pages: Vec<Value> = (0..=mailsolutions_model::sync::MAX_EWS_PAGES).map(|i| json!({"folder": format!("F{i}")})).collect();
     let too_many = json!({"result": {"account": id, "email": "ada@example.org", "pages": pages}});
     assert!(said(s.run("sync.applyEws", &too_many)).contains("more in it than is taken in"));
-    let long = "x".repeat(mailcraft_model::sync::MAX_EWS_STATE + 1);
+    let long = "x".repeat(mailsolutions_model::sync::MAX_EWS_STATE + 1);
     let long_state = json!({"result": {"account": id, "email": "ada@example.org", "hierarchy": long}});
     assert!(said(s.run("sync.applyEws", &long_state)).contains("folder state that can't be one"));
     let sound =

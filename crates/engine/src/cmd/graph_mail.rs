@@ -3,9 +3,9 @@
 //! A Microsoft account kept in step through Microsoft Graph (R3; ADR 0002, ADR 0003).
 //!
 //! As for IMAP, the engine never talks to a server: [`graph_mail_request`] (`sync.graphRequest`)
-//! says what a run should do, a host with sockets does it (`mailcraft_net::graph::sync_folders`,
+//! says what a run should do, a host with sockets does it (`mailsolutions_net::graph::sync_folders`,
 //! on a background thread), and [`apply_graph_mail`] (`sync.applyGraph`) takes in what it brought
-//! back. The two are Graph's own (`mailcraft_model::sync::GraphMailRequest`), beside the IMAP ones
+//! back. The two are Graph's own (`mailsolutions_model::sync::GraphMailRequest`), beside the IMAP ones
 //! rather than bent into them.
 //!
 //! **Folders (R3.1).** A folder the server has is known by its server id ([`ServerFolder`]),
@@ -13,18 +13,18 @@
 //! between a folder and what the server last said of it: a name that differs is a rename, a
 //! parent that differs a move (Delete Folder is a move into Deleted Items, as Outlook does), a
 //! folder with no server id one to make. Only a folder deleted for good waits in a queue
-//! ([`mailcraft_model::Queued`]). What comes back is taken in by server id: the server's name and
+//! ([`mailsolutions_model::Queued`]). What comes back is taken in by server id: the server's name and
 //! place win, but for what was changed here and hasn't reached it yet; a folder that a complete
 //! listing doesn't have is removed with its mail, which the server no longer has either, and a
 //! listing that was cut short removes nothing (R3 spec S6–S8).
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     ChangeOutcome, FolderChange, FolderListing, GraphFetchRequest, GraphFetchResult, GraphFolder, GraphLink, GraphMailRequest, GraphMailResult,
     MAX_DRAFTS, MAX_FOLDER_CHANGES, MAX_MESSAGE_CHANGES, MAX_PLACES, MessageOutcome, SendOutcome, SyncPhase,
 };
-use mailcraft_model::{AccountKind, Folder, FolderKind, Id, Mailbox, Queued, ServerFolder, clean_name};
+use mailsolutions_model::{AccountKind, Folder, FolderKind, Id, Mailbox, Queued, ServerFolder, clean_name};
 use serde_json::{Value, json};
 
 use super::graph_down::{self, Down};
@@ -146,7 +146,7 @@ fn shared_mailbox(s: &Session, account: Id) -> Result<bool, CmdError> {
     if mb.owner_of(account).is_none() {
         return Err(failed!("{name} is a shared mailbox whose account is gone: remove it and add it again", name = a.name));
     }
-    if mailcraft_model::mailbox_address(&a.email).is_none() {
+    if mailsolutions_model::mailbox_address(&a.email).is_none() {
         return Err(failed!("{name} isn't an address a shared mailbox can be opened at", name = a.name));
     }
     Ok(true)
@@ -292,7 +292,7 @@ pub fn apply_graph_fetch(s: &mut Session, result: GraphFetchResult) -> CmdResult
     s.graph_index = index;
     // Older than its mail to keep offline (the owner opened it): whole until the mailbox is
     // opened again (#143).
-    let window = mailcraft_model::OfflineWindow::of(&s.mailbox, s.now());
+    let window = mailsolutions_model::OfflineWindow::of(&s.mailbox, s.now());
     let outside: Vec<Id> = taken.iter().copied().filter(|id| s.mailbox.message(*id).is_some_and(|m| !window.within(m))).collect();
     s.kept_for_now.extend(outside);
     let taken = taken.len();
@@ -562,7 +562,7 @@ pub(super) fn change_done(
     account: Id,
     change: &FolderChange,
     outcome: &ChangeOutcome,
-    lang: mailcraft_i18n::Lang,
+    lang: mailsolutions_i18n::Lang,
     taken: &mut Taken,
 ) -> Option<String> {
     let mine = |mb: &Mailbox, id: Id| mb.folder(id).is_some_and(|f| f.account == account);
@@ -577,7 +577,7 @@ pub(super) fn change_done(
                 "The folder \"{name}\" wasn't deleted: the server has {n} new item in it that you hadn't seen. It comes back with it; delete it again if you still want it gone.",
                 "The folder \"{name}\" wasn't deleted: the server has {n} new items in it that you hadn't seen. It comes back with them; delete it again if you still want it gone.",
             );
-            Some(mailcraft_i18n::fmt(line, &[("name", &name), ("n", &items.to_string())]))
+            Some(mailsolutions_i18n::fmt(line, &[("name", &name), ("n", &items.to_string())]))
         }
         (FolderChange::Delete { id, .. }, ChangeOutcome::Done { .. } | ChangeOutcome::Gone) => {
             mb.queued.retain(|q| !matches!(q, Queued::DeleteFolder { account: a, id: queued, .. } if *a == account && queued == id));

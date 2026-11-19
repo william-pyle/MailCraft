@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The owner's text in a message being written, drawn as it will be sent: bold, italic,
 //! underline, a font size, links, bulleted and numbered lists, and a signature's pictures
-//! (`mailcraft_model::rich`). The same editor edits a signature in File › Signatures
+//! (`mailsolutions_model::rich`). The same editor edits a signature in File › Signatures
 //! ([`Which`]); while one is open there, the message's body is only drawn.
 //!
 //! The widget only draws and listens. Every change, the caret and the selection included, is a
@@ -27,9 +27,9 @@ use std::sync::{Arc, Mutex};
 use egui::epaint::text::CharIndex;
 use egui::text::{CCursor, LayoutJob, TextFormat};
 use egui::{Align2, Event, FontFamily, Galley, Key, Modifiers, Rect, Sense, Stroke, Ui, Vec2, pos2, vec2};
-use mailcraft_model::RichBody;
-use mailcraft_model::rich::{ListKind, OBJECT, Paragraph, Selection, Style, numbers};
-use mailcraft_model::signature::Picture;
+use mailsolutions_model::RichBody;
+use mailsolutions_model::rich::{ListKind, OBJECT, Paragraph, Selection, Style, numbers};
+use mailsolutions_model::signature::Picture;
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -71,7 +71,7 @@ impl Which {
     fn id(self, app: &MailApp) -> egui::Id {
         match self {
             Which::Message => id(app),
-            Which::Signature => egui::Id::unique("mailcraft-signature-body"),
+            Which::Signature => egui::Id::unique("mailsolutions-signature-body"),
         }
     }
 }
@@ -79,7 +79,7 @@ impl Which {
 /// The id of the body of the message being written `compose`: what has the keyboard when it
 /// does. Each message has its own (#286), so that two never share a caret, a layout or the keyboard.
 pub fn id_of(compose: u64) -> egui::Id {
-    egui::Id::unique("mailcraft-compose-body").with(compose)
+    egui::Id::unique("mailsolutions-compose-body").with(compose)
 }
 
 /// The body's id of the current message being written.
@@ -88,7 +88,7 @@ pub fn id(app: &MailApp) -> egui::Id {
 }
 
 /// What marks the id of a body drawn (of any message being written, or of a signature).
-const BODY: &str = "mailcraft-body";
+const BODY: &str = "mailsolutions-body";
 
 /// Whether `id` is the body of a message being written, or of a signature being edited.
 pub fn is_body(ctx: &egui::Context, id: egui::Id) -> bool {
@@ -602,7 +602,7 @@ fn select(anchor: usize, head: usize) -> Option<Ask> {
 /// The text `which` names, and whether it is plain.
 fn body(app: &MailApp, which: Which) -> Option<(&RichBody, bool)> {
     match which {
-        Which::Message => app.session.compose.as_ref().map(|c| (&c.body, c.format == mailcraft_engine::BodyFormat::Plain)),
+        Which::Message => app.session.compose.as_ref().map(|c| (&c.body, c.format == mailsolutions_engine::BodyFormat::Plain)),
         Which::Signature => app.session.signature_edit.as_ref().map(|e| (&e.body, false)),
     }
 }
@@ -635,7 +635,7 @@ pub(crate) fn unedited_html_signature(app: &MailApp) -> Option<&str> {
     let html = c.signature.as_ref()?.html.as_deref()?;
     let paragraphs = c.body.text().paragraphs();
     let ends = paragraphs.first().is_some_and(|p| !p.signature) && paragraphs.last().is_some_and(|p| p.signature);
-    (c.format == mailcraft_engine::BodyFormat::Html && ends && c.signature_unedited()).then_some(html)
+    (c.format == mailsolutions_engine::BodyFormat::Html && ends && c.signature_unedited()).then_some(html)
 }
 
 /// The selection, the caret and whether the text is plain.
@@ -708,7 +708,7 @@ pub(crate) fn show_doc(app: &mut MailApp, ui: &mut Ui, which: Which, min_height:
         }
         if handle.dragged() {
             let w = st.resizing.filter(|(i, _)| *i == pid).map_or(r.width(), |(_, w)| w) + handle.drag_delta().x;
-            st.resizing = Some((pid, w.clamp(8.0, f32::from(mailcraft_model::signature::MAX_WIDTH))));
+            st.resizing = Some((pid, w.clamp(8.0, f32::from(mailsolutions_model::signature::MAX_WIDTH))));
         }
         if handle.drag_stopped()
             && let Some((i, w)) = st.resizing.take()
@@ -1222,8 +1222,8 @@ mod wide_picture_tests;
 /// or a rule (whose words `Block::text` doesn't hold) or a second picture is more than the one
 /// picture the clipboard has beside it.
 fn pictures_only(html: &str) -> bool {
-    use mailcraft_html::BlockKind;
-    let blocks = mailcraft_html::parse_text(html);
+    use mailsolutions_html::BlockKind;
+    let blocks = mailsolutions_html::parse_text(html);
     let pictures = blocks.iter().filter(|b| matches!(b.kind, BlockKind::Image { .. })).count();
     pictures == 1
         && blocks.iter().all(|b| match b.kind {

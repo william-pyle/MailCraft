@@ -77,7 +77,7 @@ pub(super) fn contents(ui: &mut Ui, app: &mut MailApp) {
                     for path in paths.iter().take(10) {
                         let Some(name) = path.file_name().and_then(|name| name.to_str()) else { continue };
                         let Some(full) = path.to_str() else { continue };
-                        let label = mailcraft_names::shown(name, 96);
+                        let label = mailsolutions_names::shown(name, 96);
                         if label.is_empty() {
                             continue;
                         }

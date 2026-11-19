@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! A written `Date:` header reads back as the same instant, whatever offset the caller passes.
 
-use mailcraft_time::{format_rfc5322, parse_rfc5322};
+use mailsolutions_time::{format_rfc5322, parse_rfc5322};
 
 #[test]
 fn extreme_offsets_round_trip() {

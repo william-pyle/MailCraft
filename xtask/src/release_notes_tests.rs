@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use super::*;
 
-const NOTES: &str = "**MailCraft 1.0 in short**\n- Things.\n\n**What's new**\n- **Old feature.**\n\n**Fixes**\n- Old fix.\n\nClosing words.\n";
+const NOTES: &str = "**MailSolutions 1.0 in short**\n- Things.\n\n**What's new**\n- **Old feature.**\n\n**Fixes**\n- Old fix.\n\nClosing words.\n";
 
 fn fragment(name: &str, added: u64, lines: &[&str]) -> Fragment {
     Fragment { path: PathBuf::from(name), added, lines: lines.iter().map(|l| l.to_string()).collect() }
@@ -19,7 +19,7 @@ fn fragments_go_at_the_top_of_their_section_newest_first() {
     let joined = join(NOTES, &[new, fixes]).unwrap();
     assert_eq!(
         joined,
-        "**MailCraft 1.0 in short**\n- Things.\n\n**What's new**\n- **New feature.**\n- **Old feature.**\n\n**Fixes**\n- Not committed yet.\n- Newer fix.\n- Its second line.\n- Older fix.\n- Old fix.\n\nClosing words.\n"
+        "**MailSolutions 1.0 in short**\n- Things.\n\n**What's new**\n- **New feature.**\n- **Old feature.**\n\n**Fixes**\n- Not committed yet.\n- Newer fix.\n- Its second line.\n- Older fix.\n- Old fix.\n\nClosing words.\n"
     );
 }
 
@@ -46,7 +46,7 @@ fn a_fragment_holds_list_lines_only() {
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("mailcraft-xtask-release-notes-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-xtask-release-notes-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("packaging")).unwrap();
     std::fs::write(dir.join(super::NOTES), NOTES).unwrap();

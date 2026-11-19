@@ -4,8 +4,8 @@
 //! held, Copy and Paste), the number of days in view, and how the calendar is drawn (its time
 //! scale, week numbers).
 
-use mailcraft_model::Event;
-use mailcraft_time::DateTime;
+use mailsolutions_model::Event;
+use mailsolutions_time::DateTime;
 use serde_json::{Value, json};
 
 use super::{bad, fail, remote};
@@ -146,8 +146,8 @@ fn week_numbers(s: &mut Session, v: &Value) -> CmdResult {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::{Address, Attendee, Freq, Recurrence, ShowAs};
-    use mailcraft_time::Date;
+    use mailsolutions_model::{Address, Attendee, Freq, Recurrence, ShowAs};
+    use mailsolutions_time::Date;
 
     use super::*;
 

@@ -3,7 +3,7 @@
 //! A shared mailbox's calendars, read through Graph (#70): at `/users/{address}/…`, never at `/me`,
 //! held against the stand-in ([`standin`]). Nothing here leaves this machine.
 
-use mailcraft_time::Date;
+use mailsolutions_time::Date;
 
 use super::standin::{CalendarAccess, StandIn, TOKEN};
 use super::*;

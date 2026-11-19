@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! The display blocks of a message as UniFFI records, mirroring `mailcraft_html`'s `Block`,
+//! The display blocks of a message as UniFFI records, mirroring `mailsolutions_html`'s `Block`,
 //! `Span`, `Table`, `Row` and `Cell` (which stays free of UniFFI). Only what the native drawing
 //! needs is carried; nothing is fetched, and a picture's bytes come through `Core::picture` by
 //! the reference a block names.
 
-use mailcraft_html::{Align, Block, BlockKind, Cell, Insets, Length, LineHeight, LineStyle, Marker, Rgb, Row, Sides, Span, Table, VAlign};
+use mailsolutions_html::{Align, Block, BlockKind, Cell, Insets, Length, LineHeight, LineStyle, Marker, Rgb, Row, Sides, Span, Table, VAlign};
 
 use crate::text::MAX_URL;
 
@@ -197,7 +197,7 @@ fn rgb(c: Rgb) -> u32 {
     (u32::from(c.0) << 16) | (u32::from(c.1) << 8) | u32::from(c.2)
 }
 
-fn line(l: &mailcraft_html::Line) -> LineView {
+fn line(l: &mailsolutions_html::Line) -> LineView {
     LineView {
         width: l.width,
         style: match l.style {

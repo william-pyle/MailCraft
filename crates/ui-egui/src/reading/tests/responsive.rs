@@ -4,8 +4,8 @@
 //! the theme, once for each, kept with its blocks, and never per frame; a dark window uses the
 //! sender's own dark palette.
 
-use mailcraft_html::corpus::{DARK_NEWSLETTER, RESPONSIVE_NEWSLETTER};
-use mailcraft_model::Mailbox;
+use mailsolutions_html::corpus::{DARK_NEWSLETTER, RESPONSIVE_NEWSLETTER};
+use mailsolutions_model::Mailbox;
 use serde_json::json;
 
 use super::super::Place;
@@ -13,7 +13,7 @@ use super::super::layout::ItemKind;
 use super::super::view;
 use super::{NOW, Window, html_message, select, served_by_example_org, window};
 use crate::{MailApp, Services};
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 
 /// A mailbox with a responsive newsletter, a dark-palette one and a plain one; their ids.
 fn app() -> (MailApp, u64, u64, u64) {
@@ -36,7 +36,7 @@ fn app() -> (MailApp, u64, u64, u64) {
 
 fn text(harness: &Window, id: u64) -> String {
     let doc = view::current_doc(&harness.ctx, Place::Pane, id).expect("a body is kept");
-    mailcraft_html::blocks_to_text(&doc.blocks)
+    mailsolutions_html::blocks_to_text(&doc.blocks)
 }
 
 /// Run `n` frames, noting after each the look of the message in use.
@@ -185,7 +185,7 @@ fn a_light_page_in_a_dark_window_shows_the_light_edition() {
 fn the_senders_dark_design_is_adjusted_only_where_it_falls_short() {
     use super::super::colors::{MIN_CONTRAST, Paper, c32, contrast, readable};
     use crate::theme::Tokens;
-    use mailcraft_html::Rgb;
+    use mailsolutions_html::Rgb;
     let (own, window) = (Tokens { sender_dark: true, ..Tokens::dark() }, Tokens::dark());
     for bg in [Rgb(0x1f, 0x23, 0x29), Rgb(0xf4, 0xf1, 0xea), Rgb(255, 255, 255), Rgb(0x0b, 0x3d, 0x75)] {
         assert_eq!(Paper::of(bg, &own).fill, c32(bg), "{bg:?}");

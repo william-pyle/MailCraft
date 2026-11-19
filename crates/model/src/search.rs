@@ -30,7 +30,7 @@
 
 use std::ops::{Bound, Range, RangeBounds};
 
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday};
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday};
 
 use crate::words::{self, ATTACHMENT, BODY, CC, FROM, SUBJECT, TO};
 use crate::{Address, Category, FlagStatus, Importance, Message, Rgb, contains_ci};
@@ -630,7 +630,7 @@ fn keywords_starting(query: &str, token: &str, range: Range<usize>) -> Vec<Sugge
 /// characters or characters that show nothing, spaces run together, at most
 /// [`MAX_SUGGESTED_NAME`] characters, the last an ellipsis where it was cut.
 fn shown_name(name: &str) -> String {
-    mailcraft_names::shown(name, MAX_SUGGESTED_NAME)
+    mailsolutions_names::shown(name, MAX_SUGGESTED_NAME)
 }
 
 /// Whether a server's search takes `word` as it is: letters, digits and `@._-'+`, which keep an

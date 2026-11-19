@@ -58,7 +58,7 @@ pub fn google(consumer: bool) -> Preset {
         oauth: Some(OAuthProvider::Google),
         incoming: server("imap.gmail.com", 993, Security::Tls),
         outgoing: server("smtp.gmail.com", 465, Security::Tls),
-        note: "Google sign-in opens the provider's page; MailCraft does not ask for your Google password.",
+        note: "Google sign-in opens the provider's page; MailSolutions does not ask for your Google password.",
     }
 }
 
@@ -355,7 +355,7 @@ impl std::fmt::Debug for FoundServer {
 /// What a host with sockets found out about a domain nobody here knows, once the owner pressed
 /// Connect: its mail exchangers (by which [`by_mx`] may know whose it is), and, when they say
 /// nothing, the servers the domain's own records or a database name, for the owner to confirm.
-/// Nothing here was looked up by the model: `mailcraft_net::discover` fills it in.
+/// Nothing here was looked up by the model: `mailsolutions_net::discover` fills it in.
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct Discovered {
     /// The domain's mail exchangers, best first; empty when it has none or they couldn't be had.

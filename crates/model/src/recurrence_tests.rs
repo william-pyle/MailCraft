@@ -4,7 +4,7 @@
 
 use std::time::{Duration, Instant};
 
-use mailcraft_time::{Date, Weekday};
+use mailsolutions_time::{Date, Weekday};
 
 use crate::{Freq, Recurrence};
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device limits (MB3.16): what listing afresh does to folders and to messages outside the window.
 
-use mailcraft_model::device_limits::PHONE_STORAGE;
+use mailsolutions_model::device_limits::PHONE_STORAGE;
 use serde_json::json;
 
 use super::device_limits_tests::{add, graph_session};

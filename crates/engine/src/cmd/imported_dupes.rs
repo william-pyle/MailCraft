@@ -30,7 +30,7 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
-use mailcraft_model::{FolderKind, Id, MailIdentity, Mailbox, Message, Pending, Queued};
+use mailsolutions_model::{FolderKind, Id, MailIdentity, Mailbox, Message, Pending, Queued};
 use serde_json::{Value, json};
 
 use super::fail;
@@ -143,7 +143,7 @@ fn only_here(m: &Message) -> bool {
 }
 
 /// What the owner may have changed of a message, which the clean-up must not lose.
-fn marks(m: &Message) -> (bool, &mailcraft_model::FlagStatus, Option<i64>, Vec<&str>, bool, Option<mailcraft_model::Snooze>) {
+fn marks(m: &Message) -> (bool, &mailsolutions_model::FlagStatus, Option<i64>, Vec<&str>, bool, Option<mailsolutions_model::Snooze>) {
     let mut categories: Vec<&str> = m.categories.iter().map(String::as_str).collect();
     categories.sort_unstable();
     (m.read, &m.flag, m.flag_due, categories, m.pinned, m.snooze)

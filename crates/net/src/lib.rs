@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft's network side, for the desktop app and the CLI.
+//! MailSolutions's network side, for the desktop app and the CLI.
 //!
-//! Sockets and TLS under the protocol clients of `mailcraft-proto`: [`test_account`] checks a
+//! Sockets and TLS under the protocol clients of `mailsolutions-proto`: [`test_account`] checks a
 //! sign-in, [`send`] sends one message through SMTP, and [`sync`] synchronises with the account's
 //! servers both ways: it sends the Outbox, pushes the flag changes, moves and deletions made
 //! here to IMAP, and downloads new mail, flag changes and removals from there. [`oauth`]
@@ -98,11 +98,11 @@ pub use native::*;
 /// servers copied from a mailbox file or chosen by a plugin/agent. Loopback is only permitted
 /// inside this crate's synthetic protocol tests.
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn google_destination(account: &mailcraft_model::Account, host: &str, expected: &str) -> Result<(), NetError> {
-    if account.oauth.as_ref().is_some_and(|oauth| oauth.provider == mailcraft_model::OAuthProvider::Google) {
+pub(crate) fn google_destination(account: &mailsolutions_model::Account, host: &str, expected: &str) -> Result<(), NetError> {
+    if account.oauth.as_ref().is_some_and(|oauth| oauth.provider == mailsolutions_model::OAuthProvider::Google) {
         let name = host.trim().trim_end_matches('.');
         if !(name.eq_ignore_ascii_case(expected) || (cfg!(test) && name.eq_ignore_ascii_case("127.0.0.1"))) {
-            return Err(NetError::Config(mailcraft_i18n::said!(
+            return Err(NetError::Config(mailsolutions_i18n::said!(
                 "Google OAuth access tokens may only be sent to Google's Gmail IMAP and SMTP servers"
             )));
         }
@@ -112,8 +112,8 @@ pub(crate) fn google_destination(account: &mailcraft_model::Account, host: &str,
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
-    use mailcraft_i18n::{Arg, Text, said};
-    use mailcraft_model::Account;
+    use mailsolutions_i18n::{Arg, Text, said};
+    use mailsolutions_model::Account;
 
     pub use crate::anchors::system_trust_anchors;
     pub use crate::cert::{CertificateFault, CertificateInfo, CertificateProblem, describe as describe_certificate};
@@ -130,7 +130,7 @@ mod native {
     /// Whether this build can talk to mail servers.
     pub const AVAILABLE: bool = true;
 
-    /// What went wrong. The reasons that are MailCraft's own words are texts the window says in
+    /// What went wrong. The reasons that are MailSolutions's own words are texts the window says in
     /// its language ([`Text`], made with `said!`); what a server or the system said is kept as it
     /// said it. The English ([`Display`](std::fmt::Display)) is what the CLI, MCP and the log read
     /// (#872).
@@ -144,7 +144,7 @@ mod native {
             host: String,
             reason: Text,
         },
-        Proto(mailcraft_proto::ProtoError),
+        Proto(mailsolutions_proto::ProtoError),
         Config(Text),
         /// The owner called the sign-in on the provider's page off ([`oauth::sign_in`](crate::oauth::sign_in)).
         SignInCancelled,
@@ -170,11 +170,11 @@ mod native {
         Certificate(Box<CertificateProblem>),
         /// A shared mailbox Microsoft won't open for the owner of the token (#70), by Graph's own
         /// code: asking again by itself changes nothing.
-        SharedRefused(mailcraft_model::sync::SharedRefusal),
+        SharedRefused(mailsolutions_model::sync::SharedRefusal),
     }
 
-    impl From<mailcraft_proto::ProtoError> for NetError {
-        fn from(e: mailcraft_proto::ProtoError) -> NetError {
+    impl From<mailsolutions_proto::ProtoError> for NetError {
+        fn from(e: mailsolutions_proto::ProtoError) -> NetError {
             NetError::Proto(e)
         }
     }
@@ -210,7 +210,7 @@ mod native {
 
         /// The same error with `secret` (a password, a token) blanked out, should a server have written it back.
         pub(crate) fn without(self, secret: &str) -> NetError {
-            use mailcraft_proto::ProtoError as P;
+            use mailsolutions_proto::ProtoError as P;
             let clean = |text: String| scrub(&text, secret);
             let blank = |text: Text| text.map_plain(&|said: String| scrub(&said, secret));
             match self {
@@ -241,24 +241,24 @@ mod native {
         /// token it no longer takes), as against trouble reaching it: only then is asking the
         /// owner to sign in again the cure.
         pub fn is_refused_sign_in(&self) -> bool {
-            matches!(self, NetError::Proto(mailcraft_proto::ProtoError::Auth(_)))
+            matches!(self, NetError::Proto(mailsolutions_proto::ProtoError::Auth(_)))
         }
 
         /// A Google refresh grant was explicitly revoked or expired; a transient failure
         /// or a denied browser consent must never make us erase an otherwise usable token.
         pub fn is_revoked_google_refresh(&self) -> bool {
-            matches!(self, NetError::Proto(mailcraft_proto::ProtoError::Auth(reason)) if reason.to_string() == crate::oauth::GOOGLE_REFRESH_REVOKED)
+            matches!(self, NetError::Proto(mailsolutions_proto::ProtoError::Auth(reason)) if reason.to_string() == crate::oauth::GOOGLE_REFRESH_REVOKED)
         }
 
         /// Whether the other side couldn't be reached or stopped answering, as against an answer
         /// that says no: trying again later is what there is to do.
         pub fn is_unreachable(&self) -> bool {
-            matches!(self, NetError::Connect { .. } | NetError::Tls { .. } | NetError::Proto(mailcraft_proto::ProtoError::Io(_)))
+            matches!(self, NetError::Connect { .. } | NetError::Tls { .. } | NetError::Proto(mailsolutions_proto::ProtoError::Io(_)))
         }
 
         /// Whether the connection the error came from can't be used any more.
         pub(crate) fn is_fatal(&self) -> bool {
-            use mailcraft_proto::ProtoError as P;
+            use mailsolutions_proto::ProtoError as P;
             !matches!(self, NetError::Proto(P::Rejected(_) | P::Auth(_)) | NetError::Config(_))
         }
     }

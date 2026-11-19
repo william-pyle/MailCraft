@@ -20,7 +20,7 @@ fn refused(c: char) -> bool {
         || c == '\u{fffd}'
         || matches!(c, '\u{3002}' | '\u{ff0e}' | '\u{ff61}' | '\u{2024}' | '\u{fe52}')
         || (c.is_ascii() && !(c.is_ascii_alphanumeric() || matches!(c, '-' | '_')))
-        || (mailcraft_names::is_format(c) && !mailcraft_names::is_joiner(c))
+        || (mailsolutions_names::is_format(c) && !mailsolutions_names::is_joiner(c))
 }
 
 /// A virama: the mark of an Indic script that joins the consonant before it to the next

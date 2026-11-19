@@ -27,7 +27,7 @@ fn a_confirmed_legacy_alias_keeps_the_custom_domain_address() {
         assert_eq!(addresses(&h), [""]);
         assert!(h.state().tokens.is_empty());
         assert!(says(&h, "Only keep your custom-domain address if both addresses are aliases"));
-        if let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") {
+        if let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") {
             h.render().unwrap().save(std::path::Path::new(&dir).join(format!("legacy-alias-{theme}.png"))).unwrap();
         }
         click(&mut h, "Keep noor@example.org");

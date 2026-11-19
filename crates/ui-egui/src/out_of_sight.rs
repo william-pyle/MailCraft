@@ -6,7 +6,7 @@
 //! sight for [`AFTER`] seconds, what is kept only to show things quickly again goes: the bodies
 //! laid out, the pictures' textures and bytes, the pictures from the web, senders' pictures, the
 //! faces read for messages, the content read from disk, and the bodies and attachments brought
-//! into messages, from their Undo steps too ([`mailcraft_engine::Session::let_go_of_content`]),
+//! into messages, from their Undo steps too ([`mailsolutions_engine::Session::let_go_of_content`]),
 //! except those of messages open in a window of their own or being written. Everything is read
 //! again when it is next shown.
 //!
@@ -17,12 +17,12 @@
 //! ([`MailApp::logic`]) and asks for the logic to run again when the time is up. A texture let go
 //! of leaves the graphics card at the next frame painted.
 //!
-//! `MAILCRAFT_FLUSH_AFTER_SECS` sets another wait, in seconds (for measuring,
+//! `MAILSOLUTIONS_FLUSH_AFTER_SECS` sets another wait, in seconds (for measuring,
 //! `docs/control-protocol.md`).
 
 use std::collections::HashSet;
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 
 use crate::MailApp;
 
@@ -55,10 +55,10 @@ impl OutOfSight {
     }
 }
 
-/// The wait: [`AFTER`], or `MAILCRAFT_FLUSH_AFTER_SECS` where that is a number of seconds.
+/// The wait: [`AFTER`], or `MAILSOLUTIONS_FLUSH_AFTER_SECS` where that is a number of seconds.
 fn after() -> f64 {
     static AFTER_SET: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
-    *AFTER_SET.get_or_init(|| wait_from(std::env::var("MAILCRAFT_FLUSH_AFTER_SECS").ok().as_deref()))
+    *AFTER_SET.get_or_init(|| wait_from(std::env::var("MAILSOLUTIONS_FLUSH_AFTER_SECS").ok().as_deref()))
 }
 
 /// The wait `set` asks for: a number of seconds, at most a day; [`AFTER`] otherwise.
@@ -75,7 +75,7 @@ pub fn window_out_of_sight(ctx: &egui::Context, hidden: bool) -> bool {
 /// What is at work with what would be let go of, if anything: then nothing goes yet.
 fn busy(app: &MailApp) -> Option<&'static str> {
     let at_work = [
-        (app.job_busy() != mailcraft_engine::sync_driver::Busy::default(), "a job"),
+        (app.job_busy() != mailsolutions_engine::sync_driver::Busy::default(), "a job"),
         (app.syncing(), "Send/Receive"),
         (app.fetching.busy(), "a download of messages"),
         (app.save_progress.is_some(), "a save"),
@@ -139,7 +139,7 @@ pub(crate) fn tick_at(app: &mut MailApp, ctx: &egui::Context, now: f64, wait: f6
         None => {
             app.out_of_sight.done = true;
             #[cfg(not(target_arch = "wasm32"))]
-            mailcraft_engine::store::clear_cache();
+            mailsolutions_engine::store::clear_cache();
             log::info!("the window is out of sight: what was kept to show things again quickly was let go of");
         }
     }

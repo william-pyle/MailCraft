@@ -5,8 +5,8 @@
 //! Delete, and mail kept from before conversation ids were asked for gets them from its server,
 //! a run at a time.
 
-use mailcraft_model::sync::{ServerMessage, ThreadOf};
-use mailcraft_model::{Account, AccountKind, FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::sync::{ServerMessage, ThreadOf};
+use mailsolutions_model::{Account, AccountKind, FolderKind, Id, Mailbox, Message};
 use serde_json::{Value, json};
 
 use crate::Session;
@@ -100,7 +100,7 @@ fn mail_kept_from_before_gets_its_conversation_ids_a_run_at_a_time() {
         // One it wasn't asked about, or that isn't this account's, is nothing.
         ThreadOf { id: "AAk-9".into(), thread: "AAQkconvA".into(), ..Default::default() },
     ];
-    let result = mailcraft_model::sync::GraphMailResult { account, email: "me@example.org".into(), threads, ..Default::default() };
+    let result = mailsolutions_model::sync::GraphMailResult { account, email: "me@example.org".into(), threads, ..Default::default() };
     crate::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
     assert!(crate::cmd::graph_mail::graph_mail_request(&s, account).unwrap().threads.is_empty());
     let server = |id: Id| s.mailbox.message(id).unwrap().server.clone().unwrap();
@@ -116,16 +116,16 @@ fn a_listing_without_a_conversation_id_keeps_the_one_known() {
     let (mut s, account, made) = microsoft(&[("AAk-1", "a@one.example")]);
     s.mailbox.message_mut(made[0]).unwrap().server.as_mut().unwrap().thread = "AAQkconvA".into();
     let inbox = s.mailbox.folder_of_kind(account, FolderKind::Inbox).unwrap();
-    s.mailbox.folder_mut(inbox).unwrap().server = Some(mailcraft_model::ServerFolder { id: "F".into(), ..Default::default() });
+    s.mailbox.folder_mut(inbox).unwrap().server = Some(mailsolutions_model::ServerFolder { id: "F".into(), ..Default::default() });
     // A delta that says the message again without its conversation (as a JMAP window's marks do).
-    let there = mailcraft_model::sync::GraphMessage {
+    let there = mailsolutions_model::sync::GraphMessage {
         server: ServerMessage { id: "AAk-1".into(), read: true, ..Default::default() },
         subject: "Invoice".into(),
         received: 5,
         ..Default::default()
     };
-    let page = mailcraft_model::sync::MessagePage { folder: "F".into(), messages: vec![there], ..Default::default() };
-    let result = mailcraft_model::sync::GraphMailResult { account, email: "me@example.org".into(), pages: vec![page], ..Default::default() };
+    let page = mailsolutions_model::sync::MessagePage { folder: "F".into(), messages: vec![there], ..Default::default() };
+    let result = mailsolutions_model::sync::GraphMailResult { account, email: "me@example.org".into(), pages: vec![page], ..Default::default() };
     crate::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
     let server = s.mailbox.message(made[0]).unwrap().server.clone().unwrap();
     assert_eq!((server.read, server.thread.as_str()), (true, "AAQkconvA"));
@@ -137,7 +137,7 @@ fn hostile_conversation_answers_are_held_to_their_sizes() {
     let mut threads: Vec<ThreadOf> =
         (0..5_000).map(|n| ThreadOf { id: format!("junk-{n}"), thread: "x".repeat(10_000), ..Default::default() }).collect();
     threads.push(ThreadOf { id: "AAk-1".into(), thread: "conv\n\u{0}".into(), ..Default::default() });
-    let result = mailcraft_model::sync::GraphMailResult { account, email: "me@example.org".into(), threads, ..Default::default() };
+    let result = mailsolutions_model::sync::GraphMailResult { account, email: "me@example.org".into(), threads, ..Default::default() };
     crate::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
     // Past the most a run asks about, nothing is looked at; an id that is none is none.
     let server = s.mailbox.message(made[0]).unwrap().server.clone().unwrap();
@@ -147,10 +147,10 @@ fn hostile_conversation_answers_are_held_to_their_sizes() {
 #[test]
 fn a_server_that_refuses_to_say_is_asked_a_few_runs_and_then_left_alone() {
     let (mut s, account, made) = microsoft(&[("AAk-1", "a@one.example")]);
-    for run in 1..=mailcraft_model::sync::MAX_THREAD_TRIES {
+    for run in 1..=mailsolutions_model::sync::MAX_THREAD_TRIES {
         assert_eq!(crate::cmd::graph_mail::graph_mail_request(&s, account).unwrap().threads, ["AAk-1"], "run {run}");
         let threads = vec![ThreadOf::refused("AAk-1")];
-        let result = mailcraft_model::sync::GraphMailResult { account, email: "me@example.org".into(), threads, ..Default::default() };
+        let result = mailsolutions_model::sync::GraphMailResult { account, email: "me@example.org".into(), threads, ..Default::default() };
         crate::cmd::graph_mail::apply_graph_mail(&mut s, result).unwrap();
     }
     assert!(crate::cmd::graph_mail::graph_mail_request(&s, account).unwrap().threads.is_empty());
@@ -216,7 +216,7 @@ fn two_known_threads_with_their_own_conversation_ids_stay_apart() {
     assert!([x1, x2].iter().all(|id| s.mailbox.message(*id).unwrap().folder == deleted));
 }
 
-/// A flag over 326,000 messages, timed (`cargo test --release -p mailcraft-engine -- --ignored
+/// A flag over 326,000 messages, timed (`cargo test --release -p mailsolutions-engine -- --ignored
 /// a_flag_over_a_large_mailbox --nocapture`).
 #[test]
 #[ignore]
@@ -274,7 +274,7 @@ fn what_is_kept_points_at_each_message_as_it_is_and_hashes_it_once() {
 /// An Exchange server account whose server doesn't know `ConversationId`, with two unrelated
 /// "Invoice for October" from two senders.
 fn exchange_invoices() -> (Session, Id, [Id; 2]) {
-    use mailcraft_model::sync::{EwsFolderDeltas, EwsMailResult, EwsMessagePage, GraphFolder, GraphMessage};
+    use mailsolutions_model::sync::{EwsFolderDeltas, EwsMailResult, EwsMessagePage, GraphFolder, GraphMessage};
     const URL: &str = "https://exchange.example.org/EWS/Exchange.asmx";
     let mut s = Session::empty();
     let added = s.run("account.add", &json!({"email": "ada@example.org", "kind": "exchange", "ews": {"url": URL}})).unwrap();
@@ -314,11 +314,11 @@ fn mail_whose_server_wont_say_its_conversation_threads_by_its_headers_once_asked
     const URL: &str = "https://exchange.example.org/EWS/Exchange.asmx";
     // Never asked yet: together, as before.
     assert_eq!(*s.conversation(x), [x, y]);
-    for run in 1..=mailcraft_model::sync::MAX_THREAD_TRIES {
+    for run in 1..=mailsolutions_model::sync::MAX_THREAD_TRIES {
         let asked = crate::cmd::ews_mail::ews_mail_request(&s, account, false).unwrap().threads;
         assert_eq!(asked, ["AAMk-Y", "AAMk-X"], "run {run}");
         let threads = asked.iter().map(|id| ThreadOf::refused(id)).collect();
-        let result = mailcraft_model::sync::EwsMailResult {
+        let result = mailsolutions_model::sync::EwsMailResult {
             account,
             email: "ada@example.org".into(),
             url: URL.into(),

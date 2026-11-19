@@ -3,8 +3,8 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::Id;
-use mailcraft_model::auto_replies::{AutoReplies, AutoReplyStatus};
+use mailsolutions_model::Id;
+use mailsolutions_model::auto_replies::{AutoReplies, AutoReplyStatus};
 use serde_json::json;
 
 use super::auto_replies::*;

@@ -6,7 +6,7 @@
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use super::{ControlRequest, handle};
@@ -17,7 +17,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// The window, its host's file picker one that goes wrong: it panics.
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app.services.open_async = Some(Box::new(|_, _| panic!("a host that went wrong")));
     app

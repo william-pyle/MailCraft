@@ -79,7 +79,7 @@ pub struct Item {
     pub body: (bool, String),
     /// The flag's status as the server has it: `NotFlagged`, `Flagged` or `Complete`.
     pub flag: String,
-    /// MailCraft's marker, when the item carries one.
+    /// MailSolutions's marker, when the item carries one.
     pub marker: String,
     /// Its files: id, name and bytes.
     pub files: Vec<(String, String, Vec<u8>)>,

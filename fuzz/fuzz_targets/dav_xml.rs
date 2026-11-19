@@ -3,7 +3,7 @@
 //! Hostile DAV XML is bounded and never panics.
 #![no_main]
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
-    if let Ok(root) = mailcraft_dav::xml::parse(data) {
-        let _ = mailcraft_dav::xml::properties(&root).count();
+    if let Ok(root) = mailsolutions_dav::xml::parse(data) {
+        let _ = mailsolutions_dav::xml::properties(&root).count();
     }
 });

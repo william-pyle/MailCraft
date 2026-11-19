@@ -5,19 +5,19 @@
 //! `cargo-ndk` and the Android Rust targets, which a developer's machine may not have; the
 //! path-filtered `android` job of `.github/workflows/ci.yml` runs it.
 //!
-//! The steps, in one Gradle run (`apps/mailcraft-android`): `cargo ndk` builds `crates/mobile` for
+//! The steps, in one Gradle run (`apps/mailsolutions-android`): `cargo ndk` builds `crates/mobile` for
 //! arm64-v8a and x86_64, UniFFI's Kotlin bindings are generated from that library, then
 //! `assembleDebug assembleRelease lint detekt detektDebug testDebugUnitTest verifyPaparazziDebug` (the
 //! last compares the shell's screenshots with the ones committed in `app/src/test/snapshots`; after a
 //! change to a screen, `./gradlew recordPaparazziDebug` draws them again). Then the dependency tree that ships
 //! is read: every artifact's licence must be on the permissive allowlist
-//! (`apps/mailcraft-android/licences-allowed.txt`), and no Google Play Services (`com.google.android.gms`)
+//! (`apps/mailsolutions-android/licences-allowed.txt`), and no Google Play Services (`com.google.android.gms`)
 //! or Firebase (`com.google.firebase`) artifact may be anywhere in any configuration.
 
 use std::path::Path;
 use std::process::Command;
 
-const APP: &str = "apps/mailcraft-android";
+const APP: &str = "apps/mailsolutions-android";
 const REPORT: &str = "app/build/reports/dependency-licences.tsv";
 
 /// Group prefixes no artifact of the app may have, in any configuration.

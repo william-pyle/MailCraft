@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use mailcraft_i18n::Lang;
-use mailcraft_model::Id;
-use mailcraft_model::remote_rules::RulesDownload;
+use mailsolutions_i18n::Lang;
+use mailsolutions_model::Id;
+use mailsolutions_model::remote_rules::RulesDownload;
 use serde_json::json;
 
 use super::rules::*;

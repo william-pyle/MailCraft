@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft dates and times.
+//! MailSolutions dates and times.
 //!
 //! Calendar maths is our own (proleptic Gregorian, no leap seconds) so it is the same on every
 //! platform and never panics on hostile input. The clock ([`now`], [`Stopwatch`]) and this

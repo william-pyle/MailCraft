@@ -10,8 +10,8 @@
 
 #![no_main]
 
-use mailcraft_ews::http::{HttpResponse, Secret, TransportError};
-use mailcraft_ews::{Autodiscover, Outcome, Step};
+use mailsolutions_ews::http::{HttpResponse, Secret, TransportError};
+use mailsolutions_ews::{Autodiscover, Outcome, Step};
 
 /// Statuses a hostile server uses, picked by a byte: most are the ones the machine acts on.
 const STATUSES: [u16; 10] = [200, 200, 200, 200, 301, 302, 307, 401, 403, 404];

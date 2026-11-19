@@ -3,7 +3,7 @@
 //! Mail to keep offline (#143): the setting, which mail is within it, the background fetch
 //! within it, and mail outside it going back to its headers and preview.
 
-use mailcraft_model::{Id, KeepOffline};
+use mailsolutions_model::{Id, KeepOffline};
 use serde_json::json;
 
 use crate::Session;
@@ -44,8 +44,8 @@ const DAY: i64 = 86_400;
 /// A session at [`NOW`] with a Microsoft account keeping `keep`, whose Inbox (on the server) has
 /// a message whole received each of `days_ago`, of a few kilobytes; its id and theirs.
 fn aged(keep: &str, days_ago: &[i64]) -> (Session, Id, Vec<Id>) {
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{Body, FolderKind, Mailbox, Message, ServerFolder};
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{Body, FolderKind, Mailbox, Message, ServerFolder};
     let mut s = Session::at(Mailbox::with_local_account("", ""), NOW, 0);
     let account = s.run("account.add", &json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     s.run("account.edit", &json!({"id": account, "keepOffline": keep})).unwrap();
@@ -124,8 +124,8 @@ fn a_shared_mailbox_has_no_setting_of_its_own() {
 /// preview, and the window's commands take it.
 #[test]
 fn an_exchange_server_account_fetches_and_keeps_only_its_window() {
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{Body, FolderKind, Mailbox, Message, ServerFolder};
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{Body, FolderKind, Mailbox, Message, ServerFolder};
     let mut s = Session::at(Mailbox::with_local_account("", ""), NOW, 0);
     let ews = json!({"url": "https://exchange.example.org/EWS/Exchange.asmx"});
     let account = s.run("account.add", &json!({"email": "owner@example.org", "kind": "exchange", "ews": ews})).unwrap()["id"].as_u64().unwrap();

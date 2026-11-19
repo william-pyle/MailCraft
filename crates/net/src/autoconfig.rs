@@ -18,7 +18,7 @@
 
 use std::time::Duration;
 
-use mailcraft_model::{Security, Server};
+use mailsolutions_model::{Security, Server};
 use quick_xml::Reader;
 use quick_xml::events::{BytesRef, BytesStart, Event};
 

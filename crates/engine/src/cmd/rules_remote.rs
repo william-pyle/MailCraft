@@ -2,33 +2,33 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The rules of a Microsoft account, kept on its server (#566, Graph's `messageRules`).
 //!
-//! The engine does no I/O: a host with sockets (`mailcraft_net::graph::rules`) asks what is to
+//! The engine does no I/O: a host with sockets (`mailsolutions_net::graph::rules`) asks what is to
 //! be told to the server (`sync.ruleChanges`, [`rule_upload`]), says what the server made of it
 //! (`sync.applyRuleChanges`, [`apply_rule_outcomes`]) and brings the server's rules
 //! (`sync.applyRules`, [`merge_rules`]).
 //!
 //! **What a rule remembers.** A rule the server has keeps its id there and, beside whether it is
 //! switched on and where it stands, the same two as the server last had them
-//! ([`mailcraft_model::ServerRule`]). What was changed here since is the difference, and only that
+//! ([`mailsolutions_model::ServerRule`]). What was changed here since is the difference, and only that
 //! is sent: a rule is never rewritten on the server, so one with parts this version doesn't know
 //! stays as it was made. A rule to go to the server and not there yet is sent whole, after those
 //! there; one the server refuses stays on this computer, and says why.
 //!
 //! **A lost answer.** A rule whose creation went out and got no answer (the connection dropped,
-//! or MailCraft was closed) may be on the server already: it is marked
-//! ([`mailcraft_model::Rule::unanswered`], from when its job starts, [`mark_sent`]) and not sent
+//! or MailSolutions was closed) may be on the server already: it is marked
+//! ([`mailsolutions_model::Rule::unanswered`], from when its job starts, [`mark_sent`]) and not sent
 //! again until the server's rules have been read whole. A rule there with the same name, conditions
 //! and actions is then taken as it; when there is none, it is sent again. Only such a rule is
 //! taken for one of the server's that looks the same: a rule never sent is never taken for one
 //! made elsewhere. One deleted here meanwhile is remembered by what it is
-//! ([`mailcraft_model::RuleGone::made`]): the next whole read deletes the one there that looks the
+//! ([`mailsolutions_model::RuleGone::made`]): the next whole read deletes the one there that looks the
 //! same, or, finding none, lets it go. An answer that says what became of it ends that, for a rule
 //! there that looks the same is then somebody else's. A job sends before it reads, and its answer
 //! is taken in in that order, so a whole read that comes with it is later than what it sent.
 //!
 //! **Conflicts.** A download is the server's word on everything but what was changed here and not
 //! sent yet. A rule the server no longer has goes from here too, even one switched or moved here
-//! since: a deletion elsewhere wins, and that is said. A rule deleted here is remembered ([`mailcraft_model::RuleGone`])
+//! since: a deletion elsewhere wins, and that is said. A rule deleted here is remembered ([`mailsolutions_model::RuleGone`])
 //! until the server has been told, and is not brought back by a download that still shows it.
 //!
 //! Everything from outside is hostile: ids and text are cut by [`RemoteRule::tidy`], counts are
@@ -36,10 +36,10 @@
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_model::remote_rules::{
+use mailsolutions_model::remote_rules::{
     MAX_RULE_OPS, MAX_SERVER_RULES, RemoteRule, RuleOp, RuleOpKind, RuleOutcome, RuleResult, RulesDownload, RulesUpload, RulesUploaded,
 };
-use mailcraft_model::{Action, Condition, Id, Keep, MAX_RULE_GONE, MAX_RULES, Mailbox, Rule, RuleGone, ServerRule};
+use mailsolutions_model::{Action, Condition, Id, Keep, MAX_RULE_GONE, MAX_RULES, Mailbox, Rule, RuleGone, ServerRule};
 use serde_json::{Value, json};
 
 use super::remote::{Merged, owner};

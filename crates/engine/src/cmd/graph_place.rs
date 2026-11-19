@@ -8,7 +8,7 @@
 //! made there by that mailbox's own run, at its own address, from the whole message here
 //! ([`PlaceUp`]): the message waits here, in its new folder, until it is
 //! ([`Queued::PlaceMessage`]). Of a move, the original stays on its own server, **being moved**
-//! ([`mailcraft_model::sync::MovingOut`] in a Microsoft account, a [`Pending::Move`] out of an
+//! ([`mailsolutions_model::sync::MovingOut`] in a Microsoft account, a [`Pending::Move`] out of an
 //! IMAP account), and goes from there only once the copy is confirmed on the destination's
 //! server ([`safe_here`]: `graph_up`'s moved-out changes, the IMAP run's deletions): a copy that
 //! fails never loses the message.
@@ -25,9 +25,9 @@
 
 use std::collections::HashSet;
 
-use mailcraft_model::sync::{FlagUp, MAX_PLACES, MessageOutcome, PLACE_BYTES, PlaceDone, PlaceUp, ServerMessage};
-use mailcraft_model::{FlagStatus, FolderKind, Id, Mailbox, Message, Pending, Queued, RETURNED_LISTINGS};
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_model::sync::{FlagUp, MAX_PLACES, MessageOutcome, PLACE_BYTES, PlaceDone, PlaceUp, ServerMessage};
+use mailsolutions_model::{FlagStatus, FolderKind, Id, Mailbox, Message, Pending, Queued, RETURNED_LISTINGS};
+use mailsolutions_time::{DateTime, Timestamp};
 
 use super::graph_up::{Kind, Refusals, Why, destination, folder_name};
 use crate::Session;
@@ -115,9 +115,9 @@ pub(crate) fn unreadable_waiting(s: &Session, account: Id) -> Vec<String> {
 /// theirs does. As far as a run looks ([`MAX_PLACES`]).
 pub(crate) fn held_for_this_computer(s: &Session, account: Id) -> Vec<String> {
     let mb = &s.mailbox;
-    let local = |m: &Message| mb.account(m.account).is_some_and(|a| a.kind == mailcraft_model::AccountKind::Local);
+    let local = |m: &Message| mb.account(m.account).is_some_and(|a| a.kind == mailsolutions_model::AccountKind::Local);
     let moved = mb.pending.iter().filter_map(|p| match p {
-        mailcraft_model::Pending::Move { message, .. } if p.account() == account => Some(*message),
+        mailsolutions_model::Pending::Move { message, .. } if p.account() == account => Some(*message),
         _ => None,
     });
     let out = mb.messages.values().filter(|m| m.moving_out.as_ref().is_some_and(|o| o.account == account)).map(|m| m.id);

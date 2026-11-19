@@ -3,7 +3,7 @@
 //! Signatures through commands (R4.5.1): rich text, pictures, the two defaults, and mailboxes
 //! from before there were any of these.
 
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};
@@ -18,7 +18,7 @@ fn run(s: &mut Session, id: &str, params: Value) -> Value {
 }
 
 fn png() -> String {
-    mailcraft_charset::base64::STANDARD.encode(b"\x89PNG\r\n\x1a\nIHDR....")
+    mailsolutions_charset::base64::STANDARD.encode(b"\x89PNG\r\n\x1a\nIHDR....")
 }
 
 fn account(s: &Session) -> u64 {
@@ -81,7 +81,7 @@ fn a_signature_takes_rich_text_pasted_html_and_pictures_within_the_caps() {
     assert_eq!(sig.plain(), "[Lumen Studio]Avery Quinn\nLumen");
     assert_eq!(sig.picture(u32::try_from(id).unwrap()).unwrap().width, Some(120));
     // Not a picture, a web address, and a picture that isn't there.
-    let junk = { mailcraft_charset::base64::STANDARD.encode(b"<html>") };
+    let junk = { mailsolutions_charset::base64::STANDARD.encode(b"<html>") };
     assert!(s.run("signature.picture.add", &json!({"name": "Work", "data": junk})).unwrap_err().to_string().contains("PNG, JPEG or GIF"));
     assert!(
         s.run("signature.picture.add", &json!({"name": "Work", "path": "https://example.org/logo.png"}))
@@ -95,7 +95,7 @@ fn a_signature_takes_rich_text_pasted_html_and_pictures_within_the_caps() {
     // A save and an open keep all of it.
     run(&mut s, "signature.picture.add", json!({"name": "Work", "data": png()}));
     let json = serde_json::to_string(&s.mailbox).unwrap();
-    let back: mailcraft_model::Mailbox = serde_json::from_str(&json).unwrap();
+    let back: mailsolutions_model::Mailbox = serde_json::from_str(&json).unwrap();
     assert_eq!(back.signatures, s.mailbox.signatures);
 }
 
@@ -120,7 +120,7 @@ fn colour_and_font_are_formats_of_the_message() {
 fn a_mailbox_from_before_has_its_signatures_and_defaults_as_they_were() {
     let json = r#"{"accounts": [{"id": 1, "email": "avery@lumen.example", "signature": "Standard"}],
         "signatures": [{"name": "Standard", "text": "Avery Quinn\nLumen Studio"}]}"#;
-    let mb: mailcraft_model::Mailbox = serde_json::from_str(json).unwrap();
+    let mb: mailsolutions_model::Mailbox = serde_json::from_str(json).unwrap();
     let a = mb.account(1).unwrap();
     assert_eq!((a.signature.as_str(), a.reply_signature()), ("Standard", "Standard"));
     assert_eq!(mb.signature("standard").unwrap().plain(), "Avery Quinn\nLumen Studio");
@@ -144,15 +144,15 @@ fn a_signature_with_a_logo_goes_out_with_the_picture_inside_the_message() {
     let id = run(&mut s, "compose.send", json!({}))["id"].as_u64().unwrap();
     let m = s.mailbox.message(id).unwrap().clone();
     let pic = m.attachments.iter().find(|a| a.inline).expect("the logo goes with the message");
-    assert!(pic.content_id.starts_with("sig-") && pic.content_id.ends_with("@mailcraft.invalid") && pic.mime == "image/png");
+    assert!(pic.content_id.starts_with("sig-") && pic.content_id.ends_with("@mailsolutions.invalid") && pic.mime == "image/png");
     let html = m.body.html.clone().unwrap();
     assert!(html.contains(&format!("cid:{}", pic.content_id)) && html.contains("Lumen Studio logo") && html.contains("Hello"), "{html}");
     // The plain-text part has the words, and the picture said in words.
     assert!(m.body.text.starts_with("Hello\n\n[Lumen Studio logo]Avery Quinn\nLumen Studio"), "{:?}", m.body.text);
     // On the wire the picture is part of the HTML, and it reads back.
-    let bytes = mailcraft_mime_model::write(&m, &mailcraft_mime_model::WriteOptions::default());
+    let bytes = mailsolutions_mime_model::write(&m, &mailsolutions_mime_model::WriteOptions::default());
     assert!(String::from_utf8_lossy(&bytes).contains("multipart/related"));
-    let back = mailcraft_mime_model::parse(&bytes);
+    let back = mailsolutions_mime_model::parse(&bytes);
     let read = back.attachments.iter().find(|a| a.content_id == pic.content_id).expect("the picture reads back");
     assert_eq!(read.data, pic.data);
 }
@@ -262,7 +262,10 @@ fn pictures_go_in_at_the_caret_of_the_open_signature_and_out_with_it() {
     run(&mut s, "signature.layout", json!({"value": "pictureLeft"}));
     run(&mut s, "signature.save", json!({}));
     let sig = s.mailbox.signature("Standard").unwrap();
-    assert_eq!((sig.pictures().len(), sig.picture(id).unwrap().width, sig.layout), (1, Some(120), mailcraft_model::signature::Layout::PictureLeft));
+    assert_eq!(
+        (sig.pictures().len(), sig.picture(id).unwrap().width, sig.layout),
+        (1, Some(120), mailsolutions_model::signature::Layout::PictureLeft)
+    );
     // Taken out of the text, it is let go when saved.
     run(&mut s, "signature.picture.remove", json!({"id": id}));
     assert!(s.signature_edit.as_ref().unwrap().body.text().pictures().is_empty());
@@ -287,7 +290,7 @@ fn a_signature_pasted_from_outlook_on_the_web_keeps_its_formatting() {
     assert_eq!(text.to_plain(), "Avery Quinn\nLumen Studio\nlumen.example <https://lumen.example/>");
     let runs: Vec<_> = text.paragraphs().iter().flat_map(|p| p.runs.clone()).collect();
     let name = runs.iter().find(|r| r.text == "Avery Quinn").unwrap();
-    assert!(name.style.bold && name.style.font == Some(mailcraft_model::rich::Font::Calibri) && name.style.size == Some(12), "{name:?}");
+    assert!(name.style.bold && name.style.font == Some(mailsolutions_model::rich::Font::Calibri) && name.style.size == Some(12), "{name:?}");
     let org = runs.iter().find(|r| r.text == "Lumen Studio").unwrap();
     assert_eq!(org.style.color.as_deref(), Some("#1f4e79"));
     assert!(runs.iter().any(|r| r.style.link.as_deref() == Some("https://lumen.example/")));
@@ -303,9 +306,9 @@ fn a_signature_made_from_details_has_working_links_and_follows_them_until_edited
     let r = run(&mut s, "signature.details", json!({"name": "Card", "details": details}));
     assert_eq!((r["laidOut"].as_bool(), r["handEdited"].as_bool()), (Some(true), Some(false)));
     let sig = s.mailbox.signature("Card").unwrap();
-    assert_eq!(sig.layout, mailcraft_model::signature::Layout::PictureLeft);
+    assert_eq!(sig.layout, mailsolutions_model::signature::Layout::PictureLeft);
     assert_eq!(sig.body().pictures().len(), 1);
-    let html = mailcraft_mime_model::rich::signature_html(sig, &|p| format!("p{}", p.id));
+    let html = mailsolutions_mime_model::rich::signature_html(sig, &|p| format!("p{}", p.id));
     for link in ["href=\"tel:+442079460000\"", "href=\"tel:07700900000\"", "href=\"mailto:avery@lumen.example\"", "href=\"https://lumen.example\""] {
         assert!(html.contains(link), "{link} in {html}");
     }
@@ -480,7 +483,7 @@ fn an_html_signature_is_rich_text_again_with_its_words_and_refuses_what_it_would
     logo(&mut s);
     assert!(s.run("signature.html", &json!({"name": "Logo", "html": "<b>Avery</b>"})).is_err());
     assert!(s.mailbox.signature("Logo").unwrap().html().is_none() && s.mailbox.signature("Logo").unwrap().pictures().len() == 1);
-    let big = "x".repeat(mailcraft_model::signature::MAX_HTML + 1);
+    let big = "x".repeat(mailsolutions_model::signature::MAX_HTML + 1);
     assert!(s.run("signature.html", &json!({"name": "Standard", "html": big})).is_err());
     assert!(s.run("signature.html", &json!({"name": "Standard", "html": 7})).is_err());
     assert!(s.mailbox.signature("Standard").unwrap().html().is_none());
@@ -537,7 +540,7 @@ fn a_signature_in_the_fixed_width_font_is_kept_in_it() {
     run(&mut s, "format.font", json!({"value": "courier new", "from": 0, "to": end}));
     run(&mut s, "signature.save", json!({}));
     let json = serde_json::to_string(&s.mailbox).unwrap();
-    let back: mailcraft_model::Mailbox = serde_json::from_str(&json).unwrap();
+    let back: mailsolutions_model::Mailbox = serde_json::from_str(&json).unwrap();
     let first = back.signature("Standard").unwrap().body().paragraphs().first().unwrap().runs.first().unwrap().style.font;
     assert_eq!(first.map(|f| f.label()), Some("Courier New"));
 }

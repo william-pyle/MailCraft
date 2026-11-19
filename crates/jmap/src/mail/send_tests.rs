@@ -8,8 +8,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use mailcraft_model::sync::{JmapChange, MAX_SENDS, SendDone, SendOutcome, SendUp};
-use mailcraft_model::{Address, Body, Message};
+use mailsolutions_model::sync::{JmapChange, MAX_SENDS, SendDone, SendOutcome, SendUp};
+use mailsolutions_model::{Address, Body, Message};
 use proptest::prelude::*;
 use serde_json::json;
 
@@ -168,7 +168,7 @@ fn a_message_is_uploaded_imported_into_sent_and_submitted_with_its_envelope_in_o
     let fields: Vec<(&str, &str)> = upload.fields().collect();
     assert!(fields.contains(&("Content-Type", "message/rfc822")) && fields.iter().any(|(name, _)| *name == "Authorization"));
     let text = String::from_utf8_lossy(upload.body()).to_string();
-    let read = mailcraft_mime_model::parse(upload.body());
+    let read = mailsolutions_mime_model::parse(upload.body());
     assert_eq!(
         (read.subject.as_str(), read.from.email.as_str(), read.to.len(), read.cc.len(), read.body.text.trim()),
         ("Lunch", ME, 2, 2, "Shall we?")
@@ -714,10 +714,10 @@ fn the_message_goes_without_its_bcc_field_and_dated() {
     let text = String::from_utf8_lossy(&octets).to_string();
     assert!(!text.contains("erin@example.org") && !text.lines().any(|line| line.to_ascii_lowercase().starts_with("bcc:")), "{text}");
     assert!(text.contains("bob@example.org") && text.contains("carol@example.org"));
-    assert_eq!(mailcraft_mime_model::parse(&octets).date, THEN);
+    assert_eq!(mailsolutions_mime_model::parse(&octets).date, THEN);
     // One that was never dated is dated now.
     mail.date = 0;
-    let dated = mailcraft_mime_model::parse(&written(&mail)).date;
+    let dated = mailsolutions_mime_model::parse(&written(&mail)).date;
     assert!(dated > 1_700_000_000, "{dated}");
 }
 
@@ -1376,8 +1376,8 @@ fn the_octets_sent_are_the_same_whatever_marks_of_the_mailbox_change() {
     for marked in [
         Message { read: true, ..mail.clone() },
         Message { answered: true, ..mail.clone() },
-        Message { flag: mailcraft_model::FlagStatus::Flagged, ..mail.clone() },
-        Message { flag: mailcraft_model::FlagStatus::Complete, read: true, ..mail.clone() },
+        Message { flag: mailsolutions_model::FlagStatus::Flagged, ..mail.clone() },
+        Message { flag: mailsolutions_model::FlagStatus::Complete, read: true, ..mail.clone() },
     ] {
         assert_eq!(written(&marked), plain);
     }
@@ -1393,7 +1393,7 @@ fn the_octets_sent_are_the_same_whatever_marks_of_the_mailbox_change() {
         d.refuse_next.extend([None, None, None, Some((401, None))]);
     });
     assert!(sent_of(&send(&stand_in, vec![simple(41)])).is_empty(), "it waits");
-    let read = outbox(41, Message { read: true, flag: mailcraft_model::FlagStatus::Flagged, ..mail });
+    let read = outbox(41, Message { read: true, flag: mailsolutions_model::FlagStatus::Flagged, ..mail });
     assert_eq!(sent_of(&send(&stand_in, vec![read])), [is(41, SendOutcome::Sent)]);
     stand_in.with(|d| {
         assert_eq!((d.submitted.len(), d.emails.len()), (1, 1));

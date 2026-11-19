@@ -19,9 +19,9 @@
 
 use std::sync::Arc;
 
-use mailcraft_ical::WriteOptions;
-use mailcraft_model::{Address, Attachment, Attendee, Body, Event, FolderKind, Id, Message, Occurrence, Origin, Response, ShowAs};
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_ical::WriteOptions;
+use mailsolutions_model::{Address, Attachment, Attendee, Body, Event, FolderKind, Id, Message, Occurrence, Origin, Response, ShowAs};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use serde_json::{Value, json};
 
 use super::super::{bad, fail, remote};
@@ -37,7 +37,7 @@ const MAX_PEOPLE: usize = 60;
 const MAX_DAY: usize = 40;
 /// The longest a meeting's `UID` may be: what a server keeps of one (`model::remote::MAX_KEY`).
 /// A longer one is no name to know a meeting by.
-const MAX_UID: usize = mailcraft_model::remote::MAX_KEY;
+const MAX_UID: usize = mailsolutions_model::remote::MAX_KEY;
 /// The longest title, place and name kept of an invitation, and the longest description.
 const MAX_LINE: usize = 500;
 const MAX_TEXT: usize = 100_000;
@@ -60,7 +60,7 @@ pub(super) fn specs() -> Vec<CommandSpec> {
             .params(r#"{"message"?: number} — the calendar on the day of the meeting a message carries, with the meeting selected when it is there: {"date", "event": number|null}"#),
         CommandSpec::new("calendar.deleteAnsweredRequests", "Delete Meeting Requests after Responding", "File › Options", delete_answered)
             .pure()
-            .params(r#"{"value"?: bool (default: toggle)} — whether a meeting request or a cancellation answered from the mail goes from the Inbox to Deleted Items: the owner's choice in File › Options, on in a new install's window, off in a session without the window's settings (mailcraft-cli run, headless mcp)"#),
+            .params(r#"{"value"?: bool (default: toggle)} — whether a meeting request or a cancellation answered from the mail goes from the Inbox to Deleted Items: the owner's choice in File › Options, on in a new install's window, off in a session without the window's settings (mailsolutions-cli run, headless mcp)"#),
     ]
 }
 
@@ -212,7 +212,7 @@ fn read(s: &Session, v: &Value) -> Result<Invitation, CmdError> {
     let offset_at = remote::offset_of(s);
     for (index, part) in message.attachments.iter().enumerate().filter(calendar).take(MAX_PARTS).filter(|(_, part)| part.data.len() <= MAX_ICS) {
         let text = String::from_utf8_lossy(&part.data);
-        let file = mailcraft_ical::parse_events(&text, &offset_at, 1);
+        let file = mailsolutions_ical::parse_events(&text, &offset_at, 1);
         let notes = file.notes;
         // The meeting itself comes first; changed days of a series follow it.
         if let Some(event) = file.events.into_iter().next() {
@@ -363,7 +363,7 @@ fn noted_answer(s: &Session, message: &Message) -> Option<(Response, Timestamp)>
         let code = answer_code(response)?;
         let at = words.next()?.parse::<Timestamp>().ok()?;
         let mark = u64::from_str_radix(words.next()?, 16).ok()?;
-        (mark == answer_mark(message, code, at) && at > 0 && at <= s.now().saturating_add(mailcraft_time::DAY)).then_some((response, at))
+        (mark == answer_mark(message, code, at) && at > 0 && at <= s.now().saturating_add(mailsolutions_time::DAY)).then_some((response, at))
     };
     // (The last noted is the one that counts.)
     let notes: Vec<&str> = message.header_values(ANSWER_HEADER).collect();
@@ -627,7 +627,7 @@ fn invitation(s: &mut Session, v: &Value) -> CmdResult {
     let proposals = {
         let known = on_calendar.map(|there| there.proposals.as_slice()).unwrap_or_default();
         let sender = proposer(s, &invitation).email;
-        let same = |one: &mailcraft_model::Proposal| {
+        let same = |one: &mailsolutions_model::Proposal| {
             one.from.email.trim().eq_ignore_ascii_case(sender.trim()) && one.start == invitation.event.start && one.end == invitation.event.end
         };
         known.len() + usize::from(kind == "counter" && !known.iter().any(same))
@@ -648,8 +648,8 @@ fn invitation(s: &mut Session, v: &Value) -> CmdResult {
         "allDay": event.all_day,
         // Where it was made, when the clock there shows another time than the calendar's: the
         // zone, and its times by that clock. And what was unclear about its zone.
-        "startZone": event.zone().map(mailcraft_time::Zone::id),
-        "ownTime": mailcraft_model::zoned::own_time_label(event, &remote::offset_of(s), s.prefs.twelve_hour),
+        "startZone": event.zone().map(mailsolutions_time::Zone::id),
+        "ownTime": mailsolutions_model::zoned::own_time_label(event, &remote::offset_of(s), s.prefs.twelve_hour),
         "notes": invitation.notes,
         "organizer": event.organizer.as_ref().map(Address::full),
         "people": {
@@ -879,14 +879,14 @@ fn line_end(text: &str, from: usize) -> Option<usize> {
 fn reply_message(
     s: &Session,
     invitation: &Invitation,
-    owner: &mailcraft_model::Account,
+    owner: &mailsolutions_model::Account,
     response: Response,
     note: &str,
     proposed: Option<(DateTime, DateTime)>,
 ) -> Result<Message, CmdError> {
     let organizer =
         invitation.event.organizer.clone().filter(|who| who.is_valid()).ok_or_else(|| fail("The invitation doesn't say who to answer."))?;
-    if owner.kind == mailcraft_model::AccountKind::Unknown {
+    if owner.kind == mailsolutions_model::AccountKind::Unknown {
         return Err(super::super::account::added_by_newer(
             owner,
             "which sends its mail: answer the invitation there, or here without sending an answer",
@@ -929,7 +929,7 @@ fn reply_message(
     };
     let now = s.now();
     let method = if proposed.is_some() { "COUNTER" } else { "REPLY" };
-    let mut ics = mailcraft_ical::write_in(&[&answer], &[], &WriteOptions { method: method.into(), now }, Some(s.zone()));
+    let mut ics = mailsolutions_ical::write_in(&[&answer], &[], &WriteOptions { method: method.into(), now }, Some(s.zone()));
     // One occurrence of a series is named as the invitation named it.
     if let Some((written, _)) = &invitation.instance
         && written.len() <= 16
@@ -943,7 +943,7 @@ fn reply_message(
     let fill = |template: &str, more: &[(&str, &str)]| {
         let mut values = vec![("name", name), ("title", title.as_str())];
         values.extend_from_slice(more);
-        mailcraft_i18n::fmt(template, &values)
+        mailsolutions_i18n::fmt(template, &values)
     };
     let mut said = fill(word, &[]);
     let mut subject = fill(verb, &[]);
@@ -958,7 +958,7 @@ fn reply_message(
     Ok(Message {
         account: owner.id,
         folder: outbox,
-        message_id: mailcraft_mime::new_message_id(domain, now, s.rev().wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ invitation.message.rotate_left(17)),
+        message_id: mailsolutions_mime::new_message_id(domain, now, s.rev().wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ invitation.message.rotate_left(17)),
         in_reply_to: original.map(|m| m.message_id.clone()).unwrap_or_default(),
         references: original.map(|m| m.message_id.clone()).into_iter().filter(|id| !id.is_empty()).collect(),
         from: owner.address(),
@@ -968,7 +968,7 @@ fn reply_message(
         received: now,
         body: Body { text, html: None },
         // The answer is the message in another form: it goes beside the text, where the
-        // organizer's program looks for it (`mailcraft-mime` writes it `text/calendar; method=REPLY`).
+        // organizer's program looks for it (`mailsolutions-mime` writes it `text/calendar; method=REPLY`).
         attachments: vec![Attachment { inline: true, ..Attachment::new("response.ics", "text/calendar", ics.into_bytes()) }],
         read: true,
         ..Default::default()
@@ -982,7 +982,8 @@ fn reply_message(
 /// What the owner made of the item for their own use (its reminder, its categories, that it is
 /// private) and who else is invited stay here: the file says what, when and where.
 pub(super) fn forward_message(s: &Session, event: &Event, to: &[Address], note: &str) -> Result<Message, CmdError> {
-    let sends = |account: &&mailcraft_model::Account| account.kind.sends_mail() && s.mailbox.folder_of_kind(account.id, FolderKind::Outbox).is_some();
+    let sends =
+        |account: &&mailsolutions_model::Account| account.kind.sends_mail() && s.mailbox.folder_of_kind(account.id, FolderKind::Outbox).is_some();
     let owner = s.mailbox.default_account().filter(sends).or_else(|| s.mailbox.accounts.iter().find(sends));
     let owner = owner.cloned().ok_or_else(|| fail("No account here has a mail server to send this through."))?;
     let outbox = s.mailbox.folder_of_kind(owner.id, FolderKind::Outbox).ok_or_else(|| fail("this account has no Outbox folder"))?;
@@ -997,7 +998,7 @@ pub(super) fn forward_message(s: &Session, event: &Event, to: &[Address], note: 
     };
     let now = s.now();
     // (With its times as the item has them: in its own zone, or the one the calendar is shown in.)
-    let ics = mailcraft_ical::write_in(&[&item], &[], &WriteOptions { method: "PUBLISH".into(), now }, Some(s.zone()));
+    let ics = mailsolutions_ical::write_in(&[&item], &[], &WriteOptions { method: "PUBLISH".into(), now }, Some(s.zone()));
     let title: String = event.title.chars().filter(|c| !c.is_control()).take(200).collect();
     let twelve = s.prefs.twelve_hour;
     let when = if event.all_day {
@@ -1016,7 +1017,7 @@ pub(super) fn forward_message(s: &Session, event: &Event, to: &[Address], note: 
     Ok(Message {
         account: owner.id,
         folder: outbox,
-        message_id: mailcraft_mime::new_message_id(domain, now, s.rev().wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ event.id.rotate_left(23)),
+        message_id: mailsolutions_mime::new_message_id(domain, now, s.rev().wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ event.id.rotate_left(23)),
         from: owner.address(),
         to: to.to_vec(),
         subject: format!("FW: {title}"),
@@ -1110,8 +1111,8 @@ fn delete_answered(s: &mut Session, v: &Value) -> CmdResult {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::remote::{EventChangeKind, EventsDownload, RemoteEvent, RemoteEventKind};
-    use mailcraft_model::{Freq, Recurrence};
+    use mailsolutions_model::remote::{EventChangeKind, EventsDownload, RemoteEvent, RemoteEventKind};
+    use mailsolutions_model::{Freq, Recurrence};
 
     use super::*;
 
@@ -1209,15 +1210,15 @@ mod tests {
         waiting.into_iter().map(|(_, subject, part)| (subject, part)).collect()
     }
 
-    /// An account a newer MailCraft added: no answer is mailed from it, as nothing here sends its
+    /// An account a newer MailSolutions added: no answer is mailed from it, as nothing here sends its
     /// mail; answered without one, the meeting goes into a calendar here, as for a local account.
     #[test]
     fn an_invitation_to_an_account_a_newer_version_added_is_answered_without_mail() {
         let mut s = Session::at(crate::sample::mailbox(now(), 0), now(), 0);
-        let newer = mailcraft_model::Account {
+        let newer = mailsolutions_model::Account {
             name: "Ada".into(),
             email: "ada@example.org".into(),
-            kind: mailcraft_model::AccountKind::Unknown,
+            kind: mailsolutions_model::AccountKind::Unknown,
             ..Default::default()
         };
         let account = s.mailbox.add_account(newer);
@@ -1226,7 +1227,7 @@ mod tests {
         assert_eq!((said["answerable"].as_bool(), said["canSend"].as_bool()), (Some(true), Some(false)));
         let events = s.mailbox.events.len();
         let why = refused(&mut s, "calendar.respond", json!({"message": request, "response": "accept", "send": true}));
-        assert!(why.contains("was added by a newer version of MailCraft, which sends its mail"), "{why}");
+        assert!(why.contains("was added by a newer version of MailSolutions, which sends its mail"), "{why}");
         assert_eq!((s.mailbox.events.len(), outbox(&s, account).len()), (events, 0));
         let answered = run(&mut s, "calendar.respond", json!({"message": request, "response": "accept"}));
         assert!(answered["event"].is_u64(), "{answered}");
@@ -1239,11 +1240,11 @@ mod tests {
     #[test]
     fn a_jmap_account_answers_and_forwards_a_meeting_by_mail() {
         let mut s = Session::at(crate::sample::mailbox(now(), 0), now(), 0);
-        let server = mailcraft_model::JmapServer { session: "https://jmap.example/.well-known/jmap".into(), bearer: true };
-        let jmap = mailcraft_model::Account {
+        let server = mailsolutions_model::JmapServer { session: "https://jmap.example/.well-known/jmap".into(), bearer: true };
+        let jmap = mailsolutions_model::Account {
             name: "Ada".into(),
             email: "ada@example.org".into(),
-            kind: mailcraft_model::AccountKind::Jmap,
+            kind: mailsolutions_model::AccountKind::Jmap,
             jmap: Some(server),
             ..Default::default()
         };
@@ -1383,7 +1384,7 @@ mod tests {
 
     #[test]
     fn an_answer_is_written_in_the_interface_language() {
-        use mailcraft_i18n::{Lang, test_support};
+        use mailsolutions_i18n::{Lang, test_support};
         let fr = test_support::po(&[
             ("Declined: {title}", "Refusé\u{a0}: {title}"),
             ("{name} has declined this meeting.", "{name} a refusé cette réunion."),
@@ -1413,9 +1414,11 @@ mod tests {
         assert!(reply.body.text.contains("has accepted this meeting."), "{}", reply.body.text);
         assert!(reply.cc.is_empty() && reply.bcc.is_empty() && reply.from.email == "ada@example.org");
         // Written out: text and `text/calendar; method=REPLY` side by side, to the organizer alone.
-        let wire =
-            String::from_utf8(mailcraft_mime_model::write(reply, &mailcraft_mime_model::WriteOptions { include_bcc: true, ..Default::default() }))
-                .unwrap();
+        let wire = String::from_utf8(mailsolutions_mime_model::write(
+            reply,
+            &mailsolutions_mime_model::WriteOptions { include_bcc: true, ..Default::default() },
+        ))
+        .unwrap();
         assert!(wire.contains("\r\nContent-Type: text/calendar; method=REPLY; charset=utf-8\r\n"), "{wire}");
         assert!(wire.contains("\r\nMETHOD:REPLY\r\n") && wire.contains("PARTSTAT=ACCEPTED") && wire.contains("\r\nUID:uid-1\r\n"), "{wire}");
         let head = wire.split("\r\n\r\n").next().unwrap();
@@ -1472,7 +1475,7 @@ mod tests {
         let mine = mail(&mut s, account, "REQUEST", "uid-mine", "");
         assert_eq!(blocked(&mut s, mine), (Some("organizer".into()), Some(false)));
         let calendar = s.mailbox.events.values().find(|e| e.uid == "uid-there").map(|e| e.calendar).unwrap();
-        s.mailbox.calendars.iter_mut().find(|c| c.id == calendar).unwrap().rights = mailcraft_model::Rights::Read;
+        s.mailbox.calendars.iter_mut().find(|c| c.id == calendar).unwrap().rights = mailsolutions_model::Rights::Read;
         assert_eq!(blocked(&mut s, there), (Some("readOnly".into()), Some(false)));
     }
 
@@ -1560,7 +1563,7 @@ mod tests {
         let far = mail(&mut s, account, "REQUEST", &long, moved);
         run(&mut s, "calendar.respond", json!({"message": far, "response": "accept", "send": true}));
         let reply = outbox(&s, account).into_iter().map(|(_, part)| part).find(|part| part.contains("0400")).unwrap();
-        let read = mailcraft_ical::parse(&reply, &|_| 0);
+        let read = mailsolutions_ical::parse(&reply, &|_| 0);
         assert_eq!(
             (read.method.as_str(), read.events.len(), read.events[0].uid.clone()),
             ("REPLY", 1, format!("{long}#20261022T140000Z")),

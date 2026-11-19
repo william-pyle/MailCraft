@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::digital_signature::SignatureFormat;
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 
 /// The most bytes of one key (an S/MIME certificate is a few KB, an OpenPGP key as kept, with
 /// its self-signatures only, as much).

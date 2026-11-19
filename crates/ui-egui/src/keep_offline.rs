@@ -6,10 +6,10 @@
 //! done a few hundred messages a frame (`account.thinOffline` with `most`), so that a first
 //! thinning of years of mail never holds the window up; its content files go with the next save.
 
-use mailcraft_model::KeepOffline;
+use mailsolutions_model::KeepOffline;
 use serde_json::{Value, json};
 
-use mailcraft_engine::sync_driver::Thinned;
+use mailsolutions_engine::sync_driver::Thinned;
 
 use crate::{MailApp, now_ms};
 
@@ -56,7 +56,7 @@ impl MailApp {
     }
 
     /// Each frame: take mail outside its window back when it is due (the engine decides and
-    /// does it, [`mailcraft_engine::Session::offline_tick`]).
+    /// does it, [`mailsolutions_engine::Session::offline_tick`]).
     pub(crate) fn offline_tick(&mut self) {
         match self.session.offline_tick(now_ms()) {
             Thinned::More => {
@@ -122,7 +122,7 @@ pub(crate) fn step_slider(ui: &mut egui::Ui, index: &mut usize, count: usize) ->
 /// follows it), as a slider over Outlook's steps from 3 days to All, with the step in words.
 /// Moving it runs `ui.keepOffline` once it is let go (a shorter window asks first); while it is
 /// dragged it only shows where it is. Answers the step it shows.
-pub(crate) fn slider(app: &mut MailApp, ui: &mut egui::Ui, account: mailcraft_model::Id, now: KeepOffline) -> KeepOffline {
+pub(crate) fn slider(app: &mut MailApp, ui: &mut egui::Ui, account: mailsolutions_model::Id, now: KeepOffline) -> KeepOffline {
     let steps = KeepOffline::STEPS;
     let last = steps.len().saturating_sub(1);
     let at = steps.iter().position(|k| *k == now).unwrap_or(last);
@@ -147,9 +147,9 @@ pub(crate) fn slider(app: &mut MailApp, ui: &mut egui::Ui, account: mailcraft_mo
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_engine::Session;
-    use mailcraft_model::sync::ServerMessage;
-    use mailcraft_model::{FolderKind, Message, ServerFolder};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::sync::ServerMessage;
+    use mailsolutions_model::{FolderKind, Message, ServerFolder};
 
     use super::*;
     use crate::Services;
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn mail_ages_out_at_opening_and_once_a_day_and_what_was_opened_stays_until_the_next_opening() {
-        let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0), Services::default());
         app.autosave = false;
         let account = app.execute("account.add", json!({"email": "offline@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
         app.execute("account.edit", json!({"id": account, "keepOffline": "1w"})).unwrap();
@@ -169,7 +169,7 @@ mod tests {
         let mut ids = Vec::new();
         for (n, days) in [(1, 2), (2, 6), (3, 30)] {
             let server = ServerMessage { id: format!("M{n}"), folder: "in".into(), ..Default::default() };
-            let body = mailcraft_model::Body { text: format!("All of message {n}. ").repeat(100), html: None };
+            let body = mailsolutions_model::Body { text: format!("All of message {n}. ").repeat(100), html: None };
             let m = Message { account, folder: inbox, received: NOW - days * DAY, server: Some(server), body, ..Default::default() };
             ids.push(app.session.mailbox.add_message(m).unwrap());
         }
@@ -182,23 +182,23 @@ mod tests {
         app.session.clock.now = Some(NOW + 2 * DAY);
         app.offline_tick();
         assert_eq!(whole(&app), [true, true, false], "not due yet");
-        app.session.driver.thinning.at -= mailcraft_engine::sync_driver::DAY_MS;
+        app.session.driver.thinning.at -= mailsolutions_engine::sync_driver::DAY_MS;
         app.offline_tick();
         assert_eq!(whole(&app), [true, false, false]);
         // Opened (fetched by the owner) outside the window: it stays whole while the mailbox
         // stays open, and goes once it is opened again.
-        let fetched = mailcraft_model::sync::GraphFetchResult {
+        let fetched = mailsolutions_model::sync::GraphFetchResult {
             account,
             email: "offline@example.org".into(),
-            fetched: vec![mailcraft_model::sync::GraphFetched {
+            fetched: vec![mailsolutions_model::sync::GraphFetched {
                 id: "M3".into(),
                 mime: b"From: kit@example.org\r\nSubject: Three\r\n\r\nThe whole of three.\r\n".to_vec(),
             }],
             ..Default::default()
         };
-        mailcraft_engine::cmd::graph_mail::apply_graph_fetch(&mut app.session, fetched).unwrap();
+        mailsolutions_engine::cmd::graph_mail::apply_graph_fetch(&mut app.session, fetched).unwrap();
         assert_eq!(whole(&app), [true, false, true]);
-        app.session.driver.thinning.at -= mailcraft_engine::sync_driver::DAY_MS;
+        app.session.driver.thinning.at -= mailsolutions_engine::sync_driver::DAY_MS;
         app.offline_tick();
         assert_eq!(whole(&app), [true, false, true], "kept until the next start");
         let mailbox = app.session.mailbox.clone();

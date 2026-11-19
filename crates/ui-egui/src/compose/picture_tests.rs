@@ -4,7 +4,7 @@
 //! keys going over it as over a letter. Driven in a window without a window.
 
 use egui::{Event, Key, Modifiers};
-use mailcraft_model::rich::OBJECT;
+use mailsolutions_model::rich::OBJECT;
 use serde_json::json;
 
 use super::tests::{Window, app, key, key_with, plain, sel, type_in, window};
@@ -143,7 +143,7 @@ fn a_large_screenshot_is_pasted_scaled_down_to_fit() {
     let p = &c.pictures[0];
     let dims = image::ImageReader::new(std::io::Cursor::new(p.data.as_slice())).with_guessed_format().unwrap().into_dimensions().unwrap();
     assert_eq!(dims, (1920, 1280));
-    assert!(p.data.len() <= mailcraft_model::pictures::MAX_PICTURE_BYTES);
+    assert!(p.data.len() <= mailsolutions_model::pictures::MAX_PICTURE_BYTES);
 }
 
 #[test]

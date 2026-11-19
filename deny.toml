@@ -19,6 +19,12 @@ unmaintained = "all"
 yanked = "warn"
 # The same advisories are listed in osv-scanner.toml, for the OSV scanner and Scorecard.
 ignore = [
+    # 2026-11-19: informational unmaintained notice, not a reported vulnerability.
+    # The published ContactSolutions 1.3.0 store contract brings chrono 0.4.45;
+    # no patched chrono version exists. Keep the audited published store pinned.
+    # Re-review on its next release; replace chrono there separately (MailSolutions
+    # already uses jiff). Do not generalize this exception to other advisories.
+    { id = "RUSTSEC-2026-0543", reason = "Informational chrono unmaintained notice via pinned contactsolutions-store 1.3.0; no patched release; reviewed 2026-11-19, re-review with the next ContactSolutions store release" },
     # 2026-10-17: zvariant, zvariant_derive and zbus_names are merged into zbus 6 and no longer
     # kept up as crates of their own; nothing is known wrong with them.
     # 2026-10-18: the credential store moved from keyring 3 to keyring-core 1, and with it from
@@ -31,13 +37,13 @@ ignore = [
     { id = "RUSTSEC-2026-0370", reason = "zvariant merged into zbus 6; zbus 5 waits on accesskit/atspi and secret-service" },
     { id = "RUSTSEC-2026-0371", reason = "zbus_names merged into zbus 6; zbus 5 waits on accesskit/atspi and secret-service" },
     { id = "RUSTSEC-2026-0372", reason = "zvariant_derive merged into zbus 6; zbus 5 waits on accesskit/atspi and secret-service" },
-    # 2026-11-09: rPGP 0.21 (`mailcraft-openpgp`, #30) brings rsa 0.9 and crypto-bigint 0.5. Both
-    # advisories are timing leaks of a *private* key while it signs or decrypts; MailCraft only
+    # 2026-11-09: rPGP 0.21 (`mailsolutions-openpgp`, #30) brings rsa 0.9 and crypto-bigint 0.5. Both
+    # advisories are timing leaks of a *private* key while it signs or decrypts; MailSolutions only
     # checks Digital signatures with Public keys, where nothing secret is computed on. Look again
-    # before signing or decrypting with a key MailCraft holds itself (#30, later parts), and when
+    # before signing or decrypting with a key MailSolutions holds itself (#30, later parts), and when
     # rPGP moves to rsa 0.10 / crypto-bigint 0.7.
-    { id = "RUSTSEC-2023-0071", reason = "rsa Marvin attack: private-key timing; mailcraft-openpgp only verifies with public keys; remove or justify again before MailCraft signs or decrypts with a key it holds (#30 parts 5 and 6)" },
-    { id = "RUSTSEC-2026-0387", reason = "crypto-bigint 0.5 timing on secret integers; mailcraft-openpgp only verifies with public keys; remove or justify again before MailCraft signs or decrypts with a key it holds (#30 parts 5 and 6)" },
+    { id = "RUSTSEC-2023-0071", reason = "rsa Marvin attack: private-key timing; mailsolutions-openpgp only verifies with public keys; remove or justify again before MailSolutions signs or decrypts with a key it holds (#30 parts 5 and 6)" },
+    { id = "RUSTSEC-2026-0387", reason = "crypto-bigint 0.5 timing on secret integers; mailsolutions-openpgp only verifies with public keys; remove or justify again before MailSolutions signs or decrypts with a key it holds (#30 parts 5 and 6)" },
 ]
 
 [licenses]
@@ -61,8 +67,8 @@ allow = [
 [[licenses.exceptions]]
 # Mozilla's root certificates as data: a permissive data licence, not OSI, used for this crate
 # alone. rustls-platform-verifier brings it only for the browser and Android, where there is no
-# system verifier; MailCraft's own builds check certificates with the system's (#501), and
-# `mailcraft-net` has no TLS in the browser build at all.
+# system verifier; MailSolutions's own builds check certificates with the system's (#501), and
+# `mailsolutions-net` has no TLS in the browser build at all.
 name = "webpki-root-certs"
 allow = ["CDLA-Permissive-2.0"]
 
@@ -106,4 +112,4 @@ wildcards = "allow"
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = ["https://github.com/UCS-Care-Group/winit", "https://github.com/william-pyle/ContactCraft"]
+allow-git = ["https://github.com/UCS-Care-Group/winit", "https://github.com/william-pyle/ContactSolutions"]

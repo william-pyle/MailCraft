@@ -74,7 +74,7 @@ pub use rules::{RulesCame, RulesDriver, RulesFacts, RulesPlan};
 pub use sending::{GateStep, Pressed, SendingDriver};
 pub use tasks::{TasksCame, TasksDriver, TasksFacts};
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 
 /// How one kind of job is paced (all times in milliseconds).
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -9,8 +9,8 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use mailcraft_model::sync::JmapKnown;
-use mailcraft_model::{Address, FlagStatus};
+use mailsolutions_model::sync::JmapKnown;
+use mailsolutions_model::{Address, FlagStatus};
 use proptest::prelude::*;
 use serde_json::json;
 
@@ -150,7 +150,7 @@ fn folders_read(pieces: &[JmapMailResult]) -> Vec<&str> {
 
 /// The time an ISO date names.
 fn time(iso: &str) -> i64 {
-    mailcraft_time::iso_to_timestamp(iso, 0).unwrap()
+    mailsolutions_time::iso_to_timestamp(iso, 0).unwrap()
 }
 
 #[test]
@@ -1831,10 +1831,10 @@ fn emails_like() -> impl Strategy<Value = Value> {
 
 /// What must hold of any listing: a name each, parents before what is in them, no level too many.
 fn check_listing(listing: &FolderListing) {
-    assert!(listing.folders.len() <= mailcraft_model::sync::MAX_LISTED_FOLDERS);
+    assert!(listing.folders.len() <= mailsolutions_model::sync::MAX_LISTED_FOLDERS);
     let mut index: HashMap<&str, usize> = HashMap::new();
     for (n, folder) in listing.folders.iter().enumerate() {
-        assert!(is_id(&folder.id) && !folder.name.is_empty() && folder.name.chars().count() <= mailcraft_model::MAX_NAME);
+        assert!(is_id(&folder.id) && !folder.name.is_empty() && folder.name.chars().count() <= mailsolutions_model::MAX_NAME);
         assert!(!folder.name.chars().any(char::is_control) && folder.name == folder.name.trim());
         assert!(index.insert(folder.id.as_str(), n).is_none(), "an id twice");
         assert!(folder.parent.is_empty() || index.get(folder.parent.as_str()).is_some_and(|parent| *parent < n), "a parent after what is in it");

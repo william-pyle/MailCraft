@@ -4,7 +4,7 @@
 //!
 //! A shared mailbox (`support@`, a team's) is a mailbox of the owner's organisation that an
 //! administrator gave the owner Full Access to. It is opened under the owner's Microsoft account
-//! as Outlook opens it: an account of its own here ([`mailcraft_model::Account::shared_of`]),
+//! as Outlook opens it: an account of its own here ([`mailsolutions_model::Account::shared_of`]),
 //! with its own folders, messages and links, listed under its owner in the folder pane, and read
 //! through Graph at `/users/{address}/…` with the owner's sign-in. Nothing is asked of any
 //! server when it is added: the owner is asked for `Mail.ReadWrite.Shared` on Microsoft's page
@@ -15,7 +15,7 @@
 //! own folders and its own entry of `folder.list`, never added to its owner's; a search of All
 //! Mailboxes takes in its mail (but its Deleted Items and Junk E-mail, as for every account),
 //! and its conversations are its own. Its folders can be put among the Favorites, kept in
-//! MailCraft whatever its owner's come from (Outlook's list for the owner's own folders is
+//! MailSolutions whatever its owner's come from (Outlook's list for the owner's own folders is
 //! unchanged): nothing is read from or written to any server for that.
 //!
 //! What is changed in it goes up as for its owner's own mail (R3.3), at its own address with its
@@ -27,7 +27,7 @@
 //! Microsoft moves and copies only within one mailbox, so the destination's own run makes a copy
 //! there from the whole message, and of a move the original goes once that copy is confirmed; a
 //! message not downloaded yet is refused, and a copy that fails never loses it. Not to another
-//! account's mailbox ([`mailcraft_model::BETWEEN_MAILBOXES`]). Moved out to a local folder or
+//! account's mailbox ([`mailsolutions_model::BETWEEN_MAILBOXES`]). Moved out to a local folder or
 //! another account, its copy there goes once the message is safe here, as for the owner's (R3
 //! spec S19).
 //!
@@ -44,7 +44,7 @@
 //! asked, by itself, for `Calendars.ReadWrite.Shared`. They are only shown and read here: a change
 //! to one is refused, and none of them raises a reminder (they are the mailbox's, not the owner's).
 
-use mailcraft_model::{AccountKind, FolderKind, Id};
+use mailsolutions_model::{AccountKind, FolderKind, Id};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -95,7 +95,7 @@ fn owner(s: &Session, v: &Value) -> Result<Id, CmdError> {
 /// an address of Microsoft Graph's.
 fn address(v: &Value) -> Result<String, CmdError> {
     let text = p::req_str(v, "address")?;
-    mailcraft_model::mailbox_address(text).ok_or_else(|| {
+    mailsolutions_model::mailbox_address(text).ok_or_else(|| {
         let shown: String = text.chars().filter(|c| !c.is_control()).take(80).collect();
         bad(format!("\"{}\" isn't an e-mail address", shown.trim()))
     })

@@ -4,7 +4,7 @@
 //! (#577): once the owner has written in a message, it is theirs until it is closed (#494). A
 //! message only the agent wrote stays the agent's to edit (#442).
 
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};

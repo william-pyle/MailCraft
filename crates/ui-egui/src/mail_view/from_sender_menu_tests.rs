@@ -29,6 +29,6 @@ fn the_menu_looks_for_the_sender_of_the_message_clicked() {
     testing::click(&mut w, pos, PointerButton::Secondary, 1);
     w.get_by_label_contains("Messages from Sender").click();
     w.run_steps(3);
-    let want = format!("from:{}", mailcraft_model::search::keyword_value(&sender(&w, clicked)));
+    let want = format!("from:{}", mailsolutions_model::search::keyword_value(&sender(&w, clicked)));
     assert_eq!(w.state().session.view.search, want);
 }

@@ -7,13 +7,13 @@
 //!
 //! The engine never asks a server: `account.automaticReplies` says what is known and that the
 //! server is to be read, `account.setAutomaticReplies` says what is to change, a host with
-//! sockets reads and changes them (`mailcraft-net`'s `graph::automatic_replies` and
+//! sockets reads and changes them (`mailsolutions-net`'s `graph::automatic_replies` and
 //! `graph::set_automatic_replies`), and `sync.applyAutomaticReplies` takes what it read in.
 //!
 //! What a server says is hostile: the two replies are HTML on the server, and are kept here as
-//! plain text ([`mailcraft_html::to_text`]), cut to size; nothing of them is ever shown as a
+//! plain text ([`mailsolutions_html::to_text`]), cut to size; nothing of them is ever shown as a
 //! page. What the owner types goes up as simple HTML, escaped, in paragraphs
-//! ([`mailcraft_html::from_text`]), and only when it changed: a reply the owner didn't touch keeps
+//! ([`mailsolutions_html::from_text`]), and only when it changed: a reply the owner didn't touch keeps
 //! whatever the server made of it. Times go up in UTC.
 //!
 //! Changing them makes the server write to other people on the owner's behalf: an agent may read
@@ -21,9 +21,9 @@
 //!
 //! Nothing of it is kept in the mailbox file: it is the server's, and read again each session.
 
-use mailcraft_model::auto_replies::{AutoReplies, AutoReplyStatus, ExternalAudience, MAX_REPLY_TEXT, ZonedTime};
-use mailcraft_model::{AccountKind, Id, Mailbox, OAuthProvider};
-use mailcraft_time::{DateTime, Timestamp, Zone};
+use mailsolutions_model::auto_replies::{AutoReplies, AutoReplyStatus, ExternalAudience, MAX_REPLY_TEXT, ZonedTime};
+use mailsolutions_model::{AccountKind, Id, Mailbox, OAuthProvider};
+use mailsolutions_time::{DateTime, Timestamp, Zone};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -31,9 +31,9 @@ use crate::{CmdError, CmdResult, CommandSpec, Session, p};
 
 /// Why an account has no automatic replies here (an IMAP, JMAP, Exchange server or local
 /// account).
-pub const NOT_MICROSOFT: &str = "Automatic replies are kept on the mail server, and MailCraft can set them only for accounts that sign in with Microsoft so far: IMAP has no standard way to set them (Sieve vacation replies may come later)";
+pub const NOT_MICROSOFT: &str = "Automatic replies are kept on the mail server, and MailSolutions can set them only for accounts that sign in with Microsoft so far: IMAP has no standard way to set them (Sieve vacation replies may come later)";
 /// Why a shared mailbox has none.
-pub const SHARED: &str = "A shared mailbox's automatic replies are set by whoever manages it; MailCraft sets only your own account's";
+pub const SHARED: &str = "A shared mailbox's automatic replies are set by whoever manages it; MailSolutions sets only your own account's";
 /// Why a change is refused before the server's setting has been read.
 pub const NOT_READ: &str =
     "the automatic replies haven't been read from the server yet: read them first, so that nothing of them is written over unseen";
@@ -51,7 +51,7 @@ pub fn specs() -> Vec<CommandSpec> {
             .params(r#"{"account"?: number, "status": "disabled"|"alwaysEnabled"|"scheduled", "start"?: "YYYY-MM-DDTHH:MM", "end"?: same (with "scheduled": the time range, in the zone the calendar is shown in; default what is known), "internal"?: string (the reply inside the organisation, plain text), "external"?: string (outside it), "audience"?: "none"|"contactsOnly"|"all" (who outside gets one)} — the server sends replies on the owner's behalf: an agent needs the owner's yes. Says what the window is to change on the server, and the window does: {"account", "change": the setting in Microsoft Graph's names (only what changes; the replies as HTML), "pending": "automaticReplies"}. Refused while working offline, and before they have been read from the server (`account.automaticReplies`): what the owner leaves as it is must stay as the server has it"#),
         CommandSpec::new("sync.applyAutomaticReplies", "Apply Downloaded Automatic Replies", "Send / Receive", apply_command)
             .pure()
-            .params(r#"{"account": number, "setting": {"status", "scheduledStartDateTime"?: {"dateTime", "timeZone"}, "scheduledEndDateTime"?: same, "internalReplyMessage"?: HTML, "externalReplyMessage"?: HTML, "externalAudience"?} (as Microsoft Graph has it)} — the automatic replies an account's server has, as a host brought them (`mailcraft-net`'s `graph::automatic_replies`). Answers what `account.automaticReplies` calls "known""#),
+            .params(r#"{"account": number, "setting": {"status", "scheduledStartDateTime"?: {"dateTime", "timeZone"}, "scheduledEndDateTime"?: same, "internalReplyMessage"?: HTML, "externalReplyMessage"?: HTML, "externalAudience"?} (as Microsoft Graph has it)} — the automatic replies an account's server has, as a host brought them (`mailsolutions-net`'s `graph::automatic_replies`). Answers what `account.automaticReplies` calls "known""#),
     ]
 }
 
@@ -150,7 +150,7 @@ fn read_command(s: &mut Session, v: &Value) -> CmdResult {
 fn time_param(s: &Session, v: &Value, key: &str) -> Result<Option<Timestamp>, CmdError> {
     let Some(text) = v.get(key).filter(|x| !x.is_null()) else { return Ok(None) };
     let text = text.as_str().ok_or_else(|| bad(format!("`{key}` is a time: YYYY-MM-DDTHH:MM")))?;
-    let wall = (text.len() <= 40).then(|| mailcraft_time::parse_iso(text)).flatten().map(|(wall, _)| wall);
+    let wall = (text.len() <= 40).then(|| mailsolutions_time::parse_iso(text)).flatten().map(|(wall, _)| wall);
     let wall = wall.filter(|wall| (FIRST_YEAR..=LAST_YEAR).contains(&wall.date.year));
     let wall = wall.ok_or_else(|| bad(format!("`{key}` is a time: YYYY-MM-DDTHH:MM")))?;
     Ok(Some(s.instant_of(wall)))
@@ -208,12 +208,12 @@ fn set_command(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(internal) = reply_param(v, "internal")?
         && !unchanged(&internal, &known.internal)
     {
-        change.internal_reply_message = Some(mailcraft_html::from_text(&internal));
+        change.internal_reply_message = Some(mailsolutions_html::from_text(&internal));
     }
     if let Some(external) = reply_param(v, "external")?
         && !unchanged(&external, &known.external)
     {
-        change.external_reply_message = Some(mailcraft_html::from_text(&external));
+        change.external_reply_message = Some(mailsolutions_html::from_text(&external));
     }
     if audience.is_some() && audience != Some(known.audience) {
         change.external_audience = audience;
@@ -226,7 +226,7 @@ fn set_command(s: &mut Session, v: &Value) -> CmdResult {
 /// What a server's `dateTimeTimeZone` comes to: the instant, when it is a time in a zone that is
 /// known (one that isn't is taken as UTC, as Graph's own default is).
 fn instant_of(at: &ZonedTime) -> Option<Timestamp> {
-    let (wall, offset) = mailcraft_time::parse_iso(&at.date_time)?;
+    let (wall, offset) = mailsolutions_time::parse_iso(&at.date_time)?;
     if !(FIRST_YEAR..=LAST_YEAR).contains(&wall.date.year) {
         return None;
     }
@@ -239,7 +239,7 @@ fn instant_of(at: &ZonedTime) -> Option<Timestamp> {
 
 /// A reply as the server has it (HTML), as plain text of at most [`MAX_REPLY_TEXT`] characters.
 fn text_of(html: Option<&str>) -> String {
-    let text = html.map(mailcraft_html::to_text).unwrap_or_default();
+    let text = html.map(mailsolutions_html::to_text).unwrap_or_default();
     text.trim().chars().take(MAX_REPLY_TEXT).collect::<String>().trim_end().to_string()
 }
 

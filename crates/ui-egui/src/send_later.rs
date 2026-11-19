@@ -13,8 +13,8 @@
 use std::sync::Arc;
 
 use egui::Ui;
-use mailcraft_model::{Id, Message};
-use mailcraft_time::DateTime;
+use mailsolutions_model::{Id, Message};
+use mailsolutions_time::DateTime;
 use serde_json::json;
 
 use crate::MailApp;
@@ -97,7 +97,7 @@ impl Ask {
     /// The time typed, as seconds since 1970, in the owner's zone; `None` when it isn't a date and
     /// a time.
     fn at(&self, app: &MailApp) -> Option<i64> {
-        let date = mailcraft_time::Date::parse_iso(self.date.trim())?;
+        let date = mailsolutions_time::Date::parse_iso(self.date.trim())?;
         let (hour, minute) = kit::parse_clock(&self.time)?;
         let wall = DateTime::new(date, hour, minute, 0)?;
         Some(app.session.instant_of(wall))
@@ -124,7 +124,7 @@ impl Ask {
         }
         ui.label(
             egui::RichText::new(tl!(
-                "The message waits in your Outbox, where you can change or cancel it. MailCraft sends it at that time; if MailCraft isn't running then, it goes the next time it runs."
+                "The message waits in your Outbox, where you can change or cancel it. MailSolutions sends it at that time; if MailSolutions isn't running then, it goes the next time it runs."
             ))
             .color(t.text_dim),
         );
@@ -217,7 +217,7 @@ pub(crate) fn delay_is_on(app: &MailApp) -> bool {
 /// Why a delayed message of `account` didn't go at its time, where that is known: the window is
 /// offline, the account's mailbox wasn't opened (a shared one the server refused), it needs a
 /// sign-in, or its own last Send/Receive had problems.
-pub(crate) fn late_reason(app: &MailApp, account: Option<mailcraft_model::Id>) -> Option<String> {
+pub(crate) fn late_reason(app: &MailApp, account: Option<mailsolutions_model::Id>) -> Option<String> {
     if app.offline() {
         return Some(tl!("working offline").to_string());
     }
@@ -280,7 +280,7 @@ pub(crate) fn queued_bar(app: &mut MailApp, ui: &mut Ui, m: &Arc<Message>) {
 
 /// Whether `m` waits in an Outbox for its Send time or the next run.
 pub(crate) fn waits(app: &MailApp, m: &Message) -> bool {
-    mailcraft_engine::cmd::send_later::waits_in_outbox(&app.session, m)
+    mailsolutions_engine::cmd::send_later::waits_in_outbox(&app.session, m)
 }
 
 /// The small arrow beside Send: a menu with Send Later….

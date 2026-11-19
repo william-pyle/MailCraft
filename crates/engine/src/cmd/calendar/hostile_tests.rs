@@ -5,14 +5,14 @@
 
 use std::time::{Duration, Instant};
 
-use mailcraft_model::{Address, Attachment, FolderKind, Id, Message};
-use mailcraft_time::{DateTime, Timestamp};
+use mailsolutions_model::{Address, Attachment, FolderKind, Id, Message};
+use mailsolutions_time::{DateTime, Timestamp};
 use serde_json::json;
 
 use crate::Session;
 
 fn now() -> Timestamp {
-    DateTime::new(mailcraft_time::Date::new(2026, 10, 14).unwrap(), 16, 0, 0).unwrap().to_timestamp(0)
+    DateTime::new(mailsolutions_time::Date::new(2026, 10, 14).unwrap(), 16, 0, 0).unwrap().to_timestamp(0)
 }
 
 fn session() -> (Session, Id) {

@@ -12,13 +12,13 @@
 //! Where the mailbox is kept by the background saver, the run waits for the saver to have written
 //! the marks ([`MailApp::send_gate_tick`]); a save that fails sends nothing. What is marked, when
 //! the marks come off and whether the run may go yet are the engine's
-//! ([`mailcraft_engine::sync_driver::sending`]); this writes the mailbox and hands the run over.
+//! ([`mailsolutions_engine::sync_driver::sending`]); this writes the mailbox and hands the run over.
 
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-use mailcraft_engine::sync_driver::GateStep;
-use mailcraft_model::Id;
-use mailcraft_model::sync::{EwsMailResult, JmapMailResult, SyncRequest, SyncResult};
+use mailsolutions_engine::sync_driver::GateStep;
+use mailsolutions_model::Id;
+use mailsolutions_model::sync::{EwsMailResult, JmapMailResult, SyncRequest, SyncResult};
 use serde_json::json;
 
 use crate::ews_mail::EwsJob;
@@ -58,7 +58,7 @@ impl MailApp {
             return Saved::Now;
         }
         let written = if let Some(persist) = &self.services.persist {
-            mailcraft_engine::io::write_mailbox(&self.session.mailbox).and_then(|bytes| persist(&bytes))
+            mailsolutions_engine::io::write_mailbox(&self.session.mailbox).and_then(|bytes| persist(&bytes))
         } else if let (Some(saver), Some(path)) = (&self.services.saver, &self.session.path) {
             saver.follow(path);
             saver.submit(path, &self.session.mailbox, rev);

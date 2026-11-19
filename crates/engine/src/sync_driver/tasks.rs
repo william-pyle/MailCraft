@@ -9,9 +9,9 @@
 
 use std::collections::HashMap;
 
-use mailcraft_i18n::Text;
-use mailcraft_model::remote_tasks::{TasksDownload, TasksUploaded};
-use mailcraft_model::{Account, Id};
+use mailsolutions_i18n::Text;
+use mailsolutions_model::remote_tasks::{TasksDownload, TasksUploaded};
+use mailsolutions_model::{Account, Id};
 
 use super::{Busy, JobBook, Pacing, Permission, SETTLING_TRIES, Start};
 use crate::Session;
@@ -170,7 +170,7 @@ impl Session {
         started: f64,
         given: u64,
         ran_for: &Account,
-        lang: mailcraft_i18n::Lang,
+        lang: mailsolutions_i18n::Lang,
         came: &TasksCame<'_>,
     ) -> Vec<Text> {
         // An answer for an account removed meanwhile changes nothing (else its question would be

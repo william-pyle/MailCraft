@@ -3,8 +3,8 @@
 //! Delete and Move take only the messages the list shows: a message selected before the tab or the
 //! search changed, which the list no longer shows, is not taken with a message Ctrl+clicked there.
 
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::{Filter, Session, sample};

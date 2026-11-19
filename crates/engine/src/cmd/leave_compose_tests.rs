@@ -5,8 +5,8 @@
 //! go of; and a save that fails leaves everything as it was. (A command that starts another
 //! message opens it beside this one, which stays open, saved first: #286, `composing_tests`.)
 
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::agent::{Access, Class, classify};

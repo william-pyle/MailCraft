@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! MailCraft Internet messages: reading and writing RFC 5322 + MIME (`.eml`) and mbox files.
+//! MailSolutions Internet messages: reading and writing RFC 5322 + MIME (`.eml`) and mbox files.
 //!
 //! [`parse()`] turns the bytes of a message into a [`Message`], this crate's own; [`write()`] does
 //! the reverse. Nothing here knows of a mailbox, and nothing does I/O, so the reader is reusable
-//! outside the client (#1235); MailCraft converts to and from its own model in
-//! `mailcraft-mime-model`. [`parse_mbox`] and [`write_mbox`] do the same for a file of many messages, and
+//! outside the client (#1235); MailSolutions converts to and from its own model in
+//! `mailsolutions-mime-model`. [`parse_mbox`] and [`write_mbox`] do the same for a file of many messages, and
 //! [`parse_mailto`] reads the link that starts a new one. Written from the public RFCs: 5322
 //! (messages), 2045–2049 (MIME), 2047 (encoded-words), 2231 (parameter values), 4155 (mbox) and
 //! 6068 (`mailto:` links).
@@ -47,17 +47,17 @@ mod tests;
 pub use mailto::{Mailto, is_mailto, parse_mailto};
 
 /// The header in which a message opened from a file keeps that file's SHA-256 (#505), so that
-/// opening the file again finds it. MailCraft's own: never read from a message (a sender could
+/// opening the file again finds it. MailSolutions's own: never read from a message (a sender could
 /// write one) and never written into one.
 pub const OPENED_FILE_HEADER: &str = "X-MailCraft-Opened-File-SHA256";
 
 /// The header in which a message brought in from a .pst file keeps where in that file it was
 /// (#815): the file's identity and the item's node id, so that importing the same file again
-/// skips it. MailCraft's own: never read from a message (a sender could write one) and never
+/// skips it. MailSolutions's own: never read from a message (a sender could write one) and never
 /// written into one.
 pub const PST_ITEM_HEADER: &str = "X-MailCraft-Pst-Item";
 
-/// The header in which the copy that MailCraft puts on a mail server, of a message moved or
+/// The header in which the copy that MailSolutions puts on a mail server, of a message moved or
 /// copied there from elsewhere, carries that copy's marker (#451): what tells it that copy from
 /// the server's own messages, which may look the same. Written into that copy alone
 /// ([`write_placed`]), never from a message's kept headers into anything else.
@@ -122,9 +122,9 @@ pub struct WriteOptions {
 }
 
 /// A new `Message-ID`, without angle brackets: `mc.<time>.<entropy>@<domain>`, the time and the
-/// entropy in base 36. The domain is `mailcraft.local` when `domain` is empty or isn't a host
+/// entropy in base 36. The domain is `mailsolutions.local` when `domain` is empty or isn't a host
 /// name. The caller brings the entropy (random bits), so this crate asks the system for nothing.
-pub fn new_message_id(domain: &str, now: mailcraft_time::Timestamp, entropy: u64) -> String {
+pub fn new_message_id(domain: &str, now: mailsolutions_time::Timestamp, entropy: u64) -> String {
     let domain = domain.trim();
     let label = |l: &str| {
         !l.is_empty() && l.len() <= 63 && l.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') && !l.starts_with('-') && !l.ends_with('-')
@@ -132,7 +132,7 @@ pub fn new_message_id(domain: &str, now: mailcraft_time::Timestamp, entropy: u64
     let domain = if !domain.is_empty() && domain.len() <= 253 && domain.split('.').all(label) {
         domain.to_ascii_lowercase()
     } else {
-        "mailcraft.local".to_string()
+        "mailsolutions.local".to_string()
     };
     format!("mc.{}.{}@{domain}", base36(u64::try_from(now).unwrap_or(0)), base36(entropy))
 }
@@ -160,9 +160,9 @@ mod id_tests {
         assert_eq!(new_message_id(" Mail.Example.ORG ", 0, 0), "mc.0.0@mail.example.org");
         assert_eq!(new_message_id("example.org", -5, u64::MAX), "mc.0.3w5e11264sgsf@example.org");
         for bad in ["", "  ", "exa mple.org", "a..b", ".org", "org.", "-a.org", "a-.org", "a@b.org", "<x>", "é.org", "a\r\n.org"] {
-            assert_eq!(new_message_id(bad, 1, 1), "mc.1.1@mailcraft.local", "{bad:?}");
+            assert_eq!(new_message_id(bad, 1, 1), "mc.1.1@mailsolutions.local", "{bad:?}");
         }
-        assert_eq!(new_message_id(&"a".repeat(64), 1, 1), "mc.1.1@mailcraft.local");
+        assert_eq!(new_message_id(&"a".repeat(64), 1, 1), "mc.1.1@mailsolutions.local");
         assert_eq!(new_message_id("localhost", 36, 35), "mc.10.z@localhost");
     }
 

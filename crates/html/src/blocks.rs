@@ -2652,7 +2652,7 @@ fn safe_url(raw: Option<String>) -> Option<String> {
 /// [`safe_url`] for the owner's own HTML: tabs and line breaks removed as there, then `accept`.
 fn own_url(raw: Option<String>, accept: fn(&str) -> Option<String>) -> Option<String> {
     let url: String = raw?.chars().filter(|c| !matches!(c, '\t' | '\n' | '\r')).collect();
-    accept(url.trim()).filter(|url| url.len() <= mailcraft_link::MAX_LINK)
+    accept(url.trim()).filter(|url| url.len() <= mailsolutions_link::MAX_LINK)
 }
 
 /// The address of a picture, when it may be used: [`safe_url`], and besides an address that

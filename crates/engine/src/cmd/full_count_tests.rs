@@ -4,8 +4,8 @@
 //! most once a second of the clock while the run goes on (each count goes through every message),
 //! and when the account's part of the run ends, exactly what a count from the mailbox says.
 
-use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, MessagePage};
-use mailcraft_model::{FolderKind, Id, Mailbox};
+use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, MessagePage};
+use mailsolutions_model::{FolderKind, Id, Mailbox};
 use serde_json::json;
 
 use super::graph_down::{self, FullCounts};

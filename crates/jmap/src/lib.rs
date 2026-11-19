@@ -8,7 +8,7 @@
 //! no clock, so it builds for wasm32 unchanged and its futures need not be `Send`. (A `Retry-After` date is
 //! therefore for the exchange to turn into seconds: see [`connection`]. The one thing that asks the time is
 //! the writing of a message that goes out: its `Date` field is in this computer's zone, and one that was
-//! never dated is dated then, through `mailcraft-time`, as for every other way of sending.)
+//! never dated is dated then, through `mailsolutions-time`, as for every other way of sending.)
 //!
 //! **The protocol core** builds the requests and judges what comes back, and does nothing else. It is
 //! written from the public specifications: RFC 3986 and the WHATWG URL Standard (addresses), RFC 6570

@@ -4,9 +4,9 @@
 
 use std::collections::BTreeMap;
 
-use mailcraft_model::zoned::instant_of;
-use mailcraft_model::{Address, Event, Importance, OnlineMeeting, OnlineProvider, Response, ShowAs, Task};
-use mailcraft_time::{Date, DateTime, Timestamp, Zone};
+use mailsolutions_model::zoned::instant_of;
+use mailsolutions_model::{Address, Event, Importance, OnlineMeeting, OnlineProvider, Response, ShowAs, Task};
+use mailsolutions_time::{Date, DateTime, Timestamp, Zone};
 
 use crate::WriteOptions;
 use crate::lines::{fold, param_value};
@@ -14,13 +14,13 @@ use crate::rrule;
 use crate::values::{escape_text, format_date, format_local, format_utc, valid_time};
 use crate::zones::{tzid, write_zone};
 
-/// Write a `VCALENDAR` (`VERSION:2.0`, `PRODID:-//MailCraft//MailCraft//EN`) with CRLF line endings
+/// Write a `VCALENDAR` (`VERSION:2.0`, `PRODID:-//MailSolutions//MailSolutions//EN`) with CRLF line endings
 /// and lines folded at 75 octets on char boundaries.
 ///
 /// Times are written floating (no zone), just as the events have them; all-day events as dates.
 /// ([`write_in`] writes them in their zones, which is what a file for another program wants.) An
-/// event without a uid gets `mailcraft-<id>@mailcraft.local`, a to-do
-/// `mailcraft-task-<id>@mailcraft.local`. Text is escaped; control characters other than line
+/// event without a uid gets `mailsolutions-<id>@mailsolutions.local`, a to-do
+/// `mailsolutions-task-<id>@mailsolutions.local`. Text is escaped; control characters other than line
 /// breaks and tabs are dropped. A to-do's link to a message isn't written.
 pub fn write(events: &[&Event], tasks: &[&Task], opts: &WriteOptions) -> String {
     write_in(events, tasks, opts, None)
@@ -31,7 +31,7 @@ pub fn write(events: &[&Event], tasks: &[&Task], opts: &WriteOptions) -> String 
 const SERIES_YEARS: i32 = 10;
 
 /// [`write()`], with every time in its zone: `zone` is the zone the calendar is shown in, which
-/// is the one the events' wall-clock times are by ([`Mailbox::zone`](mailcraft_model::Mailbox)).
+/// is the one the events' wall-clock times are by ([`Mailbox::zone`](mailsolutions_model::Mailbox)).
 ///
 /// A timed event is written by the clock of its own zone when it has one
 /// ([`Event::start_zone`]), else of `zone`, as `DTSTART;TZID=…`, and the text carries a
@@ -45,7 +45,7 @@ pub fn write_in(events: &[&Event], tasks: &[&Task], opts: &WriteOptions, zone: O
     let mut out = String::new();
     fold(&mut out, "BEGIN:VCALENDAR");
     fold(&mut out, "VERSION:2.0");
-    fold(&mut out, "PRODID:-//MailCraft//MailCraft//EN");
+    fold(&mut out, "PRODID:-//MailSolutions//MailSolutions//EN");
     let method: String = opts.method.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-').map(|c| c.to_ascii_uppercase()).collect();
     if !method.is_empty() {
         fold(&mut out, &format!("METHOD:{method}"));
@@ -154,7 +154,7 @@ fn write_event(out: &mut String, e: &Event, stamp: &str, zone: Option<Zone>) {
     fold(out, "BEGIN:VEVENT");
     let uid = e.uid.trim();
     if uid.is_empty() {
-        text(out, "UID", &format!("mailcraft-{}@mailcraft.local", e.id));
+        text(out, "UID", &format!("mailsolutions-{}@mailsolutions.local", e.id));
     } else {
         text(out, "UID", uid);
     }
@@ -293,7 +293,7 @@ fn write_task(out: &mut String, t: &Task, stamp: &str) {
     fold(out, "BEGIN:VTODO");
     let uid = t.uid.trim();
     if uid.is_empty() {
-        text(out, "UID", &format!("mailcraft-task-{}@mailcraft.local", t.id));
+        text(out, "UID", &format!("mailsolutions-task-{}@mailsolutions.local", t.id));
     } else {
         text(out, "UID", uid);
     }
@@ -334,8 +334,8 @@ fn write_task(out: &mut String, t: &Task, stamp: &str) {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::{Attendee, Freq, Recurrence};
-    use mailcraft_time::{Date, Weekday};
+    use mailsolutions_model::{Attendee, Freq, Recurrence};
+    use mailsolutions_time::{Date, Weekday};
 
     use super::*;
 
@@ -396,7 +396,7 @@ mod tests {
             [
                 "BEGIN:VCALENDAR",
                 "VERSION:2.0",
-                "PRODID:-//MailCraft//MailCraft//EN",
+                "PRODID:-//MailSolutions//MailSolutions//EN",
                 "BEGIN:VEVENT",
                 "UID:planning-2026@example.org",
                 "DTSTAMP:20261011T120000Z",
@@ -446,7 +446,7 @@ mod tests {
             event_lines(&e).get(3..12).unwrap(),
             [
                 "BEGIN:VEVENT",
-                "UID:mailcraft-7@mailcraft.local",
+                "UID:mailsolutions-7@mailsolutions.local",
                 "DTSTAMP:20261011T120000Z",
                 "DTSTART:20261012T090000",
                 "DTEND:20261012T090000",
@@ -459,7 +459,7 @@ mod tests {
         let free = Event { show_as: ShowAs::Free, uid: "   ".into(), ..e.clone() };
         let lines = event_lines(&free);
         assert!(lines.contains(&"TRANSP:TRANSPARENT".to_string()) && lines.contains(&"X-MICROSOFT-CDO-BUSYSTATUS:FREE".to_string()));
-        assert!(lines.contains(&"UID:mailcraft-7@mailcraft.local".to_string()));
+        assert!(lines.contains(&"UID:mailsolutions-7@mailsolutions.local".to_string()));
         // An organizer with nothing in it isn't one.
         let blank = Event { organizer: Some(Address::default()), ..e };
         assert!(!event_lines(&blank).iter().any(|l| l.starts_with("ORGANIZER")));
@@ -511,7 +511,10 @@ mod tests {
     #[test]
     fn the_method_is_a_clean_token() {
         let with = |method: &str| write(&[], &[], &WriteOptions { method: method.into(), now: 0 });
-        assert_eq!(with("request"), "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MailCraft//MailCraft//EN\r\nMETHOD:REQUEST\r\nEND:VCALENDAR\r\n");
+        assert_eq!(
+            with("request"),
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MailSolutions//MailSolutions//EN\r\nMETHOD:REQUEST\r\nEND:VCALENDAR\r\n"
+        );
         assert!(with(" REPLY\r\nBEGIN:VEVENT ").contains("METHOD:REPLYBEGINVEVENT\r\n"));
         assert!(!with("").contains("METHOD"));
         assert!(!with(" \r\n:;").contains("METHOD"));
@@ -596,7 +599,14 @@ mod tests {
         let plain = Task { id: 5, importance: Importance::Low, ..Default::default() };
         assert_eq!(
             task_lines(&plain).get(3..9).unwrap(),
-            ["BEGIN:VTODO", "UID:mailcraft-task-5@mailcraft.local", "DTSTAMP:20261011T120000Z", "SUMMARY:", "STATUS:NEEDS-ACTION", "PRIORITY:9"]
+            [
+                "BEGIN:VTODO",
+                "UID:mailsolutions-task-5@mailsolutions.local",
+                "DTSTAMP:20261011T120000Z",
+                "SUMMARY:",
+                "STATUS:NEEDS-ACTION",
+                "PRIORITY:9"
+            ]
         );
     }
 

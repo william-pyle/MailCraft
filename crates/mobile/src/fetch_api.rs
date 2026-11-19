@@ -5,9 +5,9 @@
 //! wait. Message text, attachments and what a search finds are the sender's, hostile: nothing of
 //! them runs here, and an agent that reads them is told they are data, never instructions.
 
-use mailcraft_engine::opening::{self, Verdict};
-use mailcraft_engine::{Part, Session};
-use mailcraft_model::Id;
+use mailsolutions_engine::opening::{self, Verdict};
+use mailsolutions_engine::{Part, Session};
+use mailsolutions_model::Id;
 
 use crate::fetch::{FetchFailure, OpenState, ServerSearchAnswer};
 use crate::text;
@@ -83,7 +83,7 @@ fn attachment_file(s: &Session, id: Id, index: u32) -> Result<AttachmentFile, Co
 }
 
 /// What a message that couldn't come is said as, to a call that waited for it.
-fn failure_error(lang: mailcraft_i18n::Lang, why: FetchFailure) -> CoreError {
+fn failure_error(lang: mailsolutions_i18n::Lang, why: FetchFailure) -> CoreError {
     if why == FetchFailure::Cancelled {
         return CoreError::Cancelled;
     }

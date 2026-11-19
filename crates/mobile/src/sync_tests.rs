@@ -8,12 +8,12 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::time::{Duration, Instant};
 
-use mailcraft_engine::Session;
-use mailcraft_host::graph::{GraphRequest, GraphResult};
-use mailcraft_host::secrets::secret_key;
-use mailcraft_host::sync::SendReceive;
-use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessagePage, ServerMessage, Tokens};
-use mailcraft_model::{Address, FolderKind};
+use mailsolutions_engine::Session;
+use mailsolutions_host::graph::{GraphRequest, GraphResult};
+use mailsolutions_host::secrets::secret_key;
+use mailsolutions_host::sync::SendReceive;
+use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessagePage, ServerMessage, Tokens};
+use mailsolutions_model::{Address, FolderKind};
 use serde_json::json;
 
 use crate::fake_tests::{FakePlatform, block_on};
@@ -434,7 +434,7 @@ fn tokens_handed_over_by_the_app_are_kept_and_remembered_and_forgotten_on_reques
     // Kept in the platform's store, and the name is in the index that "remove my data" reads.
     let store = platform.secrets.kept.lock().unwrap().clone();
     assert!(store.contains(&(key.clone(), "fresh-refresh".to_string())), "{}", store.len());
-    let index = store.iter().find(|(k, _)| k == "mailcraft:index").map(|(_, v)| v.clone()).unwrap_or_default();
+    let index = store.iter().find(|(k, _)| k == "mailsolutions:index").map(|(_, v)| v.clone()).unwrap_or_default();
     assert!(index.contains(&key) && !index.contains("fresh-refresh"), "{index}");
     // The run begins with it.
     assert!(block_on(core.background_sync(10_000)).unwrap().ran);

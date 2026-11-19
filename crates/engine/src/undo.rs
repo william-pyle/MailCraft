@@ -30,8 +30,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
-use mailcraft_model::sync::{DraftState, MovingOut, ServerMessage, same_category};
-use mailcraft_model::{AccountKind, Calendar, Folder, FolderKind, Id, Mailbox, Message, Pending, Queued, RETURNED_LISTINGS};
+use mailsolutions_model::sync::{DraftState, MovingOut, ServerMessage, same_category};
+use mailsolutions_model::{AccountKind, Calendar, Folder, FolderKind, Id, Mailbox, Message, Pending, Queued, RETURNED_LISTINGS};
 
 /// What a change did to the mail of the Microsoft accounts: the messages and folders it changed,
 /// as they were right after it (`None`: it took them away). Nothing for a mailbox without one.
@@ -53,7 +53,7 @@ pub(crate) struct Touched {
     /// What the changes the step added or took away were while they waited for their copy.
     waiting: HashSet<String>,
     /// The Public keys it imported, removed or changed (#30): an undo puts back only those.
-    keys: Vec<mailcraft_model::public_keys::KeyName>,
+    keys: Vec<mailsolutions_model::public_keys::KeyName>,
 }
 
 impl Touched {
@@ -243,7 +243,7 @@ fn shown(text: &str) -> String {
 }
 
 impl Said {
-    fn lines(&self, lang: mailcraft_i18n::Lang) -> Vec<String> {
+    fn lines(&self, lang: mailsolutions_i18n::Lang) -> Vec<String> {
         let mut lines = Vec::new();
         match self.deleted.as_slice() {
             [] => {}
@@ -268,7 +268,7 @@ impl Said {
         }
         match self.held.as_slice() {
             [] => {}
-            [one] => lines.push(mailcraft_i18n::fmt(
+            [one] => lines.push(mailsolutions_i18n::fmt(
                 lang.t("'{subject}' stays where it was moved: it is Digitally signed or Encrypted, and its copy in the mailbox it came from was removed while the copy it was first moved out of keeps the bytes it came as. Move it back to put it there again."),
                 &[("subject", &shown(one))],
             )),
@@ -279,7 +279,7 @@ impl Said {
                     "{n} message stays where it was moved: it is Digitally signed or Encrypted, and its copy in the mailbox it came from was removed while the copy it was first moved out of keeps the bytes it came as. Move it back to put it there again.",
                     "{n} messages stay where they were moved: they are Digitally signed or Encrypted, and their copies in the mailbox they came from were removed while the copies they were first moved out of keep the bytes they came as. Move them back to put them there again.",
                 );
-                lines.push(mailcraft_i18n::fmt(line, &[("n", &n.to_string())]));
+                lines.push(mailsolutions_i18n::fmt(line, &[("n", &n.to_string())]));
             }
         }
         lines
@@ -289,7 +289,7 @@ impl Said {
 /// `target`, the mailbox an undo (or redo) goes back to, with the Microsoft accounts' mail kept in
 /// step with `now`; `touched` is what the change being undone did. Answers the mailbox and what
 /// couldn't be undone, in words.
-pub(crate) fn keep_in_step(mut out: Mailbox, touched: &Touched, now: &Mailbox, lang: mailcraft_i18n::Lang) -> (Mailbox, Vec<String>) {
+pub(crate) fn keep_in_step(mut out: Mailbox, touched: &Touched, now: &Mailbox, lang: mailsolutions_i18n::Lang) -> (Mailbox, Vec<String>) {
     // Ids are never given out twice, whatever the undo brings back.
     out.ids_after(now);
     // The certificates Digital signatures brought are what was learnt, not what the owner did
@@ -435,7 +435,8 @@ fn leave_alone(out: &mut Mailbox, touched: &Touched, now: &Mailbox, g: &BTreeSet
         let (Some(t), Some(c)) = (out.messages.get(id), now.messages.get(id)) else { continue };
         // A step that left the reminder alone leaves it as it is now (ended, raised, put off);
         // one that changed it goes back to the reminder as it was, with its state now.
-        let undone = if touched.follow_up_changed.contains(id) { mailcraft_model::FollowUp::undone(t.follow_up, c.follow_up) } else { c.follow_up };
+        let undone =
+            if touched.follow_up_changed.contains(id) { mailsolutions_model::FollowUp::undone(t.follow_up, c.follow_up) } else { c.follow_up };
         if undone != t.follow_up
             && let Some(t) = out.messages.get_mut(id)
         {
@@ -831,13 +832,13 @@ fn fields(t: &Message, a: &Message, c: &Arc<Message>, now: &Mailbox, g: &BTreeSe
                 }
                 return Some(c.clone());
             };
-            let source = mailcraft_model::sync::fingerprint(placed.id.as_bytes());
+            let source = mailsolutions_model::sync::fingerprint(placed.id.as_bytes());
             // The stamps of the server it leaves stay behind (#781).
-            mailcraft_model::auth_results::forget_stamps(&mut m);
+            mailsolutions_model::auth_results::forget_stamps(&mut m);
             said.queued.push(Queued::PlaceMessage {
                 account: t.account,
                 message: c.id,
-                marker: format!("mailcraft-place-{:x}-u-{source:016x}", c.id),
+                marker: format!("mailsolutions-place-{:x}-u-{source:016x}", c.id),
                 copy: false,
                 from: None,
             });
@@ -898,7 +899,7 @@ fn fields(t: &Message, a: &Message, c: &Arc<Message>, now: &Mailbox, g: &BTreeSe
     back!(folder, read, flag, flag_due, importance, pinned, answered, forwarded, draft, held, placed, snooze);
     // A reminder as it was, but what has become of it since (raised, put off) stays (#948).
     if t.follow_up != a.follow_up {
-        m.follow_up = mailcraft_model::FollowUp::undone(t.follow_up, c.follow_up);
+        m.follow_up = mailsolutions_model::FollowUp::undone(t.follow_up, c.follow_up);
     }
     // Categories as a list that others add to too (R3 spec S17): what the change added is taken
     // off and what it took off is put back; one added in Outlook meanwhile stays.

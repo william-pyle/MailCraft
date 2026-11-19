@@ -178,7 +178,7 @@ fn the_reserved_bit_a_of_block_ids_is_ignored() {
     }
 }
 
-/// Writes the fuzz target's seed files (`fuzz/seeds/pst/`): `cargo test -p mailcraft-pst --
+/// Writes the fuzz target's seed files (`fuzz/seeds/pst/`): `cargo test -p mailsolutions-pst --
 /// --ignored write_fuzz_seeds`.
 #[test]
 #[ignore = "writes files into the repository"]

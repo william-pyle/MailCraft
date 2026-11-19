@@ -6,8 +6,8 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{SyncRequest, SyncResult};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{SyncRequest, SyncResult};
 use serde_json::json;
 
 use super::*;
@@ -17,7 +17,7 @@ const NOW: i64 = 1_791_993_600;
 
 /// A mailbox file with one account at `host`, written under a folder of its own.
 fn crafted(name: &str, host: &str) -> (PathBuf, PathBuf) {
-    let dir = std::env::temp_dir().join(format!("mailcraft-c1c-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-c1c-{name}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let mut s = Session::empty();
     s.run("account.add", &json!({"email": "owner@example.org", "incoming": {"host": host, "port": 993}, "outgoing": {"host": host, "port": 465}}))
@@ -29,7 +29,7 @@ fn crafted(name: &str, host: &str) -> (PathBuf, PathBuf) {
 
 /// An app with a Send/Receive that counts its runs.
 fn app(runs: &Arc<AtomicUsize>) -> MailApp {
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     let runs = runs.clone();
     a.services.sync = Some(Box::new(move |req: SyncRequest| {

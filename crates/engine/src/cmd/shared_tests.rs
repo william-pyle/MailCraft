@@ -4,11 +4,11 @@
 //! its sign-in at their own address, and kept apart from it. (Against the Graph stand-in:
 //! `crates/net/src/graph/mail/shared_tests.rs`.)
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     FolderChange, FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessageChange, MessageChangeDone, MessageOutcome, MessagePage,
     ServerMessage,
 };
-use mailcraft_model::{AccountKind, FolderKind, Id};
+use mailsolutions_model::{AccountKind, FolderKind, Id};
 use serde_json::json;
 
 use crate::Session;
@@ -107,9 +107,13 @@ fn the_only_account_goes_with_its_shared_mailboxes_too() {
 /// owner is missing (a file may say anything) and it is closed.
 #[test]
 fn closing_a_shared_mailbox_that_is_all_there_is_leaves_an_empty_mailbox() {
-    let mut mb = mailcraft_model::Mailbox::default();
-    let shared =
-        mb.add_account(mailcraft_model::Account { email: SHARED.into(), kind: AccountKind::Microsoft, shared_of: Some(4_242), ..Default::default() });
+    let mut mb = mailsolutions_model::Mailbox::default();
+    let shared = mb.add_account(mailsolutions_model::Account {
+        email: SHARED.into(),
+        kind: AccountKind::Microsoft,
+        shared_of: Some(4_242),
+        ..Default::default()
+    });
     let mut s = Session::at(mb, 1_800_000_000, 0);
     s.run("account.removeSharedMailbox", &json!({"id": shared})).unwrap();
     assert!(s.mailbox.placeholder().is_some(), "{:?}", s.mailbox.accounts);
@@ -240,7 +244,7 @@ fn a_shared_mailbox_has_signatures_of_its_own_and_none_by_default() {
 
 #[test]
 fn a_send_exchange_wont_let_go_as_a_shared_mailbox_is_held_and_says_its_address() {
-    use mailcraft_model::sync::{SEND_AS_DENIED, SendDone, SendOutcome};
+    use mailsolutions_model::sync::{SEND_AS_DENIED, SendDone, SendOutcome};
     let (mut s, owner, shared) = both();
     s.view.folder = s.mailbox.folder_of_kind(shared, FolderKind::Inbox).unwrap();
     s.run("mail.new", &json!({"to": "bob@example.org", "subject": "Hello"})).unwrap();
@@ -425,7 +429,7 @@ fn mail_moves_and_copies_between_a_shared_mailbox_and_its_owners_once_it_is_whol
     assert!(theirs_asked.places.is_empty() && theirs_asked.messages.is_empty(), "the original stays until the copy is there");
     // Made there: the owner's message now; the shared mailbox's request takes the original away.
     let mut result = GraphMailResult { account: owner, email: OWNER.into(), ..Default::default() };
-    result.placed = vec![mailcraft_model::sync::PlaceDone {
+    result.placed = vec![mailsolutions_model::sync::PlaceDone {
         change: own.places[0].without_data(),
         outcome: MessageOutcome::Done { categories: None, flag: None, folder: "in".into(), id: "AAkA9".into() },
     }];
@@ -442,8 +446,10 @@ fn mail_moves_and_copies_between_a_shared_mailbox_and_its_owners_once_it_is_whol
     assert!(matches!(theirs_asked.places.as_slice(), [p] if p.message == copy && !p.moved), "{:?}", theirs_asked.places);
     // Refused there: the copy is taken away, the source stays.
     let mut result = GraphMailResult { account: shared, email: SHARED.into(), ..Default::default() };
-    result.placed =
-        vec![mailcraft_model::sync::PlaceDone { change: theirs_asked.places[0].without_data(), outcome: MessageOutcome::Refused { status: 400 } }];
+    result.placed = vec![mailsolutions_model::sync::PlaceDone {
+        change: theirs_asked.places[0].without_data(),
+        outcome: MessageOutcome::Refused { status: 400 },
+    }];
     apply_graph_mail(&mut s, result).unwrap();
     assert!(s.mailbox.message(copy).is_none() && s.mailbox.message(mine).is_some());
     assert!(s.sync_status.contains("Couldn't copy"), "{}", s.sync_status);
@@ -483,8 +489,8 @@ fn mail_moves_between_a_shared_mailbox_and_an_imap_account_by_way_of_the_imap_se
     let (mut s, _owner, shared) = both();
     let servers = json!({"email": "ada@mail.example", "incoming": {"host": "imap.mail.example"}, "outgoing": {"host": "smtp.mail.example"}});
     let imap = s.run("account.add", &servers).unwrap()["id"].as_u64().unwrap();
-    let delta = mailcraft_model::sync::FolderDelta { remote: "INBOX".into(), kind: FolderKind::Inbox, uid_validity: 7, ..Default::default() };
-    let result = mailcraft_model::sync::SyncResult { account: imap, folders: vec![delta], ..Default::default() };
+    let delta = mailsolutions_model::sync::FolderDelta { remote: "INBOX".into(), kind: FolderKind::Inbox, uid_validity: 7, ..Default::default() };
+    let result = mailsolutions_model::sync::SyncResult { account: imap, folders: vec![delta], ..Default::default() };
     crate::cmd::account::apply_sync(&mut s, result).unwrap();
     let (theirs_inbox, imap_inbox) =
         (s.mailbox.folder_of_kind(shared, FolderKind::Inbox).unwrap(), s.mailbox.folder_of_kind(imap, FolderKind::Inbox).unwrap());
@@ -496,7 +502,8 @@ fn mail_moves_between_a_shared_mailbox_and_an_imap_account_by_way_of_the_imap_se
     assert_eq!((m.account, m.moving_out.as_ref().map(|o| o.account)), (imap, Some(shared)));
     assert_eq!(crate::cmd::account::sync_request(&s, imap).unwrap().places.iter().map(|p| p.message.id).collect::<Vec<_>>(), [one]);
     // And into it, made there by its own run.
-    let mine = s.mailbox.add_message(mailcraft_model::Message { folder: imap_inbox, uid: 9, subject: "Mine".into(), ..Default::default() }).unwrap();
+    let mine =
+        s.mailbox.add_message(mailsolutions_model::Message { folder: imap_inbox, uid: 9, subject: "Mine".into(), ..Default::default() }).unwrap();
     s.run("mail.copy", &json!({"ids": [mine], "folder": theirs_inbox})).unwrap();
     assert_eq!(graph_mail_request(&s, shared).unwrap().places.len(), 1);
 }
@@ -547,14 +554,14 @@ fn a_shared_mailbox_keeps_as_much_mail_whole_as_its_owners_account() {
     }
     // (A file may say anything of the shared mailbox's own: it isn't what counts.)
     if let Ok(a) = s.mailbox.account_mut(shared) {
-        a.download_in_full = mailcraft_model::DownloadInFull::Everything;
+        a.download_in_full = mailsolutions_model::DownloadInFull::Everything;
     }
     assert!(graph_fetch_request(&s, shared, None, 10).unwrap().ids.is_empty());
     if let Ok(a) = s.mailbox.account_mut(owner) {
-        a.download_in_full = mailcraft_model::DownloadInFull::Everything;
+        a.download_in_full = mailsolutions_model::DownloadInFull::Everything;
     }
     if let Ok(a) = s.mailbox.account_mut(shared) {
-        a.download_in_full = mailcraft_model::DownloadInFull::UpTo10Mb;
+        a.download_in_full = mailsolutions_model::DownloadInFull::UpTo10Mb;
     }
     assert_eq!(graph_fetch_request(&s, shared, None, 10).unwrap().ids, ["AAkA1"]);
 }
@@ -565,7 +572,7 @@ fn a_shared_mailbox_and_its_link_to_its_owner_survive_a_save_and_a_reopen() {
     let shared = add(&mut s, json!({"address": SHARED})).unwrap();
     apply_graph_mail(&mut s, listing(shared, SHARED)).unwrap();
     apply_graph_mail(&mut s, page(shared, SHARED, &["AAkA1"])).unwrap();
-    let dir = std::env::temp_dir().join(format!("mailcraft-shared-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-shared-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("shared.mailcraft");
@@ -715,7 +722,7 @@ fn a_shared_mailboxs_favourite_and_its_link_to_its_owner_survive_a_save_and_a_re
     let (mut s, owner, shared) = two_mailboxes();
     let theirs = s.mailbox.folder_by_server(shared, "in").unwrap();
     s.run("folder.favorite", &json!({"id": theirs, "value": true})).unwrap();
-    let dir = std::env::temp_dir().join(format!("mailcraft-shared-fav-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-shared-fav-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("shared.mailcraft");
@@ -729,7 +736,7 @@ fn a_shared_mailboxs_favourite_and_its_link_to_its_owner_survive_a_save_and_a_re
 
 #[test]
 fn a_shared_mailbox_is_named_as_its_own_sent_items_name_it_or_as_the_owner_gave_it() {
-    use mailcraft_model::Address;
+    use mailsolutions_model::Address;
     let (mut s, _, owner) = session();
     let shared = add(&mut s, json!({"account": owner, "address": SHARED})).unwrap();
     assert_eq!(s.mailbox.account(shared).map(|a| a.address().full()), Some(SHARED.to_string()), "its address, until named");

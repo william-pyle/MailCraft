@@ -8,9 +8,9 @@ use std::sync::{Arc, Mutex};
 
 use egui::Key;
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
-use mailcraft_model::remote::{RemoteEvent, RemoteProposal};
-use mailcraft_model::{Address, Attendee, Id, Importance};
+use mailsolutions_engine::Session;
+use mailsolutions_model::remote::{RemoteEvent, RemoteProposal};
+use mailsolutions_model::{Address, Attendee, Id, Importance};
 use serde_json::{Value, json};
 
 use super::*;
@@ -50,7 +50,7 @@ fn planning() -> RemoteEvent {
 /// The sample mailbox with an account whose server (the stand-in) has `events`, brought down,
 /// in the whole window.
 fn served(events: Vec<RemoteEvent>) -> (Harness, Arc<Mutex<Server>>) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let server = serve(&mut app);
     microsoft_account(&mut app);
@@ -122,7 +122,7 @@ fn dialog(harness: &Harness) -> Option<&'static str> {
     harness.state().dialog.as_ref().map(|d| d.name())
 }
 
-fn named(harness: &Harness, title: &str) -> mailcraft_model::Event {
+fn named(harness: &Harness, title: &str) -> mailsolutions_model::Event {
     let found = harness.state().session.mailbox.events.values().find(|e| e.title == title);
     found.map(|e| (**e).clone()).unwrap_or_else(|| panic!("no event called {title}"))
 }
@@ -450,7 +450,7 @@ fn the_window_bar_sets_importance_response_options_and_teams() {
         // hold in its place is no link, and Join says so instead of opening anything.
         let id = launch.id;
         if let Ok(event) = harness.state_mut().session.mailbox.event_mut(id) {
-            event.online = Some(mailcraft_model::OnlineMeeting { join_url: "javascript:alert(1)".into(), ..Default::default() });
+            event.online = Some(mailsolutions_model::OnlineMeeting { join_url: "javascript:alert(1)".into(), ..Default::default() });
         }
         assert!(harness.state_mut().execute("ui.joinMeeting", json!({"event": id})).is_err());
     }
@@ -468,9 +468,9 @@ fn right_click(harness: &mut Harness, pos: egui::Pos2) {
 
 #[test]
 fn the_menu_of_an_item_offers_what_can_be_done_with_a_meeting() {
-    use mailcraft_model::remote::{CalendarsDownload, RemoteCalendar};
+    use mailsolutions_model::remote::{CalendarsDownload, RemoteCalendar};
     let link = "https://teams.example.org/l/meetup-join/g-1";
-    let online = mailcraft_model::OnlineMeeting { join_url: link.into(), ..Default::default() };
+    let online = mailsolutions_model::OnlineMeeting { join_url: link.into(), ..Default::default() };
     let (mut harness, server) = served(vec![RemoteEvent { online: Some(online), ..board() }, event("e-1", "Physio", NOW + 18 * HOUR)]);
     // The account's server has a second calendar.
     let account = harness.state().session.mailbox.accounts.iter().find(|a| a.email == "avery@mail.example").map(|a| a.id).unwrap();
@@ -484,7 +484,7 @@ fn the_menu_of_an_item_offers_what_can_be_done_with_a_meeting() {
         ],
         ..Default::default()
     };
-    mailcraft_engine::cmd::remote::apply_calendars(&mut harness.state_mut().session, &list).unwrap();
+    mailsolutions_engine::cmd::remote::apply_calendars(&mut harness.state_mut().session, &list).unwrap();
     harness.state_mut().execute("view.calendar", json!({})).unwrap();
     harness.state_mut().execute("view.week", json!({})).unwrap();
     harness.run_steps(8);

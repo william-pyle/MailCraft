@@ -5,13 +5,13 @@
 use std::borrow::Cow;
 use std::sync::atomic::AtomicBool;
 
-use mailcraft_mime_model::WriteOptions;
-use mailcraft_model::{Account, Message, Security};
-use mailcraft_proto::smtp::Smtp;
+use mailsolutions_mime_model::WriteOptions;
+use mailsolutions_model::{Account, Message, Security};
+use mailsolutions_proto::smtp::Smtp;
 
 use crate::transport::{self, Patience, Service, Stream};
 use crate::{NetError, not_signed_in};
-use mailcraft_i18n::said;
+use mailsolutions_i18n::said;
 
 /// What the client calls itself in EHLO: an address literal that says nothing about this machine.
 const CLIENT_NAME: &str = "[127.0.0.1]";
@@ -115,15 +115,15 @@ pub(crate) fn open_smtp_with<'a>(
 
 /// The message as it goes out: one that was never dated is dated now.
 pub(crate) fn dated(message: &Message) -> Cow<'_, Message> {
-    if message.date == 0 { Cow::Owned(Message { date: mailcraft_time::now(), ..message.clone() }) } else { Cow::Borrowed(message) }
+    if message.date == 0 { Cow::Owned(Message { date: mailsolutions_time::now(), ..message.clone() }) } else { Cow::Borrowed(message) }
 }
 
 /// Hand one message to an open session.
 pub(crate) fn deliver(smtp: &mut Smtp<Stream<'_>>, envelope: &Envelope, message: &Message) -> Result<(), NetError> {
     let message = dated(message);
     // Bcc recipients are in the envelope only.
-    let options = WriteOptions { include_bcc: false, offset_minutes: mailcraft_time::local_offset_minutes(message.date) };
-    let bytes = mailcraft_mime_model::write(&message, &options);
+    let options = WriteOptions { include_bcc: false, offset_minutes: mailsolutions_time::local_offset_minutes(message.date) };
+    let bytes = mailsolutions_mime_model::write(&message, &options);
     let recipients: Vec<&str> = envelope.recipients.iter().map(String::as_str).collect();
     smtp.send(&envelope.from, &recipients, &bytes)?;
     Ok(())
@@ -144,7 +144,7 @@ pub fn send(account: &Account, secret: &str, message: &Message) -> Result<(), Ne
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::Address;
+    use mailsolutions_model::Address;
 
     use super::*;
 

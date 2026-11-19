@@ -7,7 +7,7 @@ use super::*;
 
 fn registered() -> MailApp {
     let mut app = app(false);
-    app.services.google_client_id = "mailcraft-example.apps.googleusercontent.com".into();
+    app.services.google_client_id = "mailsolutions-example.apps.googleusercontent.com".into();
     app.services.google_client_secret = "synthetic-public-desktop-registration".into();
     app
 }
@@ -227,7 +227,7 @@ fn configured_google_oauth_still_allows_an_explicit_successful_app_password_acco
     assert!(!h.state().tokens.contains_key(&account.id));
 }
 
-/// An owner must choose Google explicitly. Without MailCraft's desktop registration the
+/// An owner must choose Google explicitly. Without MailSolutions's desktop registration the
 /// existing app-password page remains usable, and no provider page is opened.
 #[test]
 fn google_desktop_requires_registration_and_keeps_password_as_default() {

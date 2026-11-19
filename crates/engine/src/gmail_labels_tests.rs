@@ -3,8 +3,8 @@
 //! Gmail's labels of messages (#1153): what a synchronisation brings, the search and what agents
 //! see.
 
-use mailcraft_model::sync::{FolderDelta, GmailLabels, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, Message};
+use mailsolutions_model::sync::{FolderDelta, GmailLabels, SyncResult};
+use mailsolutions_model::{Address, FolderKind, Id, Message};
 use serde_json::json;
 
 use crate::Session;
@@ -69,7 +69,7 @@ fn labels_arrive_cleaned_and_follow_the_server() {
     ];
     apply(&mut s, account, vec![delta(inbox, Vec::new(), said)]);
     assert_eq!(labels_of(&s, account, 1), ["\\Inbox", "Personal"]);
-    assert_eq!(labels_of(&s, account, 2).len(), mailcraft_model::gmail::MAX_GMAIL_LABELS);
+    assert_eq!(labels_of(&s, account, 2).len(), mailsolutions_model::gmail::MAX_GMAIL_LABELS);
     assert!(!s.mailbox.messages.values().any(|m| m.gmail_labels.iter().any(|l| l == "Ghost")));
 
     // Labels taken off on the server are taken off here.

@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dates and times as the window shows them: in the interface language
-//! ([`mailcraft_i18n::date`]) the way of the system's region (`i18n::dated`: English in Britain
-//! writes the day first, #978), from `mailcraft_time`'s days and clocks. `mailcraft_time`'s own
+//! ([`mailsolutions_i18n::date`]) the way of the system's region (`i18n::dated`: English in Britain
+//! writes the day first, #978), from `mailsolutions_time`'s days and clocks. `mailsolutions_time`'s own
 //! text (`Date::long`, `list_label`…) stays English for commands, the CLI and agents; the window
 //! says dates through here.
 //!
 //! A time the owner types into a field is the exception: a field is filled with
-//! `mailcraft_time::time_short`, which `mailcraft_time::parse_time` reads back.
+//! `mailsolutions_time::time_short`, which `mailsolutions_time::parse_time` reads back.
 
-use mailcraft_i18n::date::{self, Day};
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday};
+use mailsolutions_i18n::date::{self, Day};
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday};
 
 use crate::i18n::{Lang, current, dated};
 
@@ -139,9 +139,9 @@ pub fn duration(minutes: i64) -> String {
 mod tests {
     use super::*;
 
-    /// In English the window says dates exactly as `mailcraft_time` does (and always did).
+    /// In English the window says dates exactly as `mailsolutions_time` does (and always did).
     #[test]
-    fn english_is_mailcraft_time_s_own() {
+    fn english_is_mailsolutions_time_s_own() {
         // (The window's language is shared by the tests running alongside: only English here.)
         let now = 1_791_993_600; // Wednesday 2026-10-14 16:00 UTC.
         let mut ts: i64 = 1_600_000_000;
@@ -152,19 +152,19 @@ mod tests {
             assert_eq!(month_year(t.date), t.date.month_year());
             for twelve in [true, false] {
                 assert_eq!(clock(t, twelve), t.time_short(twelve));
-                assert_eq!(list_label(ts, now, 120, twelve), mailcraft_time::list_label(ts, now, 120, twelve), "{ts}");
-                assert_eq!(header_label(ts, 120, twelve), mailcraft_time::header_label(ts, 120, twelve));
+                assert_eq!(list_label(ts, now, 120, twelve), mailsolutions_time::list_label(ts, now, 120, twelve), "{ts}");
+                assert_eq!(header_label(ts, 120, twelve), mailsolutions_time::header_label(ts, 120, twelve));
             }
             ts += 3 * 86_400 + 3_917;
         }
         for m in [-1, 0, 1, 2, 45, 60, 90, 95, 120, 600, 1439, 1440, 2880, 100_000] {
-            assert_eq!(duration(m), mailcraft_time::duration_label(m));
+            assert_eq!(duration(m), mailsolutions_time::duration_label(m));
         }
         for d in Weekday::ALL {
             assert_eq!((weekday_name(d), weekday_short(d)), (d.name(), d.short()));
         }
         for m in 0..=13 {
-            assert_eq!((month_name(m), month_short(m)), (mailcraft_time::month_name(m), mailcraft_time::month_short(m)));
+            assert_eq!((month_name(m), month_short(m)), (mailsolutions_time::month_name(m), mailsolutions_time::month_short(m)));
         }
     }
 }

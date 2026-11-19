@@ -4,11 +4,11 @@
 //! and mail sorted by them as it arrives, the move going up as the owner's own does; and the rules
 //! run on what arrives in the Inbox after them (#567).
 
-use mailcraft_model::sync::{
+use mailsolutions_model::sync::{
     FolderDelta, FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessageChange, MessageChangeDone, MessageOutcome, MessagePage, RemoteOp,
     ServerMessage, SyncResult,
 };
-use mailcraft_model::{Address, FlagStatus, FolderKind, Id, Importance, Message, ServerFolder};
+use mailsolutions_model::{Address, FlagStatus, FolderKind, Id, Importance, Message, ServerFolder};
 use serde_json::json;
 
 use crate::Session;
@@ -16,7 +16,7 @@ use crate::cmd::account::sync_request;
 use crate::cmd::graph_mail::{apply_graph_mail, graph_mail_request};
 
 fn local() -> (Session, Id) {
-    let s = Session::new(mailcraft_model::Mailbox::with_local_account("Ada", "ada@example.org"));
+    let s = Session::new(mailsolutions_model::Mailbox::with_local_account("Ada", "ada@example.org"));
     let a = s.mailbox.accounts[0].id;
     (s, a)
 }
@@ -84,7 +84,7 @@ fn the_options_add_remove_and_list_entries() {
     let long = "\u{0}\u{202e}é\n@".repeat(100_000);
     assert!(s.run("junk.add", &json!({"list": "safe", "entry": long})).is_err());
     assert!(s.run("junk.remove", &json!({"list": "safe", "entry": long})).is_err());
-    for i in 0..mailcraft_model::MAX_JUNK_ENTRIES {
+    for i in 0..mailsolutions_model::MAX_JUNK_ENTRIES {
         s.mailbox.junk_lists_mut(a).blocked.push(format!("s{i}@example.org"));
     }
     assert!(s.run("junk.add", &json!({"list": "blocked", "entry": "more@example.org"})).is_err());
@@ -786,7 +786,7 @@ fn what_a_rule_marks_on_graph_mail_goes_up() {
 fn a_later_round_left_partway_is_sorted_on_after_a_save_and_a_reopen() {
     let (mut s, account, [_, _, archive]) = graph_with_rule(true);
     apply_graph_mail(&mut s, inbox_page(account, &["one@shop.example"], false, false)).unwrap();
-    let dir = std::env::temp_dir().join(format!("mailcraft-567-reopen-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-567-reopen-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("later-round.mailcraft");

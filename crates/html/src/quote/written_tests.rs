@@ -25,7 +25,7 @@ fn quoted(html: &str) -> (String, Vec<(String, Picture)>) {
     let mut handed = Vec::new();
     let out = quotable_with_pictures(html, &mut |mime: &str, picture: &Picture| {
         handed.push((mime.to_string(), picture.clone()));
-        Some(format!("p{}@mailcraft.invalid", handed.len()))
+        Some(format!("p{}@mailsolutions.invalid", handed.len()))
     });
     (out, handed)
 }
@@ -33,12 +33,12 @@ fn quoted(html: &str) -> (String, Vec<(String, Picture)>) {
 #[test]
 fn a_picture_written_into_the_message_is_carried_as_a_part_of_its_own() {
     let (out, handed) = quoted(&format!("<p>Before</p><img src=\"{}\" alt=\"Chart\" width=\"40\"><p>After</p>", png()));
-    assert_eq!(out, "<p>Before</p><img src=\"cid:p1@mailcraft.invalid\" alt=\"Chart\" width=\"40\"><p>After</p>");
+    assert_eq!(out, "<p>Before</p><img src=\"cid:p1@mailsolutions.invalid\" alt=\"Chart\" width=\"40\"><p>After</p>");
     assert_eq!(handed.len(), 1);
     assert_eq!((handed[0].0.as_str(), handed[0].1.to_vec()), ("image/png", PNG.to_vec()));
     // Its type is read from the address in any letter case, with the breaks a program puts in it.
     let (out, handed) = quoted(&format!("<img src=\"DATA:Image/PNG;Base64,\r\n{}\">", b64(&PNG)));
-    assert_eq!((out.as_str(), handed.len()), ("<img src=\"cid:p1@mailcraft.invalid\">", 1));
+    assert_eq!((out.as_str(), handed.len()), ("<img src=\"cid:p1@mailsolutions.invalid\">", 1));
     // Each of the four kinds, by its own bytes.
     for (kind, bytes) in [
         ("image/jpeg", vec![0xff, 0xd8, 0xff, 0xe0, 0, 0]),
@@ -46,7 +46,7 @@ fn a_picture_written_into_the_message_is_carried_as_a_part_of_its_own() {
         ("image/webp", b"RIFF\x00\x00\x00\x00WEBPVP8 ".to_vec()),
     ] {
         let (out, handed) = quoted(&format!("<img src=\"data:{kind};base64,{}\">", b64(&bytes)));
-        assert_eq!(out, "<img src=\"cid:p1@mailcraft.invalid\">", "{kind}");
+        assert_eq!(out, "<img src=\"cid:p1@mailsolutions.invalid\">", "{kind}");
         assert_eq!((handed[0].0.as_str(), handed[0].1.to_vec()), (kind, bytes), "{kind}");
     }
 }
@@ -92,7 +92,7 @@ fn a_picture_too_small_to_see_is_left_out_and_takes_nothing_of_the_caps() {
     // As many as the reading pane shows at most, then a picture to see: that one still goes.
     let tiny: String = (0..MAX_DATA_PICTURES).map(|_| format!("<img src=\"{}\" width=\"1\" height=\"1\">", png())).collect();
     let (out, handed) = quoted(&format!("{tiny}<img src=\"{}\" alt=\"Chart\">", png()));
-    assert_eq!(out, "<img src=\"cid:p1@mailcraft.invalid\" alt=\"Chart\">");
+    assert_eq!(out, "<img src=\"cid:p1@mailsolutions.invalid\" alt=\"Chart\">");
     assert_eq!(handed.len(), 1);
 }
 

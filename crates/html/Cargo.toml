@@ -1,16 +1,16 @@
 [package]
-name = "mailcraft-html"
+name = "mailsolutions-html"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "MailCraft HTML for mail: hostile HTML to safe display blocks and plain text, and plain text to HTML"
+description = "MailSolutions HTML for mail: hostile HTML to safe display blocks and plain text, and plain text to HTML"
 
 [lints]
 workspace = true
 
 [dependencies]
-mailcraft-link = { workspace = true }
-mailcraft-names = { workspace = true }
+mailsolutions-link = { workspace = true }
+mailsolutions-names = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]

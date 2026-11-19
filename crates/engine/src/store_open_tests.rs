@@ -4,7 +4,7 @@
 
 use std::time::Duration;
 
-use mailcraft_model::{Address, Mailbox, Message};
+use mailsolutions_model::{Address, Mailbox, Message};
 
 use super::*;
 
@@ -13,7 +13,7 @@ struct Temp(PathBuf);
 
 impl Temp {
     fn new(name: &str) -> Temp {
-        let dir = std::env::temp_dir().join(format!("mailcraft-open-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mailsolutions-open-{}-{name}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         Temp(dir)
@@ -57,7 +57,7 @@ fn the_open_line_says_how_long_how_big_and_how_many_and_nothing_of_the_mail() {
     assert!(line.contains("3 messages"), "{line}");
     assert!(line.contains(&format!("{} folders", mb.folders.len())), "{line}");
     assert!(line.contains("not repaired"), "{line}");
-    for secret in ["Avery", "avery@", "Blake", "blake@", "example.org", "Confidential", "merger", "Inbox", "mailcraft"] {
+    for secret in ["Avery", "avery@", "Blake", "blake@", "example.org", "Confidential", "merger", "Inbox", "mailsolutions"] {
         assert!(!line.contains(secret), "{secret} in {line}");
     }
     let repaired = open_line(Duration::from_millis(80), 10, counts(&mb), 2);

@@ -5,7 +5,7 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-use mailcraft_charset::base64::STANDARD;
+use mailsolutions_charset::base64::STANDARD;
 use serde_json::{Value, json};
 
 use crate::graph::standin::{StandIn, TOKEN};

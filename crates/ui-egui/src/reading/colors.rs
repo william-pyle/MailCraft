@@ -23,7 +23,7 @@
 //!    nothing is invisible: not white on white, not black in a dark window.
 
 use egui::Color32;
-use mailcraft_html::Rgb;
+use mailsolutions_html::Rgb;
 
 use crate::theme::Tokens;
 

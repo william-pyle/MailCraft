@@ -10,7 +10,7 @@
 //!   command in [`ASKS_A_SERVER`], and the window starts no Send/Receive, no fetch, no picture
 //!   and no look-up. Mail that is sent waits in the Outbox until it is turned off.
 
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::{Value, json};
 
 use super::sync_progress::RunState;
@@ -39,7 +39,7 @@ pub fn specs() -> Vec<CommandSpec> {
             r#"{} — calls off the Send/Receive under way: the accounts waiting their turn are stopped and the one at work stops at its next safe place; what came in stays. Answers {"cancelling": bool (whether a run was under way), "stopped": [account ids]}"#,
         ),
         CommandSpec::new("sync.offline", "Work Offline", "Send / Receive › Preferences", offline).pure().params(
-            r#"{"value"?: bool} (default: the other way) — while on, MailCraft asks no server for anything: no Send/Receive, no message fetched, no pictures, no sender images, no look-ups; mail that is sent waits in the Outbox, and goes with the first Send/Receive after it is turned off. Kept between runs; not an undo step. Answers {"offline": bool, "outbox": number (messages waiting in the Outboxes)}"#,
+            r#"{"value"?: bool} (default: the other way) — while on, MailSolutions asks no server for anything: no Send/Receive, no message fetched, no pictures, no sender images, no look-ups; mail that is sent waits in the Outbox, and goes with the first Send/Receive after it is turned off. Kept between runs; not an undo step. Answers {"offline": bool, "outbox": number (messages waiting in the Outboxes)}"#,
         ),
     ]
 }

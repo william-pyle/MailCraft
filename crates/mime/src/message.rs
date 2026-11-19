@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 /// Seconds since 1970-01-01 UTC.
-pub type Timestamp = mailcraft_time::Timestamp;
+pub type Timestamp = mailsolutions_time::Timestamp;
 
 /// A mailbox in an address field: a display name (empty when there is none) and an address.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]

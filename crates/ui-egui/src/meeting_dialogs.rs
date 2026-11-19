@@ -20,8 +20,8 @@
 //! proposal's sender) is data: cut to size, shown as text, never followed.
 
 use egui::{Align2, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_model::{Address, Event, Id, ShowAs};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Address, Event, Id, ShowAs};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -72,7 +72,7 @@ fn when_text(start: DateTime, end: DateTime, all_day: bool, twelve: bool) -> Str
 }
 
 fn time_of(text: &str) -> Option<DateTime> {
-    mailcraft_time::parse_iso(text).map(|(at, _)| at)
+    mailsolutions_time::parse_iso(text).map(|(at, _)| at)
 }
 
 /// The date and the time of two fields as one moment.
@@ -145,7 +145,7 @@ impl ProposeTime {
             // Of a series: the occurrence that is selected, which is the one the proposal is for.
             let day = s.sel.event_day.filter(|_| s.sel.event == Some(event.id) && event.recurrence.is_some());
             // (When that occurrence is by the clock here: a series may repeat by another zone's.)
-            let here = |instant: mailcraft_time::Timestamp| s.offset_at(instant);
+            let here = |instant: mailsolutions_time::Timestamp| s.offset_at(instant);
             let day = day.filter(|day| event.series_day_on(*day, &here).is_some());
             let times = day.map(|day| event.occurrence_times(event.series_day_on(day, &here).unwrap_or(day), &here));
             let apart = day.map_or(0, |day| event.start.date.days_until(day));
@@ -197,7 +197,7 @@ impl ProposeTime {
 
     /// Why another time can't be proposed for an item of the calendar; empty when it can.
     fn why_not(app: &MailApp, event: &Event) -> String {
-        let kept = mailcraft_engine::cmd::remote::keeper(&app.session.mailbox, &event.origin).is_some();
+        let kept = mailsolutions_engine::cmd::remote::keeper(&app.session.mailbox, &event.origin).is_some();
         if !kept {
             tl!("Another time can be proposed for a meeting that the account's server keeps, or from the invitation in the mail.").to_string()
         } else if !event.origin.guest {
@@ -363,7 +363,7 @@ fn day_strip(app: &MailApp, ui: &Ui, rect: Rect, day: Date, span: Option<(DateTi
         Rect::from_min_max(pos2(left, top + 1.0), pos2(right, bottom.max(top + 12.0) - 1.0))
     };
     // What else is on, to the right; the proposal to the left.
-    let others = mailcraft_engine::cmd::calendar::occurrences(&app.session, day, day);
+    let others = mailsolutions_engine::cmd::calendar::occurrences(&app.session, day, day);
     for occurrence in others.iter().filter(|o| Some(o.event) != skip).take(40) {
         let Some(event) = app.session.mailbox.event(occurrence.event).filter(|event| !event.all_day) else { continue };
         let (from, to) = (minutes(occurrence.start), minutes(occurrence.end));
@@ -415,7 +415,7 @@ impl ForwardMeeting {
         let one = p.get("scope").and_then(Value::as_str) == Some("occurrence");
         let day = said.or(s.sel.event_day.filter(|_| one && s.sel.event == Some(event.id))).filter(|_| event.recurrence.is_some());
         // (When that occurrence is by the clock here: a series may repeat by another zone's.)
-        let here = |instant: mailcraft_time::Timestamp| s.offset_at(instant);
+        let here = |instant: mailsolutions_time::Timestamp| s.offset_at(instant);
         let day = day.filter(|day| event.series_day_on(*day, &here).is_some());
         let apart = day.map_or(0, |day| event.start.date.days_until(day));
         let (starts, ends) = match day.filter(|_| !event.all_day) {
@@ -431,7 +431,7 @@ impl ForwardMeeting {
             occurrence: day,
             title: kit::shown(&event.title, 120),
             when,
-            on_server: mailcraft_engine::cmd::remote::keeper(&s.mailbox, &event.origin).is_some(),
+            on_server: mailsolutions_engine::cmd::remote::keeper(&s.mailbox, &event.origin).is_some(),
             guest: event.origin.guest,
             to: p.get("to").and_then(Value::as_str).unwrap_or_default().chars().take(4_000).collect(),
             note: String::new(),
@@ -743,7 +743,8 @@ pub(crate) fn ui_command(app: &mut MailApp, id: &str, p: &Value) -> Option<Resul
     };
     let url = told.get("url").and_then(Value::as_str).unwrap_or_default();
     // Twice over: an https address as the model has it, and one a message's link would be followed to.
-    let safe = mailcraft_model::OnlineMeeting::clean_link(url).filter(|url| mailcraft_html::is_safe_url(url) && !mailcraft_html::is_embedded(url));
+    let safe = mailsolutions_model::OnlineMeeting::clean_link(url)
+        .filter(|url| mailsolutions_html::is_safe_url(url) && !mailsolutions_html::is_embedded(url));
     let Some(url) = safe else { return Some(Err(tl!("This meeting's link isn't one that can be opened.").to_string())) };
     let Some(ctx) = app.ctx.clone() else { return Some(Err(tl!("The window isn't up yet.").to_string())) };
     ctx.open_url(egui::OpenUrl::new_tab(url.clone()));

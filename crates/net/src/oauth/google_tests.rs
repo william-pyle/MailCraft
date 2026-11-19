@@ -76,9 +76,9 @@ fn google_is_a_distinct_mail_only_provider() {
     assert_eq!(serde_json::to_string(&OAuthProvider::Google).unwrap(), r#""google""#);
     assert_eq!(OAuthProvider::Microsoft.code(), "microsoft");
     // An existing Gmail app-password account is not silently converted to OAuth.
-    let existing = mailcraft_model::provider::by_domain("gmail.com").unwrap();
+    let existing = mailsolutions_model::provider::by_domain("gmail.com").unwrap();
     assert_eq!(existing.oauth, None);
-    let chosen = mailcraft_model::provider::google(true);
+    let chosen = mailsolutions_model::provider::google(true);
     assert_eq!(chosen.oauth, Some(OAuthProvider::Google));
     assert_eq!(chosen.incoming.host, existing.incoming.host);
     assert_eq!(chosen.outgoing.host, existing.outgoing.host);
@@ -218,7 +218,7 @@ fn google_refresh_preserves_account_identity_scope_and_expiry() {
     let old = "synthetic-refresh-one";
     let refreshed = refresh_google_at(&endpoint(&server), &google(), STAND_IN_SECRET, old).unwrap();
     assert_eq!((refreshed.access.as_str(), refreshed.refresh.as_str()), ("next-access", old));
-    assert!(!refreshed.fresh(mailcraft_time::now()));
+    assert!(!refreshed.fresh(mailsolutions_time::now()));
     let sent = form(&server, 0);
     assert_eq!(sent["grant_type"], "refresh_token");
     assert_eq!(sent["client_secret"], STAND_IN_SECRET);
@@ -333,8 +333,8 @@ fn integrated_google_servers(token: &str) -> (crate::fake::FakeImap, crate::fake
     (imap, smtp)
 }
 
-fn integrated_google_account(imap: &crate::fake::FakeImap, smtp: &crate::fake::FakeSmtp) -> mailcraft_model::Account {
-    use mailcraft_model::{Account, AccountKind, Security, Server};
+fn integrated_google_account(imap: &crate::fake::FakeImap, smtp: &crate::fake::FakeSmtp) -> mailsolutions_model::Account {
+    use mailsolutions_model::{Account, AccountKind, Security, Server};
     let loopback = |port| Server { host: "127.0.0.1".into(), port, security: Security::None };
     Account {
         id: 91,
@@ -352,8 +352,8 @@ fn integrated_google_account(imap: &crate::fake::FakeImap, smtp: &crate::fake::F
 
 #[test]
 fn google_integration_pkce_callback_token_authenticates_imap_and_smtp_without_a_password() {
-    use mailcraft_model::sync::SyncRequest;
-    use mailcraft_model::{Address, Message};
+    use mailsolutions_model::sync::SyncRequest;
+    use mailsolutions_model::{Address, Message};
 
     let provider = FakeHttp::answering(good("one@example.org", 3600));
     let (open, _) = browser(false);
@@ -401,9 +401,9 @@ fn google_integration_refused_expired_access_recovers_with_fake_refresh_and_no_t
     assert_eq!(fresh.access, "rotated-access");
     assert_eq!(form(&provider, 0)["grant_type"], "refresh_token");
     assert_eq!(crate::test_account(&account, &fresh.access), Ok(()));
-    let message = mailcraft_model::Message {
+    let message = mailsolutions_model::Message {
         id: 3,
-        to: vec![mailcraft_model::Address::new("Other", "other@example.org")],
+        to: vec![mailsolutions_model::Address::new("Other", "other@example.org")],
         subject: "Synthetic reconnected SMTP".into(),
         ..Default::default()
     };

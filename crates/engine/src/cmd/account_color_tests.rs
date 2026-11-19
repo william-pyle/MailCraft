@@ -3,7 +3,7 @@
 //! #893: each account has a colour. `account.add` gives a new one a colour no other account has,
 //! `account.edit` changes it or takes it away, and `account.list` says it.
 
-use mailcraft_model::{Account, Id, PALETTE, Rgb};
+use mailsolutions_model::{Account, Id, PALETTE, Rgb};
 use serde_json::{Value, json};
 
 use crate::Session;

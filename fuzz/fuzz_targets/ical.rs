@@ -5,6 +5,6 @@
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     let text = String::from_utf8_lossy(data);
-    let _ = mailcraft_ical::parse(&text, &|_| 0);
-    let _ = mailcraft_ical::parse_rrule(&text);
+    let _ = mailsolutions_ical::parse(&text, &|_| 0);
+    let _ = mailsolutions_ical::parse_rrule(&text);
 });

@@ -338,7 +338,7 @@ pub fn plain_button(ui: &mut Ui, label: &str) -> Response {
 }
 
 /// A round avatar with initials.
-pub fn avatar(ui: &Ui, center: egui::Pos2, radius: f32, address: &mailcraft_model::Address) {
+pub fn avatar(ui: &Ui, center: egui::Pos2, radius: f32, address: &mailsolutions_model::Address) {
     let t = Tokens::get(ui.ctx());
     let key = if address.email.is_empty() { &address.name } else { &address.email };
     ui.painter().circle_filled(center, radius, crate::theme::avatar_color(key, &t));
@@ -401,7 +401,7 @@ pub fn paint_label_tag(p: &egui::Painter, left_center: egui::Pos2, text: std::sy
 
 /// What a place is called: an account by its address (two accounts of one person can have one
 /// name), 0 this computer.
-pub fn place_name(mailbox: &mailcraft_model::Mailbox, account: mailcraft_model::Id) -> String {
+pub fn place_name(mailbox: &mailsolutions_model::Mailbox, account: mailsolutions_model::Id) -> String {
     match mailbox.account(account) {
         Some(a) => crate::people_view::one_line(&a.email, 200),
         None => tl!("On this computer").to_string(),
@@ -412,11 +412,11 @@ pub fn place_name(mailbox: &mailcraft_model::Mailbox, account: mailcraft_model::
 /// computer. Returns what was picked.
 pub fn account_choice(
     ui: &mut Ui,
-    mailbox: &mailcraft_model::Mailbox,
-    accounts: &[mailcraft_model::Id],
-    current: mailcraft_model::AccountChoice,
-) -> Option<mailcraft_model::AccountChoice> {
-    use mailcraft_model::AccountChoice;
+    mailbox: &mailsolutions_model::Mailbox,
+    accounts: &[mailsolutions_model::Id],
+    current: mailsolutions_model::AccountChoice,
+) -> Option<mailsolutions_model::AccountChoice> {
+    use mailsolutions_model::AccountChoice;
     let label = |choice: AccountChoice| match choice {
         AccountChoice::All => tl!("All accounts").to_string(),
         AccountChoice::Here => place_name(mailbox, 0),
@@ -446,12 +446,12 @@ pub fn pane_heading(ui: &mut Ui, text: &str) {
     crate::theme::paint_clipped(ui.painter(), pos2(r.min.x + 10.0, r.center().y), r.width() - 16.0, text, regular(14.667), t.text);
 }
 
-/// A colour swatch `size` square that opens the palette (`mailcraft_model::PALETTE`), with a
+/// A colour swatch `size` square that opens the palette (`mailsolutions_model::PALETTE`), with a
 /// ring and a heavier edge on the colour in use. `color` is the one in use; `None` is drawn as an
 /// empty square with a stroke through it. With `none` the palette has a button of that name
 /// under it, which takes the colour away. Answers what was picked there: `Some(Some(colour))`, or
 /// `Some(None)` for the button; `None` when nothing was.
-pub fn color_swatch(ui: &mut Ui, size: f32, color: Option<mailcraft_model::Rgb>, none: Option<&str>) -> Option<Option<mailcraft_model::Rgb>> {
+pub fn color_swatch(ui: &mut Ui, size: f32, color: Option<mailsolutions_model::Rgb>, none: Option<&str>) -> Option<Option<mailsolutions_model::Rgb>> {
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(vec2(size, size), Sense::click());
     let edge = Stroke::new(1.0, if resp.hovered() { t.text_dim } else { t.border_strong });
@@ -470,7 +470,7 @@ pub fn color_swatch(ui: &mut Ui, size: f32, color: Option<mailcraft_model::Rgb>,
     let mut picked = None;
     egui::Popup::menu(&resp).show(|ui| {
         ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
-        for line in mailcraft_model::PALETTE.chunks(6) {
+        for line in mailsolutions_model::PALETTE.chunks(6) {
             ui.horizontal(|ui| {
                 for choice in line {
                     let (cell, cell_resp) = ui.allocate_exact_size(vec2(22.0, 22.0), Sense::click());

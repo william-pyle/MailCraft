@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, mpsc::Receiver};
 use std::time::Duration;
 
-use mailcraft_model::{Attachment, Id};
+use mailsolutions_model::{Attachment, Id};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -280,7 +280,7 @@ pub(crate) fn open(app: &mut MailApp, viewport: egui::ViewportId, id: Id, index:
     if selected(app, viewport, id, index) && app.attachment_preview.as_ref().is_some_and(|preview| preview.error.is_none()) {
         return Ok(());
     }
-    let name = mailcraft_engine::opening::file_name(&part.name);
+    let name = mailsolutions_engine::opening::file_name(&part.name);
     if !part.data.is_empty() && !format.matches(&part.data) {
         return Err(Error::Invalid.text().into());
     }
@@ -465,7 +465,7 @@ pub(crate) fn show(app: &mut MailApp, ui: &mut egui::Ui, id: Id) -> bool {
             // One scroll state for the preview, at the top again for another attachment: not one
             // in egui's memory for every attachment ever previewed.
             let mut area = egui::ScrollArea::both().auto_shrink([false, false]).id_salt("attachment-preview");
-            let shown = egui::Id::unique(("mailcraft-attachment-preview-shown", ui.ctx().viewport_id()));
+            let shown = egui::Id::unique(("mailsolutions-attachment-preview-shown", ui.ctx().viewport_id()));
             if ui.ctx().data(|d| d.get_temp::<(Id, usize)>(shown)) != Some((id, preview.index)) {
                 ui.ctx().data_mut(|d| d.insert_temp(shown, (id, preview.index)));
                 area = area.scroll_offset(egui::Vec2::ZERO);

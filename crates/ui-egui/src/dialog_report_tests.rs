@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! A report (Check Calendar Connection, Remove MailCraft's Data): every line is shown when there
+//! A report (Check Calendar Connection, Remove MailSolutions's Data): every line is shown when there
 //! is room, and its buttons sit right under the last one, not at the foot of a dialog as tall as
 //! the window with the report cut short above a gap.
 

@@ -7,10 +7,10 @@
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::Id;
-use mailcraft_model::remote::{ContactsDownload, EventsDownload, RemoteContact};
-use mailcraft_model::sync::Tokens;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Id;
+use mailsolutions_model::remote::{ContactsDownload, EventsDownload, RemoteContact};
+use mailsolutions_model::sync::Tokens;
 use serde_json::json;
 
 use crate::{GraphRequest, GraphResult, MailApp, Services};
@@ -28,7 +28,7 @@ fn window() -> (MailApp, Id, Id, Jobs, Held) {
     let mut app = MailApp::new(Session::empty(), Services::default());
     app.autosave = false;
     let owner = app.execute("account.add", json!({"email": OWNER, "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
-    let tokens = Tokens { access: "own-access".into(), refresh: "ref-1".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() };
+    let tokens = Tokens { access: "own-access".into(), refresh: "ref-1".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() };
     app.tokens.insert(owner, tokens.clone());
     app.graph_tokens.insert(owner, tokens);
     let shared = app.execute("account.addSharedMailbox", json!({"address": SHARED})).unwrap()["id"].as_u64().unwrap();
@@ -40,14 +40,14 @@ fn window() -> (MailApp, Id, Id, Jobs, Held) {
         if req.mail.is_some() {
             // Mail: nothing to bring, answered at once.
             if let Some(to) = &req.mail_pieces {
-                let folder = mailcraft_model::sync::GraphFolder {
+                let folder = mailsolutions_model::sync::GraphFolder {
                     id: "in".into(),
                     name: "Inbox".into(),
-                    kind: mailcraft_model::FolderKind::Inbox,
+                    kind: mailsolutions_model::FolderKind::Inbox,
                     ..Default::default()
                 };
-                let listing = mailcraft_model::sync::FolderListing { folders: vec![folder], complete: true };
-                to.send(mailcraft_model::sync::GraphMailResult {
+                let listing = mailsolutions_model::sync::FolderListing { folders: vec![folder], complete: true };
+                to.send(mailsolutions_model::sync::GraphMailResult {
                     account: req.account.id,
                     email: req.account.email.clone(),
                     listing: Some(listing),
@@ -89,7 +89,7 @@ fn a_second_mailboxes_mail_starts_before_the_first_ones_calendar_download_ends()
     app.session.driver.round.last_auto = crate::now_ms();
     app.execute("ui.sync", json!({})).unwrap();
     // The whole round, with the calendar's looks in between: the calendar waits for the round.
-    let started_in_round = frames(&mut app, mailcraft_time::now() as f64 * 1_000.0);
+    let started_in_round = frames(&mut app, mailsolutions_time::now() as f64 * 1_000.0);
     let mail = |job: &(Id, bool, bool)| (job.0, job.1, job.2);
     let log = jobs.lock().unwrap().clone();
     assert_eq!(log.iter().map(mail).collect::<Vec<_>>()[..2], [(owner, true, false), (shared, true, false)], "both mailboxes' mail, no wide stretch");
@@ -98,7 +98,7 @@ fn a_second_mailboxes_mail_starts_before_the_first_ones_calendar_download_ends()
     // Send/Receive Progress still has each account, done.
     assert_eq!(app.session.sync_progress.accounts.iter().map(|r| r.account).collect::<Vec<_>>(), [owner, shared]);
     let states: Vec<_> = app.session.sync_progress.accounts.iter().map(|r| r.state).collect();
-    assert!(states.iter().all(|s| *s == mailcraft_engine::cmd::sync_progress::RunState::Done), "{states:?}");
+    assert!(states.iter().all(|s| *s == mailsolutions_engine::cmd::sync_progress::RunState::Done), "{states:?}");
     // The round is over: the download is a job of its own now (it may have started in the frames
     // above, once the round ended).
     let calendar_job = |log: &[(Id, bool, bool)]| log.iter().position(|job| !job.1);

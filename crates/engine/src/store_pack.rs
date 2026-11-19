@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Header blocks packed (#1376): the header lines of a message that nothing reads by name
-//! ([`mailcraft_model::HeaderBlock`]) are kept, when they are more than the record holds, in a
+//! ([`mailsolutions_model::HeaderBlock`]) are kept, when they are more than the record holds, in a
 //! few pack files in the content folder rather than in one content file each, which on a disk of
 //! 4 KB pieces cost twice their size and a file apiece.
 //!
@@ -31,7 +31,7 @@ use std::io::{Read as _, Seek as _, SeekFrom, Write as _};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-use mailcraft_model::headers::MAX_HEADER_BLOCK;
+use mailsolutions_model::headers::MAX_HEADER_BLOCK;
 
 use super::{Digest, MAX_ENTRIES, Ref, get_loose, lock, sync_dir_of};
 

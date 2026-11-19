@@ -107,7 +107,7 @@ fn names_are_cleaned_and_a_mailbox_with_none_left_is_passed_over() {
     let listing = listing(&answer(list)).unwrap();
     assert_eq!(ids(&listing), ["a", "b", "g"]);
     assert_eq!(listing.folders[0].name, "Quiet folder");
-    assert_eq!(listing.folders[1].name.chars().count(), mailcraft_model::MAX_NAME);
+    assert_eq!(listing.folders[1].name.chars().count(), mailsolutions_model::MAX_NAME);
     assert!(!listing.complete, "a mailbox the server has was not listed: nothing is removed for being missing");
     // A name keeps its slashes: the tree comes from the parents, not from the name.
     let slashes = self::listing(&answer(vec![mailbox("a", "Work/Home\\Away", None, None)])).unwrap();
@@ -250,9 +250,9 @@ fn a_tree_deeper_than_32_levels_goes_to_the_top_at_the_32nd() {
 
 #[test]
 fn a_hundred_thousand_mailboxes_are_held_to_ten_thousand_and_the_list_is_not_complete() {
-    let list: Vec<Value> = (0..mailcraft_model::sync::MAX_LISTED_FOLDERS + 5).map(|n| mailbox(&format!("m{n}"), "x", None, None)).collect();
+    let list: Vec<Value> = (0..mailsolutions_model::sync::MAX_LISTED_FOLDERS + 5).map(|n| mailbox(&format!("m{n}"), "x", None, None)).collect();
     let listing = listing(&answer(list)).unwrap();
-    assert_eq!(listing.folders.len(), mailcraft_model::sync::MAX_LISTED_FOLDERS);
+    assert_eq!(listing.folders.len(), mailsolutions_model::sync::MAX_LISTED_FOLDERS);
     assert!(!listing.complete);
     // A chain of ten thousand is walked without recursion.
     let chain: Vec<Value> = (0..10_000).map(|n| mailbox(&format!("m{n}"), "x", (n > 0).then(|| format!("m{}", n - 1)).as_deref(), None)).collect();

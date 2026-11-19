@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Snooze (#949) on a mailbox kept on this computer: snoozing, the return at the Return time (also
-//! after MailCraft was closed past it), the early return on a reply, the snooze called off by a
+//! after MailSolutions was closed past it), the early return on a reply, the snooze called off by a
 //! move, Return now, the undo steps, a source folder that is gone, and hostile parameters. The
 //! servers' side is in `snooze_servers_tests`.
 
-use mailcraft_model::{FolderKind, Id, Mailbox, Message};
+use mailsolutions_model::{FolderKind, Id, Mailbox, Message};
 use serde_json::{Value, json};
 
 use super::snooze;
@@ -231,7 +231,7 @@ fn a_return_time_that_is_not_in_the_future_or_is_not_a_time_is_refused_and_a_far
     assert!(w.s.run("mail.snooze", &json!({"ids": [w.a]})).is_err());
     w.s.run("mail.snooze", &json!({"ids": [w.a], "until": i64::MAX})).unwrap();
     let until = w.s.mailbox.message(w.a).unwrap().snooze.unwrap().until;
-    assert_eq!(until, NOON + mailcraft_model::MAX_SNOOZE_AHEAD);
+    assert_eq!(until, NOON + mailsolutions_model::MAX_SNOOZE_AHEAD);
     w.s.run("mail.snooze", &json!({"ids": [w.b], "until": "2200-12-31T23:59"})).unwrap();
     assert!(w.s.run("mail.snooze", &json!({"ids": [w.a], "until": "9999-12-31T23:59"})).is_err());
 }

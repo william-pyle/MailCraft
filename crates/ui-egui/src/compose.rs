@@ -3,7 +3,7 @@
 //! Writing a message: recipients, subject, attachments and the body, in place of the reading pane.
 
 use egui::{Align2, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_engine::ComposeMode;
+use mailsolutions_engine::ComposeMode;
 use serde_json::json;
 
 use crate::theme::{Tokens, paint_clipped, regular};
@@ -55,7 +55,7 @@ fn line_edit<'t>(text: &'t mut String, id: egui::Id, hint: &str, width: f32) -> 
 /// What takes the place of the name being typed on a line of recipients when the suggestion
 /// `who` is taken: the name and the address, then `; ` for the next one; after a space, unless it
 /// is the line's `first`.
-pub(crate) fn completed(first: bool, who: &mailcraft_engine::cmd::compose::Suggestion) -> String {
+pub(crate) fn completed(first: bool, who: &mailsolutions_engine::cmd::compose::Suggestion) -> String {
     let name: String = who.name.chars().filter(|c| !c.is_control() && !"\"<>".contains(*c)).collect();
     let name = name.trim();
     let written = if name.is_empty() || name.eq_ignore_ascii_case(&who.email) {
@@ -76,7 +76,7 @@ pub(crate) fn completed(first: bool, who: &mailcraft_engine::cmd::compose::Sugge
 /// typed. `offer`: whether anything is suggested now.
 pub(crate) fn recipient_line(
     ui: &mut Ui,
-    s: &mailcraft_engine::Session,
+    s: &mailsolutions_engine::Session,
     id: egui::Id,
     edit: egui::TextEdit<'_>,
     offer: bool,
@@ -121,10 +121,15 @@ pub(crate) fn recipient_line(
 /// keyboard is drawn at least twice a second (its cursor blinks), and asking reads the whole
 /// mailbox.
 ///
-/// [`Session::rev`]: mailcraft_engine::Session::rev
-/// [`Session::openings`]: mailcraft_engine::Session::openings
-fn suggestions(ctx: &egui::Context, s: &mailcraft_engine::Session, id: egui::Id, typed: &str) -> Vec<mailcraft_engine::cmd::compose::Suggestion> {
-    type Asked = ((String, u64, u64), Vec<mailcraft_engine::cmd::compose::Suggestion>);
+/// [`Session::rev`]: mailsolutions_engine::Session::rev
+/// [`Session::openings`]: mailsolutions_engine::Session::openings
+fn suggestions(
+    ctx: &egui::Context,
+    s: &mailsolutions_engine::Session,
+    id: egui::Id,
+    typed: &str,
+) -> Vec<mailsolutions_engine::cmd::compose::Suggestion> {
+    type Asked = ((String, u64, u64), Vec<mailsolutions_engine::cmd::compose::Suggestion>);
     let kept = id.with("suggestions");
     let asking = (typed.to_string(), s.rev(), s.openings());
     if let Some((at, found)) = ctx.data(|d| d.get_temp::<Asked>(kept))
@@ -132,7 +137,7 @@ fn suggestions(ctx: &egui::Context, s: &mailcraft_engine::Session, id: egui::Id,
     {
         return found;
     }
-    let found = mailcraft_engine::cmd::compose::suggest(s, typed, 6);
+    let found = mailsolutions_engine::cmd::compose::suggest(s, typed, 6);
     ctx.data_mut(|d| d.insert_temp::<Asked>(kept, (asking, found.clone())));
     found
 }
@@ -204,7 +209,9 @@ impl Shown {
             attachments: c
                 .attachments
                 .iter()
-                .map(|a| (mailcraft_engine::opening::file_name(&a.name), mailcraft_model::size_label_in(crate::i18n::current(), a.size() as u64)))
+                .map(|a| {
+                    (mailsolutions_engine::opening::file_name(&a.name), mailsolutions_model::size_label_in(crate::i18n::current(), a.size() as u64))
+                })
                 .collect(),
             quote: c.quote.is_some(),
         })
@@ -504,16 +511,16 @@ fn signature(app: &mut MailApp, ui: &mut Ui) {
     // The last few signatures shown (one a window being written; at least one for each window
     // open, so that none misses every frame), under one key: not one entry in
     // egui's memory for every signature ever shown.
-    type Kept = Vec<(egui::Id, std::sync::Arc<mailcraft_model::Message>)>;
+    type Kept = Vec<(egui::Id, std::sync::Arc<mailsolutions_model::Message>)>;
     const KEPT: usize = 4;
-    let key = egui::Id::unique("mailcraft-compose-signature");
+    let key = egui::Id::unique("mailsolutions-compose-signature");
     let this = egui::Id::unique(&html);
     let known = ctx.data(|d| d.get_temp::<Kept>(key)).unwrap_or_default();
     let message = match known.iter().find(|(of, _)| *of == this) {
         Some((_, m)) => m.clone(),
         None => {
             // As it is sent: cleaned.
-            let m = std::sync::Arc::new(crate::signatures::message_of(mailcraft_engine::html::quotable(&html), &[], |_| String::new()));
+            let m = std::sync::Arc::new(crate::signatures::message_of(mailsolutions_engine::html::quotable(&html), &[], |_| String::new()));
             let mut known = known;
             if known.len() >= KEPT.max(app.windows.len().saturating_add(2)) {
                 known.remove(0);

@@ -3,10 +3,10 @@
 //! Calendar items and tasks of a .pst file (#815): synthetic files by the reader's test writer,
 //! invented people at `example.org`. Nothing is sent for any of them.
 
-use mailcraft_model::{Freq, Importance, Mailbox, Response, ShowAs};
-use mailcraft_pst::test_writer::{self as w, FileSpec, FolderSpec, Layout, MessageSpec, Value, recurrence_bytes, time_zone_bytes};
-use mailcraft_pst::{Encryption, Format, PS_PUBLIC_STRINGS};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Freq, Importance, Mailbox, Response, ShowAs};
+use mailsolutions_pst::test_writer::{self as w, FileSpec, FolderSpec, Layout, MessageSpec, Value, recurrence_bytes, time_zone_bytes};
+use mailsolutions_pst::{Encryption, Format, PS_PUBLIC_STRINGS};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value as Json, json};
 
 use crate::Session;
@@ -94,7 +94,7 @@ fn run(s: &mut Session, dir: &Temp, bytes: &[u8], v: Json) -> Json {
     run_staged(s, &pst, None, false, &v).unwrap()
 }
 
-fn event<'a>(s: &'a Session, title: &str) -> &'a mailcraft_model::Event {
+fn event<'a>(s: &'a Session, title: &str) -> &'a mailsolutions_model::Event {
     s.mailbox.events.values().find(|e| e.title == title).unwrap()
 }
 
@@ -317,7 +317,7 @@ fn a_chosen_calendar_is_used_and_one_on_a_server_refused() {
     let dir = Temp::new("cal-place");
     let mut s = kept_session(&dir);
     let id = s.mailbox.alloc_id();
-    s.mailbox.calendars.push(mailcraft_model::Calendar { id, name: "Mine".into(), visible: true, ..Default::default() });
+    s.mailbox.calendars.push(mailsolutions_model::Calendar { id, name: "Mine".into(), visible: true, ..Default::default() });
     let bytes = file(vec![folder("Calendar", "IPF.Appointment", vec![appointment("Once", at(2026, 3, 2, 9, 0), at(2026, 3, 2, 10, 0), vec![])])]);
     let calendars = s.mailbox.calendars.len();
     run(&mut s, &dir, &bytes, json!({"places": {"calendar": id}}));
@@ -326,10 +326,10 @@ fn a_chosen_calendar_is_used_and_one_on_a_server_refused() {
 
     let mut bare = Session::at(Mailbox::with_local_account("", ""), crate::import_pst_memory_tests::now(), 0);
     let remote = bare.mailbox.alloc_id();
-    bare.mailbox.calendars.push(mailcraft_model::Calendar {
+    bare.mailbox.calendars.push(mailsolutions_model::Calendar {
         id: remote,
         name: "Server".into(),
-        origin: mailcraft_model::Origin { account: 1, id: "x".into(), ..Default::default() },
+        origin: mailsolutions_model::Origin { account: 1, id: "x".into(), ..Default::default() },
         ..Default::default()
     });
     let pst = dir.pst(&bytes);
@@ -342,8 +342,8 @@ fn a_subscribed_calendar_is_never_imported_into() {
     let dir = Temp::new("cal-subscribed");
     let mut s = kept_session(&dir);
     let id = s.mailbox.alloc_id();
-    let subscription = mailcraft_model::subscription::Subscription { host: "cal.example.org".into(), ..Default::default() };
-    s.mailbox.calendars.push(mailcraft_model::Calendar {
+    let subscription = mailsolutions_model::subscription::Subscription { host: "cal.example.org".into(), ..Default::default() };
+    s.mailbox.calendars.push(mailsolutions_model::Calendar {
         id,
         name: "Fixtures".into(),
         visible: true,
@@ -568,10 +568,10 @@ fn a_calendar_removed_meanwhile_stops_the_import() {
     let dir = Temp::new("cal-gone");
     let mut s = kept_session(&dir);
     let id = s.mailbox.alloc_id();
-    s.mailbox.calendars.push(mailcraft_model::Calendar { id, name: "Chosen".into(), visible: true, ..Default::default() });
+    s.mailbox.calendars.push(mailsolutions_model::Calendar { id, name: "Chosen".into(), visible: true, ..Default::default() });
     let batch = || {
         let mut b = Batch::default();
-        b.events = vec![mailcraft_model::Event { title: "One".into(), calendar: id, ..Default::default() }];
+        b.events = vec![mailsolutions_model::Event { title: "One".into(), calendar: id, ..Default::default() }];
         b.identity = "x".into();
         b
     };
@@ -733,7 +733,7 @@ fn a_mailbox_full_of_notes_takes_no_more_from_any_file() {
     let dir = Temp::new("notes-total");
     let mut s = kept_session(&dir);
     let full = usize::try_from(crate::import_pst::item::KEPT_TOTAL_BUDGET).unwrap().saturating_sub(1000);
-    s.mailbox.add_note(mailcraft_model::Note { text: "n".repeat(full), ..Default::default() });
+    s.mailbox.add_note(mailsolutions_model::Note { text: "n".repeat(full), ..Default::default() });
     let answer = run(&mut s, &dir, &file(vec![folder("Notes", "IPF.StickyNote", vec![sticky(&"m".repeat(4000), 3)])]), json!({}));
     adds_up(&answer);
     assert_eq!((answer["stickyNotes"].as_u64(), answer["leftOut"].as_u64()), (Some(0), Some(1)), "{answer}");

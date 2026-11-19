@@ -11,8 +11,8 @@
 //! What a server doesn't say is left as it was (E7): an answer without a preview, a flag or the
 //! categories reads as a message without them. Everything is capped as the answer is read.
 
-use mailcraft_model::sync::{GraphMessage, ReadState, ServerMessage, ThreadOf};
-use mailcraft_model::{Address, FlagStatus, Importance};
+use mailsolutions_model::sync::{GraphMessage, ReadState, ServerMessage, ThreadOf};
+use mailsolutions_model::{Address, FlagStatus, Importance};
 
 use crate::b64;
 use crate::error::Error;
@@ -24,7 +24,7 @@ use crate::xml::{MAX_MIME_TEXT, Node};
 /// Most changes one page asks for (the schema's own limit is 512).
 pub const MAX_CHANGES: u32 = 512;
 /// The most changes one page holds that are taken in: what the model takes in of a page.
-const MAX_PAGE: usize = mailcraft_model::sync::MAX_EWS_PAGE_MESSAGES;
+const MAX_PAGE: usize = mailsolutions_model::sync::MAX_EWS_PAGE_MESSAGES;
 /// Longest subject, `Message-ID`, preview and name kept, in characters; the most people a
 /// message names in one list.
 const MAX_SUBJECT: usize = 998;
@@ -190,7 +190,7 @@ fn line(text: &str, most: usize) -> String {
 
 /// The time an element says (`2013-08-29T15:22:10Z`); 0 when it says none that can be read.
 fn time(node: &Node, name: &str) -> i64 {
-    node.child_in(TYPES, name).and_then(|n| mailcraft_time::iso_to_timestamp(n.text.trim(), 0)).unwrap_or(0)
+    node.child_in(TYPES, name).and_then(|n| mailsolutions_time::iso_to_timestamp(n.text.trim(), 0)).unwrap_or(0)
 }
 
 fn flag(node: &Node, name: &str) -> bool {
@@ -220,7 +220,7 @@ fn people(node: &Node, name: &str) -> Vec<Address> {
 /// The conversation an item is in (`ConversationId`, an id as an item's is: #795), else none.
 pub(crate) fn conversation_of(item: &Node) -> String {
     let id = item.child_in(TYPES, "ConversationId").and_then(|n| n.attribute("Id")).filter(|id| valid_id(id)).unwrap_or_default();
-    mailcraft_model::sync::thread_id(id)
+    mailsolutions_model::sync::thread_id(id)
 }
 
 /// The message in an item element, when it has an id.
@@ -239,7 +239,7 @@ fn read_item(item: &Node) -> Option<GraphMessage> {
         "Complete" => FlagStatus::Complete,
         _ => FlagStatus::None,
     };
-    let when = |name: &str| flag_node.and_then(|f| f.child_in(TYPES, name)).and_then(|n| mailcraft_time::iso_to_timestamp(n.text.trim(), 0));
+    let when = |name: &str| flag_node.and_then(|f| f.child_in(TYPES, name)).and_then(|n| mailsolutions_time::iso_to_timestamp(n.text.trim(), 0));
     let categories = item
         .child_in(TYPES, "Categories")
         .map(|c| c.children.iter().take(MAX_CATEGORIES).map(|s| line(&s.text, MAX_CATEGORY)).filter(|s| !s.is_empty()).collect())

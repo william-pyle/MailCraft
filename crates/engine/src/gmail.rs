@@ -6,28 +6,28 @@
 //! They are no folders of the mailbox: each is a view of the Inbox (`folder.select` with
 //! `gmail`), so nothing can be renamed, deleted or filed in one, and the Inbox's mail stays in
 //! the Inbox. Primary, Social, Promotions, Updates and Forums are Gmail's decision, read from its
-//! server ([`mailcraft_model::GmailCategory`]).
+//! server ([`mailsolutions_model::GmailCategory`]).
 //!
 //! The owner may move mail from one to another (`mail.setGmailCategory`), for an account that
 //! signs in with Google ([`moves_offered`], [`why_not_movable`]): the move is made here at once,
 //! like a read mark, and goes to Gmail through its API at the next Send/Receive
-//! (`SyncRequest::gmail_moves`). That ships switched off until Google has reviewed MailCraft's
+//! (`SyncRequest::gmail_moves`). That ships switched off until Google has reviewed MailSolutions's
 //! use of the API ([`GMAIL_CATEGORY_MOVES`]).
 
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use mailcraft_model::{FolderKind, GmailCategory, Id, Message, ThreadIndex, ThreadKey};
+use mailsolutions_model::{FolderKind, GmailCategory, Id, Message, ThreadIndex, ThreadKey};
 
 use crate::Session;
 
 /// Whether mail can be moved between Gmail's categories in this build (#911): the model's switch,
-/// which `mailcraft-net` holds to as well. [`Session::gmail_category_moves`] starts as this.
-pub use mailcraft_model::gmail::GMAIL_CATEGORY_MOVES;
+/// which `mailsolutions-net` holds to as well. [`Session::gmail_category_moves`] starts as this.
+pub use mailsolutions_model::gmail::GMAIL_CATEGORY_MOVES;
 
 /// Why moves between Gmail's categories aren't there while they are switched off. (The reasons
 /// are written out where they are given, so that they are translated; these are for comparing.)
-pub const MOVES_NOT_YET: &str = "comes once Google has reviewed MailCraft";
+pub const MOVES_NOT_YET: &str = "comes once Google has reviewed MailSolutions";
 /// Why an account signed in with an app password can't move mail between Gmail's categories.
 pub const NEEDS_GOOGLE_SIGN_IN: &str = "needs Google sign-in";
 
@@ -36,7 +36,7 @@ pub const NEEDS_GOOGLE_SIGN_IN: &str = "needs Google sign-in";
 /// signs in with Google; else why not.
 pub fn moves_offered(s: &Session) -> Option<&'static str> {
     if !s.gmail_category_moves {
-        return Some("comes once Google has reviewed MailCraft");
+        return Some("comes once Google has reviewed MailSolutions");
     }
     if cfg!(target_arch = "wasm32") {
         return Some("can't be done in the browser");

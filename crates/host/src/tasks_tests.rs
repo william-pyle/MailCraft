@@ -5,10 +5,10 @@
 
 use std::sync::Arc;
 
-use mailcraft_model::remote_tasks::TasksUpload;
-use mailcraft_model::{Account, AccountKind, OAuth};
-use mailcraft_net::NetError;
-use mailcraft_net::oauth::Resource;
+use mailsolutions_model::remote_tasks::TasksUpload;
+use mailsolutions_model::{Account, AccountKind, OAuth};
+use mailsolutions_net::NetError;
+use mailsolutions_net::oauth::Resource;
 
 use crate::tasks::{TasksJob, mail_resource, run_with};
 use crate::{Host, Platform, init};
@@ -19,7 +19,7 @@ fn job() -> TasksJob {
         oauth: OAuth::default(),
         refresh: "r".into(),
         upload: TasksUpload::default(),
-        zone: mailcraft_time::Zone::UTC,
+        zone: mailsolutions_time::Zone::UTC,
         cancel: Default::default(),
     }
 }
@@ -41,7 +41,7 @@ fn a_sign_in_that_does_not_cover_the_tasks_asks_the_owner_and_sends_nothing() {
 
 #[test]
 fn trouble_reaching_the_server_is_a_line_in_the_answer_not_a_refusal() {
-    let out = run_with(job(), &|_, _| Err(NetError::Config(mailcraft_i18n::Text::from("down"))));
+    let out = run_with(job(), &|_, _| Err(NetError::Config(mailsolutions_i18n::Text::from("down"))));
     assert!(!out.consent_needed && !out.sign_in_refused);
     assert_eq!(out.errors.len(), 1);
 }

@@ -6,8 +6,8 @@
 //! side goes to `/me`. The order is the engine's; here the two halves are sent the way a host
 //! sends them, against the stand-in ([`standin`]). Every address is invented.
 
-use mailcraft_model::remote::opened_id;
-use mailcraft_time::Date;
+use mailsolutions_model::remote::opened_id;
+use mailsolutions_time::Date;
 
 use super::standin::{CalendarAccess, StandIn, TOKEN};
 use super::*;

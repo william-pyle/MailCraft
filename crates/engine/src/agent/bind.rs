@@ -22,7 +22,7 @@
 use std::collections::HashSet;
 use std::hash::{BuildHasher, Hasher, RandomState};
 
-use mailcraft_model::Id;
+use mailsolutions_model::Id;
 use serde_json::Value;
 
 use crate::{Compose, Selection, Session, ViewState, p};

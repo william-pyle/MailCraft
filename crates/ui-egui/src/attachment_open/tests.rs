@@ -5,8 +5,8 @@
 
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::Attachment;
+use mailsolutions_engine::Session;
+use mailsolutions_model::Attachment;
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -19,7 +19,7 @@ type Opened = Arc<Mutex<Vec<(String, Vec<u8>)>>>;
 /// The sample mailbox with a message carrying `names`, and a host that notes what it is asked to
 /// open. The message's id comes back too.
 fn app(names: &[&str]) -> (MailApp, u64, Opened) {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let id = app.session.rows().first().map(|r| r.id).unwrap();
     let m = app.session.mailbox.message_mut(id).unwrap();

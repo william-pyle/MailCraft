@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::{Value, json};
 
 use super::*;
@@ -99,7 +99,7 @@ impl SecretStore for Store {
     fn get(&self, key: &str) -> Option<String> {
         self.0.lock().unwrap().get(key).cloned()
     }
-    fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+    fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
         self.0.lock().unwrap().insert(key.to_string(), secret.to_string());
         Ok(())
     }
@@ -109,7 +109,7 @@ impl SecretStore for Store {
 }
 
 fn app() -> MailApp {
-    let session = Session::at(mailcraft_model::Mailbox::with_local_account("", ""), NOW, 0);
+    let session = Session::at(mailsolutions_model::Mailbox::with_local_account("", ""), NOW, 0);
     let mut app = MailApp::new(session, Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
@@ -196,7 +196,7 @@ fn certificate(changed: bool) -> EwsCertificate {
     }
 }
 
-fn account(h: &Harness<'static, MailApp>) -> mailcraft_model::Account {
+fn account(h: &Harness<'static, MailApp>) -> mailsolutions_model::Account {
     h.state().session.mailbox.accounts.iter().find(|a| a.email == ME).cloned().expect("the account was added")
 }
 
@@ -401,7 +401,7 @@ fn a_failure_is_a_sentence_to_act_on_with_server_settings_open() {
         // The password is still there to try again; nothing was added.
         assert!(wizard(&h).is_some_and(|w| w.password.0 == TYPED));
         assert!(h.state().session.mailbox.accounts.iter().all(|a| a.email != ME));
-        // The words are MailCraft's own, whatever the server said.
+        // The words are MailSolutions's own, whatever the server said.
         let error = wizard(&h).unwrap().error.clone();
         assert!(!error.contains("WWW-Authenticate") && !error.contains("NTLM ") && error.ends_with('.'), "{error}");
     }
@@ -496,7 +496,7 @@ fn an_expired_certificate_is_never_offered_for_trust() {
 fn trusting(host: &Host) -> (MailApp, Id) {
     let mut a = app();
     host.install(&mut a);
-    let server = mailcraft_model::EwsServer { url: URL.into(), trusted: "ab".repeat(32), ..Default::default() };
+    let server = mailsolutions_model::EwsServer { url: URL.into(), trusted: "ab".repeat(32), ..Default::default() };
     let id = a.session.mailbox.add_account(Account { email: ME.into(), kind: AccountKind::Exchange, ews: Some(server), ..Default::default() });
     (a, id)
 }
@@ -586,7 +586,7 @@ fn the_password_is_remembered_with_the_system_when_the_owner_lets_it_be_and_read
     // The first Send/Receive is a stand-in that never finishes, and says what it was given.
     let secrets: Arc<Mutex<Vec<String>>> = Default::default();
     let seen = secrets.clone();
-    let held: Arc<Mutex<Vec<mpsc::Sender<mailcraft_model::sync::EwsMailResult>>>> = Default::default();
+    let held: Arc<Mutex<Vec<mpsc::Sender<mailsolutions_model::sync::EwsMailResult>>>> = Default::default();
     let keep = held.clone();
     a.services.ews = Some(Box::new(move |job| {
         seen.lock().unwrap().push(job.secret.clone());

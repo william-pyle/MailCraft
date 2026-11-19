@@ -5,7 +5,7 @@
 //! caps. (A small block stays in a message's JSON, which `mailbox_file` reads.)
 #![no_main]
 
-use mailcraft_model::headers::{HeaderBlock, MAX_BLOCK_LINES, MAX_HEADER_BLOCK};
+use mailsolutions_model::headers::{HeaderBlock, MAX_BLOCK_LINES, MAX_HEADER_BLOCK};
 
 libfuzzer_sys::fuzz_target!(|data: &[u8]| {
     if let Some(block) = HeaderBlock::read(data) {
@@ -13,7 +13,7 @@ libfuzzer_sys::fuzz_target!(|data: &[u8]| {
         let lines = block.lines();
         assert!(lines.len() <= MAX_BLOCK_LINES);
         let working = vec![("List-Id".to_string(), "<list.example.org>".to_string())];
-        let all = mailcraft_model::headers::merge(&working, &lines);
+        let all = mailsolutions_model::headers::merge(&working, &lines);
         assert_eq!(all.len(), lines.len() + 1);
     }
 });

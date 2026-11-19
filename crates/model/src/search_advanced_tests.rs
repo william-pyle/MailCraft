@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Advanced Search's fields, read out of the search box's query and written back into it (#329).
 
-use mailcraft_time::Date;
+use mailsolutions_time::Date;
 
 use crate::Importance;
 use crate::search::{Advanced, Query, Reading, full_date};

@@ -227,6 +227,7 @@ const TABLE: &[(&str, Verdict)] = &[
     ("a.cdr", Blocked),
     ("a.smi", Blocked),
     ("a.mailcraft", Blocked),
+    ("a.mailsolutions", Blocked),
     // ASCII case variants.
     ("a.EXE", Blocked),
     ("a.ExE", Blocked),

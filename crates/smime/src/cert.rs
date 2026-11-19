@@ -5,15 +5,15 @@
 
 use const_oid::ObjectIdentifier;
 use der::{Decode, Encode};
-use mailcraft_model::digital_signature::{MAX_SIGNER_ADDRESSES, signer_text};
-use mailcraft_time::Timestamp;
+use mailsolutions_model::digital_signature::{MAX_SIGNER_ADDRESSES, signer_text};
+use mailsolutions_time::Timestamp;
 use x509_cert::Certificate;
 use x509_cert::ext::pkix::constraints::name::GeneralSubtrees;
 use x509_cert::ext::pkix::name::GeneralName;
 use x509_cert::ext::pkix::{BasicConstraints, ExtendedKeyUsage, KeyUsage, NameConstraints, SubjectAltName, SubjectKeyIdentifier};
 
 use crate::algorithms::{self, Fault};
-use mailcraft_ber as ber;
+use mailsolutions_ber as ber;
 
 /// The largest certificate read.
 pub const MAX_CERT_BYTES: usize = 64 * 1024;

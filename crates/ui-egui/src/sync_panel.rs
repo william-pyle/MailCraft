@@ -6,7 +6,7 @@
 //! done came to, and the problems of each under its row. It opens only when the owner asks
 //! (the Send/Receive text in the status bar, Send / Receive › Show Progress,
 //! `ui.dialog {"name": "syncProgress"}`), and never by itself. It isn't modal: Escape or a click
-//! anywhere else closes it. What it shows is the engine's ([`mailcraft_engine::cmd::sync_progress`])
+//! anywhere else closes it. What it shows is the engine's ([`mailsolutions_engine::cmd::sync_progress`])
 //! with the problems the window keeps ([`MailApp::sync_problem_lines`]).
 //!
 //! A waiting account has Skip (`ui.skipSync`), which leaves it out of the run; under each
@@ -20,9 +20,9 @@
 //! Problems may name a message by its subject; messages being sent are only counted.
 
 use egui::{Align2, Rect, RichText, Sense, Ui, pos2, vec2};
-use mailcraft_engine::cmd::sync_progress::{AccountRun, FullMessages, RunState};
-use mailcraft_model::Id;
-use mailcraft_model::sync::SyncPhase;
+use mailsolutions_engine::cmd::sync_progress::{AccountRun, FullMessages, RunState};
+use mailsolutions_model::Id;
+use mailsolutions_model::sync::SyncPhase;
 use serde_json::json;
 
 use crate::MailApp;
@@ -186,10 +186,10 @@ pub(crate) fn timings_report(app: &MailApp) -> String {
         let Some(account) = mb.account(run.account) else { continue };
         any = true;
         let kind = match account.kind {
-            mailcraft_model::AccountKind::Microsoft => "Microsoft Graph",
-            mailcraft_model::AccountKind::Imap => "mail server",
-            mailcraft_model::AccountKind::Jmap => "JMAP",
-            mailcraft_model::AccountKind::Exchange => "Exchange Web Services",
+            mailsolutions_model::AccountKind::Microsoft => "Microsoft Graph",
+            mailsolutions_model::AccountKind::Imap => "mail server",
+            mailsolutions_model::AccountKind::Jmap => "JMAP",
+            mailsolutions_model::AccountKind::Exchange => "Exchange Web Services",
             _ => "other",
         };
         let t = &run.timings;
@@ -499,9 +499,9 @@ mod tests {
     use std::sync::{Arc, Mutex, mpsc};
 
     use egui_kittest::Harness;
-    use mailcraft_engine::Session;
-    use mailcraft_model::sync::{FolderDelta, SyncRequest, SyncResult, SyncStage, SyncStep};
-    use mailcraft_model::{Address, FolderKind, Message};
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::sync::{FolderDelta, SyncRequest, SyncResult, SyncStage, SyncStep};
+    use mailsolutions_model::{Address, FolderKind, Message};
     use serde_json::json;
 
     use super::*;
@@ -517,8 +517,10 @@ mod tests {
     /// whose runs the test hands the pieces of.
     fn app() -> (MailApp, Vec<Id>, Pipe) {
         // (Not the sample: its reminders would come up over the window.)
-        let mut a =
-            MailApp::new(Session::at(mailcraft_model::Mailbox::with_local_account("Noor Haddad", "noor@example.org"), NOW, 0), Services::default());
+        let mut a = MailApp::new(
+            Session::at(mailsolutions_model::Mailbox::with_local_account("Noor Haddad", "noor@example.org"), NOW, 0),
+            Services::default(),
+        );
         a.autosave = false;
         a.session.driver.set_auto_sync(false);
         let pipe: Pipe = Default::default();
@@ -979,7 +981,7 @@ mod tests {
     /// the next row starts below them, not over them.
     #[test]
     fn a_waiting_rows_lines_are_not_covered_by_the_next_row() {
-        use mailcraft_model::sync::{SyncPhase, Timings};
+        use mailsolutions_model::sync::{SyncPhase, Timings};
         let (mut a, ids, _) = app();
         a.execute("ui.sync", json!({})).unwrap();
         let mut timings = Timings::default();
@@ -1001,8 +1003,8 @@ mod tests {
     /// them, and the next run, the owner's or one by itself, has them go on.
     #[test]
     fn full_messages_pause_with_stop_and_go_on_with_the_next_run() {
-        use mailcraft_engine::cmd::graph_mail;
-        use mailcraft_model::sync::{GraphFetchResult, GraphFetched, ServerMessage, Tokens};
+        use mailsolutions_engine::cmd::graph_mail;
+        use mailsolutions_model::sync::{GraphFetchResult, GraphFetched, ServerMessage, Tokens};
 
         use crate::graph_fetch::GraphFetchJob;
 
@@ -1025,7 +1027,7 @@ mod tests {
         }
         a.seed_graph_token(
             ms,
-            Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() },
+            Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() },
         );
         let jobs: Arc<Mutex<Vec<(GraphFetchJob, mpsc::Sender<GraphFetchResult>)>>> = Default::default();
         let asked = jobs.clone();
@@ -1120,7 +1122,7 @@ mod tests {
     /// one names only the phases that are through.
     #[test]
     fn a_row_says_how_long_it_took_and_each_phase() {
-        use mailcraft_model::sync::{SyncPhase, Timings};
+        use mailsolutions_model::sync::{SyncPhase, Timings};
         let mut timings = Timings::default();
         timings.add(SyncPhase::Sending, 400, 2);
         timings.add(SyncPhase::Folders, 1_200, 4);
@@ -1145,7 +1147,7 @@ mod tests {
     /// for each account, with no address or name in it.
     #[test]
     fn copy_diagnostics_has_each_accounts_timings_and_no_addresses() {
-        use mailcraft_model::sync::{SyncPhase, Timings};
+        use mailsolutions_model::sync::{SyncPhase, Timings};
         let (mut a, ids, _) = app();
         assert!(a.execute("ui.copyDiagnostics", json!({})).unwrap()["text"].as_str().unwrap().contains("- none yet"));
         let mut timings = Timings::default();
@@ -1166,7 +1168,7 @@ mod tests {
     /// What a row says, whatever the numbers.
     #[test]
     fn a_row_says_where_it_is_in_one_line() {
-        use mailcraft_model::sync::SyncPhase;
+        use mailsolutions_model::sync::SyncPhase;
         let row = |run: AccountRun, problems: usize| Row {
             account: 1,
             name: "A".into(),

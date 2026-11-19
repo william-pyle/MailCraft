@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! What an account's server keeps besides its mail: the calendar and the contacts.
 //!
-//! As with mail, the engine never talks to a server. A host with sockets (`mailcraft-net`, which
+//! As with mail, the engine never talks to a server. A host with sockets (`mailsolutions-net`, which
 //! asks Microsoft Graph) brings an [`EventsDownload`] or a [`ContactsDownload`], and
 //! `sync.applyEvents` and `sync.applyContacts` ([`apply_events`], [`apply_contacts`]) merge it
 //! into the mailbox: what is new is added, what changed is updated, and what the server no longer
@@ -46,7 +46,7 @@
 //! its change here at once and notes an [`EventChange`] in [`Mailbox::event_changes`]
 //! ([`note_created`], [`note_changed`], [`note_deleted`]). `sync.eventChanges`
 //! ([`event_upload`]) says what the server is to be told, a host carries that out
-//! (`mailcraft-net`: Microsoft Graph), and `sync.applyEventChanges`
+//! (`mailsolutions-net`: Microsoft Graph), and `sync.applyEventChanges`
 //! ([`apply_event_outcomes`]) takes in what the server said: the new event's id, the new change
 //! key, or the refusal. What couldn't be sent waits and is tried again, later each time; what the
 //! server refuses for good is put back as it was, and says so. Until a change has gone through, a
@@ -74,19 +74,19 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use mailcraft_model::remote::EventZones;
-use mailcraft_model::remote::{
+use mailsolutions_model::remote::EventZones;
+use mailsolutions_model::remote::{
     CalendarsDownload, CategoriesDownload, ContactsDownload, EventChange, EventChangeKind, EventCheck, EventFields, EventOp, EventOutcome,
     EventReminder, EventRepeat, EventResult, EventTime, EventWall, EventsDownload, EventsUpload, EventsUploaded, FavoritesDownload, FavoritesOutcome,
     MAX_CHECK_AGE, MAX_CHECK_TRIES, MAX_CONTACTS, MAX_EVENT_CHANGES, MAX_EVENT_CHECKS, MAX_EVENT_OPS, MAX_EVENTS, MAX_FAVORITE_DEPTH, MAX_KEY,
     RemoteContact, RemoteEvent, RemoteEventKind, RemoteFavorite, clean_key, id_tag,
 };
-use mailcraft_model::sync::same_category;
-use mailcraft_model::zoned;
-use mailcraft_model::{
+use mailsolutions_model::sync::same_category;
+use mailsolutions_model::zoned;
+use mailsolutions_model::{
     Account, Attendee, Calendar, Contact, Event, FolderKind, Id, Importance, Mailbox, OnlineMeeting, Origin, Proposal, Response, Rights,
 };
-use mailcraft_time::{Date, DateTime, Timestamp, Weekday, Zone};
+use mailsolutions_time::{Date, DateTime, Timestamp, Weekday, Zone};
 use serde_json::{Value, json};
 
 use super::{bad, fail};
@@ -261,7 +261,7 @@ pub(crate) fn changeable(mailbox: &Mailbox, origin: &Origin, what: &'static str)
     let who = who(account);
     Err(failed!(
         "This {what} is kept by the server of {who}. Changes made here are not sent back yet, so it can't be changed or deleted here.",
-        what = mailcraft_i18n::Arg::words(what),
+        what = mailsolutions_i18n::Arg::words(what),
         who
     ))
 }
@@ -270,7 +270,7 @@ pub(crate) fn changeable(mailbox: &Mailbox, origin: &Origin, what: &'static str)
 /// Asked twice, so a time near a daylight-saving change still gets its own offset.
 #[allow(dead_code)] // (An event's own times are read through `Event::instants`, which knows which of two it is.)
 fn instant_of(wall: DateTime, offset_at: &dyn Fn(Timestamp) -> i32) -> Timestamp {
-    // As everything that reads a wall-clock time reads it (`mailcraft_model::zoned`): the first
+    // As everything that reads a wall-clock time reads it (`mailsolutions_model::zoned`): the first
     // of two instants the clocks show a time at, in whichever zone.
     zoned::instant_at(wall, offset_at)
 }
@@ -282,7 +282,7 @@ fn zones_from_remote(start: &str, end: &str, at: (Timestamp, Timestamp), repeats
 }
 
 /// The day of `series` that an occurrence at `instant` is, as the series names its days
-/// ([`mailcraft_model::zoned`]): for a series that repeats in a zone of its own, by that zone.
+/// ([`mailsolutions_model::zoned`]): for a series that repeats in a zone of its own, by that zone.
 fn series_day_at(series: &Event, instant: Timestamp, offset_at: &dyn Fn(Timestamp) -> i32) -> Date {
     if series.all_day { occurrence_day(true, instant, offset_at) } else { series.occurrence_day(instant, offset_at) }
 }
@@ -356,7 +356,7 @@ fn remote_times(remote: &RemoteEvent, offset_at: &dyn Fn(Timestamp) -> i32) -> (
 pub fn server_time(event: &Event, offset_at: &dyn Fn(Timestamp) -> i32) -> EventTime {
     if event.all_day {
         let start = event.start.to_timestamp(0);
-        return EventTime { start, end: event.end.to_timestamp(0).max(start.saturating_add(mailcraft_time::DAY)), all_day: true };
+        return EventTime { start, end: event.end.to_timestamp(0).max(start.saturating_add(mailsolutions_time::DAY)), all_day: true };
     }
     // (Which of two instants a time in an hour that comes twice is, the event says.)
     let (start, end) = event.instants(offset_at);
@@ -551,7 +551,7 @@ pub fn event_from_remote(remote: &RemoteEvent, owner: &str, offset_at: &dyn Fn(T
     let (start, end) = remote_times(remote, offset_at);
     // Somebody else's meeting: the server says so, or else the organizer's address does.
     let other =
-        |organizer: &mailcraft_model::Address| !organizer.email.trim().is_empty() && !organizer.email.trim().eq_ignore_ascii_case(owner.trim());
+        |organizer: &mailsolutions_model::Address| !organizer.email.trim().is_empty() && !organizer.email.trim().eq_ignore_ascii_case(owner.trim());
     let guest = match remote.is_organizer {
         Some(organizes) => !organizes,
         None => !owner.trim().is_empty() && remote.organizer.as_ref().is_some_and(other),
@@ -608,7 +608,7 @@ pub fn event_from_remote(remote: &RemoteEvent, owner: &str, offset_at: &dyn Fn(T
 
 /// The other times people proposed for a server's meeting, by the clock here.
 fn proposals_from_remote(remote: &RemoteEvent, offset_at: &dyn Fn(Timestamp) -> i32) -> Vec<Proposal> {
-    let local = |proposal: &mailcraft_model::remote::RemoteProposal| {
+    let local = |proposal: &mailsolutions_model::remote::RemoteProposal| {
         let (start, end) = local_times(proposal.start, proposal.end, false, offset_at);
         Proposal { from: proposal.from.clone(), start, end }
     };
@@ -632,7 +632,7 @@ pub fn series_from_remote(remote: &RemoteEvent, owner: &str, offset_at: &dyn Fn(
     let mut event = event_from_remote(remote, owner, offset_at);
     let Some(mut rule) = remote.recurrence.clone() else { return event };
     // A series whose zone is known repeats by that zone's clock, and its rule counts that
-    // zone's days as it stands (`mailcraft_model::zoned`): nothing of it is shifted.
+    // zone's days as it stands (`mailsolutions_model::zoned`): nothing of it is shifted.
     if !remote.all_day {
         (event.start_zone, event.end_zone) = zones_from_remote(&remote.start_zone, "", (remote.start, remote.end.max(remote.start)), true, offset_at);
     }
@@ -807,7 +807,7 @@ pub fn ensure_shared_calendars(s: &mut Session) -> bool {
         .iter()
         .filter(|account| account.is_shared() && mailbox.owner_of(account.id).is_some())
         .filter(|account| !mailbox.calendars.iter().any(|calendar| calendar.origin.account == account.id && calendar.origin.id.is_empty()))
-        .map(|account| (account.id, account.email.trim().chars().take(mailcraft_model::MAX_NAME).collect()))
+        .map(|account| (account.id, account.email.trim().chars().take(mailsolutions_model::MAX_NAME).collect()))
         .collect();
     let mut added = false;
     for (account, name) in wanted {
@@ -848,7 +848,7 @@ fn new_token(event: Id, salt: u64) -> String {
     };
     let nth = MADE.fetch_add(1, Ordering::Relaxed);
     // The clock as the machine has it, not as a test may have stopped it.
-    let a = mix(mailcraft_time::now().unsigned_abs() ^ mix(event) ^ nth.rotate_left(40));
+    let a = mix(mailsolutions_time::now().unsigned_abs() ^ mix(event) ^ nth.rotate_left(40));
     let b = mix(a ^ salt.rotate_left(17) ^ nth);
     format!("{:08x}-{:04x}-4{:03x}-a{:03x}-{:012x}", a >> 32, (a >> 16) & 0xFFFF, a & 0xFFF, (b >> 48) & 0xFFF, b & 0xFFFF_FFFF_FFFF)
 }
@@ -1941,7 +1941,7 @@ pub(crate) fn note_responded(mailbox: &mut Mailbox, before: &Event, response: Re
 /// The answer that was just noted for a meeting ([`note_responded`], [`note_occurrence_gone`])
 /// proposes another time to its organizer. It is mail to the organizer, so it goes only with the
 /// owner's yes: an answer that wasn't noted as one to send is left as it is.
-pub(crate) fn propose_with_answer(mailbox: &mut Mailbox, proposed: mailcraft_model::remote::EventTime) {
+pub(crate) fn propose_with_answer(mailbox: &mut Mailbox, proposed: mailsolutions_model::remote::EventTime) {
     if let Some(change) = mailbox.event_changes.last_mut().filter(|change| change.kind == EventChangeKind::Respond && change.send) {
         change.proposed = Some(proposed);
     }
@@ -1954,7 +1954,7 @@ pub(crate) fn note_forward(
     s: &mut Session,
     event: &Event,
     occurrence: Option<Date>,
-    to: Vec<mailcraft_model::Address>,
+    to: Vec<mailsolutions_model::Address>,
     comment: &str,
 ) -> Result<(), CmdError> {
     let Some(account) = keeper(&s.mailbox, &event.origin).map(|account| account.id) else { return Ok(()) };
@@ -3660,9 +3660,10 @@ pub fn apply_calendars(s: &mut Session, download: &CalendarsDownload) -> CmdResu
     download.tidy();
     // Calendars opened by address (#70) come from the host, never from a server's list, and
     // only for an address the owner opened under this account.
-    let opened: Vec<mailcraft_model::OpenedCalendar> = s.mailbox.account(account).map(|a| a.opened_calendars.clone()).unwrap_or_default();
-    let is_opened = |id: &str| mailcraft_model::remote::opened_address(id).is_some_and(|a| opened.iter().any(|o| o.address.eq_ignore_ascii_case(&a)));
-    download.calendars.retain(|calendar| !calendar.id.starts_with(mailcraft_model::remote::OPENED_PREFIX) || is_opened(&calendar.id));
+    let opened: Vec<mailsolutions_model::OpenedCalendar> = s.mailbox.account(account).map(|a| a.opened_calendars.clone()).unwrap_or_default();
+    let is_opened =
+        |id: &str| mailsolutions_model::remote::opened_address(id).is_some_and(|a| opened.iter().any(|o| o.address.eq_ignore_ascii_case(&a)));
+    download.calendars.retain(|calendar| !calendar.id.starts_with(mailsolutions_model::remote::OPENED_PREFIX) || is_opened(&calendar.id));
     // The copy of a shared mailbox's calendar that the owner hid (#70: the server lists it too,
     // under Shared Calendars) is neither kept nor shown; the shared mailbox has its own.
     if let Some(owner) = s.mailbox.account(account).filter(|a| !a.is_shared()) {
@@ -3702,7 +3703,8 @@ pub fn apply_calendars(s: &mut Session, download: &CalendarsDownload) -> CmdResu
             }
         } else if mailbox.calendars.len() < MAX_CALENDARS {
             // (One opened by address has the colour and the tick the owner's list gave it.)
-            let own = opened.iter().find(|o| mailcraft_model::remote::opened_address(&remote.id).is_some_and(|a| o.address.eq_ignore_ascii_case(&a)));
+            let own =
+                opened.iter().find(|o| mailsolutions_model::remote::opened_address(&remote.id).is_some_and(|a| o.address.eq_ignore_ascii_case(&a)));
             let color = own.map(|o| o.color).or(remote.color).unwrap_or_else(|| super::calendar::next_color(mailbox));
             let id = mailbox.alloc_id();
             let origin = Origin { account, id: named, ..Default::default() };
@@ -3776,7 +3778,7 @@ pub(crate) fn forget_calendars(mailbox: &mut Mailbox, ids: &[Id]) -> usize {
 /// other's go on the shared list), in the server's colour. Categories that are only here stay,
 /// and one that its server has stopped listing leaves the list. Not an undo step.
 pub fn apply_categories(s: &mut Session, download: &CategoriesDownload) -> CmdResult {
-    let microsoft = owner(&s.mailbox, download.account, &download.email)?.kind == mailcraft_model::AccountKind::Microsoft;
+    let microsoft = owner(&s.mailbox, download.account, &download.email)?.kind == mailsolutions_model::AccountKind::Microsoft;
     let mut download = download.clone();
     download.tidy();
     let list = if microsoft { s.mailbox.junk_owner(download.account) } else { 0 };
@@ -3787,7 +3789,7 @@ pub fn apply_categories(s: &mut Session, download: &CategoriesDownload) -> CmdRe
     let mut changed = 0usize;
     for category in &download.categories {
         let have = s.mailbox.category_of(list, &category.name).map(|have| (have.name == category.name, have.color));
-        if have != Some((true, category.color)) && s.mailbox.categories_of(list).len() < 2 * mailcraft_model::remote::MAX_REMOTE_CATEGORIES {
+        if have != Some((true, category.color)) && s.mailbox.categories_of(list).len() < 2 * mailsolutions_model::remote::MAX_REMOTE_CATEGORIES {
             // Under the server's spelling of the name, wherever that list is used.
             if have.is_some_and(|(same, _)| !same) {
                 let old = s.mailbox.category_of(list, &category.name).map(|have| have.name.clone()).unwrap_or_default();
@@ -3847,7 +3849,7 @@ fn folder_of_favorite(mailbox: &Mailbox, account: Id, favorite: &RemoteFavorite)
 /// where it is, and one the mailbox doesn't have is left out (and counted). When the server has
 /// no list, or it may not be read, what was kept of one goes, and the favourites marked here
 /// are what the pane shows; when it couldn't be read this time, nothing changes. The marks made
-/// here ([`mailcraft_model::Folder::favorite`]) are never touched. Not an undo step.
+/// here ([`mailsolutions_model::Folder::favorite`]) are never touched. Not an undo step.
 pub fn apply_favorites(s: &mut Session, download: &FavoritesDownload) -> CmdResult {
     let account = owner(&s.mailbox, download.account, &download.email)?.id;
     let mut download = download.clone();

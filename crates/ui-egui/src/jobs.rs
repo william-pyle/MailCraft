@@ -13,13 +13,13 @@
 //!
 //! Sending is the one thing a job does that can't be let go of: what was handed to a server may
 //! have gone. Each message is marked as being sent, and the mark saved, before the run that sends
-//! it is handed to the host ([`mailcraft_engine::cmd::graph_send::mark_sending`]); the run's
+//! it is handed to the host ([`mailsolutions_engine::cmd::graph_send::mark_sending`]); the run's
 //! answer clears the mark, and a message still marked when the next run begins is held (AU3-26).
 //!
 //! A new kind of job is added to [`JobKind`], whose every member [`MailApp::clear_jobs_on_replace`]
 //! and [`MailApp::job_running`] must name; the replacement test has a row for each.
 //!
-//! [`Session::openings`]: mailcraft_engine::Session::openings
+//! [`Session::openings`]: mailsolutions_engine::Session::openings
 
 use std::sync::atomic::Ordering;
 
@@ -28,14 +28,14 @@ use crate::forms::Form;
 use crate::{MailApp, MailRun};
 
 // The kinds of job, and what may start while another is at work, are the engine's
-// ([`mailcraft_engine::sync_driver::jobs`]); this says which are at work.
-use mailcraft_engine::sync_driver::Busy;
-pub(crate) use mailcraft_engine::sync_driver::JobKind;
+// ([`mailsolutions_engine::sync_driver::jobs`]); this says which are at work.
+use mailsolutions_engine::sync_driver::Busy;
+pub(crate) use mailsolutions_engine::sync_driver::JobKind;
 
 impl MailApp {
     /// What the window says of itself when the engine is asked which question to the owner is next.
-    pub(crate) fn ask_window(&self) -> mailcraft_engine::sync_driver::AskWindow {
-        mailcraft_engine::sync_driver::AskWindow {
+    pub(crate) fn ask_window(&self) -> mailsolutions_engine::sync_driver::AskWindow {
+        mailsolutions_engine::sync_driver::AskWindow {
             dialog_open: self.dialog.is_some(),
             backstage: self.ui.backstage,
             signing_in: self.signing_in.is_some(),

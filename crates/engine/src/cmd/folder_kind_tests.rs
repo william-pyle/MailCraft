@@ -4,7 +4,7 @@
 //! `folder.select`, whatever the mailbox's language calls it; a path still works, and digits
 //! that name no folder are an id.
 
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::{Value, json};
 
 use crate::{Session, sample};
@@ -60,13 +60,13 @@ fn a_path_comes_before_digits_and_digits_are_an_id() {
     let (mut s, _, sent) = german();
     let account = s.mailbox.default_account().unwrap().id;
     let year = s.mailbox.add_folder(account, None, "2024").unwrap();
-    s.mailbox.add_message(mailcraft_model::Message { folder: year, account, subject: "Old".into(), ..Default::default() }).unwrap();
+    s.mailbox.add_message(mailsolutions_model::Message { folder: year, account, subject: "Old".into(), ..Default::default() }).unwrap();
     assert_eq!(listed_folder(&mut s, json!({"folder": "2024"})), year);
     assert_eq!(listed_folder(&mut s, json!({"folder": sent.to_string()})), sent);
     assert_eq!(listed_folder(&mut s, json!({"folder": sent})), sent);
     // A folder whose name is another folder's id is that folder by its name; a number is the id.
     let named = s.mailbox.add_folder(account, None, &sent.to_string()).unwrap();
-    s.mailbox.add_message(mailcraft_model::Message { folder: named, account, subject: "Named".into(), ..Default::default() }).unwrap();
+    s.mailbox.add_message(mailsolutions_model::Message { folder: named, account, subject: "Named".into(), ..Default::default() }).unwrap();
     assert_eq!(listed_folder(&mut s, json!({"folder": sent.to_string()})), named);
     assert_eq!(listed_folder(&mut s, json!({"folder": sent})), sent);
 }
@@ -77,7 +77,7 @@ fn a_kind_is_of_the_account_named_or_in_view() {
     let (mut s, inbox, _) = german();
     let other = s.run("account.add", &json!({"email": "noor@example.org"})).unwrap()["id"].as_u64().unwrap();
     let other_inbox = s.mailbox.folder_of_kind(other, FolderKind::Inbox).unwrap();
-    s.mailbox.add_message(mailcraft_model::Message { folder: other_inbox, account: other, subject: "Hi".into(), ..Default::default() }).unwrap();
+    s.mailbox.add_message(mailsolutions_model::Message { folder: other_inbox, account: other, subject: "Hi".into(), ..Default::default() }).unwrap();
     assert_eq!(listed_folder(&mut s, json!({"folder": "inbox"})), inbox, "the account in view");
     assert_eq!(listed_folder(&mut s, json!({"folder": "inbox", "account": other})), other_inbox);
     s.run("folder.select", &json!({"folder": "inbox", "account": other})).unwrap();
@@ -150,7 +150,7 @@ fn a_kind_shadows_a_folder_of_that_name_unless_the_account_has_none() {
     let (mut s, _, sent) = german();
     let account = s.mailbox.default_account().unwrap().id;
     let mine = s.mailbox.add_folder(account, None, "Sent").unwrap();
-    s.mailbox.add_message(mailcraft_model::Message { folder: mine, account, subject: "Mine".into(), ..Default::default() }).unwrap();
+    s.mailbox.add_message(mailsolutions_model::Message { folder: mine, account, subject: "Mine".into(), ..Default::default() }).unwrap();
     assert_eq!(listed_folder(&mut s, json!({"folder": "sent"})), sent, "the account's Sent Items wins");
     assert_eq!(listed_folder(&mut s, json!({"folder": mine})), mine, "the owner's own, by its id");
     // An account without a folder of that kind, as an IMAP server without an Archive leaves it:
@@ -160,14 +160,14 @@ fn a_kind_shadows_a_folder_of_that_name_unless_the_account_has_none() {
     s.mailbox.folder_mut(archive).unwrap().name = "Alt".into();
     assert_eq!(s.mailbox.folder_of_kind(account, FolderKind::Archive), None);
     let mine = s.mailbox.add_folder(account, None, "Archive").unwrap();
-    s.mailbox.add_message(mailcraft_model::Message { folder: mine, account, subject: "Kept".into(), ..Default::default() }).unwrap();
+    s.mailbox.add_message(mailsolutions_model::Message { folder: mine, account, subject: "Kept".into(), ..Default::default() }).unwrap();
     assert_eq!(listed_folder(&mut s, json!({"folder": "archive"})), mine);
     // That one is its account's own: another account's folder of that name is never reached by a
     // kind, so a word never lists somebody else's mail.
     s.mailbox.folder_mut(mine).unwrap().name = "Later".into();
     let other = s.run("account.add", &json!({"email": "noor@example.org"})).unwrap()["id"].as_u64().unwrap();
     let theirs = s.mailbox.folder_of_kind(other, FolderKind::Archive).unwrap();
-    s.mailbox.add_message(mailcraft_model::Message { folder: theirs, account: other, subject: "Theirs".into(), ..Default::default() }).unwrap();
+    s.mailbox.add_message(mailsolutions_model::Message { folder: theirs, account: other, subject: "Theirs".into(), ..Default::default() }).unwrap();
     let refused = s.run("mail.list", &json!({"folder": "archive"})).unwrap_err().to_string();
     assert!(refused.contains("Archive"), "{refused}");
     // Named, that account's own is found.

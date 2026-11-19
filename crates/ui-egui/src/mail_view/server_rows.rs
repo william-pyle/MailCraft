@@ -9,7 +9,7 @@
 use std::collections::HashSet;
 
 use egui::{Align2, Rect, Sense, Stroke, Ui, pos2, vec2};
-use mailcraft_model::{FlagStatus, Id, Importance};
+use mailsolutions_model::{FlagStatus, Id, Importance};
 
 use super::{GROUP_H, GROUP_TEXT, LIST_TEXT, PREVIEW_TOP, ROW_INSET, SENDER_TEXT, SENDER_Y, SUBJECT_Y, TEXT_LEFT, TEXT_RIGHT, TIME_RIGHT};
 use crate::server_search::Link;
@@ -51,7 +51,7 @@ fn lines(app: &MailApp, local: &HashSet<Id>) -> Vec<Line> {
         return Vec::new();
     }
     let search = &app.session.server_search;
-    let held = mailcraft_engine::cmd::search_server::is_current(&app.session);
+    let held = mailsolutions_engine::cmd::search_server::is_current(&app.session);
     if !held || !search.asked() {
         return vec![Line::Link(link)];
     }
@@ -155,7 +155,7 @@ fn link_line(app: &mut MailApp, ui: &mut Ui, rect: Rect, link: Link) {
 fn result_row(app: &mut MailApp, ui: &mut Ui, index: usize, rect: Rect) {
     let t = Tokens::get(ui.ctx());
     let Some(r) = app.session.server_search.results.get(index).cloned() else { return };
-    let m = mailcraft_engine::cmd::search_server::as_message(r.account, r.folder, &r.found);
+    let m = mailsolutions_engine::cmd::search_server::as_message(r.account, r.folder, &r.found);
     let resp = ui.interact(rect, ui.scope_id().with(("server_result", index)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
     app.hit.add("serverResult", index as u64, rect);
     let p = ui.painter();
@@ -198,8 +198,12 @@ fn result_row(app: &mut MailApp, ui: &mut Ui, index: usize, rect: Rect) {
     let who = m.from.display().to_string();
     let who_font = if unread { semibold(SENDER_TEXT) } else { regular(SENDER_TEXT) };
     paint_clipped(p, pos2(left, line1), (text_end.min(x - 4.0) - left).max(0.0), &who, who_font, t.text);
-    let date =
-        crate::dates::list_label(mailcraft_engine::list::when(&m), app.session.now(), app.session.offset_at(m.date), app.session.prefs.twelve_hour);
+    let date = crate::dates::list_label(
+        mailsolutions_engine::list::when(&m),
+        app.session.now(),
+        app.session.offset_at(m.date),
+        app.session.prefs.twelve_hour,
+    );
     let (font, color) = if unread { (semibold(LIST_TEXT), t.accent_text) } else { (regular(LIST_TEXT), t.text) };
     let date_w = p.text(pos2(time_end, line2), Align2::RIGHT_CENTER, &date, font.clone(), color).width();
     // In a search of every mailbox the folder it is in, under the time (or before it, with no

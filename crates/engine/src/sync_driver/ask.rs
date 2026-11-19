@@ -6,7 +6,7 @@
 //! ([`AskWindow`]), and puts it (the dialog, then the provider's page) itself. One question at a
 //! time, and never over another dialog, a sign-in or the open File menu.
 
-use mailcraft_model::{Id, LocalTasks};
+use mailsolutions_model::{Id, LocalTasks};
 
 use crate::Session;
 

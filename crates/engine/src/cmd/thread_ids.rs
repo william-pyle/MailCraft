@@ -4,7 +4,7 @@
 //! (#795): a Microsoft account's, an Exchange server account's or a JMAP account's mail kept by an
 //! earlier version has its headers and a preview, and nothing that says which thread it is of. Until
 //! it has, such messages are one conversation per topic among themselves, as every conversation
-//! was before ([`mailcraft_model::thread_index`]).
+//! was before ([`mailsolutions_model::thread_index`]).
 //!
 //! Each Send/Receive asks the account's own server, after the rest of its run, for the conversation
 //! ids of at most [`MAX_THREAD_ASKS`] of them, newest first (`threads` of the run's request); the
@@ -17,8 +17,8 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::sync::{MAX_THREAD_ASKS, MAX_THREAD_TRIES, ThreadOf, thread_id};
-use mailcraft_model::{Id, Mailbox};
+use mailsolutions_model::sync::{MAX_THREAD_ASKS, MAX_THREAD_TRIES, ThreadOf, thread_id};
+use mailsolutions_model::{Id, Mailbox};
 
 /// The server ids of the messages of `account` to ask the conversation of: those its server has
 /// and has given no conversation id for, not asked yet, newest first, at most [`MAX_THREAD_ASKS`].

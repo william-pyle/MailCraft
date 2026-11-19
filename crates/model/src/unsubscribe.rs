@@ -142,7 +142,7 @@ pub fn way(account: Option<&Account>, m: &Message) -> Option<Way> {
     let list = addresses(m.header("List-Unsubscribe")?);
     let web = |secure: bool| {
         list.iter().find_map(|a| {
-            let link = mailcraft_link::WebLink::parse(a)?;
+            let link = mailsolutions_link::WebLink::parse(a)?;
             (!secure || link.is_https()).then(|| link.as_str().to_string())
         })
     };

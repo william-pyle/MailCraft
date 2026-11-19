@@ -6,7 +6,7 @@
 use std::collections::BTreeMap;
 
 use egui::vec2;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::{Value, json};
 
 use super::fit::{Stage, fit};
@@ -107,7 +107,7 @@ fn recent_attachments_open_in_compact_classic_columns_and_overflow() {
     use egui_kittest::kittest::Queryable as _;
 
     for stage in [Some(Stage::Small), Some(Stage::Icons), None] {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.run("mail.new", json!({})).unwrap();
         app.services.recent_attachments = Some(Box::new(|_| std::sync::mpsc::channel().1));
         let group = super::g("Include", vec![super::Item::big("attach", "Attach File", "ui.attach", json!({}))]);
@@ -132,7 +132,7 @@ fn recent_attachments_open_in_compact_classic_columns_and_overflow() {
 }
 
 fn window(size_percent: u32) -> Window {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     let mut harness =
         egui_kittest::Harness::builder().with_accessibility_check(false).allow_missing_glyphs().with_size(vec2(1600.0, 700.0)).build_ui_state(

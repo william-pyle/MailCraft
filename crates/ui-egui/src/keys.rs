@@ -14,7 +14,7 @@
 //! in the text field it is typing new lines in. A key counts only when it is pressed alone.
 
 use egui::{Event, Key, LayerId, Modifiers, Order, ViewportId, ViewportIdMap};
-use mailcraft_engine::Module;
+use mailsolutions_engine::Module;
 use serde_json::json;
 
 use crate::MailApp;
@@ -81,7 +81,7 @@ struct Chain {
 const REMEMBERED: usize = 32;
 
 fn store() -> egui::Id {
-    egui::Id::unique("mailcraft-key-chain")
+    egui::Id::unique("mailsolutions-key-chain")
 }
 
 /// A press (or a repeat) of `key` alone.
@@ -678,9 +678,9 @@ pub fn resolve(app: &MailApp, key: &str) -> Option<&'static str> {
     // (The main window's message being written is the reading pane's; one in a window of its
     // own has the keys of that window, #286.)
     let composing = crate::windows::compose_window::pane_compose(app).is_some_and(|c| app.session.compose_id() == Some(c));
-    let bound = |c: &&mailcraft_engine::CommandSpec| !c.shortcut.is_empty() && c.shortcut.split(" / ").any(|k| k.eq_ignore_ascii_case(key));
-    let fits = |c: &&mailcraft_engine::CommandSpec| window_command(app, c.id).is_some() && (composing || !c.writing);
-    let mut hits: Vec<&mailcraft_engine::CommandSpec> = app.session.registry.all().iter().filter(bound).filter(fits).collect();
+    let bound = |c: &&mailsolutions_engine::CommandSpec| !c.shortcut.is_empty() && c.shortcut.split(" / ").any(|k| k.eq_ignore_ascii_case(key));
+    let fits = |c: &&mailsolutions_engine::CommandSpec| window_command(app, c.id).is_some() && (composing || !c.writing);
+    let mut hits: Vec<&mailsolutions_engine::CommandSpec> = app.session.registry.all().iter().filter(bound).filter(fits).collect();
     // While writing, the Message commands win (Mod+S saves the draft); otherwise they are out.
     hits.sort_by_key(|c| c.id.starts_with("compose.") != composing);
     hits.into_iter().find(|c| (c.enabled)(&app.session).is_none()).map(|c| c.id)
@@ -713,7 +713,7 @@ pub fn global_shortcuts(app: &mut MailApp, ctx: &egui::Context) {
     // the ✕ on the bar over the list does (#115). (In the search box itself, the box does it.)
     if !typing
         && crate::windows::compose_window::pane_compose(app).is_none()
-        && app.session.view.module == mailcraft_engine::Module::Mail
+        && app.session.view.module == mailsolutions_engine::Module::Mail
         && !app.session.view.search.trim().is_empty()
         && take_escape(ctx, main_layer())
     {
@@ -821,7 +821,7 @@ mod tests {
 
     #[test]
     fn every_shortcut_in_the_registry_names_a_real_key() {
-        let s = mailcraft_engine::Session::empty();
+        let s = mailsolutions_engine::Session::empty();
         let names: Vec<&str> = Key::ALL.iter().filter_map(|k| key_name(*k)).collect();
         for c in s.registry.all().iter().filter(|c| !c.shortcut.is_empty()) {
             for k in c.shortcut.split(" / ") {

@@ -3,8 +3,8 @@
 //! Exchange server accounts, the skeleton (#252): File › Info says where one connects, and no
 //! Send/Receive of a window whose host doesn't run Exchange Web Services takes it in.
 
-use mailcraft_engine::Session;
-use mailcraft_model::{Account, AccountKind, EwsServer, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_model::{Account, AccountKind, EwsServer, Id};
 use serde_json::json;
 
 use crate::{MailApp, Services};
@@ -12,7 +12,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> (MailApp, Id, Id) {
-    let session = Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0);
+    let session = Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0);
     let mut a = MailApp::new(session, Services::default());
     a.autosave = false;
     let imap =
@@ -90,7 +90,7 @@ fn the_folders_a_run_could_not_read_go_with_the_mailbox_that_is_replaced() {
     a.ews_unreadable.insert(id, vec!["Inbox".into()]);
     a.drop_secrets_if_replaced();
     assert!(!a.ews_unreadable.is_empty(), "kept while the mailbox stays");
-    a.session.replace_mailbox(mailcraft_model::Mailbox::with_local_account("", ""));
+    a.session.replace_mailbox(mailsolutions_model::Mailbox::with_local_account("", ""));
     a.drop_secrets_if_replaced();
     assert!(a.ews_unreadable.is_empty());
 }

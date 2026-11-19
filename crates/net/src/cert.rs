@@ -10,7 +10,7 @@
 //! (`crate::tls`), which also checks the dates and the name for itself, so a certificate this
 //! cannot read is simply one nobody can be offered.
 
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_time::{Date, DateTime};
 use ring::digest;
 
 /// What a person is shown about a certificate.

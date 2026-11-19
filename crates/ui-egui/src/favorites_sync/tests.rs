@@ -6,11 +6,11 @@
 
 use std::sync::{Arc, Mutex, mpsc};
 
-use mailcraft_engine::Session;
-use mailcraft_engine::cmd::folder::{favorites, favorites_from_server};
-use mailcraft_model::remote::{ContactsDownload, EventsDownload};
-use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens};
-use mailcraft_model::{Directory, FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_engine::cmd::folder::{favorites, favorites_from_server};
+use mailsolutions_model::remote::{ContactsDownload, EventsDownload};
+use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens};
+use mailsolutions_model::{Directory, FolderKind, Id};
 use serde_json::json;
 
 use super::*;
@@ -64,7 +64,7 @@ impl Rig {
     /// favourite of the owner's making, and a host that has Outlook's list: Receipts, Sent
     /// Items, Inbox/Projects.
     fn new() -> Rig {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
         app.autosave = false;
         let host: Arc<Mutex<Host>> = Default::default();
         {
@@ -85,7 +85,7 @@ impl Rig {
                 out.tokens = Some(Tokens {
                     access: "graph-tok".into(),
                     refresh: "ref-2".into(),
-                    expires_at: mailcraft_time::now() + 3600,
+                    expires_at: mailsolutions_time::now() + 3600,
                     ..Default::default()
                 });
                 out.favorites_covered = request.favorites_scopes.then_some(!host.unconsented);
@@ -111,7 +111,7 @@ impl Rig {
         app.services.sign_in = Some(Box::new(move |request: SignInRequest| {
             let mut host = shared.lock().unwrap();
             let tokens =
-                Tokens { access: "graph-tok-3".into(), refresh: "ref-3".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+                Tokens { access: "graph-tok-3".into(), refresh: "ref-3".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
             let (tx, rx) = mpsc::channel();
             host.sign_ins.push((request.graph, request.favorites));
             let _ = tx.send(match &host.sign_in_error {
@@ -139,7 +139,7 @@ impl Rig {
             json!({"email": "avery@mail.example", "auth": "oauth2", "provider": "microsoft", "incoming": {"host": "imap.mail.example"}}),
         );
         let account = added.unwrap()["id"].as_u64().unwrap();
-        let fresh = Tokens { access: "graph-tok".into(), refresh: "ref".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+        let fresh = Tokens { access: "graph-tok".into(), refresh: "ref".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
         app.tokens.insert(account, Tokens { access: "mail-tok".into(), ..fresh.clone() });
         app.graph_tokens.insert(account, fresh);
         let kind = |app: &MailApp, kind: FolderKind| app.session.mailbox.folder_of_kind(account, kind).unwrap();
@@ -392,7 +392,7 @@ fn a_read_that_fails_is_one_quiet_line_with_try_again() {
 #[test]
 fn the_commands_take_anything_and_say_what_they_cannot_do() {
     // Without an account that signs in with Microsoft there is nothing to connect or to read.
-    let mut plain = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut plain = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     for command in ["ui.connectFavorites", "ui.favorites"] {
         assert!(plain.execute(command, json!({})).unwrap_err().contains("Microsoft"), "{command}");
         let local = plain.session.mailbox.accounts[0].id;
@@ -569,7 +569,7 @@ fn the_offer_is_one_line_under_the_heading_and_in_the_options() {
     let restored: crate::UiState = serde_json::from_str(&saved).unwrap();
     assert!(restored.options.own_favorites);
     // A mailbox without an account that signs in with Microsoft has no such switch.
-    let mut plain = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut plain = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     plain.autosave = false;
     plain.execute("ui.backstage", json!({"value": true, "page": "options"})).unwrap();
     let mut harness =
@@ -617,7 +617,7 @@ fn which_kind_of_microsoft_account_it_is_is_known_and_nothing_of_it_is_saved() {
         rig.app.note_directory(rig.account, junk);
     }
     assert_eq!(rig.app.directory(rig.account), Directory::Organisation);
-    let file = String::from_utf8(mailcraft_engine::io::write_mailbox(&rig.app.session.mailbox).unwrap()).unwrap();
+    let file = String::from_utf8(mailsolutions_engine::io::write_mailbox(&rig.app.session.mailbox).unwrap()).unwrap();
     assert!(!file.contains("directory") && !file.contains(ORGANISATION) && !file.contains("favoritesSource"));
     // What was written down with the account goes before what a sign-in says…
     rig.app.execute("account.edit", json!({"id": rig.account, "directory": "personal"})).unwrap();
@@ -713,7 +713,7 @@ fn a_forbidden_read_from_an_organisations_server_says_approval_needed_instead_of
 
 #[test]
 fn the_admin_commands_take_anything_and_say_what_they_cannot_do() {
-    let mut plain = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut plain = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     assert!(plain.execute("ui.copyAdminConsentLink", json!({})).unwrap_err().contains("Microsoft"));
     assert!(plain.execute("ui.dialog", json!({"name": "favoritesSource"})).is_err());
     let mut rig = Rig::organisation();
@@ -772,7 +772,7 @@ fn what_stands_in_the_way_is_a_sentence_under_the_heading_with_a_row_for_each_th
     // What to do next: the page about an approval, for this account; closed, nothing has changed.
     click(&mut harness, help.center());
     assert_eq!(harness.state().dialog.as_ref().map(|dialog| dialog.name()), Some("account"));
-    assert!(harness.query_all_by_label_contains("Your organisation has to approve MailCraft first").next().is_some());
+    assert!(harness.query_all_by_label_contains("Your organisation has to approve MailSolutions first").next().is_some());
     harness.get_by_label("Not now").click();
     harness.run_steps(4);
     assert!(harness.state().dialog.is_none());

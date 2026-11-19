@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use mailcraft_model::sync::{GraphMailRequest, GraphMailResult};
+use mailsolutions_model::sync::{GraphMailRequest, GraphMailResult};
 
 use crate::NetError;
 use crate::graph::pace::{Gate, Retry};
@@ -98,7 +98,7 @@ fn a_second_refusal_ends_the_run_without_renewing_again() {
 #[test]
 fn a_renewal_that_fails_ends_the_run_as_before() {
     let server = mailbox();
-    let renew = || Err(NetError::Proto(mailcraft_proto::ProtoError::Auth("the sign-in was refused".into())));
+    let renew = || Err(NetError::Proto(mailsolutions_proto::ProtoError::Auth("the sign-in was refused".into())));
     let pieces = run(&server, Some(&renew), &[1], &[RENEWED]);
     let last = pieces.last().unwrap();
     assert!(!last.whole && !last.errors.is_empty());

@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! What an agent may do through the window (`mailcraft-cli mcp --connect`): the bridge marks
+//! What an agent may do through the window (`mailsolutions-cli mcp --connect`): the bridge marks
 //! every request it sends as an agent's (`ControlRequest::agent`, with what the owner allowed it
-//! in advance), and those go through [`mailcraft_engine::agent`]'s gate here. A command that is
+//! in advance), and those go through [`mailsolutions_engine::agent`]'s gate here. A command that is
 //! not for agents, or names a file, is refused; one that needs the owner is asked about in a
 //! question over the window ("An agent wants to send …"), whose default answer is no. It runs
 //! only on the owner's yes; nobody's answer within [`WAIT_MS`] is a no. While a question is up,
@@ -14,7 +14,7 @@ use std::collections::{HashSet, VecDeque};
 use std::sync::mpsc::Sender;
 
 use egui::vec2;
-use mailcraft_engine::agent::{self, Class, Verdict};
+use mailsolutions_engine::agent::{self, Class, Verdict};
 use serde_json::{Value, json};
 
 use crate::MailApp;
@@ -36,11 +36,11 @@ pub struct Asking {
     /// What else it needs, which the question names and a yes covers ([`agent::also`], #473).
     also: Vec<Class>,
     /// The messages an undo or redo would take away, which the question names, and the steps
-    /// as they were when it was asked ([`mailcraft_engine::Session::undo_steps_moved`], #473).
+    /// as they were when it was asked ([`mailsolutions_engine::Session::undo_steps_moved`], #473).
     taken: HashSet<u64>,
     steps: u64,
     /// The contacts, events, tasks, calendars and categories it would take away
-    /// ([`mailcraft_engine::Session::undo_takes`]): a yes reaches none that came since.
+    /// ([`mailsolutions_engine::Session::undo_takes`]): a yes reaches none that came since.
     items: HashSet<String>,
     /// What it would do, after "An agent wants to".
     pub what: String,
@@ -82,7 +82,7 @@ pub fn screen(app: &mut MailApp, req: &ControlRequest, allow: &[Class]) -> Optio
         "ui.click" | "ui.move" | "ui.drag" | "ui.key" | "ui.text" => {
             if !allow.contains(&Class::Input) {
                 Some(err(format!(
-                    "clicking and typing in the window needs the owner: {}. Only the owner can let an agent do this, by starting the bridge with `mailcraft-cli mcp --allow input`",
+                    "clicking and typing in the window needs the owner: {}. Only the owner can let an agent do this, by starting the bridge with `mailsolutions-cli mcp --allow input`",
                     Class::Input.what()
                 )))
             } else if !app.asking.is_empty() {
@@ -221,7 +221,7 @@ fn overwrites(app: &MailApp, id: &str, params: &Value) -> Option<String> {
 
 /// The appointment, contact or task the owner is changing in the dialog, with changes that
 /// aren't saved.
-fn changing_in_the_dialog(app: &MailApp) -> Option<mailcraft_model::Id> {
+fn changing_in_the_dialog(app: &MailApp) -> Option<mailsolutions_model::Id> {
     match &app.dialog {
         Some(crate::dialogs::Dialog::Form(form)) if form.changed() => form.editing(),
         _ => None,
@@ -279,7 +279,7 @@ fn counted(app: &MailApp, id: &str, params: &Value) -> Result<Vec<(u64, u64)>, S
         return Ok(Vec::new());
     }
     let mb = &app.session.mailbox;
-    let named = mailcraft_engine::p::ids_strict(params).ok().flatten().unwrap_or_default();
+    let named = mailsolutions_engine::p::ids_strict(params).ok().flatten().unwrap_or_default();
     named
         .into_iter()
         .map(|m| {
@@ -490,13 +490,13 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mailcraft_engine::Session;
-    use mailcraft_model::FolderKind;
+    use mailsolutions_engine::Session;
+    use mailsolutions_model::FolderKind;
 
     const NOW: i64 = 1_791_993_600;
 
     fn app() -> MailApp {
-        let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
+        let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), crate::Services::default());
         app.autosave = false;
         app
     }
@@ -525,9 +525,9 @@ mod tests {
         let missing: Vec<&str> = crate::UI_COMMANDS.iter().map(|c| c.0).filter(|id| agent::access(id).is_none()).collect();
         assert!(missing.is_empty(), "classify these for agents in crates/engine/src/agent.rs: {missing:?}");
         assert_eq!(agent::access("ui.previewAttachment"), Some(agent::Access::Never));
-        assert_eq!(agent::access("ui.googleClientId"), Some(mailcraft_engine::agent::Access::Never));
+        assert_eq!(agent::access("ui.googleClientId"), Some(mailsolutions_engine::agent::Access::Never));
         // The retired secret setter stays explicitly denied, but is no longer a window command.
-        assert_eq!(agent::access("ui.googleClientSecret"), Some(mailcraft_engine::agent::Access::Never));
+        assert_eq!(agent::access("ui.googleClientSecret"), Some(mailsolutions_engine::agent::Access::Never));
         assert!(!crate::UI_COMMANDS.iter().any(|command| command.0 == "ui.googleClientSecret"));
     }
 
@@ -577,7 +577,7 @@ mod tests {
         let mut a = app();
         write(&mut a);
         let all = Class::ALL.to_vec();
-        let bat = std::env::temp_dir().join(format!("mailcraft-gate-{}.bat", std::process::id()));
+        let bat = std::env::temp_dir().join(format!("mailsolutions-gate-{}.bat", std::process::id()));
         for (method, params) in [
             ("engine.execute", json!({"command": "compose.attach", "params": {"path": "/etc/passwd"}})),
             ("compose.attach", json!({"path": "/etc/passwd"})),

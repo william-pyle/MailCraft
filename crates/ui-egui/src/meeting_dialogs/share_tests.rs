@@ -5,7 +5,7 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable as _;
-use mailcraft_engine::Session;
+use mailsolutions_engine::Session;
 use serde_json::json;
 
 use crate::dialogs::Dialog;
@@ -15,7 +15,7 @@ use crate::{MailApp, Services};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app
 }
@@ -111,7 +111,7 @@ fn people_meeting_opens_the_meeting_form_with_the_contact_invited() {
     let mut app = app();
     let contact = app.session.mailbox.contacts.values().find(|c| c.address().is_some()).map(|c| c.id).unwrap();
     app.session.sel.contact = Some(contact);
-    let to = app.session.mailbox.contact(contact).and_then(mailcraft_model::Contact::address).unwrap();
+    let to = app.session.mailbox.contact(contact).and_then(mailsolutions_model::Contact::address).unwrap();
     assert_eq!(crate::dialogs::as_opened(&mut app, "people.meeting", json!({}))["attendees"], json!(to.full()));
     let events = app.session.mailbox.events.len();
     let opened = app.run("people.meeting", json!({})).unwrap();

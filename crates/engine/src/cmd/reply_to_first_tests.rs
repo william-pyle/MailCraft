@@ -4,7 +4,7 @@
 //! to a message I sent goes to the people I sent it to" only when `Reply-To` names nobody but the
 //! owner; Reply All adds the `To` and `Cc` that aren't the owner's, each once.
 
-use mailcraft_model::{Address, FolderKind, Id, Message};
+use mailsolutions_model::{Address, FolderKind, Id, Message};
 use serde_json::json;
 
 use crate::Session;
@@ -41,7 +41,7 @@ fn message(s: &mut Session, account: Id, from: &str, to: &[&str], cc: &[&str], r
         reply_to: list(reply_to),
         subject: "Contact form".into(),
         date: 1_791_000_000,
-        body: mailcraft_model::Body { text: "Please call me back.".into(), html: None },
+        body: mailsolutions_model::Body { text: "Please call me back.".into(), html: None },
         ..Default::default()
     };
     s.mailbox.add_message(m).unwrap()
@@ -167,7 +167,7 @@ fn a_reply_to_line_too_long_to_be_true_is_answered_only_in_part() {
     let refs: Vec<&str> = many.iter().map(String::as_str).collect();
     let id = message(&mut s, owner, OWNER, &[OWNER], &[], &refs);
     let (to, _) = reply(&mut s, "mail.replyAll", id);
-    assert_eq!(to.split("; ").count(), mailcraft_mime::MAX_RECIPIENTS);
+    assert_eq!(to.split("; ").count(), mailsolutions_mime::MAX_RECIPIENTS);
 }
 
 #[test]

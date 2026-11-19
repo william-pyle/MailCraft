@@ -4,9 +4,9 @@
 //! `/users/{address}/calendar…`, what the owner may do with it, and that nothing of it is asked
 //! at `/me`.
 
-use mailcraft_model::remote::{EventChangeKind, EventFields, EventOp, EventResult, EventsUpload, OpenedWhy, opened_id};
-use mailcraft_model::{Rights, ShowAs};
-use mailcraft_time::Timestamp;
+use mailsolutions_model::remote::{EventChangeKind, EventFields, EventOp, EventResult, EventsUpload, OpenedWhy, opened_id};
+use mailsolutions_model::{Rights, ShowAs};
+use mailsolutions_time::Timestamp;
 
 use super::people::open_calendar_at;
 use super::standin::{Access, StandIn, TOKEN};
@@ -162,7 +162,7 @@ fn a_series_of_an_opened_calendar_is_asked_for_at_the_persons_mailbox() {
 }
 
 fn new_event(mark: &str, calendar: &str, title: &str) -> EventOp {
-    let time = mailcraft_model::remote::EventTime { start: NOW + 3_600, end: NOW + 7_200, all_day: false };
+    let time = mailsolutions_model::remote::EventTime { start: NOW + 3_600, end: NOW + 7_200, all_day: false };
     let fields = EventFields { title: Some(title.into()), time: Some(time), ..Default::default() };
     EventOp { kind: EventChangeKind::Create, event: 1, token: mark.into(), calendar: calendar.into(), fields, ..Default::default() }
 }
@@ -224,7 +224,7 @@ fn an_id_a_servers_list_brings_that_says_it_was_opened_by_address_is_not_a_calen
 fn the_blocks_of_a_wide_stretch_are_asked_for_in_stretches() {
     let server = StandIn::start().unwrap();
     server.state().add_person("fay@example.org", "Fay", Access::FreeBusy);
-    let now = mailcraft_time::now();
+    let now = mailsolutions_time::now();
     server.state().person("fay@example.org").unwrap().busy = vec![(now + 3_600, now + 7_200, "busy".into())];
     // A month back to a year ahead, as a Send/Receive asks: more than a schedule is asked for at once.
     let wide = EventsQuery {

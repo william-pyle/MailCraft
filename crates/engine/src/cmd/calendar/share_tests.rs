@@ -4,8 +4,8 @@
 //! Calendar: a message is opened and nothing is sent; a summary says no more than the owner chose
 //! and nothing of a private appointment but that the owner is busy. Invented people at `.example`.
 
-use mailcraft_model::{Address, Attendee, Event, Id, Response, ShowAs};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{Address, Attendee, Event, Id, Response, ShowAs};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::agent::{Access, classify};
@@ -73,7 +73,7 @@ fn week(s: &mut Session) -> (Id, Id, Id) {
                 Attendee { address: Address::new("Avery Quinn", "avery@lumen.example"), optional: false, response: Response::Tentative },
                 Attendee { address: Address::new("Fay Lin", "fay@partner.example"), optional: true, response: Response::Declined },
             ],
-            origin: mailcraft_model::Origin { guest: true, ..Default::default() },
+            origin: mailsolutions_model::Origin { guest: true, ..Default::default() },
             ..Default::default()
         },
     );

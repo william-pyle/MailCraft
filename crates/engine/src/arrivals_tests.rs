@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-use mailcraft_model::sync::{FolderDelta, SyncResult};
-use mailcraft_model::{Address, FolderKind, Id, Message, ServerFolder};
+use mailsolutions_model::sync::{FolderDelta, SyncResult};
+use mailsolutions_model::{Address, FolderKind, Id, Message, ServerFolder};
 use serde_json::json;
 
 use super::*;
@@ -141,7 +141,7 @@ fn a_shared_mailbox_and_a_local_account_are_not_watched() {
     let mut s = Session::empty();
     let owner = s.run("account.add", &json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
     let shared = s.mailbox.add_shared_mailbox(owner, "team@example.org").unwrap();
-    let local = s.mailbox.add_account(mailcraft_model::Account { name: "Local".into(), email: "me@local.example".into(), ..Default::default() });
+    let local = s.mailbox.add_account(mailsolutions_model::Account { name: "Local".into(), email: "me@local.example".into(), ..Default::default() });
     // Every Inbox read to the end once, as Graph and IMAP say.
     let inboxes: Vec<(Id, Id)> =
         [owner, shared, local].iter().filter_map(|a| s.mailbox.folder_of_kind(*a, FolderKind::Inbox).map(|f| (*a, f))).collect();
@@ -183,7 +183,8 @@ fn a_flood_is_capped() {
 fn nothing_arrives_in_an_account_a_newer_version_added() {
     // Its Inbox was read to the end by that version; a message put into it here is no new mail.
     let mut s = Session::empty();
-    let newer = mailcraft_model::Account { email: "ada@jmap.example".into(), kind: mailcraft_model::AccountKind::Unknown, ..Default::default() };
+    let newer =
+        mailsolutions_model::Account { email: "ada@jmap.example".into(), kind: mailsolutions_model::AccountKind::Unknown, ..Default::default() };
     let newer = s.mailbox.add_account(newer);
     let inbox = s.mailbox.folder_of_kind(newer, FolderKind::Inbox).unwrap();
     s.mailbox.folder_mut(inbox).unwrap().server = Some(ServerFolder { id: "inbox".into(), caught_up: true, ..Default::default() });
@@ -223,7 +224,7 @@ fn a_caught_up_microsoft_inbox_of_a_file_from_before_round_ended_arrives() {
 #[test]
 fn a_partial_graph_run_after_a_caught_up_one_leaves_the_inbox_watched() {
     use crate::cmd::graph_down::{Down, ServerIndex, take_page};
-    use mailcraft_model::sync::MessagePage;
+    use mailsolutions_model::sync::MessagePage;
     let server = ServerFolder { id: "F".into(), delta: "link".into(), caught_up: true, round_ended: true, ..Default::default() };
     let (mut s, owner, inbox) = microsoft_inbox(server);
     let mut index = ServerIndex::default();

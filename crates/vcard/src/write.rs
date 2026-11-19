@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Writing contacts as vCard 3.0.
 
-use mailcraft_model::Contact;
-use mailcraft_time::Date;
+use mailsolutions_model::Contact;
+use mailsolutions_time::Date;
 
 use crate::lines::fold;
 use crate::text::{escape, multi, single};
@@ -139,7 +139,7 @@ fn card(out: &mut String, c: &Contact) {
 
 #[cfg(test)]
 mod tests {
-    use mailcraft_model::{Labeled, PostalAddress};
+    use mailsolutions_model::{Labeled, PostalAddress};
 
     use super::*;
 

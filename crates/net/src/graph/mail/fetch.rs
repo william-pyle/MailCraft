@@ -18,7 +18,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use mailcraft_model::sync::{GraphFetchRequest, GraphFetchResult, GraphFetched};
+use mailsolutions_model::sync::{GraphFetchRequest, GraphFetchResult, GraphFetched};
 
 use super::super::pace::{Gate, Kind, Priority, Retry};
 use super::super::{Doing, Graph, graph_base};

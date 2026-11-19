@@ -7,7 +7,7 @@
 //! its clock and the day its weeks start on) is [`Conventions`].
 //!
 //! The crate stands alone, so a day comes in as plain numbers ([`Day`]): callers make one from
-//! `mailcraft_time::Date`. The English output is the same as `mailcraft_time`'s own (`Date::long`,
+//! `mailsolutions_time::Date`. The English output is the same as `mailsolutions_time`'s own (`Date::long`,
 //! `list_label`, `duration_label`…), which stays English for commands, the CLI and agents.
 //!
 //! Every function takes what it speaks as a [`Words`]: a [`Lang`] (there is no global here), or in
@@ -197,7 +197,7 @@ impl Words for (&Catalogue, Conventions) {
 }
 
 /// A calendar day, as plain numbers: month 1–12, day 1–31, weekday 0 Monday … 6 Sunday
-/// (`mailcraft_time::Weekday::index`). Out-of-range numbers never panic: a month or a weekday
+/// (`mailsolutions_time::Weekday::index`). Out-of-range numbers never panic: a month or a weekday
 /// that doesn't exist has an empty name.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Day {

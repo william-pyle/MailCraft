@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! The reading pane on the corpus of `mailcraft-html`: every message laid out in both themes and
+//! The reading pane on the corpus of `mailsolutions-html`: every message laid out in both themes and
 //! at every width, what is shown of pictures and what is not, tables, contrast, and time.
 //!
 //! The pictures the corpus refers to are drawn here, in code.
@@ -9,10 +9,10 @@ use std::sync::{Arc, LazyLock, Mutex, mpsc};
 
 use egui::Color32;
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
-use mailcraft_engine::Session;
-use mailcraft_html::Span;
-use mailcraft_html::corpus::{self, PictureKind};
-use mailcraft_model::{Address, Attachment, Body, Mailbox, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_html::Span;
+use mailsolutions_html::corpus::{self, PictureKind};
+use mailsolutions_model::{Address, Attachment, Body, Mailbox, Message};
 use serde_json::json;
 
 use super::Place;
@@ -143,7 +143,7 @@ fn message(n: usize, from: (&str, &str), subject: &str, html: Option<String>, te
 }
 
 fn html_message(n: usize, from: (&str, &str), subject: &str, html: &str) -> Message {
-    let mut m = message(n, from, subject, Some(html.to_string()), mailcraft_html::to_text(html));
+    let mut m = message(n, from, subject, Some(html.to_string()), mailsolutions_html::to_text(html));
     // Each message carries the pictures it refers to, and no others.
     m.attachments = pictures().into_iter().filter(|a| html.contains(&format!("cid:{}", a.content_id))).collect();
     m
@@ -231,7 +231,7 @@ fn large_newsletter() -> Message {
         40,
         ("The Long Read", "editors@longread.example"),
         "The Long Read: everything, at length",
-        &corpus::large_newsletter(mailcraft_html::MAX_INPUT),
+        &corpus::large_newsletter(mailsolutions_html::MAX_INPUT),
     )
 }
 
@@ -307,7 +307,7 @@ fn check(laid: &Laid, t: &Tokens, what: &str) {
                     if t.dark { "dark" } else { "light" }
                 );
                 assert!(
-                    (9.0..=f32::from(mailcraft_html::MAX_FONT_PX)).contains(&section.format.font_id.size),
+                    (9.0..=f32::from(mailsolutions_html::MAX_FONT_PX)).contains(&section.format.font_id.size),
                     "{what}: text of size {}",
                     section.format.font_id.size
                 );
@@ -339,8 +339,9 @@ fn the_whole_corpus_lays_out_in_both_themes_at_every_width() {
 /// Its server is the one that wrote the `mx.example.org` line the corpus carries.
 fn served_by_example_org(mailbox: &mut Mailbox) {
     for account in &mut mailbox.accounts {
-        account.kind = mailcraft_model::AccountKind::Imap;
-        account.incoming = Some(mailcraft_model::Server { host: "imap.example.org".into(), port: 993, security: mailcraft_model::Security::Tls });
+        account.kind = mailsolutions_model::AccountKind::Imap;
+        account.incoming =
+            Some(mailsolutions_model::Server { host: "imap.example.org".into(), port: 993, security: mailsolutions_model::Security::Tls });
     }
 }
 
@@ -365,13 +366,13 @@ fn corpus_app(large: bool) -> (MailApp, Vec<(&'static str, u64)>) {
 }
 
 /// The corpus as a mailbox file, to look at in the app or with the screenshot example:
-/// `MAILCRAFT_CORPUS_DIR=<dir> cargo test -p mailcraft-ui-egui write_the_corpus -- --ignored`
+/// `MAILSOLUTIONS_CORPUS_DIR=<dir> cargo test -p mailsolutions-ui-egui write_the_corpus -- --ignored`
 /// writes `<dir>/corpus.mailcraft` and `<dir>/corpus-ids.txt` (a message id and its name per line).
 #[test]
 #[ignore = "writes the corpus as a mailbox file, for looking at it"]
 fn write_the_corpus_as_a_mailbox() {
-    let Ok(dir) = std::env::var("MAILCRAFT_CORPUS_DIR") else {
-        eprintln!("set MAILCRAFT_CORPUS_DIR to the directory to write to");
+    let Ok(dir) = std::env::var("MAILSOLUTIONS_CORPUS_DIR") else {
+        eprintln!("set MAILSOLUTIONS_CORPUS_DIR to the directory to write to");
         return;
     };
     let dir = std::path::PathBuf::from(dir);
@@ -789,7 +790,7 @@ fn html_that_shows_nothing_falls_back_to_the_text() {
     // A picture of the message's own is worth showing.
     let mut own = message(0, ("A", "a@example.org"), "x", Some("<img src=\"cid:a@x\">".into()), "The text part.".into());
     own.attachments = vec![Attachment { content_id: "a@x".into(), inline: true, ..Attachment::new("a.png", "image/png", png(8, 8)) }];
-    assert!(matches!(Doc::of(&own).blocks.first().map(|b| &b.kind), Some(mailcraft_html::BlockKind::Image { .. })));
+    assert!(matches!(Doc::of(&own).blocks.first().map(|b| &b.kind), Some(mailsolutions_html::BlockKind::Image { .. })));
     // With no text part, the HTML is all there is.
     let bare = message(0, ("A", "a@example.org"), "x", Some("<img src=\"https://example.org/a.png\" alt=\"A\">".into()), String::new());
     assert_eq!(Doc::of(&bare).remote_pictures, 1);
@@ -808,7 +809,7 @@ fn a_body_is_parsed_once_and_again_when_it_changes() {
         let first = super::view::doc(ctx, &m, Place::Pane);
         assert!(Arc::ptr_eq(&first, &super::view::doc(ctx, &m, Place::Pane)));
         // Flagging a message makes a new message of it; its body is the same one.
-        let flagged = Arc::new(Message { flag: mailcraft_model::FlagStatus::Flagged, read: false, ..(*m).clone() });
+        let flagged = Arc::new(Message { flag: mailsolutions_model::FlagStatus::Flagged, read: false, ..(*m).clone() });
         assert!(Arc::ptr_eq(&first, &super::view::doc(ctx, &flagged, Place::Pane)));
         // A changed body is parsed again, and what was kept of the old one is dropped.
         let mut edited = (*m).clone();
@@ -1051,7 +1052,7 @@ fn a_layout_begun_before_the_light_page_goes_on_in_its_colours() {
 /// the original under a reply being written and File › Signatures' sample are laid out dark.
 #[test]
 fn the_owners_own_text_keeps_the_windows_colours() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
     app.autosave = false;
     app.execute("ui.theme", json!({"value": "dark"})).unwrap();
     app.execute("ui.lightMessages", json!({"value": true})).unwrap();
@@ -1133,7 +1134,7 @@ fn light_pages(harness: &Window) -> Vec<egui::Rect> {
 fn a_two_megabyte_newsletter_opens_without_a_stall() {
     let m = large_newsletter();
     let bytes = m.body.html.as_ref().map_or(0, String::len);
-    assert!(bytes >= mailcraft_html::MAX_INPUT);
+    assert!(bytes >= mailsolutions_html::MAX_INPUT);
     in_frame(false, |ctx| {
         let started = std::time::Instant::now();
         let doc = Doc::of(&m);
@@ -1603,9 +1604,9 @@ fn the_list_of_remembered_senders_pages_in_a_narrow_window() {
 fn a_long_name_does_not_squeeze_the_address_out_of_the_header() {
     let long = "Support Desk ".repeat(9);
     let mut near = web_message(0, "a@evil.example", "Short", &[]);
-    near.from = mailcraft_model::Address::new("Support", "a@evil.example");
+    near.from = mailsolutions_model::Address::new("Support", "a@evil.example");
     let mut far = web_message(1, "a@evil.example", "Long", &[]);
-    far.from = mailcraft_model::Address::new(&long, "a@evil.example");
+    far.from = mailsolutions_model::Address::new(&long, "a@evil.example");
     let (app, ids) = app_with(vec![near, far]);
     let mut harness = window(app, (1280.0, 800.0));
     let width = |harness: &Window| harness.query_by_label("<a@evil.example>").map(|node| node.rect().width());
@@ -1675,7 +1676,7 @@ fn mail_in_a_subfolder_of_junk_is_junk_for_pictures() {
     let (mut app, ids) = app_with(vec![web_message(0, shop, "Sorted out", &web_pictures("a.shop.example", 1))]);
     let id = ids[0];
     let account = app.session.mailbox.accounts[0].id;
-    let junk = app.session.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Junk).unwrap();
+    let junk = app.session.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Junk).unwrap();
     let sub = app.session.mailbox.add_folder(account, Some(junk), "Sorted").unwrap();
     let deeper = app.session.mailbox.add_folder(account, Some(sub), "Older").unwrap();
     app.session.mailbox.message_mut(id).unwrap().folder = deeper;
@@ -1691,7 +1692,7 @@ fn mail_in_a_subfolder_of_junk_is_junk_for_pictures() {
 /// A draft opened again has lost the message it quotes: its pictures are not fetched by the switch.
 #[test]
 fn the_quote_of_a_reopened_draft_fetches_nothing() {
-    let html = "<html><body><p>Mine</p><div id=\"mailcraft-quote\"><p>Theirs</p><img src=\"https://x.example/p.png\" width=40 height=30></div></body></html>";
+    let html = "<html><body><p>Mine</p><div id=\"mailsolutions-quote\"><p>Theirs</p><img src=\"https://x.example/p.png\" width=40 height=30></div></body></html>";
     let mut draft = web_message(0, "avery@lumen-works.example", "Re: Offer", &[]);
     draft.draft = true;
     draft.body.html = Some(html.into());
@@ -1765,7 +1766,7 @@ fn only_what_is_shown_as_a_picture_is_asked_for() {
 
     // The second look, on blocks the parser would not have let through.
     let picture = |src: &str, width: Option<u16>, height: Option<u16>| {
-        mailcraft_html::Block::new(mailcraft_html::BlockKind::Image { src: src.into(), width, height, link: None, data: None }, Vec::new())
+        mailsolutions_html::Block::new(mailsolutions_html::BlockKind::Image { src: src.into(), width, height, link: None, data: None }, Vec::new())
     };
     let doc = Doc::from_blocks(vec![
         picture("https://t.example/1x1.gif", Some(1), Some(1)),
@@ -2465,12 +2466,12 @@ fn the_picture_commands_take_anything_and_never_panic() {
 
 /// The line above a message, a message with its pictures, and a message in a window of its own,
 /// in light and dark, as PNG files to look at:
-/// `MAILCRAFT_SHOTS_DIR=<dir> cargo test -p mailcraft-ui-egui shots_of_pictures -- --ignored`
+/// `MAILSOLUTIONS_SHOTS_DIR=<dir> cargo test -p mailsolutions-ui-egui shots_of_pictures -- --ignored`
 #[test]
 #[ignore = "writes screenshots, for looking at them"]
 fn shots_of_pictures_from_the_web_and_of_a_message_window() {
-    let Ok(dir) = std::env::var("MAILCRAFT_SHOTS_DIR") else {
-        eprintln!("set MAILCRAFT_SHOTS_DIR to the directory to write to");
+    let Ok(dir) = std::env::var("MAILSOLUTIONS_SHOTS_DIR") else {
+        eprintln!("set MAILSOLUTIONS_SHOTS_DIR to the directory to write to");
         return;
     };
     let dir = std::path::PathBuf::from(dir);
@@ -2635,7 +2636,7 @@ fn copy_of(laid: &Laid) -> String {
 }
 
 /// What Select All and Copy make of each message of the corpus, to read:
-/// `cargo test -p mailcraft-ui-egui print_the_copies -- --ignored --nocapture`
+/// `cargo test -p mailsolutions-ui-egui print_the_copies -- --ignored --nocapture`
 #[test]
 #[ignore = "prints what a copy of each message is, for reading it"]
 fn print_the_copies_of_the_corpus() {
@@ -2678,8 +2679,8 @@ fn squeezed(text: &str) -> String {
 /// What a copy of `blocks` must hold, in reading order, written down without the layout: every
 /// text with its list marker, and for each picture what `pictures` says it came to (its
 /// description when it is not shown and has one).
-fn told(blocks: &[mailcraft_html::Block], pictures: &mut dyn Iterator<Item = Option<String>>, out: &mut String) {
-    use mailcraft_html::{BlockKind, Marker};
+fn told(blocks: &[mailsolutions_html::Block], pictures: &mut dyn Iterator<Item = Option<String>>, out: &mut String) {
+    use mailsolutions_html::{BlockKind, Marker};
     for block in blocks {
         match &block.kind {
             BlockKind::Table(table) => {
@@ -3487,7 +3488,7 @@ fn the_header_is_selected_and_copied_field_by_field_and_across() {
     let mut harness = quick_window(app, (1280.0, 900.0));
     select(&mut harness, id);
     let m = harness.state().session.mailbox.messages.get(&id).cloned().unwrap();
-    let when = mailcraft_time::header_label(m.date, harness.state().session.offset_at(m.date), harness.state().session.prefs.twelve_hour);
+    let when = mailsolutions_time::header_label(m.date, harness.state().session.offset_at(m.date), harness.state().session.prefs.twelve_hour);
     let (subject, sender, address, to) = (
         "RE: Q4 lane pricing: revised schedule",
         "Marta Lindqvist",
@@ -4048,7 +4049,7 @@ mod written_pictures;
 /// asks for the original's pictures.
 #[test]
 fn the_original_under_a_reply_is_shown_as_the_reading_pane_shows_it() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
     app.autosave = false;
     let id = app.session.mailbox.messages.values().find(|m| m.subject.starts_with("Five new arrivals")).map(|m| m.id).unwrap();
     app.execute("mail.select", json!({"id": id})).unwrap();
@@ -4070,7 +4071,7 @@ fn the_original_under_a_reply_is_shown_as_the_reading_pane_shows_it() {
 /// Ctrl+C in the owner's text copies from the owner's text, as before.
 #[test]
 fn the_original_under_a_reply_can_be_copied() {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(1_791_993_600, 0), 1_791_993_600, 0), Services::default());
     app.autosave = false;
     let id = app.session.mailbox.messages.values().find(|m| m.subject.starts_with("Five new arrivals")).map(|m| m.id).unwrap();
     app.execute("mail.select", json!({"id": id})).unwrap();

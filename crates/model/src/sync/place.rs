@@ -8,7 +8,7 @@
 //! copied into another is therefore made in the destination by the destination's own run,
 //! at its own address, from the whole message here ([`PlaceUp`]): its fields, its attachments, its
 //! read state, flag and categories, and the times it was sent and received, as a message that was
-//! received (not a draft). It carries MailCraft's marker (an invisible extended property with a
+//! received (not a draft). It carries MailSolutions's marker (an invisible extended property with a
 //! value used once), so that a make whose answer was lost is found and not made twice. Of a move,
 //! the original is removed from its own mailbox only once the copy is confirmed there
 //! ([`crate::sync::MovingOut`], or a [`crate::Pending::Move`] out of an IMAP account): a copy
@@ -16,7 +16,7 @@
 
 use std::sync::Arc;
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use super::drafts::{AttachmentUp, DraftBody};
@@ -42,7 +42,7 @@ pub struct PlaceUp {
     pub to: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to_folder: Option<Id>,
-    /// MailCraft's marker for the copy: a value used once.
+    /// MailSolutions's marker for the copy: a value used once.
     pub marker: String,
     /// It is a move (the original goes once the copy is there), not a copy.
     #[serde(skip_serializing_if = "is_false")]

@@ -3,7 +3,7 @@
 //! What a server sends is hostile: reading anything at all into the types is an answer or an error,
 //! never a panic.
 
-use mailcraft_jmap_types::{Email, EmailQueryRequest, GetResponse, Response, Session, SetResponse, StateChange};
+use mailsolutions_jmap_types::{Email, EmailQueryRequest, GetResponse, Response, Session, SetResponse, StateChange};
 use proptest::prelude::*;
 
 fn read_all(bytes: &[u8]) {

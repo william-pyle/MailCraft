@@ -1,5 +1,5 @@
 [package]
-name = "mailcraft-dav"
+name = "mailsolutions-dav"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,11 +15,11 @@ workspace = true
 stand-in = []
 
 [dependencies]
-mailcraft-model = { workspace = true }
+mailsolutions-model = { workspace = true }
 quick-xml = { workspace = true }
 
 [dev-dependencies]
-mailcraft-ical = { workspace = true }
-mailcraft-vcard = { workspace = true }
-mailcraft-time = { workspace = true }
+mailsolutions-ical = { workspace = true }
+mailsolutions-vcard = { workspace = true }
+mailsolutions-time = { workspace = true }
 proptest = { workspace = true }

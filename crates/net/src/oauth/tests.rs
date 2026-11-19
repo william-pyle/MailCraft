@@ -64,7 +64,7 @@ const GRAPH_SCOPES_BEFORE: &str =
 #[test]
 fn a_sign_in_that_lacks_the_newest_permission_keeps_everything_it_had() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"graph-access","refresh_token":"re-fresh-2"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let over = r#"{"error":"invalid_grant","error_description":"AADSTS70000: The user could not be authenticated as the grant is expired. The user must sign in again."}"#;
     let all = |server: &FakeHttp| Endpoints { scope: format!("{GRAPH_SCOPES} offline_access"), ..endpoints_of(server) };
     let plain = |server: &FakeHttp| Endpoints { scope: format!("{GRAPH_SCOPES_BEFORE} offline_access"), ..endpoints_of(server) };
@@ -149,7 +149,7 @@ fn a_sign_in_from_before_the_calendar_was_written_to_needs_the_owners_consent_ag
     // The owner agreed to reading the calendar, once. The refresh token of that sign-in is asked
     // for a token that may write to it, which nobody agreed to: the provider says so, mail is
     // none the worse, and the owner is to be asked on the provider's page.
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'. Send an interactive authorization request for this user and resource.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'. Send an interactive authorization request for this user and resource.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(response("400 Bad Request", unasked));
     let wanted = Endpoints::for_resource(&oauth(), Resource::Graph).scope;
     let endpoints = Endpoints { scope: wanted.clone(), ..endpoints_of(&server) };
@@ -363,10 +363,10 @@ fn the_port_is_open_on_loopback_only() {
 fn signing_in_brings_back_the_tokens() {
     let server = FakeHttp::answering(ok(TOKENS));
     let (open, browser) = browser_asking(&["GET /favicon.ico", "GET /?code=the%2Fcode-123&state={state}&session_state=abc"]);
-    let before = mailcraft_time::now();
+    let before = mailsolutions_time::now();
     let tokens = sign_in_to(&endpoints_of(&server), " ada+mail@example.org ", &open).unwrap();
     assert_eq!((tokens.access.as_str(), tokens.refresh.as_str()), ("acc-ess.tok_en", "re-fresh.tok_en"));
-    assert!((before + 3599..=mailcraft_time::now() + 3599).contains(&tokens.expires_at));
+    assert!((before + 3599..=mailsolutions_time::now() + 3599).contains(&tokens.expires_at));
     assert!(tokens.fresh(before) && !tokens.fresh(before + 3600));
 
     // The page the owner was sent to, and what it was asked.
@@ -416,7 +416,7 @@ fn signing_in_brings_back_the_tokens() {
     assert!(pages[0].starts_with("HTTP/1.1 404 Not Found\r\n"), "{}", pages[0]);
     let done = &pages[1];
     assert!(done.starts_with("HTTP/1.1 200 OK\r\n") && done.contains("Content-Type: text/html; charset=utf-8\r\n"), "{done}");
-    assert!(done.contains("You can close this tab and return to MailCraft."), "{done}");
+    assert!(done.contains("You can close this tab and return to MailSolutions."), "{done}");
     let (head, body) = done.split_once("\r\n\r\n").unwrap();
     assert!(head.contains(&format!("Content-Length: {}\r\n", body.len())), "{head}");
     let lower = body.to_lowercase();
@@ -465,7 +465,7 @@ fn strangers_at_the_port_are_turned_away_and_the_wait_goes_on() {
     let status = |n: usize| pages[n].lines().next().unwrap_or("").to_string();
     for (n, page) in pages.iter().enumerate().take(4) {
         assert_eq!(status(n), "HTTP/1.1 400 Bad Request", "{n}");
-        assert!(page.contains("Not the sign-in MailCraft is waiting for"), "{n}");
+        assert!(page.contains("Not the sign-in MailSolutions is waiting for"), "{n}");
     }
     assert_eq!(status(4), "HTTP/1.1 404 Not Found");
     assert_eq!(status(5), "HTTP/1.1 405 Method Not Allowed");
@@ -598,10 +598,10 @@ fn refreshing_brings_new_tokens() {
             r#"{"error":"invalid_grant","error_description":"AADSTS70008: The refresh token has expired due to inactivity."}"#,
         ),
     });
-    let before = mailcraft_time::now();
+    let before = mailsolutions_time::now();
     let tokens = refresh_at(&endpoints_of(&server), &oauth(), "old-refresh").unwrap();
     assert_eq!((tokens.access.as_str(), tokens.refresh.as_str()), ("new-access", "new-refresh"));
-    assert!((before + 7200..=mailcraft_time::now() + 7200).contains(&tokens.expires_at));
+    assert!((before + 7200..=mailsolutions_time::now() + 7200).contains(&tokens.expires_at));
     let request = server.request(0);
     assert!(request.starts_with("POST /token HTTP/1.1\r\n"), "{request}");
     let form = form_of(&server, 0);
@@ -701,7 +701,7 @@ fn a_page_that_refuses_the_scopes_is_asked_again_for_mail_alone() {
         "error=invalid_scope",
         "error=invalid_scope&error_description=AADSTS70011%3A+The+provided+value+for+the+input+parameter+%27scope%27+is+not+valid.",
         "error=invalid_request&error_description=AADSTS28000%3A+Provided+value+for+the+input+parameter+scope+is+not+valid+because+it+contains+more+than+one+resource.",
-        "error=invalid_client&error_description=AADSTS650053%3A+The+application+%27MailCraft%27+asked+for+scope+%27Mail.Send%27+that+doesn%27t+exist+on+the+resource.",
+        "error=invalid_client&error_description=AADSTS650053%3A+The+application+%27MailSolutions%27+asked+for+scope+%27Mail.Send%27+that+doesn%27t+exist+on+the+resource.",
         "error=invalid_resource&error_description=The+resource+is+not+known+here.",
         "error=access_denied&error_description=AADSTS650057%3A+Invalid+resource.%0D%0ATrace+ID%3A+1234",
     ] {
@@ -869,7 +869,7 @@ fn the_favorites_permissions_are_asked_for_by_themselves_and_never_with_a_sign_i
 #[test]
 fn a_sign_in_that_does_not_cover_the_favorites_keeps_everything_it_had() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"graph-access","refresh_token":"re-fresh-2"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let over = r#"{"error":"invalid_grant","error_description":"AADSTS70000: The user could not be authenticated as the grant is expired. The user must sign in again."}"#;
     let most = |server: &FakeHttp| Endpoints { scope: format!("{GRAPH_SCOPES} {FAVORITES_SCOPES} offline_access"), ..endpoints_of(server) };
     let all = |server: &FakeHttp| Endpoints { scope: format!("{GRAPH_SCOPES} offline_access"), ..endpoints_of(server) };
@@ -975,11 +975,11 @@ fn the_refresh_token_gets_graph_its_own_tokens() {
         0 => ok(r#"{"token_type":"Bearer","expires_in":3600,"access_token":"graph-access","refresh_token":"newer-refresh"}"#),
         _ => ok(r#"{"token_type":"Bearer","expires_in":3600,"access_token":"mail-access"}"#),
     });
-    let before = mailcraft_time::now();
+    let before = mailsolutions_time::now();
     let tokens = refresh_for_at(&graph_endpoints_of(&server), &oauth(), "re-fresh", Resource::Graph).unwrap();
     // The access token is Graph's; the refresh token is the one to keep for both.
     assert_eq!((tokens.access.as_str(), tokens.refresh.as_str()), ("graph-access", "newer-refresh"));
-    assert!((before + 3600..=mailcraft_time::now() + 3600).contains(&tokens.expires_at));
+    assert!((before + 3600..=mailsolutions_time::now() + 3600).contains(&tokens.expires_at));
     let form = form_of(&server, 0);
     assert_eq!(form.len(), 4, "{form:?}");
     assert_eq!(
@@ -1003,10 +1003,10 @@ fn the_refresh_token_gets_graph_its_own_tokens() {
 fn a_refresh_for_graph_tells_consent_that_is_needed_from_a_sign_in_that_is_over() {
     let bad = |body: &str| response("400 Bad Request", body);
     // Nobody agreed to Graph: the refresh token is good, and mail goes on working.
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'. Send an interactive authorization request for this user and resource.\r\nTrace ID: 1234\r\nCorrelation ID: 5678\r\nTimestamp: 2026-10-12 08:00:00Z","error_codes":[65001],"suberror":"consent_required","error_uri":"https://login.example.org/error?code=65001"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'. Send an interactive authorization request for this user and resource.\r\nTrace ID: 1234\r\nCorrelation ID: 5678\r\nTimestamp: 2026-10-12 08:00:00Z","error_codes":[65001],"suberror":"consent_required","error_uri":"https://login.example.org/error?code=65001"}"#;
     assert_eq!(
         consent_needed(refreshed_for(Resource::Graph, bad(unasked))),
-        "AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'. Send an interactive authorization request for this user and resource."
+        "AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'. Send an interactive authorization request for this user and resource."
     );
     // Said in any one of the ways it is said.
     for (said, shown) in [
@@ -1322,7 +1322,7 @@ fn who_signed_in_is_read_from_the_identity_token() {
     assert_eq!(who(&id_token(r#"{"email":"not an address","preferred_username":"ada@example.org"}"#)), named("", "ada@example.org"));
     assert_eq!(who(&id_token(r#"{"sub":"123"}"#)), named("", ""));
     // Padded, as base64 elsewhere is.
-    let padded = format!("e30=.{}=.", mailcraft_charset::base64::URL_SAFE.encode(r#"{"name":"Ada"}"#).trim_end_matches('='));
+    let padded = format!("e30=.{}=.", mailsolutions_charset::base64::URL_SAFE.encode(r#"{"name":"Ada"}"#).trim_end_matches('='));
     assert_eq!(who(&padded), named("Ada", ""));
 
     // With the tokens of a sign-in, and of a refresh only when it brings one.
@@ -1439,7 +1439,13 @@ fn what_a_no_is_about() {
         (" Invalid_Resource ", "", "", &[][..], About::Scope),
         ("invalid_request", "", "AADSTS70011: The provided value for the input parameter 'scope' is not valid.", &[][..], About::Scope),
         ("invalid_grant", "", "", &[28_000][..], About::Scope),
-        ("invalid_client", "", "AADSTS650053: The application 'MailCraft' asked for scope 'Mail.Send' that doesn't exist.", &[][..], About::Scope),
+        (
+            "invalid_client",
+            "",
+            "AADSTS650053: The application 'MailSolutions' asked for scope 'Mail.Send' that doesn't exist.",
+            &[][..],
+            About::Scope,
+        ),
         ("invalid_request", "", "Twice: AADSTS90002 and then AADSTS650057: Invalid resource.", &[][..], About::Scope),
         ("consent_required", "", "", &[][..], About::Consent),
         ("interaction_required", "", "AADSTS50076: You must use multi-factor authentication.", &[50_076][..], About::Consent),
@@ -1476,7 +1482,7 @@ fn pages_are_whole_answers() {
         assert!(head.contains(&format!("\r\nContent-Length: {}\r\n", body.len())) && head.ends_with("Connection: close"), "{head}");
         assert!(head.contains("Content-Security-Policy: default-src 'none'") && head.contains("Cache-Control: no-store"), "{head}");
         assert!(body.starts_with("<!doctype html>") && body.contains(page.title) && body.contains(page.text), "{body}");
-        assert!(body.contains("MailCraft") && body.len() < 1_000, "{body}");
+        assert!(body.contains("MailSolutions") && body.len() < 1_000, "{body}");
     }
 }
 
@@ -1624,7 +1630,7 @@ fn the_link_for_an_administrator_names_the_application_and_the_permissions_and_n
     }
     // No administrator is to be found in "any directory" or among personal accounts: the
     // administrator's own sign-in says which organisation it is then.
-    for tenant in ["common", "consumers", "organizations", mailcraft_model::Directory::PERSONAL_TENANT, ""] {
+    for tenant in ["common", "consumers", "organizations", mailsolutions_model::Directory::PERSONAL_TENANT, ""] {
         let (address, _) = parts(&admin_consent_url(&settings, tenant).unwrap());
         assert_eq!(address, "https://login.microsoftonline.com/organizations/v2.0/adminconsent", "{tenant}");
     }
@@ -1641,7 +1647,7 @@ fn the_link_for_an_administrator_names_the_application_and_the_permissions_and_n
 
 #[test]
 fn the_identity_token_says_which_directory_signed_in() {
-    use mailcraft_model::Directory;
+    use mailsolutions_model::Directory;
     let work = identity(&id_token(r#"{"name":"Ada Lovelace","email":"ada@lumen.example","tid":"3A1C5E7B-9d2f-4a6c-8e0b-1d3f5a7c9e2b"}"#));
     assert_eq!((work.tenant.as_str(), Directory::of_tenant(&work.tenant)), ("3a1c5e7b-9d2f-4a6c-8e0b-1d3f5a7c9e2b", Directory::Organisation));
     let personal = identity(&id_token(r#"{"email":"ada@outlook.example","tid":"9188040d-6c67-4c5b-b112-36a304b66dad"}"#));
@@ -1744,7 +1750,7 @@ fn an_administrators_yes_comes_back_to_the_loopback_port() {
     let (open, browser) = browser_asking(&[&format!("GET /?admin_consent=True&tenant={DIRECTORY}&state={{state}}")]);
     assert_eq!(approval("", &open), Ok(()));
     let page = &pages(&browser, 1)[0];
-    assert!(page.starts_with("HTTP/1.1 200 OK\r\n") && page.contains("MailCraft is approved for your organisation"), "{page}");
+    assert!(page.starts_with("HTTP/1.1 200 OK\r\n") && page.contains("MailSolutions is approved for your organisation"), "{page}");
     assert!(!page.contains(DIRECTORY) && !page.contains(&asked_of(&browser)["state"]));
 }
 
@@ -1963,7 +1969,7 @@ proptest! {
             "\\PC{0,24}",
         ],
     ) {
-        use mailcraft_model::Directory;
+        use mailsolutions_model::Directory;
         let settings = OAuth { client_id: client.clone(), ..oauth() };
         let named = tenant.trim();
         let fits = named.is_empty()
@@ -2075,7 +2081,7 @@ const SHARED_SEND_SCOPE: &str = "https://graph.microsoft.com/Mail.Send.Shared";
 #[test]
 fn sending_from_a_shared_mailbox_asks_for_its_permission_and_nothing_less() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"send-access","refresh_token":"re-fresh-3"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(ok(granted));
     let got = refresh_graph_shared_send_at(&endpoints_of(&server), &oauth(), "re-fresh").unwrap();
     assert_eq!((got.tokens.access.as_str(), got.tokens.refresh.as_str(), server.asked()), ("send-access", "re-fresh-3", 1));
@@ -2089,7 +2095,7 @@ fn sending_from_a_shared_mailbox_asks_for_its_permission_and_nothing_less() {
 #[test]
 fn a_shared_mailboxs_tokens_are_asked_for_with_its_permission_and_nothing_less() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"shared-access","refresh_token":"re-fresh-2"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(ok(granted));
     let got = refresh_graph_shared_at(&endpoints_of(&server), &oauth(), "re-fresh").unwrap();
     assert_eq!((got.tokens.access.as_str(), got.tokens.refresh.as_str(), server.asked()), ("shared-access", "re-fresh-2", 1));
@@ -2124,7 +2130,7 @@ fn a_shared_mailboxs_calendars_are_asked_for_by_themselves_and_never_with_a_sign
 #[test]
 fn a_shared_mailboxs_calendars_need_their_permission_and_nothing_less() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"calendar-access","refresh_token":"re-fresh-4"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(ok(granted));
     let got = refresh_graph_shared_calendars_at(&endpoints_of(&server), &oauth(), "re-fresh").unwrap();
     assert_eq!((got.tokens.access.as_str(), got.tokens.refresh.as_str(), server.asked()), ("calendar-access", "re-fresh-4", 1));
@@ -2138,7 +2144,7 @@ fn a_shared_mailboxs_calendars_need_their_permission_and_nothing_less() {
 #[test]
 fn calendars_opened_by_address_are_asked_for_with_their_permission_and_nothing_more() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"calendars-access","refresh_token":"re-fresh-2"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(ok(granted));
     let got = refresh_graph_opened_calendars_at(&endpoints_of(&server), &oauth(), "re-fresh").unwrap();
     assert_eq!((got.tokens.access.as_str(), got.tokens.refresh.as_str(), server.asked()), ("calendars-access", "re-fresh-2", 1));
@@ -2178,7 +2184,7 @@ fn tasks_are_never_put_on_a_sign_in_page_so_a_mail_sign_in_never_waits_on_them()
 #[test]
 fn a_tasks_job_needs_its_permission_and_nothing_less() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"tasks-access","refresh_token":"re-fresh-5"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(ok(granted));
     let got = refresh_graph_tasks_at(&endpoints_of(&server), (&endpoints_of(&server), Resource::Mail), &oauth(), "re-fresh").unwrap();
     assert_eq!((got.tokens.access.as_str(), got.tokens.refresh.as_str(), server.asked()), ("tasks-access", "re-fresh-5", 1));
@@ -2278,7 +2284,7 @@ fn a_change_of_the_replies_needs_its_permission_and_nothing_less() {
     assert!(scope.split(' ').any(|s| s == SETTINGS_WRITE) && scope.contains("Calendars.ReadWrite"), "{scope}");
     assert!(!scope.contains("Tasks") && !scope.contains("Shared") && !scope.contains("Mail.ReadWrite"), "{scope}");
     // A sign-in from before (reading them only): the owner is to be asked, once.
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(response("400 Bad Request", unasked));
     let error = refresh_graph_replies_at(&endpoints_of(&server), (&endpoints_of(&server), Resource::Mail), &oauth(), "re-fresh").unwrap_err();
     assert!(error.is_consent_needed(), "{error}");
@@ -2298,7 +2304,7 @@ fn a_change_of_the_replies_needs_its_permission_and_nothing_less() {
 #[test]
 fn a_rules_job_with_changes_needs_its_permission_and_nothing_less() {
     let granted = r#"{"token_type":"Bearer","expires_in":3600,"access_token":"rules-access","refresh_token":"re-fresh-6"}"#;
-    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailCraft'.","error_codes":[65001],"suberror":"consent_required"}"#;
+    let unasked = r#"{"error":"invalid_grant","error_description":"AADSTS65001: The user or administrator has not consented to use the application with ID 'client-1' named 'MailSolutions'.","error_codes":[65001],"suberror":"consent_required"}"#;
     let server = FakeHttp::answering(ok(granted));
     let got = refresh_graph_rules_at(&endpoints_of(&server), &endpoints_of(&server), &oauth(), "re-fresh").unwrap();
     assert_eq!((got.tokens.access.as_str(), got.tokens.refresh.as_str(), server.asked()), ("rules-access", "re-fresh-6", 1));

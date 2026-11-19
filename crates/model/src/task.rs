@@ -4,7 +4,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use mailcraft_time::{Date, Timestamp};
+use mailsolutions_time::{Date, Timestamp};
 use serde::{Deserialize, Serialize};
 
 use crate::{Id, Importance, Origin};

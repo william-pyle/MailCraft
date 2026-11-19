@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! People › Merge Duplicates (#506).
 
-use mailcraft_model::{Contact, Id, Labeled, Origin, PostalAddress};
+use mailsolutions_model::{Contact, Id, Labeled, Origin, PostalAddress};
 use serde_json::{Value, json};
 
 use super::{MAX_MERGE, email_key, find, phone_key};
@@ -337,7 +337,7 @@ fn a_merge_past_what_an_edit_keeps_is_refused_and_one_within_survives_an_edit() 
 
 #[test]
 fn a_merge_keeps_every_contacts_keys_once() {
-    use mailcraft_model::{ContactKey, KeyKind};
+    use mailsolutions_model::{ContactKey, KeyKind};
     let key = |n: u8| ContactKey { kind: KeyKind::X509, data: vec![0x30, n], ..Default::default() };
     let mut s = Session::empty();
     let keep = add(&mut s, Contact { keys: vec![key(1), key(2)], ..person("Ada", "Lovelace", "ada@example.org", "") });

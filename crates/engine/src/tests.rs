@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: MailCraft contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
-use mailcraft_model::{FlagStatus, FolderKind, Id, Importance, Mailbox, Message};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{FlagStatus, FolderKind, Id, Importance, Mailbox, Message};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::*;
@@ -320,7 +320,7 @@ fn saved_attachments_and_exports_are_named_safely() {
     let id = first(&mut s);
     let names = ["invoice\u{202e}fdp.exe", "CON.txt", "../../x", "a:b", "re\u{200b}port.pdf", ""];
     for name in names {
-        s.mailbox.message_mut(id).unwrap().attachments.push(mailcraft_model::Attachment::new(name, "application/octet-stream", b"hi".to_vec()));
+        s.mailbox.message_mut(id).unwrap().attachments.push(mailsolutions_model::Attachment::new(name, "application/octet-stream", b"hi".to_vec()));
     }
     let base = s.mailbox.message(id).unwrap().attachments.len() - names.len();
     let saved: Vec<String> = (0..names.len())
@@ -386,10 +386,10 @@ fn folders_and_views() {
     let order = unpinned(&mut s);
     let partial = *order.last().unwrap();
     let m = s.mailbox.message_mut(partial).unwrap();
-    m.body = mailcraft_model::Body { text: "Only the start".into(), html: None };
+    m.body = mailsolutions_model::Body { text: "Only the start".into(), html: None };
     m.attachments.clear();
     m.unfetched = true;
-    m.server = Some(mailcraft_model::sync::ServerMessage { size: 50 << 20, ..Default::default() });
+    m.server = Some(mailsolutions_model::sync::ServerMessage { size: 50 << 20, ..Default::default() });
     // Another order and back, for the list to be made again.
     run(&mut s, "view.sort", json!({"by": "date"}));
     s.rows();
@@ -399,7 +399,7 @@ fn folders_and_views() {
     // One whose size isn't known counts as the smallest: last with the largest on top, first
     // with the smallest.
     let unknown = order[0];
-    s.mailbox.message_mut(unknown).unwrap().headers.push((mailcraft_model::NOT_DOWNLOADED.into(), "62914560".into()));
+    s.mailbox.message_mut(unknown).unwrap().headers.push((mailsolutions_model::NOT_DOWNLOADED.into(), "62914560".into()));
     run(&mut s, "view.sort", json!({"by": "date"}));
     s.rows();
     run(&mut s, "view.sort", json!({"by": "size", "descending": true}));
@@ -474,7 +474,7 @@ fn the_list_arranges_by_categories() {
 fn categories_that_differ_only_in_case_are_one_heading() {
     let mut s = session();
     run(&mut s, "folder.select", json!({"kind": "inbox"}));
-    s.mailbox.categories.push(mailcraft_model::Category { name: "Été".into(), color: Default::default() });
+    s.mailbox.categories.push(mailsolutions_model::Category { name: "Été".into(), color: Default::default() });
     let ids: Vec<Id> = s.rows().iter().map(|r| r.id).filter(|id| !s.mailbox.message(*id).unwrap().pinned).collect();
     for id in &ids {
         s.mailbox.message_mut(*id).unwrap().categories.clear();
@@ -542,13 +542,13 @@ fn a_search_for_today_or_this_week_goes_by_the_sessions_day() {
     // Monday, October 26, 2026, at three in the afternoon.
     let mut s = Session::at(mb, noon(26) + 3 * 3600, 0);
     s.view.folder = folder;
-    s.prefs.week_start = mailcraft_time::Weekday::Sun;
+    s.prefs.week_start = mailsolutions_time::Weekday::Sun;
     assert_eq!(run(&mut s, "view.search", json!({"query": "received:today"}))["found"], 1);
     assert_eq!(run(&mut s, "view.search", json!({"query": "received:yesterday"}))["found"], 1);
     assert_eq!(run(&mut s, "view.search", json!({"query": "received:10/24..10/26"}))["found"], 3);
     assert_eq!(run(&mut s, "view.search", json!({"query": "received:\"this week\""}))["found"], 2);
     // From Monday, this week is today alone.
-    s.prefs.week_start = mailcraft_time::Weekday::Mon;
+    s.prefs.week_start = mailsolutions_time::Weekday::Mon;
     assert_eq!(s.rows().len(), 1);
     // Today is the day here: at 23:30 on the 26th five hours west of UTC (04:30 on the 27th in
     // UTC), today is still the 26th.
@@ -569,7 +569,7 @@ fn a_search_for_today_or_this_week_goes_by_the_sessions_day() {
 /// kept with the message, so mail that was already here reads the same way.
 #[test]
 fn previews_say_what_a_message_says() {
-    use mailcraft_model::{Body, Message};
+    use mailsolutions_model::{Body, Message};
 
     let padding = "&zwnj; &zwnj; &zwnj; &zwnj; &nbsp; &zwnj;";
     let newsletter = Message {
@@ -739,7 +739,7 @@ fn rules_and_accounts() {
 
 #[test]
 fn accounts_that_sign_in_on_the_providers_page() {
-    use mailcraft_model::{AccountKind, OAuthProvider};
+    use mailsolutions_model::{AccountKind, OAuthProvider};
     let mut s = session();
     // The suggestion for an Outlook.com address, taken as it comes.
     let preset = run(&mut s, "account.preset", json!({"email": "avery@outlook.example.org"}));
@@ -969,8 +969,8 @@ fn accounts_that_sign_in_on_the_providers_page() {
 
 #[test]
 fn a_sync_result_lands_in_the_right_folders() {
-    use mailcraft_model::sync::{FolderDelta, RemoteFlags, SyncResult};
-    use mailcraft_model::{Address, Message};
+    use mailsolutions_model::sync::{FolderDelta, RemoteFlags, SyncResult};
+    use mailsolutions_model::{Address, Message};
     let mut s = session();
     let a = run(&mut s, "account.add", json!({"email": "avery@mail.example", "incoming": {"host": "imap.mail.example"}}))["id"].as_u64().unwrap();
     let inbox = s.mailbox.folder_of_kind(a, FolderKind::Inbox).unwrap();
@@ -1117,13 +1117,13 @@ fn a_sync_result_lands_in_the_right_folders() {
 
 // ---- synchronising both ways ----
 //
-// The server's side of each run is written out by hand here, as `mailcraft-net` answers it (the
+// The server's side of each run is written out by hand here, as `mailsolutions-net` answers it (the
 // engine can't reach that crate; its tests check, against the fake servers, that it does answer
 // so).
 
 mod two_way {
-    use mailcraft_model::sync::{Created, Deleted, FlagsPushed, FolderDelta, Moved, RemoteFlags, RemoteOp, SyncRequest, SyncResult};
-    use mailcraft_model::{Address, Message, Pending};
+    use mailsolutions_model::sync::{Created, Deleted, FlagsPushed, FolderDelta, Moved, RemoteFlags, RemoteOp, SyncRequest, SyncResult};
+    use mailsolutions_model::{Address, Message, Pending};
 
     use super::*;
 
@@ -1968,12 +1968,12 @@ mod two_way {
     #[test]
     fn rules_on_new_mail_reach_the_server() {
         let (mut s, a, inbox, archive) = synced();
-        s.mailbox.rules.push(mailcraft_model::Rule {
+        s.mailbox.rules.push(mailsolutions_model::Rule {
             id: 9_001,
             name: "Reports".into(),
             enabled: true,
-            conditions: vec![mailcraft_model::Condition::SubjectContains("report".into())],
-            actions: vec![mailcraft_model::Action::MarkRead, mailcraft_model::Action::MoveTo(archive)],
+            conditions: vec![mailsolutions_model::Condition::SubjectContains("report".into())],
+            actions: vec![mailsolutions_model::Action::MarkRead, mailsolutions_model::Action::MoveTo(archive)],
             stop: false,
             ..Default::default()
         });
@@ -2147,7 +2147,7 @@ mod two_way {
 
     // ---- an answer that comes in pieces ----
     //
-    // As `mailcraft_net::sync_with` hands it over: what was sent, what was pushed, then each
+    // As `mailsolutions_net::sync_with` hands it over: what was sent, what was pushed, then each
     // mailbox's new messages newest first, a batch to a piece, and only the last batch says the
     // mailbox is read (its tests check that it does).
 
@@ -2435,7 +2435,7 @@ fn options_validate() {
         json!({"twelveHour": false, "weekStart": "monday", "workDays": ["tue", "MO"], "defaultReminder": null, "previewLines": 9}),
     );
     assert_eq!((p["twelveHour"].as_bool(), p["weekStart"].as_str(), p["previewLines"].as_u64()), (Some(false), Some("Mon"), Some(3)));
-    assert_eq!(s.prefs.work_days, [mailcraft_time::Weekday::Mon, mailcraft_time::Weekday::Tue]);
+    assert_eq!(s.prefs.work_days, [mailsolutions_time::Weekday::Mon, mailsolutions_time::Weekday::Tue]);
     assert!(s.run("file.options", &json!({"workStart": 18, "workEnd": 9})).is_err());
     assert!(s.run("file.options", &json!({"weekStart": "someday"})).is_err());
     assert_eq!(s.prefs.work_start, 8);
@@ -2664,8 +2664,8 @@ fn a_panicking_command_is_contained() {
 /// run finds its place, and a nonsense list does no harm.
 #[test]
 fn the_servers_folder_tree_is_here_before_its_mail() {
-    use mailcraft_model::sync::{FolderDelta, ListedFolder, SyncResult};
-    use mailcraft_model::{Address, Message};
+    use mailsolutions_model::sync::{FolderDelta, ListedFolder, SyncResult};
+    use mailsolutions_model::{Address, Message};
 
     let mut s = session();
     let a = run(&mut s, "account.add", json!({"email": "avery@mail.example", "incoming": {"host": "imap.mail.example"}}))["id"].as_u64().unwrap();
@@ -2785,9 +2785,9 @@ fn a_windows_1250_contact_file_keeps_its_letters() {
 // ---- C1 PR-a: a mailbox in mail is saved, never opened; questions name servers ----
 
 #[test]
-fn a_mailcraft_attachment_is_never_opened_from_a_message() {
+fn a_mailsolutions_attachment_is_never_opened_from_a_message() {
     use crate::opening::{Verdict, verdict};
-    for name in ["backup.mailcraft", "Backup.MAILCRAFT", "x/../y.mailcraft", "backup.mailcraft."] {
+    for name in ["backup.mailcraft", "Backup.MAILSOLUTIONS", "x/../y.mailcraft", "backup.mailcraft."] {
         assert_eq!(verdict(name), Verdict::Blocked, "{name}");
     }
 }
@@ -2823,7 +2823,7 @@ fn the_question_for_account_edit_names_the_new_host_only_when_it_changes() {
 fn the_question_for_file_open_reads_the_servers_from_the_file() {
     let mut s = Session::empty();
     run(&mut s, "account.add", json!({"email": "owner@example.org", "incoming": {"host": "imap.evil.example", "port": 993}}));
-    let dir = std::env::temp_dir().join(format!("mailcraft-c1a-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-c1a-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("crafted.mailcraft");
     run(&mut s, "file.saveAs", json!({"path": path.to_string_lossy()}));
@@ -2853,8 +2853,8 @@ fn an_mbox_import_stops_after_the_most_it_takes() {
 fn a_reply_quotes_only_the_first_names_of_a_long_list() {
     let mut s = session();
     let inbox = kind(&s, FolderKind::Inbox);
-    let to = (0..5000).map(|i| mailcraft_model::Address::new("", format!("u{i}@example.org"))).collect();
-    let id = s.mailbox.add_message(mailcraft_model::Message { folder: inbox, subject: "many".into(), to, ..Default::default() }).unwrap();
+    let to = (0..5000).map(|i| mailsolutions_model::Address::new("", format!("u{i}@example.org"))).collect();
+    let id = s.mailbox.add_message(mailsolutions_model::Message { folder: inbox, subject: "many".into(), to, ..Default::default() }).unwrap();
     run(&mut s, "mail.reply", json!({"id": id}));
     let c = s.compose.as_ref().unwrap();
     let body = c.quote.as_ref().map_or_else(|| c.body.plain(), |q| q.text.clone());

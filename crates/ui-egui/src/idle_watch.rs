@@ -22,8 +22,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, TryRecvError};
 
-use mailcraft_model::sync::{IdleEnd, IdleNote, SyncRequest};
-use mailcraft_model::{AccountKind, Id};
+use mailsolutions_model::sync::{IdleEnd, IdleNote, SyncRequest};
+use mailsolutions_model::{AccountKind, Id};
 
 use crate::MailApp;
 
@@ -196,7 +196,7 @@ impl MailApp {
         let a = self.session.mailbox.account(account)?;
         let mut request = SyncRequest { account: a.clone(), ..Default::default() };
         if a.oauth.is_some() {
-            let token = self.tokens.get(&account).filter(|t| t.fresh(mailcraft_time::now() + 600))?;
+            let token = self.tokens.get(&account).filter(|t| t.fresh(mailsolutions_time::now() + 600))?;
             request.access_token = token.access.clone();
         } else {
             request.password = self.passwords.get(&account).filter(|p| !p.is_empty())?.clone();

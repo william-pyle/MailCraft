@@ -25,9 +25,9 @@ use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use mailcraft_model::sync::{IdleEnd, IdleNote, SyncRequest};
-use mailcraft_proto::ProtoError;
-use mailcraft_proto::imap::{IdleEvent, Imap};
+use mailsolutions_model::sync::{IdleEnd, IdleNote, SyncRequest};
+use mailsolutions_proto::ProtoError;
+use mailsolutions_proto::imap::{IdleEvent, Imap};
 
 use crate::NetError;
 use crate::sync::open_imap_with;

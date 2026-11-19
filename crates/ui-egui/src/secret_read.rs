@@ -89,7 +89,7 @@ impl MailApp {
                     // (An Exchange server account is newer than the old names: nothing moves to it;
                     // nor to either of two accounts with one address: the old name doesn't say
                     // whose it was, AU3-03.)
-                    old: (migrate && a.kind != mailcraft_model::AccountKind::Exchange && !self.address_shared(&a.email))
+                    old: (migrate && a.kind != mailsolutions_model::AccountKind::Exchange && !self.address_shared(&a.email))
                         .then(|| Self::legacy_secret_key(kind, &a.email)),
                 })
             })
@@ -101,7 +101,7 @@ impl MailApp {
             .calendars
             .iter()
             .filter_map(|c| c.subscription.as_ref().map(|sub| (c.id, sub)))
-            .take(mailcraft_model::subscription::MAX_SUBSCRIBED);
+            .take(mailsolutions_model::subscription::MAX_SUBSCRIBED);
         asks.extend(subscribed.map(|(id, sub)| Ask { key: sub.secret_name(id), old: None }));
         let (send, receive) = mpsc::channel();
         let job = std::thread::Builder::new().name("secret-read".into()).spawn(move || {
@@ -183,7 +183,7 @@ impl MailApp {
         let Some(a) = self.session.mailbox.account(account) else { return false };
         // (A JMAP account's secret is never with the store; an Exchange server account's is, under
         // the name that holds its server's address and its user name, #252.)
-        if a.kind == mailcraft_model::AccountKind::Jmap {
+        if a.kind == mailsolutions_model::AccountKind::Jmap {
             return false;
         }
         if a.oauth.is_some() {

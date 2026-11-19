@@ -10,8 +10,8 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::Id;
-use mailcraft_model::auto_replies::AutoReplies;
+use mailsolutions_model::Id;
+use mailsolutions_model::auto_replies::AutoReplies;
 use serde_json::json;
 
 use super::{Busy, Permission, Start};

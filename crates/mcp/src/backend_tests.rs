@@ -10,13 +10,13 @@ use std::sync::mpsc::{Receiver, channel};
 
 #[test]
 fn key_from_env_then_key_file() {
-    let dir = std::env::temp_dir().join(format!("mailcraft-mcp-key-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("mailsolutions-mcp-key-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
-    let path = mailcraft_control_key::key_path(&dir, 7981);
+    let path = mailsolutions_control_key::key_path(&dir, 7981);
     // Neither: the error names the variable and the file it looked for.
     let e = lookup_key(None, Some(&dir), Some(7981)).unwrap_err();
-    assert!(e.contains("MAILCRAFT_CONTROL_KEY") && e.contains(&path.display().to_string()), "{e}");
+    assert!(e.contains("MAILSOLUTIONS_CONTROL_KEY") && e.contains(&path.display().to_string()), "{e}");
     // The key file, trimmed; an empty variable does not count.
     std::fs::write(&path, "  file-key\n").unwrap();
     assert_eq!(lookup_key(None, Some(&dir), Some(7981)).unwrap(), "file-key");
@@ -97,7 +97,7 @@ fn fake_app(answer: impl Fn(&Value) -> Option<(Value, bool)> + Send + Sync + 'st
 
 /// What the real app answers to a challenge, holding `key`.
 fn prove(req: &Value, key: &str) -> Value {
-    json!({"ok": true, "result": {"proof": mailcraft_control_key::proof::proof(key, req["params"]["nonce"].as_str().unwrap_or(""))}})
+    json!({"ok": true, "result": {"proof": mailsolutions_control_key::proof::proof(key, req["params"]["nonce"].as_str().unwrap_or(""))}})
 }
 
 fn fixed_key(key: &'static str) -> KeyFinder {
@@ -122,7 +122,8 @@ fn sends_the_key_to_loopback() {
 fn every_request_is_marked_as_an_agents() {
     let (port, seen) =
         fake_app(|req| Some(if req["method"] == "auth.challenge" { (prove(req, "k1"), false) } else { (json!({"ok": true, "result": 1}), false) }));
-    let mut r = Remote::connect_with(&format!("127.0.0.1:{port}"), fixed_key("k1")).unwrap().with_allow(vec![mailcraft_engine::agent::Class::Input]);
+    let mut r =
+        Remote::connect_with(&format!("127.0.0.1:{port}"), fixed_key("k1")).unwrap().with_allow(vec![mailsolutions_engine::agent::Class::Input]);
     // Whatever the params say.
     r.call("engine.execute", json!({"command": "mail.flag", "agent": null, "params": {"agent": false}})).unwrap();
     let req = seen.recv_timeout(WAIT).unwrap();

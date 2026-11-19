@@ -6,7 +6,7 @@
 
 mod support;
 
-use mailcraft_jmap_types::{EmailSubmission, EmailSubmissionSetRequest, GetRequest, GetResponse, Identity, SetResponse, set_error};
+use mailsolutions_jmap_types::{EmailSubmission, EmailSubmissionSetRequest, GetRequest, GetResponse, Identity, SetResponse, set_error};
 use serde_json::json;
 use support::round_trip;
 

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Messages from Sender (`mail.findFromSender`, #301).
 
-use mailcraft_model::{FolderKind, Id};
-use mailcraft_time::{Date, DateTime};
+use mailsolutions_model::{FolderKind, Id};
+use mailsolutions_time::{Date, DateTime};
 use serde_json::{Value, json};
 
 use crate::*;
@@ -100,7 +100,7 @@ fn find_related_with_a_backslash_at_the_end_of_the_subject() {
     assert_eq!(said["found"], 2);
     let narrowed = format!("{} is:unread", s.view.search);
     assert_eq!(run(&mut s, "view.search", json!({"query": narrowed, "scope": "everywhere"}))["found"], 1);
-    let spans = mailcraft_model::search::keyword_spans(&narrowed);
+    let spans = mailsolutions_model::search::keyword_spans(&narrowed);
     let keys: Vec<&str> = spans.iter().map(|k| &narrowed[k.key.clone()]).collect();
     assert_eq!(keys, ["subject:", "is:"]);
     assert_eq!(spans.last().map(|k| &narrowed[k.range.clone()]), Some("is:unread"));

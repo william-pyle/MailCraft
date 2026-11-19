@@ -9,9 +9,9 @@
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{GraphFetchResult, GraphFetched, ServerMessage, Tokens};
-use mailcraft_model::{Body, FolderKind, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{GraphFetchResult, GraphFetched, ServerMessage, Tokens};
+use mailsolutions_model::{Body, FolderKind, Message};
 
 use super::*;
 use crate::Services;
@@ -25,7 +25,7 @@ const NOW: i64 = 1_791_993_600;
 /// A window with a Microsoft account whose Inbox holds one message of which only the headers are
 /// here, and a host that keeps every job for the test to answer.
 fn window() -> (MailApp, Id, Jobs) {
-    let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::default(), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::default(), NOW, 0), Services::default());
     let (waiting, jobs) = microsoft(&mut app);
     (app, waiting, jobs)
 }
@@ -48,7 +48,7 @@ fn microsoft(app: &mut MailApp) -> (Id, Jobs) {
         ..Default::default()
     };
     let waiting = app.session.mailbox.add_message(message).unwrap();
-    let tokens = Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() };
+    let tokens = Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() };
     app.seed_graph_token(account, tokens);
     app.session.view.folder = inbox;
     app.session.sync_progress.full_paused = true;
@@ -129,7 +129,7 @@ fn a_message_changed_while_it_waited_is_kept_beside_the_reply() {
 
 /// A window, frames and all, with the account and the message of [`window`].
 fn drawn() -> (testing::Window, Id, Jobs) {
-    let mut w = testing::window_on(mailcraft_model::Mailbox::default(), "view.mail");
+    let mut w = testing::window_on(mailsolutions_model::Mailbox::default(), "view.mail");
     let (waiting, jobs) = microsoft(w.state_mut());
     w.run_steps(3);
     (w, waiting, jobs)

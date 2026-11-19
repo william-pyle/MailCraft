@@ -9,9 +9,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{GraphMailRequest, GraphMailResult, SyncRequest, SyncResult, Tokens};
-use mailcraft_model::{FolderKind, Id};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{GraphMailRequest, GraphMailResult, SyncRequest, SyncResult, Tokens};
+use mailsolutions_model::{FolderKind, Id};
 use serde_json::json;
 
 use crate::{GraphRequest, GraphResult, MailApp, Services, SignInRequest};
@@ -36,7 +36,7 @@ type Jobs = Arc<Mutex<Vec<(Id, String, Option<GraphMailRequest>, usize, bool)>>>
 type SignIns = Arc<Mutex<Vec<(Id, bool, bool, String)>>>;
 
 fn tokens(access: &str, refresh: &str) -> Tokens {
-    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() }
+    Tokens { access: access.into(), refresh: refresh.into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() }
 }
 
 /// A window with a Microsoft account signed in this session, and hosts that note what they are
@@ -67,10 +67,10 @@ fn window() -> (MailApp, Id, Answers, Jobs, SignIns) {
     }));
     // The desktop host can open mail connections; a shared mailbox never uses them (it has no
     // IMAP leg), which [`no_imap`] checks at the end of every test.
-    app.services.sync = Some(Box::new(|req: mailcraft_model::sync::SyncRequest| {
+    app.services.sync = Some(Box::new(|req: mailsolutions_model::sync::SyncRequest| {
         IMAP_USED.store(true, Ordering::Relaxed);
         let (tx, rx) = mpsc::channel();
-        tx.send(mailcraft_model::sync::SyncResult { account: req.account.id, ..Default::default() }).unwrap();
+        tx.send(mailsolutions_model::sync::SyncResult { account: req.account.id, ..Default::default() }).unwrap();
         rx
     }));
     let log = sign_ins.clone();
@@ -89,8 +89,13 @@ fn a_shared_mailbox_is_read_with_its_owners_sign_in_and_its_permission_is_asked_
     let shared = app.execute("account.addSharedMailbox", json!({"address": SHARED})).unwrap()["id"].as_u64().unwrap();
     // Its first run: the owner's sign-in doesn't cover shared mailboxes yet.
     answers.lock().unwrap().push_back((GraphResult { account: shared, consent_needed: true, ..Default::default() }, Vec::new()));
-    let listing = mailcraft_model::sync::FolderListing {
-        folders: vec![mailcraft_model::sync::GraphFolder { id: "in".into(), name: "Inbox".into(), kind: FolderKind::Inbox, ..Default::default() }],
+    let listing = mailsolutions_model::sync::FolderListing {
+        folders: vec![mailsolutions_model::sync::GraphFolder {
+            id: "in".into(),
+            name: "Inbox".into(),
+            kind: FolderKind::Inbox,
+            ..Default::default()
+        }],
         complete: true,
     };
     let piece = GraphMailResult { account: shared, email: SHARED.into(), listing: Some(listing), ..Default::default() };
@@ -130,7 +135,7 @@ fn a_shared_mailbox_the_server_wont_open_waits_for_the_owner_to_ask() {
     let refused = GraphMailResult {
         account: shared,
         email: SHARED.into(),
-        refused: Some(mailcraft_model::sync::SharedRefusal::NoAccess),
+        refused: Some(mailsolutions_model::sync::SharedRefusal::NoAccess),
         errors: vec!["Microsoft won't open this shared mailbox for you: you need Full Access to it.".into()],
         ..Default::default()
     };
@@ -202,8 +207,13 @@ fn the_add_shared_mailbox_dialog_collects_the_address_and_runs_the_command() {
 /// A run of a shared mailbox's that read its Inbox: the folders, by the account's address. (The
 /// account's id is the one the run was for: the window's fake host fills it in.)
 fn inbox_read(email: &str) -> GraphMailResult {
-    let listing = mailcraft_model::sync::FolderListing {
-        folders: vec![mailcraft_model::sync::GraphFolder { id: "in".into(), name: "Inbox".into(), kind: FolderKind::Inbox, ..Default::default() }],
+    let listing = mailsolutions_model::sync::FolderListing {
+        folders: vec![mailsolutions_model::sync::GraphFolder {
+            id: "in".into(),
+            name: "Inbox".into(),
+            kind: FolderKind::Inbox,
+            ..Default::default()
+        }],
         complete: true,
     };
     GraphMailResult { email: email.into(), listing: Some(listing), ..Default::default() }
@@ -241,7 +251,7 @@ fn enter() -> egui::Event {
 
 #[test]
 fn add_shared_mailbox_keeps_only_a_mailbox_whose_inbox_could_be_read() {
-    use mailcraft_model::sync::SharedRefusal;
+    use mailsolutions_model::sync::SharedRefusal;
     let (mut app, owner, answers, jobs, sign_ins) = window();
     for (why, said) in [
         (SharedRefusal::NoAccess, "You don't have access to support@example.org. If access was just given, try again in an hour."),
@@ -605,7 +615,7 @@ fn a_shared_mailbox_problem_names_the_mailbox_and_says_what_happens_next() {
     let refused = GraphMailResult {
         account: shared,
         email: SHARED.into(),
-        refused: Some(mailcraft_model::sync::SharedRefusal::NoMailbox),
+        refused: Some(mailsolutions_model::sync::SharedRefusal::NoMailbox),
         errors: vec!["Microsoft has no mailbox at this address.".into()],
         ..Default::default()
     };
@@ -626,7 +636,7 @@ fn a_shared_mailbox_microsoft_wont_open_shows_no_access_and_keeps_its_mail() {
     app.execute("ui.sync", json!({"account": shared})).unwrap();
     app.poll_graph();
     let inbox = app.session.mailbox.folder_by_server(shared, "in").unwrap();
-    let mut kept = mailcraft_model::Message { folder: inbox, subject: "Kept".into(), ..Default::default() };
+    let mut kept = mailsolutions_model::Message { folder: inbox, subject: "Kept".into(), ..Default::default() };
     kept.account = shared;
     let id = app.session.mailbox.add_message(kept).unwrap();
     // A change made in it here, which waits.
@@ -634,7 +644,7 @@ fn a_shared_mailbox_microsoft_wont_open_shows_no_access_and_keeps_its_mail() {
     // Access is taken away.
     let refused = GraphMailResult {
         email: SHARED.into(),
-        refused: Some(mailcraft_model::sync::SharedRefusal::NoAccess),
+        refused: Some(mailsolutions_model::sync::SharedRefusal::NoAccess),
         errors: vec!["Microsoft won't open this shared mailbox for you: you need Full Access to it.".into()],
         ..Default::default()
     };
@@ -668,11 +678,11 @@ fn shared_mailboxes_are_offered_only_where_they_can_be_and_only_while_switched_o
     let (mut app, owner, _, _, _) = window();
     // A personal Microsoft account has none.
     if let Ok(a) = app.session.mailbox.account_mut(owner) {
-        a.oauth = Some(mailcraft_model::OAuth { directory: mailcraft_model::Directory::Personal, ..Default::default() });
+        a.oauth = Some(mailsolutions_model::OAuth { directory: mailsolutions_model::Directory::Personal, ..Default::default() });
     }
     assert!(app.execute("ui.dialog", json!({"name": "sharedMailbox", "account": owner})).is_err() || app.dialog.is_none());
     if let Ok(a) = app.session.mailbox.account_mut(owner) {
-        a.oauth = Some(mailcraft_model::OAuth { directory: mailcraft_model::Directory::Organisation, ..Default::default() });
+        a.oauth = Some(mailsolutions_model::OAuth { directory: mailsolutions_model::Directory::Organisation, ..Default::default() });
     }
     app.execute("ui.dialog", json!({"name": "sharedMailbox", "account": owner})).unwrap();
     assert!(app.dialog.is_some());
@@ -739,7 +749,7 @@ fn a_shared_mailboxs_folder_among_the_favorites_says_whose_it_is() {
     let mb = &app.session.mailbox;
     assert_eq!(crate::nav::folder_label(mb, mb.folder(theirs).unwrap()), format!("Inbox - {SHARED}"));
     assert_eq!(crate::nav::folder_label(mb, mb.folder(mine).unwrap()), "Inbox", "the owner's own are by their names");
-    let listed = mailcraft_engine::cmd::folder::favorites(&app.session);
+    let listed = mailsolutions_engine::cmd::folder::favorites(&app.session);
     assert!(listed.contains(&theirs) && listed.contains(&mine), "{listed:?}");
     // The pane draws it.
     let ctx = egui::Context::default();
@@ -1062,7 +1072,7 @@ fn delete_on_a_shared_mailboxs_conversation_names_whose_folder_it_is() {
     let (mut app, _, shared, _) = with_shared_inbox();
     let theirs = app.session.mailbox.folder_by_server(shared, "in").unwrap();
     for (at, subject) in [(1_791_000_000, "Plans"), (1_791_000_060, "Re: Plans")] {
-        let m = mailcraft_model::Message { folder: theirs, subject: subject.into(), date: at, received: at, ..Default::default() };
+        let m = mailsolutions_model::Message { folder: theirs, subject: subject.into(), date: at, received: at, ..Default::default() };
         app.session.mailbox.add_message(m).unwrap();
     }
     app.session.mailbox_changed();

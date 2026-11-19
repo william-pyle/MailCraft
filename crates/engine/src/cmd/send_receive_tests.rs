@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cancel All and Work Offline. Invented people and servers.
 
-use mailcraft_model::FolderKind;
+use mailsolutions_model::FolderKind;
 use serde_json::json;
 
 use super::*;

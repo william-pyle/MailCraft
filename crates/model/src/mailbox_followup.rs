@@ -10,14 +10,14 @@
 //!   message arrives in the conversation from one of the recipients first, the reminder is
 //!   cancelled (gone, not hidden); if not, at `at` it is raised and the message flagged.
 //!
-//! A reminder is raised once ([`FollowUp::raised`]), also when its time came while MailCraft was
+//! A reminder is raised once ([`FollowUp::raised`]), also when its time came while MailSolutions was
 //! closed (the next [`Mailbox::settle_follow_ups`] raises it). Dismissing it, or clearing the flag
 //! or marking the message complete, ends it. Conversations are [`crate::ThreadIndex`]'s. Everything
 //! here reads mail, which is hostile: work is linear in the messages, and the time is bounded.
 
 use std::collections::{HashMap, HashSet};
 
-use mailcraft_time::Timestamp;
+use mailsolutions_time::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use super::{Mailbox, invalid, not_found};

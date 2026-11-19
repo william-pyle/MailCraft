@@ -32,7 +32,7 @@ pub use utf7::{decode_utf7, encode_utf7};
 
 use crate::line::Wire;
 use crate::{MAX_LINE, MAX_LITERAL, ProtoError, Secrets, for_trace, tidy, xoauth2};
-use mailcraft_i18n::{Arg, Text, said};
+use mailsolutions_i18n::{Arg, Text, said};
 
 /// Most responses the server may send to one command.
 const MAX_RESPONSES: usize = 250_000;
@@ -1337,7 +1337,7 @@ impl<S: Read + Write> Imap<S> {
             };
             let size = usize::try_from(claimed).ok().filter(|n| literal_bytes.saturating_add(*n) <= MAX_LITERAL).ok_or_else(|| {
                 ProtoError::Protocol(said!(
-                    "the server sent {claimed} bytes in one piece, more than the {mb} MB MailCraft accepts",
+                    "the server sent {claimed} bytes in one piece, more than the {mb} MB MailSolutions accepts",
                     claimed,
                     mb = MAX_LITERAL >> 20
                 ))
@@ -1380,7 +1380,7 @@ impl<S: Read + Write> Imap<S> {
     }
 
     /// The server's own words for why it said no, fit to show.
-    /// What the server said for itself, as it said it; MailCraft's words when it said nothing.
+    /// What the server said for itself, as it said it; MailSolutions's words when it said nothing.
     fn refusal(&self, line: &StatusLine) -> Text {
         // Hidden before it is shortened: a secret cut in half would no longer be recognised.
         let text = tidy(&self.secrets.hide(&line.text));

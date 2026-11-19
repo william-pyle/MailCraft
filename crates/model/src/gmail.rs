@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 
 /// Whether mail can be moved between Gmail's categories in this build: the move goes through
 /// Gmail's API, which the justification Google is reviewing doesn't name yet. Off, the engine
-/// disables `mail.setGmailCategory`, the window offers no menu or drop for it, and `mailcraft-net`
+/// disables `mail.setGmailCategory`, the window offers no menu or drop for it, and `mailsolutions-net`
 /// sends nothing to Gmail's API whatever a request asks.
 // ponytail: on once Google has verified the app (#232).
 pub const GMAIL_CATEGORY_MOVES: bool = false;
@@ -107,7 +107,7 @@ pub const MAX_GMAIL_LABEL_LEN: usize = 128;
 const MAX_LABELS_READ: usize = 256;
 
 /// Gmail's labels of a message as they are kept (#1153): each cleaned as a name is
-/// ([`mailcraft_names::incoming`]: one line, no control or format characters, trimmed, at most
+/// ([`mailsolutions_names::incoming`]: one line, no control or format characters, trimmed, at most
 /// [`MAX_GMAIL_LABEL_LEN`] characters), the empty ones dropped, each once (ignoring case), at most
 /// [`MAX_GMAIL_LABELS`], in the server's order.
 pub fn tidy_labels<S: AsRef<str>>(labels: impl IntoIterator<Item = S>) -> Vec<String> {
@@ -118,7 +118,7 @@ pub fn tidy_labels<S: AsRef<str>>(labels: impl IntoIterator<Item = S>) -> Vec<St
         if out.len() >= MAX_GMAIL_LABELS {
             break;
         }
-        let Some(label) = mailcraft_names::incoming(label.as_ref(), MAX_GMAIL_LABEL_LEN) else { continue };
+        let Some(label) = mailsolutions_names::incoming(label.as_ref(), MAX_GMAIL_LABEL_LEN) else { continue };
         let lower = label.to_lowercase();
         if label_name(&label).trim().is_empty() || seen.contains(&lower) {
             continue;

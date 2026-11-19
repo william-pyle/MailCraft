@@ -4,8 +4,8 @@
 
 use std::collections::HashMap;
 
-use mailcraft_model::FolderKind;
-use mailcraft_proto::imap::Mailbox;
+use mailsolutions_model::FolderKind;
+use mailsolutions_proto::imap::Mailbox;
 
 /// Whether the mailbox can be opened at all.
 pub(crate) fn selectable(mailbox: &Mailbox) -> bool {

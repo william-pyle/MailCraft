@@ -3,7 +3,7 @@
 //! The window without a window: what `run` does around commands, and frames laid out headlessly in
 //! every module, page and dialog (nothing may panic, whatever is on screen).
 
-use mailcraft_engine::{PeopleSort, Session, TaskSort};
+use mailsolutions_engine::{PeopleSort, Session, TaskSort};
 use serde_json::{Value, json};
 
 use crate::{MailApp, Services, UiState};
@@ -12,7 +12,7 @@ use crate::{MailApp, Services, UiState};
 const NOW: i64 = 1_791_993_600;
 
 fn app() -> MailApp {
-    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
     app
 }
@@ -26,11 +26,11 @@ fn english_dates_follow_the_system_s_region() {
     a.services.system_time_locale = Some("en-GB".into());
     a.execute("ui.language", json!({"language": "auto"})).unwrap();
     assert_eq!(a.session.date_region.as_deref(), Some("GB"));
-    assert_eq!((a.session.prefs.twelve_hour, a.session.prefs.week_start), (false, mailcraft_time::Weekday::Mon));
+    assert_eq!((a.session.prefs.twelve_hour, a.session.prefs.week_start), (false, mailsolutions_time::Weekday::Mon));
     let old = NOW - 380 * 86_400;
     assert_eq!(crate::dates::list_label(old, NOW, 0, false), "29/09/2025");
     assert_eq!(crate::dates::header_label(NOW, 0, false), "Wed 14/10/2026 16:00");
-    assert_eq!(crate::dates::medium(mailcraft_time::Date::new(2026, 10, 3).unwrap()), "3 Oct 2026");
+    assert_eq!(crate::dates::medium(mailsolutions_time::Date::new(2026, 10, 3).unwrap()), "3 Oct 2026");
     assert_eq!(a.session.date_time_said(a.session.local(NOW)), "Wednesday 14 October 2026 16:00");
     // The owner's own clock wins.
     a.session.run("file.options", &json!({"twelveHour": true})).unwrap();
@@ -75,7 +75,7 @@ fn rename_folder_without_a_name_asks_for_the_folder_s_new_name() {
     use crate::dialogs::{Dialog, FolderMode};
     let mut a = app();
     let account = a.session.mailbox.accounts[0].id;
-    let inbox = a.session.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Inbox).unwrap();
+    let inbox = a.session.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Inbox).unwrap();
     let reports = a.session.run("folder.new", &json!({"name": "Quarterly reports", "parent": inbox})).unwrap()["id"].as_u64().unwrap();
     a.session.run("folder.select", &json!({"id": reports})).unwrap();
     // As the ribbon's Rename Folder and F2 run it: with no name, and with no parameters at all.
@@ -461,18 +461,18 @@ fn a_large_mailbox_lays_out() {
     let mut a = app();
     let inbox = a.session.view.folder;
     for i in 0..20_000u32 {
-        let m = mailcraft_model::Message {
+        let m = mailsolutions_model::Message {
             folder: inbox,
             subject: format!("Message {i}"),
-            from: mailcraft_model::Address::new(format!("Sender {}", i % 97), format!("s{}@example.org", i % 97)),
+            from: mailsolutions_model::Address::new(format!("Sender {}", i % 97), format!("s{}@example.org", i % 97)),
             date: NOW - i64::from(i) * 977,
             received: NOW - i64::from(i) * 977,
             ..Default::default()
         };
         a.session.mailbox.add_message(m).unwrap();
         if i % 40 == 0 {
-            a.session.mailbox.add_contact(mailcraft_model::Contact { first: format!("Person {i}"), ..Default::default() });
-            a.session.mailbox.add_task(mailcraft_model::Task { title: format!("Task {i}"), ..Default::default() });
+            a.session.mailbox.add_contact(mailsolutions_model::Contact { first: format!("Person {i}"), ..Default::default() });
+            a.session.mailbox.add_task(mailsolutions_model::Task { title: format!("Task {i}"), ..Default::default() });
         }
     }
     a.session.replace_mailbox(a.session.mailbox.clone());
@@ -586,7 +586,7 @@ fn send_receive_signs_in_first_for_an_account_without_a_password() {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens};
+    use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens};
 
     type Answer = Result<Tokens, String>;
     // What each Send/Receive was handed (token, password), and each sign-in (address, refresh token).
@@ -598,8 +598,9 @@ fn send_receive_signs_in_first_for_an_account_without_a_password() {
     // What the next sign-in answers; `None` leaves the owner in the browser.
     let answer: Arc<Mutex<Option<Answer>>> = Default::default();
     let waiting: Arc<Mutex<Vec<(mpsc::Sender<Answer>, Arc<AtomicBool>)>>> = Default::default();
-    let good =
-        |access: &str| Ok(Tokens { access: access.into(), refresh: "ref-1".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() });
+    let good = |access: &str| {
+        Ok(Tokens { access: access.into(), refresh: "ref-1".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() })
+    };
 
     let mut a = app();
     let (synced2, refuse2, error2) = (synced.clone(), refuse.clone(), error.clone());
@@ -656,7 +657,7 @@ fn send_receive_signs_in_first_for_an_account_without_a_password() {
     assert_eq!(synced.lock().unwrap().last().unwrap().0, "tok-2");
 
     // A token that runs out before a run could be over is renewed first, not taken along.
-    a.tokens.get_mut(&id).unwrap().expires_at = mailcraft_time::now() + 300;
+    a.tokens.get_mut(&id).unwrap().expires_at = mailsolutions_time::now() + 300;
     *answer.lock().unwrap() = Some(good("tok-3"));
     assert_eq!(a.execute("ui.sync", json!({"account": id})).unwrap()["pending"], "signIn");
     a.poll_sign_in();
@@ -713,7 +714,7 @@ fn the_system_remembers_passwords_and_sign_ins_only_when_wanted() {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens};
+    use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens};
 
     #[derive(Clone, Default)]
     struct Store(Arc<Mutex<HashMap<String, String>>>);
@@ -721,7 +722,7 @@ fn the_system_remembers_passwords_and_sign_ins_only_when_wanted() {
         fn get(&self, key: &str) -> Option<String> {
             self.0.lock().unwrap().get(key).cloned()
         }
-        fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+        fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
             self.0.lock().unwrap().insert(key.to_string(), secret.to_string());
             Ok(())
         }
@@ -736,7 +737,7 @@ fn the_system_remembers_passwords_and_sign_ins_only_when_wanted() {
     let synced: Arc<Mutex<Vec<(String, String)>>> = Default::default();
     let renewals: Arc<Mutex<Vec<String>>> = Default::default();
     // An app as it starts: the same mailbox and the same system store, nothing in memory.
-    let start = |mailbox: mailcraft_model::Mailbox| {
+    let start = |mailbox: mailsolutions_model::Mailbox| {
         let mut a = MailApp::new(Session::at(mailbox, NOW, 0), Services::default());
         a.autosave = false;
         let (synced, refuse) = (synced.clone(), refuse.clone());
@@ -751,7 +752,8 @@ fn the_system_remembers_passwords_and_sign_ins_only_when_wanted() {
         a.services.sign_in = Some(Box::new(move |req: crate::SignInRequest| {
             renewals.lock().unwrap().push(req.refresh.clone());
             let (tx, rx) = mpsc::channel();
-            let tokens = Tokens { access: "tok".into(), refresh: "ref-kept".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+            let tokens =
+                Tokens { access: "tok".into(), refresh: "ref-kept".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
             tx.send(Ok(tokens)).unwrap();
             rx
         }));
@@ -759,7 +761,7 @@ fn the_system_remembers_passwords_and_sign_ins_only_when_wanted() {
         a
     };
 
-    let mut a = start(mailcraft_engine::sample::mailbox(NOW, 0));
+    let mut a = start(mailsolutions_engine::sample::mailbox(NOW, 0));
     let plain =
         a.execute("account.add", json!({"email": "Avery@Mail.example", "incoming": {"host": "imap.mail.example"}})).unwrap()["id"].as_u64().unwrap();
     let signed = a.execute("account.add", json!({"email": "quinn@mail.example", "auth": "oauth2", "incoming": {"host": "imap.mail.example"}}));
@@ -834,7 +836,7 @@ fn a_sign_in_as_somebody_else_is_never_taken_for_an_account_that_exists() {
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens};
+    use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens};
 
     #[derive(Clone, Default)]
     struct Store(Arc<Mutex<HashMap<String, String>>>);
@@ -842,7 +844,7 @@ fn a_sign_in_as_somebody_else_is_never_taken_for_an_account_that_exists() {
         fn get(&self, key: &str) -> Option<String> {
             self.0.lock().unwrap().get(key).cloned()
         }
-        fn set(&self, key: &str, secret: &str) -> Result<(), mailcraft_host::SecretError> {
+        fn set(&self, key: &str, secret: &str) -> Result<(), mailsolutions_host::SecretError> {
             self.0.lock().unwrap().insert(key.to_string(), secret.to_string());
             Ok(())
         }
@@ -853,7 +855,7 @@ fn a_sign_in_as_somebody_else_is_never_taken_for_an_account_that_exists() {
     let store = Store::default();
     let who: Arc<Mutex<String>> = Arc::new(Mutex::new("admin@mail.example".into()));
     let synced: Arc<Mutex<Vec<String>>> = Default::default();
-    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    let mut a = MailApp::new(Session::at(mailsolutions_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     a.autosave = false;
     a.session.driver.set_auto_sync(false);
     let log = synced.clone();
@@ -867,8 +869,13 @@ fn a_sign_in_as_somebody_else_is_never_taken_for_an_account_that_exists() {
     a.services.sign_in = Some(Box::new(move |_req: crate::SignInRequest| {
         let (tx, rx) = mpsc::channel();
         let email = signs.lock().unwrap().clone();
-        let tokens =
-            Tokens { access: "tok-other".into(), refresh: "ref-other".into(), expires_at: mailcraft_time::now() + 3600, email, ..Default::default() };
+        let tokens = Tokens {
+            access: "tok-other".into(),
+            refresh: "ref-other".into(),
+            expires_at: mailsolutions_time::now() + 3600,
+            email,
+            ..Default::default()
+        };
         tx.send(Ok(tokens)).unwrap();
         rx
     }));
@@ -939,7 +946,7 @@ fn a_store_that_cant_be_used_is_said_once_and_the_next_start_asks() {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{SyncRequest, SyncResult};
+    use mailsolutions_model::sync::{SyncRequest, SyncResult};
 
     use crate::StoreTrouble;
 
@@ -952,10 +959,10 @@ fn a_store_that_cant_be_used_is_said_once_and_the_next_start_asks() {
             *self.0.lock().unwrap() = Some(StoreTrouble::Unavailable);
             None
         }
-        fn set(&self, _: &str, _: &str) -> Result<(), mailcraft_host::SecretError> {
+        fn set(&self, _: &str, _: &str) -> Result<(), mailsolutions_host::SecretError> {
             self.1.fetch_add(1, Ordering::Relaxed);
             *self.0.lock().unwrap() = Some(StoreTrouble::Unavailable);
-            Err(mailcraft_host::SecretError::Other("the system's credential store refused: no Secret Service"))
+            Err(mailsolutions_host::SecretError::Other("the system's credential store refused: no Secret Service"))
         }
         fn delete(&self, _: &str) {}
         fn take_trouble(&self) -> Option<StoreTrouble> {
@@ -964,7 +971,7 @@ fn a_store_that_cant_be_used_is_said_once_and_the_next_start_asks() {
     }
     let store = Broken::default();
     let synced: Arc<Mutex<Vec<String>>> = Default::default();
-    let start = |mailbox: mailcraft_model::Mailbox| {
+    let start = |mailbox: mailsolutions_model::Mailbox| {
         let mut a = MailApp::new(Session::at(mailbox, NOW, 0), Services::default());
         a.autosave = false;
         let synced = synced.clone();
@@ -978,7 +985,7 @@ fn a_store_that_cant_be_used_is_said_once_and_the_next_start_asks() {
         a
     };
 
-    let mut a = start(mailcraft_engine::sample::mailbox(NOW, 0));
+    let mut a = start(mailsolutions_engine::sample::mailbox(NOW, 0));
     let plain =
         a.execute("account.add", json!({"email": "avery@mail.example", "incoming": {"host": "imap.mail.example"}})).unwrap()["id"].as_u64().unwrap();
     // Nothing has been asked of the store yet: nothing to say.
@@ -1025,7 +1032,7 @@ fn a_store_that_cant_be_used_is_said_once_and_the_next_start_asks() {
 fn send_receive_runs_by_itself_without_asking_anybody() {
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{SyncRequest, SyncResult, Tokens};
+    use mailsolutions_model::sync::{SyncRequest, SyncResult, Tokens};
 
     let synced: Arc<Mutex<Vec<u64>>> = Default::default();
     let sign_ins: Arc<Mutex<Vec<(u64, bool)>>> = Default::default();
@@ -1041,7 +1048,8 @@ fn send_receive_runs_by_itself_without_asking_anybody() {
     a.services.sign_in = Some(Box::new(move |req: crate::SignInRequest| {
         sign_ins2.lock().unwrap().push((req.account, req.quiet));
         let (tx, rx) = mpsc::channel();
-        tx.send(Ok(Tokens { access: "tok".into(), refresh: "ref".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() })).unwrap();
+        tx.send(Ok(Tokens { access: "tok".into(), refresh: "ref".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() }))
+            .unwrap();
         rx
     }));
     let add = |a: &mut MailApp, email: &str, auth: &str| {
@@ -1106,8 +1114,8 @@ fn a_change_made_here_goes_out_soon_and_a_refused_one_backs_off() {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{FlagsPushed, FolderDelta, RemoteOp, SyncRequest, SyncResult};
-    use mailcraft_model::{Address, FolderKind, Message};
+    use mailsolutions_model::sync::{FlagsPushed, FolderDelta, RemoteOp, SyncRequest, SyncResult};
+    use mailsolutions_model::{Address, FolderKind, Message};
 
     let runs: Arc<Mutex<Vec<(usize, usize)>>> = Default::default();
     let accept = Arc::new(AtomicBool::new(false));
@@ -1148,7 +1156,7 @@ fn a_change_made_here_goes_out_soon_and_a_refused_one_backs_off() {
         }],
         ..Default::default()
     };
-    mailcraft_engine::cmd::account::apply_sync(&mut a.session, came).unwrap();
+    mailsolutions_engine::cmd::account::apply_sync(&mut a.session, came).unwrap();
     let ids: Vec<u64> = a.session.mailbox.messages_in(inbox).map(|m| m.id).collect();
     // A look that is due now, with the round that starts by itself not due.
     let look = |a: &mut MailApp| {
@@ -1183,7 +1191,7 @@ fn a_change_made_here_goes_out_soon_and_a_refused_one_backs_off() {
     accept.store(true, Ordering::Relaxed);
     a.session.driver.round.push_seen.get_mut(&id).unwrap().1 = 0.0;
     look(&mut a);
-    assert_eq!(mailcraft_engine::cmd::account::unpushed(&a.session, id), 0);
+    assert_eq!(mailsolutions_engine::cmd::account::unpushed(&a.session, id), 0);
     let done = runs.lock().unwrap().len();
     look(&mut a);
     assert_eq!(runs.lock().unwrap().len(), done);
@@ -1211,7 +1219,7 @@ fn a_change_made_here_goes_out_soon_and_a_refused_one_backs_off() {
 /// drag that ends anywhere else moves nothing, and a click still just selects.
 #[test]
 fn a_message_dragged_onto_a_folder_is_filed_there() {
-    use mailcraft_model::FolderKind;
+    use mailsolutions_model::FolderKind;
 
     let mut harness = window(app());
     let account = harness.state().session.mailbox.accounts.first().unwrap().id;
@@ -1264,10 +1272,10 @@ fn a_message_dragged_onto_a_folder_is_filed_there() {
 
 /// A mailbox with a Microsoft account and a shared mailbox under it, each with mail in its Inbox,
 /// and the shared mailbox's Inbox in view; the owner's Inbox and the shared mailbox's.
-fn shared_and_own() -> (MailApp, mailcraft_model::Id, mailcraft_model::Id) {
-    use mailcraft_engine::cmd::graph_mail::apply_graph_mail;
-    use mailcraft_model::FolderKind;
-    use mailcraft_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessagePage, ServerMessage};
+fn shared_and_own() -> (MailApp, mailsolutions_model::Id, mailsolutions_model::Id) {
+    use mailsolutions_engine::cmd::graph_mail::apply_graph_mail;
+    use mailsolutions_model::FolderKind;
+    use mailsolutions_model::sync::{FolderListing, GraphFolder, GraphMailResult, GraphMessage, MessagePage, ServerMessage};
 
     let mut s = Session::empty();
     let owner = s.run("account.add", &json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
@@ -1356,7 +1364,7 @@ fn a_refused_drag_says_why_in_a_message_box_and_the_control_channel_never_does()
 #[test]
 fn only_a_real_refusal_is_worth_a_message_box() {
     use crate::refusal_worth_a_box as boxed;
-    assert!(boxed("mail.move", mailcraft_model::BETWEEN_MAILBOXES));
+    assert!(boxed("mail.move", mailsolutions_model::BETWEEN_MAILBOXES));
     assert!(!boxed("mail.delete", "not available: nothing is selected"));
     assert!(!boxed("compose.undo", "nothing to undo in the message"));
     assert!(!boxed("mail.move", "bad parameters: `folder` is a folder id"));
@@ -1369,7 +1377,7 @@ fn only_a_real_refusal_is_worth_a_message_box() {
 /// its own.
 #[test]
 fn reminders_come_up_and_can_be_dismissed_or_put_off() {
-    use mailcraft_time::DateTime;
+    use mailsolutions_time::DateTime;
 
     let mut a = app();
     // The sample has its own events; this test wants only the ones it makes.
@@ -1436,7 +1444,7 @@ fn reminders_come_up_and_can_be_dismissed_or_put_off() {
 /// without selecting it, and are not there for a row the pointer isn't over.
 #[test]
 fn the_row_under_the_pointer_offers_flag_and_delete() {
-    use mailcraft_model::{FlagStatus, FolderKind};
+    use mailsolutions_model::{FlagStatus, FolderKind};
 
     let mut harness = window(app());
     let selected = harness.state().session.sel.messages.clone();
@@ -1474,7 +1482,7 @@ fn the_row_under_the_pointer_offers_flag_and_delete() {
 /// a script, which said what it meant.
 #[test]
 fn what_cant_be_taken_back_is_asked_about_first() {
-    use mailcraft_model::FolderKind;
+    use mailsolutions_model::FolderKind;
 
     let mut a = app();
     let account = a.session.mailbox.accounts.first().unwrap().id;
@@ -1510,7 +1518,8 @@ fn what_cant_be_taken_back_is_asked_about_first() {
     let server =
         a.execute("account.add", json!({"email": "avery@mail.example", "incoming": {"host": "imap.mail.example"}})).unwrap()["id"].as_u64().unwrap();
     let inbox = a.session.mailbox.folder_of_kind(server, FolderKind::Inbox).unwrap();
-    let id = a.session.mailbox.add_message(mailcraft_model::Message { folder: inbox, subject: "On a server".into(), ..Default::default() }).unwrap();
+    let id =
+        a.session.mailbox.add_message(mailsolutions_model::Message { folder: inbox, subject: "On a server".into(), ..Default::default() }).unwrap();
     a.run("mail.deletePermanently", json!({"ids": [id]})).unwrap();
     let Some(crate::dialogs::Dialog::Confirm { ask, .. }) = &a.dialog else { panic!("no question") };
     assert!(ask.text.contains("mail server"), "{}", ask.text);
@@ -1574,7 +1583,7 @@ fn deleting_a_contact_is_asked_about_first() {
 #[test]
 fn recipients_are_suggested_as_they_are_typed() {
     use crate::compose::completed;
-    use mailcraft_engine::cmd::compose::{Suggestion, suggest};
+    use mailsolutions_engine::cmd::compose::{Suggestion, suggest};
 
     // The pieces: what takes the place of the name being typed.
     let who = |name: &str, email: &str| Suggestion { name: name.into(), email: email.into(), contact: true };
@@ -1635,7 +1644,7 @@ fn send_receive_problems_can_be_read_afterwards() {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, mpsc};
 
-    use mailcraft_model::sync::{SyncRequest, SyncResult};
+    use mailsolutions_model::sync::{SyncRequest, SyncResult};
 
     let failing = Arc::new(AtomicBool::new(true));
     let mut a = app();
@@ -1692,10 +1701,10 @@ fn microsoft_graph_sends_and_brings_the_calendar_before_the_mail() {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_engine::cmd::sync_progress::RunState;
-    use mailcraft_model::FolderKind;
-    use mailcraft_model::remote::{ContactsDownload, EventsDownload, RemoteContact, RemoteEvent};
-    use mailcraft_model::sync::{SyncPhase, SyncRequest, SyncResult, Tokens};
+    use mailsolutions_engine::cmd::sync_progress::RunState;
+    use mailsolutions_model::FolderKind;
+    use mailsolutions_model::remote::{ContactsDownload, EventsDownload, RemoteContact, RemoteEvent};
+    use mailsolutions_model::sync::{SyncPhase, SyncRequest, SyncResult, Tokens};
 
     // What Graph was asked (outbox, directory, had a token) and what the mail server was asked to send.
     let asked: Arc<Mutex<Vec<(usize, bool, bool)>>> = Default::default();
@@ -1703,7 +1712,7 @@ fn microsoft_graph_sends_and_brings_the_calendar_before_the_mail() {
     let sign_ins: Arc<Mutex<Vec<bool>>> = Default::default();
     let consent = Arc::new(AtomicBool::new(true));
     let fresh =
-        |access: &str| Tokens { access: access.into(), refresh: "ref".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+        |access: &str| Tokens { access: access.into(), refresh: "ref".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
 
     let mut a = app();
     let smtp2 = smtp.clone();
@@ -1724,7 +1733,7 @@ fn microsoft_graph_sends_and_brings_the_calendar_before_the_mail() {
                 out.tokens = Some(Tokens {
                     access: "graph-tok".into(),
                     refresh: "ref-2".into(),
-                    expires_at: mailcraft_time::now() + 3600,
+                    expires_at: mailsolutions_time::now() + 3600,
                     ..Default::default()
                 });
             }
@@ -1748,7 +1757,8 @@ fn microsoft_graph_sends_and_brings_the_calendar_before_the_mail() {
     a.services.sign_in = Some(Box::new(move |req: crate::SignInRequest| {
         sign_ins2.lock().unwrap().push(req.graph);
         let (tx, rx) = mpsc::channel();
-        let tokens = Tokens { access: "graph-tok-2".into(), refresh: "ref-3".into(), expires_at: mailcraft_time::now() + 3600, ..Default::default() };
+        let tokens =
+            Tokens { access: "graph-tok-2".into(), refresh: "ref-3".into(), expires_at: mailsolutions_time::now() + 3600, ..Default::default() };
         tx.send(Ok(tokens)).unwrap();
         rx
     }));
@@ -1860,8 +1870,8 @@ fn mail_arrives_in_pieces_and_a_run_can_be_called_off() {
     use std::sync::atomic::Ordering;
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{FolderDelta, SyncRequest, SyncResult};
-    use mailcraft_model::{Address, FolderKind, Message};
+    use mailsolutions_model::sync::{FolderDelta, SyncRequest, SyncResult};
+    use mailsolutions_model::{Address, FolderKind, Message};
 
     // The test hands the pieces over itself, one at a time.
     let pipe: Arc<Mutex<Option<mpsc::Sender<SyncResult>>>> = Default::default();
@@ -1942,8 +1952,8 @@ fn a_change_made_during_a_long_download_goes_out_without_waiting_for_it() {
     use std::sync::atomic::Ordering;
     use std::sync::{Arc, Mutex, mpsc};
 
-    use mailcraft_model::sync::{FolderDelta, SyncRequest, SyncResult};
-    use mailcraft_model::{Address, FolderKind, Message};
+    use mailsolutions_model::sync::{FolderDelta, SyncRequest, SyncResult};
+    use mailsolutions_model::{Address, FolderKind, Message};
 
     // Every run: what it was asked to tell the server, and the pipe its pieces come through.
     let asked: Arc<Mutex<Vec<usize>>> = Default::default();
@@ -2018,7 +2028,7 @@ fn a_change_made_during_a_long_download_goes_out_without_waiting_for_it() {
     assert!(!a.syncing());
 }
 
-/// Started with a `mailto:` link (MailCraft is the system's mail program and a link was clicked
+/// Started with a `mailto:` link (MailSolutions is the system's mail program and a link was clicked
 /// somewhere), the program opens a new message to whoever the link names.
 #[test]
 fn a_mailto_link_handed_to_the_program_starts_a_message() {
@@ -2084,7 +2094,7 @@ fn opening_a_damaged_mailbox_file_says_what_was_left_out() {
 fn imported_mail_for_a_microsoft_account_goes_to_a_local_folder_and_says_how_it_gets_there() {
     let mut a = app();
     let account = a.run("account.add", json!({"email": "owner@example.org", "kind": "microsoft"})).unwrap()["id"].as_u64().unwrap();
-    let inbox = a.session.mailbox.folder_of_kind(account, mailcraft_model::FolderKind::Inbox).unwrap();
+    let inbox = a.session.mailbox.folder_of_kind(account, mailsolutions_model::FolderKind::Inbox).unwrap();
     let id = first_message(&mut a);
     let eml = a.execute("file.exportMessage", json!({"id": id})).unwrap();
     let r = a.run("file.import", json!({"name": "in.eml", "data": eml["data"], "folder": inbox})).unwrap();
@@ -2094,7 +2104,7 @@ fn imported_mail_for_a_microsoft_account_goes_to_a_local_folder_and_says_how_it_
     assert_ne!(a.session.mailbox.message(imported).unwrap().folder, inbox);
     a.run("mail.move", json!({"ids": [imported], "folder": inbox})).unwrap();
     assert_eq!(a.session.mailbox.message(imported).unwrap().folder, inbox);
-    let waits = |q: &mailcraft_model::Queued| matches!(q, mailcraft_model::Queued::PlaceMessage { message, .. } if *message == imported);
+    let waits = |q: &mailsolutions_model::Queued| matches!(q, mailsolutions_model::Queued::PlaceMessage { message, .. } if *message == imported);
     assert!(a.session.mailbox.queued.iter().any(waits));
     // What Microsoft's server leaves out of it is said, not hidden.
     let said = a.status_msg.as_ref().map(|(text, _)| text.clone()).unwrap_or_default();
@@ -2194,7 +2204,7 @@ fn info_account_card_keeps_what_follows_below_it() {
     use egui_kittest::kittest::Queryable;
     let mut a = app();
     if let Some(acc) = a.session.mailbox.accounts.first_mut() {
-        acc.kind = mailcraft_model::AccountKind::Microsoft;
+        acc.kind = mailsolutions_model::AccountKind::Microsoft;
     }
     a.execute("ui.backstage", json!({"value": true, "page": "info"})).unwrap();
     let mut h = window(a);
@@ -2209,7 +2219,7 @@ fn info_account_card_keeps_what_follows_below_it() {
 }
 
 /// #313: File › Info has Remove for the only account too, beside its Settings, and the question
-/// says MailCraft will have no account afterwards. The empty mailbox left has nothing to remove.
+/// says MailSolutions will have no account afterwards. The empty mailbox left has nothing to remove.
 #[test]
 fn the_only_account_can_be_removed_in_file_info() {
     use egui_kittest::kittest::Queryable;
@@ -2227,7 +2237,7 @@ fn the_only_account_can_be_removed_in_file_info() {
     h.get_by_label("Remove").click();
     h.run_steps(3);
     let Some(crate::dialogs::Dialog::Confirm { ask, .. }) = &h.state().dialog else { panic!("no question") };
-    assert!(ask.text.contains("MailCraft will have no account afterwards"), "{}", ask.text);
+    assert!(ask.text.contains("MailSolutions will have no account afterwards"), "{}", ask.text);
     assert!(h.state().session.mailbox.account(only).is_some(), "only asked so far");
 
     // Not said for an account that isn't the last.
@@ -2281,17 +2291,18 @@ fn search_pills_are_only_how_the_box_draws_the_query() {
     assert_eq!(harness.state_mut().session.rows().len(), 1, "the Atlas welcome from Priya");
 }
 
-/// An account a newer MailCraft added: its card in File › Info says what it is, no Send/Receive
+/// An account a newer MailSolutions added: its card in File › Info says what it is, no Send/Receive
 /// of the window takes it in, and the window lays it out as any other.
 #[test]
 fn an_account_a_newer_version_added_is_said_to_be_one_and_left_out_of_send_receive() {
     let mut a = app();
     let servers = json!({"email": "ada@imap.example", "incoming": {"host": "imap.example.org"}});
     let imap = a.execute("account.add", servers).unwrap()["id"].as_u64().unwrap();
-    let newer = mailcraft_model::Account { email: "ada@jmap.example".into(), kind: mailcraft_model::AccountKind::Unknown, ..Default::default() };
+    let newer =
+        mailsolutions_model::Account { email: "ada@jmap.example".into(), kind: mailsolutions_model::AccountKind::Unknown, ..Default::default() };
     let newer = a.session.mailbox.add_account(newer);
     let card = crate::backstage::account_detail(&a, a.session.mailbox.account(newer).unwrap());
-    assert_eq!(card, "Added by a newer version of MailCraft: send and receive with it there");
+    assert_eq!(card, "Added by a newer version of MailSolutions: send and receive with it there");
     assert_eq!(a.server_accounts(), vec![imap]);
     a.execute("ui.backstage", json!({"value": true, "page": "info"})).unwrap();
     let mut h = window(a);
@@ -2308,16 +2319,16 @@ fn a_jmap_account_is_left_out_of_send_receive_until_one_can_be_run() {
     let mut a = app();
     let handed: std::sync::Arc<std::sync::Mutex<Vec<String>>> = Default::default();
     let log = handed.clone();
-    a.services.sync = Some(Box::new(move |req: mailcraft_model::sync::SyncRequest| {
+    a.services.sync = Some(Box::new(move |req: mailsolutions_model::sync::SyncRequest| {
         log.lock().unwrap().push(req.account.email.clone());
-        std::sync::mpsc::channel::<mailcraft_model::sync::SyncResult>().1
+        std::sync::mpsc::channel::<mailsolutions_model::sync::SyncResult>().1
     }));
     let servers = json!({"email": "ada@imap.example", "incoming": {"host": "imap.example.org"}});
     let imap = a.execute("account.add", servers).unwrap()["id"].as_u64().unwrap();
-    let server = mailcraft_model::JmapServer { session: "https://jmap.example/.well-known/jmap".into(), bearer: true };
-    let jmap = mailcraft_model::Account {
+    let server = mailsolutions_model::JmapServer { session: "https://jmap.example/.well-known/jmap".into(), bearer: true };
+    let jmap = mailsolutions_model::Account {
         email: "ada@jmap.example".into(),
-        kind: mailcraft_model::AccountKind::Jmap,
+        kind: mailsolutions_model::AccountKind::Jmap,
         jmap: Some(server),
         ..Default::default()
     };
@@ -2329,14 +2340,14 @@ fn a_jmap_account_is_left_out_of_send_receive_until_one_can_be_run() {
     // A Send/Receive of every account is the IMAP account's alone.
     a.execute("ui.sync", json!({"password": "not-a-real-password"})).unwrap();
     assert_eq!(*handed.lock().unwrap(), ["ada@imap.example"]);
-    let inbox = a.session.mailbox.folder_of_kind(jmap, mailcraft_model::FolderKind::Inbox).unwrap();
-    let kept = mailcraft_model::Message { folder: inbox, subject: "Kept there".into(), ..Default::default() };
+    let inbox = a.session.mailbox.folder_of_kind(jmap, mailsolutions_model::FolderKind::Inbox).unwrap();
+    let kept = mailsolutions_model::Message { folder: inbox, subject: "Kept there".into(), ..Default::default() };
     let kept = a.session.mailbox.add_message(kept).unwrap();
     let ask = crate::dialogs::confirmation(&a, "mail.deletePermanently", &json!({"ids": [kept]})).unwrap();
     assert_eq!(ask.text, "This message will be permanently deleted.");
     // One its server has goes there too (M6), and the question says so.
-    let server = mailcraft_model::sync::ServerMessage { id: "E1".into(), folder: "M1".into(), ..Default::default() };
-    let theirs = mailcraft_model::Message { folder: inbox, subject: "Theirs".into(), server: Some(server), ..Default::default() };
+    let server = mailsolutions_model::sync::ServerMessage { id: "E1".into(), folder: "M1".into(), ..Default::default() };
+    let theirs = mailsolutions_model::Message { folder: inbox, subject: "Theirs".into(), server: Some(server), ..Default::default() };
     let theirs = a.session.mailbox.add_message(theirs).unwrap();
     let ask = crate::dialogs::confirmation(&a, "mail.deletePermanently", &json!({"ids": [theirs]})).unwrap();
     assert_eq!(ask.text, "This message will be permanently deleted. It is removed from the mail server too, and that can't be undone.");
@@ -2369,7 +2380,7 @@ fn signature_app() -> MailApp {
 /// #270: a picture over the cap is made smaller to fit, and the page says so.
 #[test]
 fn signature_picture_over_the_cap_is_made_smaller() {
-    use mailcraft_model::signature::{MAX_PICTURE_BYTES, MAX_WIDTH};
+    use mailsolutions_model::signature::{MAX_PICTURE_BYTES, MAX_WIDTH};
     let png = big_png(1200);
     assert!(png.len() > 4 * MAX_PICTURE_BYTES);
     let mut a = signature_app();
@@ -2410,7 +2421,7 @@ fn signature_picture_refusal_is_on_the_page() {
 /// and the signature keeps what it had.
 #[test]
 fn signature_picture_over_the_total_is_refused_on_the_page() {
-    use mailcraft_model::signature::{MAX_PICTURES, MAX_PICTURES_BYTES};
+    use mailsolutions_model::signature::{MAX_PICTURES, MAX_PICTURES_BYTES};
     let png = crate::files::base64_lite::encode(&big_png(1200));
     let mut a = signature_app();
     let total = |a: &MailApp| a.session.signature_edit.as_ref().unwrap().signature.pictures().iter().map(|p| p.data.len()).sum::<usize>();

@@ -306,7 +306,7 @@ impl Build {
             kept.html = Some(self.queue(html.into_bytes())?);
         }
         // (More than a hidden text can be stays where it is, as in a mailbox opened the old way.)
-        if m.hidden_text.len() > INLINE_MAX && m.hidden_text.len() <= mailcraft_model::MAX_HIDDEN_TEXT {
+        if m.hidden_text.len() > INLINE_MAX && m.hidden_text.len() <= mailsolutions_model::MAX_HIDDEN_TEXT {
             let hidden = std::mem::take(&mut m.hidden_text);
             gone = gone.saturating_add(hidden.len() as u64);
             kept.hidden = Some(self.queue(hidden.into_bytes())?);
@@ -334,7 +334,7 @@ impl Build {
             let bytes = Arc::try_unwrap(data).unwrap_or_else(|shared| shared.to_vec());
             m.header_block.kept = Some(self.queue(bytes)?);
         }
-        kept.text_hash = mailcraft_model::text_hash(&m.body.text);
+        kept.text_hash = mailsolutions_model::text_hash(&m.body.text);
         m.kept = (!kept.is_empty()).then(|| Box::new(kept));
         Ok((m, gone))
     }
@@ -518,7 +518,7 @@ pub(super) fn open(st: &mut State, file: &Path, len: u64, progress: &OpenProgres
             return if build.version == SPLIT_VERSION {
                 Ok(None)
             } else {
-                Err(format!("{show}: this mailbox was written by a newer MailCraft (format {})", build.version))
+                Err(format!("{show}: this mailbox was written by a newer MailSolutions (format {})", build.version))
             };
         }
         if let Some(why) = build.failure.take() {
@@ -528,9 +528,9 @@ pub(super) fn open(st: &mut State, file: &Path, len: u64, progress: &OpenProgres
             return Err(format!("{show}: {why}"));
         }
         if e.is_io() && e.to_string().contains(TOO_LONG) {
-            return Err(format!("{show}: this isn't a mailbox MailCraft opens ({TOO_LONG}: over {} MB)", MAX_ITEM >> 20));
+            return Err(format!("{show}: this isn't a mailbox MailSolutions opens ({TOO_LONG}: over {} MB)", MAX_ITEM >> 20));
         }
-        return Err(format!("{show}: this isn't a MailCraft mailbox ({e})"));
+        return Err(format!("{show}: this isn't a MailSolutions mailbox ({e})"));
     }
     // (A charge refused inside a value read leniently is a refusal too: nothing is left out.)
     if let Some(why) = build.budget.spent() {
@@ -539,10 +539,11 @@ pub(super) fn open(st: &mut State, file: &Path, len: u64, progress: &OpenProgres
     // The last of the content, on the disk before anything names it.
     build.flush().map_err(|e| format!("{show}: {e}"))?;
     let Build { rest, messages, contacts, events, tasks, moved, version, .. } = build;
-    let rest = serde_json::to_vec(&Value::Object(rest)).map_err(|e| format!("{show}: this isn't a MailCraft mailbox ({e})"))?;
+    let rest = serde_json::to_vec(&Value::Object(rest)).map_err(|e| format!("{show}: this isn't a MailSolutions mailbox ({e})"))?;
     // (Its own budget: what the rest was read into as it was read is let go of.)
     let budget = open_budget();
-    let mut mailbox: Mailbox = load_limit::read_json(&rest, &budget).map_err(|e| refused(&show, "this isn't a MailCraft mailbox", &e, &budget))?;
+    let mut mailbox: Mailbox =
+        load_limit::read_json(&rest, &budget).map_err(|e| refused(&show, "this isn't a MailSolutions mailbox", &e, &budget))?;
     drop(rest);
     (mailbox.messages, mailbox.contacts, mailbox.events, mailbox.tasks) = (messages.into(), contacts, events, tasks);
     mailbox.version = 1;

@@ -10,9 +10,9 @@
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use mailcraft_engine::Session;
-use mailcraft_model::sync::{GraphFetchResult, GraphFetched, ServerMessage, Tokens};
-use mailcraft_model::{Body, FolderKind, Message};
+use mailsolutions_engine::Session;
+use mailsolutions_model::sync::{GraphFetchResult, GraphFetched, ServerMessage, Tokens};
+use mailsolutions_model::{Body, FolderKind, Message};
 
 use super::*;
 use crate::Services;
@@ -25,7 +25,7 @@ const NOW: i64 = 1_791_993_600;
 /// Each account has three messages, newest first: the first and the last of them only headers.
 /// The Inbox of the first account is in view, and nothing is fetched in the background.
 fn window() -> (MailApp, [[Id; 3]; 2], Jobs) {
-    let mut app = MailApp::new(Session::at(mailcraft_model::Mailbox::default(), NOW, 0), Services::default());
+    let mut app = MailApp::new(Session::at(mailsolutions_model::Mailbox::default(), NOW, 0), Services::default());
     app.autosave = false;
     app.session.driver.set_auto_sync(false);
     let mut ids = [[0; 3]; 2];
@@ -49,7 +49,7 @@ fn window() -> (MailApp, [[Id; 3]; 2], Jobs) {
             };
             *id = app.session.mailbox.add_message(message).unwrap();
         }
-        let tokens = Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() };
+        let tokens = Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() };
         app.seed_graph_token(account, tokens);
         if k == 0 {
             app.session.view.folder = inbox;
@@ -478,7 +478,7 @@ fn those_come_by_other_means_meanwhile_go_on() {
         // brings none: the server busy, or the network gone.
         let fetched =
             ["AA0M0", "AA0M2"].map(|id| GraphFetched { id: id.into(), mime: format!("Subject: Whole {id}\r\n\r\nAll of {id}.\r\n").into_bytes() });
-        mailcraft_engine::sync_driver::fetch::apply_fetch(
+        mailsolutions_engine::sync_driver::fetch::apply_fetch(
             &mut app.session,
             GraphFetchResult { account: one, email: "one@example.org".into(), fetched: fetched.to_vec(), ..Default::default() },
         )
@@ -634,7 +634,7 @@ fn a_forward_left_waiting_in_another_mailbox_isnt_said_to_be_called_off() {
     app.judge_mailbox();
     app.confirm_servers().unwrap();
     let account = app.session.mailbox.message(x).unwrap().account;
-    let tokens = Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailcraft_time::now() + 3_600, ..Default::default() };
+    let tokens = Tokens { access: "stand-in".into(), refresh: "r".into(), expires_at: mailsolutions_time::now() + 3_600, ..Default::default() };
     app.seed_graph_token(account, tokens);
     assert_eq!(app.run("mail.reply", json!({"id": x})).unwrap()["pending"], "download");
     assert_eq!(said(&app), "Downloading the message first…");

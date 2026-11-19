@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Calendar events and contacts that an account's server keeps besides its mail.
 //!
-//! Plain data, like [`crate::sync`]: a host with sockets (`mailcraft-net`, which asks Microsoft
+//! Plain data, like [`crate::sync`]: a host with sockets (`mailsolutions-net`, which asks Microsoft
 //! Graph) brings an [`EventsDownload`] or a [`ContactsDownload`], and the engine merges it into
 //! the mailbox (`sync.applyEvents`, `sync.applyContacts`). What came from a server says so in its
 //! [`Origin`], which is also what a change sent back to the server would name the item by.
@@ -10,7 +10,7 @@
 //! All of it is hostile: it comes from a server, or from a command's parameters.
 //! [`RemoteEvent::tidy`] and [`RemoteContact::tidy`] cut it to size before any of it is kept.
 
-use mailcraft_time::{Date, DateTime, Timestamp};
+use mailsolutions_time::{Date, DateTime, Timestamp};
 use serde::{Deserialize, Serialize};
 
 use crate::{
