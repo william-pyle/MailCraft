@@ -253,7 +253,8 @@ jobs:
           $zip = (Get-Item dist/release/*-portable.zip).FullName
           $dir = Join-Path $env:RUNNER_TEMP 'portable'
           Expand-Archive -LiteralPath $zip -DestinationPath $dir
-          ./packaging/windows/verify-programs.ps1 -Folder $dir
+          $programFolder = Join-Path $dir ([IO.Path]::GetFileNameWithoutExtension($zip))
+          ./packaging/windows/verify-programs.ps1 -Folder $programFolder
       - name: Inspect MSI identity and content without installing
         shell: pwsh
         run: ./packaging/windows/verify-package.ps1 -Msi (Get-Item dist/release/*.msi).FullName

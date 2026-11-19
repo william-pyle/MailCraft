@@ -47,6 +47,7 @@ fn release_promotes_ci_without_rebuilding_or_weakening_signing_boundaries() {
     let package = read(".github/workflows/package.yml");
     assert!(ci.contains("candidate, fragments"));
     assert!(ci.contains("name: Windows release candidate"));
+    assert!(ci.contains("group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}"));
     assert!(ci.contains("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"));
     assert!(ci.contains("cargo deny --locked check"));
     assert!(ci.contains("cargo run --locked --package xtask -- ci"));
@@ -58,7 +59,7 @@ fn release_promotes_ci_without_rebuilding_or_weakening_signing_boundaries() {
     assert!(package.contains("${{ inputs.build_digest }}"));
     assert!(package.contains("-SkipBuild -NoRun"));
     assert!(package.contains("Check final signed-byte handoff"));
-    assert!(package.contains("verify-programs.ps1 -Folder $dir"));
+    assert!(package.contains("verify-programs.ps1 -Folder $programFolder"));
     assert!(package.contains("mailsolutions-$VERSION-build.json"));
 }
 

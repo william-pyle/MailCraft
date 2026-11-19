@@ -126,6 +126,7 @@ receipt records only whether the complete registration pair was present, not val
 Debug test binaries, Clippy analysis and optimized static-CRT production binaries
 are different configurations and cannot safely substitute for each other. Local
 pre-commit validation is still required by AGENTS.md; hosted exact-commit CI remains
-the release authority. Main CI no longer cancels an in-flight main run; PR-only
-cancellation remains enabled. Release concurrency still never cancels a running
+the release authority. Main CI groups by exact commit, so different main commits do not cancel or queue
+behind each other; repeated runs of the same SHA serialize. PRs retain their branch
+group and cancellation. Release concurrency still never cancels a running
 release. The application architecture, dependencies and installer family are unchanged.

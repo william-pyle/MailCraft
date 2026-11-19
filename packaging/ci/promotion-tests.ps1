@@ -12,6 +12,19 @@ function Must-Fail([string]$Name, [scriptblock]$Action) {
   $script:Count++
 }
 try {
+  . (Join-Path $PSScriptRoot '../windows/verify-programs.ps1')
+  $layout = Join-Path $base 'program-layout/release'
+  [void][IO.Directory]::CreateDirectory((Join-Path $layout 'deps'))
+  foreach ($name in @('mailsolutions.exe','mailsolutions-cli.exe')) {
+    [IO.File]::WriteAllText((Join-Path $layout $name),'synthetic top-level program')
+    [IO.File]::WriteAllText((Join-Path $layout "deps/$name"),'synthetic dependency copy')
+  }
+  $selected = @(Get-ProgramFiles $layout)
+  if ($selected.Count -ne 2 -or @($selected | Where-Object DirectoryName -NE ([IO.Path]::GetFullPath($layout))).Count) { throw 'Cargo deps copies confused program selection' }
+  Remove-Item -LiteralPath (Join-Path $layout 'mailsolutions.exe')
+  Must-Fail 'missing top-level program despite deps copy' { Get-ProgramFiles $layout }
+  [void][IO.Directory]::CreateDirectory((Join-Path $layout 'mailsolutions.exe'))
+  Must-Fail 'directory masquerading as program' { Get-ProgramFiles $layout }
   $expected = Get-Expected
   $commit = $expected.commit
   $workflow = [pscustomobject]@{id=419588732;path='.github/workflows/ci.yml';state='active'}
