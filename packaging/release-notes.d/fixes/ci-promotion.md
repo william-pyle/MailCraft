@@ -1,0 +1,1 @@
+- Future Windows releases promote verified binaries from successful exact-commit CI, preserving signing and final-package checks while avoiding repeated application builds.

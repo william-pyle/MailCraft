@@ -1,9 +1,8 @@
 name: Package
 
-# Builds Windows x64 release files with the scripts in packaging/ and uploads them as workflow artifacts
+# Packages verified Windows x64 CI binaries and uploads the release files as workflow artifacts
 # named release-* (release.yml gathers them into one GitHub release). Called by release.yml; it
-# doesn't run on its own. Everything here runs on GitHub's standard runners, so it works in any
-# public repository, a fork included.
+# doesn't run on its own. The active promotion policy pins this owner repository's identity.
 #
 # The current release files are mailsolutions-<ver>-windows-x64.msi and
 # mailsolutions-<ver>-windows-x64-portable.zip. Other target jobs are paused at the owner's request.
@@ -11,8 +10,8 @@ name: Package
 # Building and signing are separate jobs. A job that compiles (cargo, and every build script and
 # macro of every dependency) or runs what was compiled has no signing secret, no Azure sign-in, no
 # keychain and no `release` environment. The Windows and macOS jobs that sign (in the `release`
-# environment, for a version tag) check out the scripts afresh, take the binaries a build
-# job handed on and check them against the digest that job gave (packaging/ci/handoff.sh), and
+# environment, for a version tag) check out the scripts afresh, take the verified CI binaries
+# and check them against the verifier's digest (packaging/ci/handoff.sh), and
 # then sign and package them with pinned tools; they never run cargo, rustup or a built program.
 # The built programs are run in smoke-test jobs that hold no secret. `cargo xtask workflows`
 # checks this shape on every change.
@@ -24,6 +23,13 @@ name: Package
 on:
   workflow_call:
     inputs:
+      build_digest:
+        description: "Digest from release.yml after strict exact-commit CI artifact verification"
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
       freebsd:
         description: "Also build the FreeBSD tarball (in a VM; slow)"
         type: boolean
@@ -103,56 +109,9 @@ env:
   NFPM_VERSION: "2.47.0"
 
 jobs:
-  # Compiles the two Windows programs. No signing secret, no environment.
-  windows-build:
-    name: Windows ${{ matrix.arch }} (build)
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { arch: x64, target: x86_64-pc-windows-msvc }
-    # One output per architecture: the legs of a matrix share the job's outputs.
-    outputs:
-      x64: ${{ steps.seal.outputs.x64 }}
-      x86: ${{ steps.seal.outputs.x86 }}
-      arm64: ${{ steps.seal.outputs.arm64 }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no releases; pinned by hash) # zizmor: ignore[ref-version-mismatch]
-        with:
-          toolchain: 1.98.1
-          targets: ${{ matrix.target }}
-      - name: Build
-        shell: pwsh
-        env:
-          MAILSOLUTIONS_GOOGLE_CLIENT_ID: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_ID }}
-          MAILSOLUTIONS_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILSOLUTIONS_GOOGLE_CLIENT_SECRET }}
-        run: ./packaging/windows/package.ps1 -Arch ${{ matrix.arch }} -BuildOnly
-      - name: Hand the programs on by digest
-        id: seal
-        shell: bash
-        env:
-          ARCH: ${{ matrix.arch }}
-          TARGET: ${{ matrix.target }}
-        run: |
-          mkdir -p "handoff/$TARGET/release"
-          cp "target/$TARGET/release/mailsolutions.exe" "target/$TARGET/release/mailsolutions-cli.exe" "handoff/$TARGET/release/"
-          digest=$(bash packaging/ci/handoff.sh seal handoff "build-windows-$ARCH")
-          echo "$ARCH=$digest" >>"$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: build-windows-${{ matrix.arch }}
-          path: handoff/
-          if-no-files-found: error
-          retention-days: 7
-
-  # Signs and packages what windows-build made. Never runs cargo or a built program.
+  # Signs and packages the candidate verified by release.yml. Never builds or runs it.
   windows:
     name: Windows ${{ matrix.arch }}
-    needs: [windows-build]
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -184,11 +143,11 @@ jobs:
         with:
           name: build-windows-${{ matrix.arch }}
           path: prebuilt
-      - name: The programs are the ones windows-build made
+      - name: The programs are the verified CI candidate
         shell: bash
         env:
           ARCH: ${{ matrix.arch }}
-          DIGEST: ${{ needs.windows-build.outputs[matrix.arch] }}
+          DIGEST: ${{ inputs.build_digest }}
         run: bash packaging/ci/handoff.sh check prebuilt "build-windows-$ARCH=$DIGEST"
       # WiX 5.0.2 and its two extensions are NuGet packages. Each is downloaded by exact version
       # and checked against the SHA-256 pinned here before anything is installed; the tool is
@@ -243,6 +202,12 @@ jobs:
           AZURE_SIGNING_ACCOUNT: ${{ inputs.sign && secrets.AZURE_SIGNING_ACCOUNT || '' }}
           AZURE_CERT_PROFILE: ${{ inputs.sign && secrets.AZURE_CERT_PROFILE || '' }}
         run: ./packaging/windows/package.ps1 -Arch ${{ matrix.arch }} -SkipBuild -NoRun
+      - name: Retain the verified CI source evidence with the release
+        shell: bash
+        working-directory: dist/release
+        env:
+          VERSION: ${{ inputs.version }}
+        run: cp -- "$GITHUB_WORKSPACE/prebuilt/ci-build.json" "mailsolutions-$VERSION-build.json"
       - name: Hand the release files on by digest
         id: seal
         shell: bash
@@ -277,18 +242,18 @@ jobs:
         with:
           name: release-windows-${{ matrix.arch }}
           path: dist/release
-      - name: Run the portable CLI
+      - name: Check final signed-byte handoff before running version commands
+        shell: bash
+        env:
+          DIGEST: ${{ needs.windows.outputs[matrix.arch] }}
+        run: bash packaging/ci/handoff.sh check dist/release "release-windows-x64=$DIGEST"
+      - name: Check both final portable programs
         shell: pwsh
         run: |
           $zip = (Get-Item dist/release/*-portable.zip).FullName
           $dir = Join-Path $env:RUNNER_TEMP 'portable'
-          Expand-Archive -Path $zip -DestinationPath $dir -Force
-          $cli = (Get-ChildItem -Path $dir -Recurse -Filter mailsolutions-cli.exe | Select-Object -First 1).FullName
-          if (-not $cli) { throw 'no mailsolutions-cli.exe in the portable zip' }
-          $version = & $cli --version
-          if ($LASTEXITCODE -ne 0) { throw "mailsolutions-cli --version failed ($LASTEXITCODE)" }
-          if ([IO.Path]::GetFileName($zip) -notmatch '^mailsolutions-(.+)-windows-x64-portable\.zip$' -or $version -ne "mailsolutions-cli $($Matches[1])") { throw 'Portable CLI version differs from its package' }
-          Write-Output $version
+          Expand-Archive -LiteralPath $zip -DestinationPath $dir
+          ./packaging/windows/verify-programs.ps1 -Folder $dir
       - name: Inspect MSI identity and content without installing
         shell: pwsh
         run: ./packaging/windows/verify-package.ps1 -Msi (Get-Item dist/release/*.msi).FullName

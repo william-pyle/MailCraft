@@ -98,3 +98,14 @@ skip other gates to get a release. Tag only the exact main commit whose ci-ok pa
 For this rename, inspect installer metadata without installing/uninstalling, use
 synthetic profiles and mock credentials, and do not launch against live profiles.
 Do not post release announcements to upstream issues without explicit authorization.
+
+## CI-PROMOTION operating rules
+
+Read `docs/ci-release-promotion.md` before changing CI or promoting a release.
+Main CI produces the immutable release candidate; release workflows verify and
+promote it without rebuilding. Require the exact commit and complete successful
+run attempt, not an equivalent tree or a similarly named check. Missing or expired
+evidence stops promotion. Do not repeat successful checks or dispatch routine
+packaging dry runs. New commits for owner work use current Solutions names or
+neutral wording in both subject and body; inspect the complete message before
+pushing, and never rewrite historical messages to apply this rule retroactively.

@@ -2,6 +2,8 @@
 
 > **Last reviewed:** 2026-10-18 · **Last updated:** 2026-11-19 · **Change:** minor · **Status:** the owner fork builds and publishes Windows x64 release files only, beginning with 0.13.2. The Windows operating-system publisher signature is not configured yet (gap #18).
 
+The current Windows CI/promotion contract is [CI timing, inputs and release promotion](ci-release-promotion.md). It supersedes the historical build-at-tag/dry-run behavior described in older revision rows.
+
 This file is MailSolutions's release recipe. The scripts in `packaging/` are WordCraft's with MailSolutions's
 names, and differ from them only where the program does (what it opens, its description, its
 permissions, its own installer identity), so a release has exactly the files a Craft app's has,
@@ -67,12 +69,12 @@ paused in this fork.
    `[workspace.package] version`; the app shows it in `--version` and About, with the commit from
    `MAILSOLUTIONS_BUILD_SHA`), commit, and get `cargo xtask ci` green.
 3. Tag that commit `v0.2.0` and push the tag. The workflow refuses a tag that isn't the version in
-   `Cargo.toml`, then builds:
+   `Cargo.toml`, then promotes its verified CI candidate:
 
    If GitHub does not enqueue the tag's push event, run
    `gh workflow run release.yml --repo william-pyle/MailSolutions --ref v<version>`.
    Dispatching on a version tag uses the same passing-CI gate, signed packages and protected
-   `release` environment. Dispatching on a branch remains an unsigned packaging dry run.
+   `release` environment. Dispatching on main only verifies its existing successful CI candidate; it does not build or package again.
 
 | Platform | Artifacts | Signing |
 |---|---|---|
@@ -84,34 +86,26 @@ paused in this fork.
    never changed by the workflow (the run fails instead). A version with a suffix
    (`0.2.0-rc.1`) is marked as a pre-release.
 5. When the checksum signature is present, the workflow publishes the verified draft. This makes the release visible to the app version check. Without a signing key, the draft remains unpublished and the workflow fails; an unsigned release cannot be installed by the updater. Review the published assets, checksums and notes after the run.
-6. Announce it to the testers: a comment on [#11](https://github.com/UCS-Care-Group/mailcraft/issues/11)
-   headed `## MailSolutions v<version> is out`, with the download link and the release's headlines
-   (the tester welcome promises it): the notes' **in short** list. Add anyone who signed up since to #11's Testers table.
+6. Report the release URL and verification evidence to the owner. External tester announcements require separate authorization; do not post to upstream issues as part of this fork workflow.
 
-A pushed tag builds and signs only if its commit is on `main` and `ci-ok` passed on it: the first
-job of `release.yml` (`version`) checks both and every other job needs it, so a tag on a branch
-commit, or on a commit that CI never passed, stops before any signing secret is in reach. The
-merge commit of a pull request that was up to date with `main` (as the release's own pull request
-is) can be tagged as soon as it is merged: it holds the very tree the pull request's `ci-ok`
-passed on, and that check stands for it, so the release doesn't wait for CI to run again on
-`main`. Any other commit is tagged once CI on `main` is green (a documentation-only commit runs
-no `ci-ok` and can't be tagged). Building and signing are separate jobs. The Windows and macOS
-programs are compiled in jobs that hold no signing secret and name no environment
-(`package.ps1 -BuildOnly`, `package.sh --build-only`); each hands its binaries on as an artifact
-with a list of their SHA-256 and gives that list's digest as a job output
-(`packaging/ci/handoff.sh`). The jobs that sign check out the scripts afresh, check what they
-downloaded against that digest, and sign and package it (`-SkipBuild -NoRun`,
-`--skip-build --no-run`) with the systems' own signing tools and the pinned Artifact Signing
-client; they never run cargo, rustup or a program built here. The programs are run (the CLI,
-the window's `--version`, the MSI installed and removed) in check jobs that hold no secret. Every
-release file comes with the digest of the job that made it, and the job that makes the draft
-checks them all before it makes `SHA256SUMS.txt`, which it signs with the runner's OpenSSL, not
-with anything compiled from this repository. `cargo xtask workflows` (part of `cargo xtask ci`)
-fails when a job with a signing secret, an Azure sign-in, a keychain import or the `release`
-environment runs cargo, rustup or a built program. Release builds use no build cache
-(`Swatinem/rust-cache` is for CI only). The Google desktop client (`MAILSOLUTIONS_GOOGLE_CLIENT_ID`,
-`MAILSOLUTIONS_GOOGLE_CLIENT_SECRET`) is read by the build jobs, which name no environment, so it is
-a secret of the repository, not of the `release` environment.
+A pushed tag signs only when its exact commit is on `main` and the complete trusted
+CI run passed, including `ci-ok` and the Windows release candidate. The verifier
+checks the repository/workflow/run identities and the immutable artifact's digest,
+receipt, version, target and build configuration before any signing job can start.
+An equivalent tree or PR check does not substitute for exact main CI. Read the
+[promotion contract](ci-release-promotion.md#promotion-contract) for all refusal paths.
+
+CI builds production binaries once without a cache or signing credentials, alongside
+the debug/test quality gate. Release's verification-only job downloads that candidate
+without executing it. It hands the verified files by digest to the existing signing
+job (`package.ps1 -SkipBuild -NoRun`). Signing jobs never run cargo, rustup, a cache,
+or a program built here; `cargo xtask workflows` enforces that boundary. Final-byte
+checks, version commands and MSI database inspection run without signing secrets.
+The publish job checks the final handoff, signs checksums using the runner's OpenSSL,
+then verifies the signature against the updater's public keys and all listed hashes.
+Provenance covers the final files and the public CI build receipt. No installer runs.
+The Google desktop registration is injected into trusted main's candidate build from
+its existing repository secret bindings; no credential value is put in the receipt.
 
 Signing secrets (`APPLE_*`, `WINDOWS_CERTIFICATE*` and `AZURE_*`) are secrets of the `release`
 environment, not of the repository. Windows signing with Azure Artifact Signing has no client
@@ -119,8 +113,7 @@ secret: the job signs in with GitHub's OIDC token (`azure/login`), which the app
 federated credential accepts only from the `release` environment; its secrets are
 `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT` and
 `AZURE_CERT_PROFILE`. The owner fork restricts that environment to version tags (`v*`); the Windows and macOS jobs that sign, and the job that makes the
-draft, run in it, and only for a pushed version tag. Without the secrets the builds are unsigned
-(ad-hoc on macOS) and the scripts say so, so forks still build. The owner fork has the MailSolutions checksum signing key, but no Windows or macOS operating-system signing credentials. There is no riscv64 Linux build, and no Flathub manifest is published.
+draft, run in it, and only for a pushed version tag. Without OS signing credentials the packages remain unsigned at the operating-system layer and say so. The owner promotion contract is repository-specific; other forks may still build source but must deliberately configure their own release identity and trust policy. The owner fork has the MailSolutions checksum signing key, but no Windows or macOS operating-system signing credentials. There is no riscv64 Linux build, and no Flathub manifest is published.
 
 ## MC-RENAME 0.14.0 release contract
 

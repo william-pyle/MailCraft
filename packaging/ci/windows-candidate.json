@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "repository": "william-pyle/MailSolutions",
+  "repositoryId": 1458034748,
+  "workflow": ".github/workflows/ci.yml",
+  "workflowId": 419588732,
+  "target": "x86_64-pc-windows-msvc",
+  "rust": "1.98.1",
+  "profile": "release",
+  "rustflags": "-C target-feature=+crt-static",
+  "requiredWinres": true,
+  "requiredJobs": ["ci (windows-latest)", "deny", "Windows release candidate", "ci-ok"]
+}

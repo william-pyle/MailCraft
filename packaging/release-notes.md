@@ -7,12 +7,12 @@
 - Existing sign-in credential bindings and checksum-signing trust are retained.
 - **The first upgrade needs a manual download**; MailCraft 0.13.2 cannot follow the renamed API or asset names.
 
-## What's new
+**What's new**
 
 - The Windows profile is `%APPDATA%/MailSolutions`. Migration validates an offline copy before activating it, refuses busy/conflicting/damaged profiles, preserves the old folder, and quarantines old pending updates.
 - Source and packages use `mailsolutions`; the existing GitHub repository is `william-pyle/MailSolutions`. Existing releases and tags remain available.
 
-## Fixes
+**Fixes**
 
 - The ContactSolutions option keeps the previous saved choice and uses the new executable-discovery and shared-store contracts.
 - Settings saves retain unknown fields. Reporting a problem opens this fork's GitHub issue page; no upstream report relay is configured.

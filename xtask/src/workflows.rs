@@ -62,7 +62,7 @@ const BUILT: &[&str] = &[
 
 /// The scripts a job with signing material may run from inside `packaging/` (`./<script>` with a
 /// `working-directory:` there).
-const SIGNING_SCRIPTS: &[&str] = &["sign-sums.sh", "handoff.sh", "import-cert.sh", "sign.ps1", "package.ps1", "package.sh"];
+const SIGNING_SCRIPTS: &[&str] = &["sign-sums.sh", "verify-sums.sh", "handoff.sh", "import-cert.sh", "sign.ps1", "package.ps1", "package.sh"];
 
 /// Every problem in the workflows under `root`, or `Ok` when there is none.
 pub fn run(root: &Path) -> Result<(), String> {

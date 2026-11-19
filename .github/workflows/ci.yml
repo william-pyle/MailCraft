@@ -22,7 +22,7 @@ env:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Whether a pull request changes anything but documentation (Markdown files and docs/;
@@ -103,7 +103,7 @@ jobs:
       - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
         with:
           tool: cargo-deny@0.20.2
-      - run: cargo run --locked --package xtask -- deny
+      - run: cargo deny --locked check
 
   # A pull request of documentation alone skips `ci`, but its fragments (`docs/log.d/`,
   # `packaging/release-notes.d/`) are joined at release time: they are checked here, so that one
@@ -191,10 +191,47 @@ jobs:
           export JAVA_HOME="$JAVA_HOME_21_X64"  # Paparazzi 2 runs on 21; the app still targets 17
           cargo run --locked --package xtask -- mobile
 
+  # A cold optimized/static-CRT build is incompatible with debug test objects. Build it once,
+  # alongside the gates, without signing credentials or release-environment access. Only a
+  # successful main run (including ci-ok) is eligible for later promotion.
+  candidate:
+    name: Windows release candidate
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && github.repository == 'william-pyle/MailSolutions' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: windows-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: 1.98.1
+          targets: x86_64-pc-windows-msvc
+      - name: Build release candidate once
+        shell: pwsh
+        env:
+          MAILSOLUTIONS_GOOGLE_CLIENT_ID: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_ID }}
+          MAILSOLUTIONS_GOOGLE_CLIENT_SECRET: ${{ secrets.MAILCRAFT_GOOGLE_CLIENT_SECRET }}
+        run: |
+          $env:MAILSOLUTIONS_BUILD_DATE = (git show -s --format=%cs HEAD).Trim()
+          ./packaging/windows/package.ps1 -Arch x64 -BuildOnly
+          ./packaging/windows/verify-programs.ps1 -Folder target/x86_64-pc-windows-msvc/release
+          ./packaging/ci/promotion.ps1 -Mode Seal -Output candidate
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: candidate-windows-x64-${{ github.sha }}-${{ github.run_attempt }}
+          path: candidate/*
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
   # The one check main's protection requires: passes when every platform passed, or when there
   # was nothing but documentation to check.
   ci-ok:
-    needs: [changes, ci, deny, fragments, android, android-app]
+    needs: [changes, ci, deny, candidate, fragments, android, android-app]
     if: always()
     runs-on: ubuntu-24.04
     steps:

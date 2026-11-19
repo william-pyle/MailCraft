@@ -20,6 +20,48 @@ fn the_repositorys_workflows_pass() {
     }
 }
 
+/// The promotion code is PowerShell workflow tooling, as is the existing Windows packager.
+/// Its fixture runner executes no downloaded program and needs no credentials or network.
+#[cfg(windows)]
+#[test]
+fn exact_commit_promotion_rejects_incompatible_and_tampered_evidence() {
+    let output = std::process::Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
+        .arg(crate::root().join("packaging/ci/promotion-tests.ps1"))
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{}\n{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+}
+
+#[test]
+fn signed_final_bytes_are_verified_with_updater_public_keys() {
+    let output = std::process::Command::new("bash").arg(crate::root().join("packaging/ci/verify-sums-tests.sh")).output().unwrap();
+    assert!(output.status.success(), "{}\n{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+}
+
+#[test]
+fn release_promotes_ci_without_rebuilding_or_weakening_signing_boundaries() {
+    let read = |path: &str| std::fs::read_to_string(crate::root().join(path)).unwrap();
+    let ci = read(".github/workflows/ci.yml");
+    let release = read(".github/workflows/release.yml");
+    let package = read(".github/workflows/package.yml");
+    assert!(ci.contains("candidate, fragments"));
+    assert!(ci.contains("name: Windows release candidate"));
+    assert!(ci.contains("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"));
+    assert!(ci.contains("cargo deny --locked check"));
+    assert!(ci.contains("cargo run --locked --package xtask -- ci"));
+    assert!(release.contains("promotion.ps1 -Mode Promote"));
+    assert!(release.contains("bash packaging/verify-sums.sh artifacts"));
+    assert!(!release.contains("same tree"));
+    assert!(!release.contains("dry-run:"));
+    assert!(!package.contains("windows-build:"));
+    assert!(package.contains("${{ inputs.build_digest }}"));
+    assert!(package.contains("-SkipBuild -NoRun"));
+    assert!(package.contains("Check final signed-byte handoff"));
+    assert!(package.contains("verify-programs.ps1 -Folder $dir"));
+    assert!(package.contains("mailsolutions-$VERSION-build.json"));
+}
+
 /// The publish job as it was: xtask compiled in the job that then signs with the release key.
 #[test]
 fn a_signing_job_that_compiles_its_tool_fails() {
